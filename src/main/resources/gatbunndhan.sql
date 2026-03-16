@@ -1,8 +1,8 @@
 -- Create Database
-CREATE DATABASE gatbunndhan;
+CREATE DATABASE gathbandhan;
 
 -- Use Database
-\c gatbunndhan;
+\c gathbandhan;
 
 -- Users Table
 CREATE TABLE users (
