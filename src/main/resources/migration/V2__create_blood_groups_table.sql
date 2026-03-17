@@ -1,22 +1,20 @@
 CREATE TABLE blood_groups (
-id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
 
-```
-admin_id BIGINT,
+    admin_id BIGINT,
 
-type VARCHAR(10) NOT NULL UNIQUE,
+    type VARCHAR(10) NOT NULL UNIQUE,
 
-status BOOLEAN NOT NULL DEFAULT TRUE,
+    status BOOLEAN NOT NULL DEFAULT TRUE,
 
-created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-updated_at TIMESTAMP NULL,
+    updated_at TIMESTAMP,
 
-CONSTRAINT fk_bloodgroup_admin
-    FOREIGN KEY (admin_id)
-    REFERENCES admins(id)
-```
-
+    CONSTRAINT fk_bloodgroup_admin
+        FOREIGN KEY (admin_id)
+        REFERENCES admins(id)
 );
 
+-- Index
 CREATE INDEX idx_blood_group ON blood_groups(type);
