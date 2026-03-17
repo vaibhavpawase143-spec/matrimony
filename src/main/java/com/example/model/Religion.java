@@ -8,16 +8,19 @@ import java.time.LocalDateTime;
         name = "religions",
         indexes = {
                 @Index(name = "idx_religion_name", columnList = "name")
-        }
+        },
+        uniqueConstraints = @UniqueConstraint(columnNames = {"admin_id", "name"})
 )
 public class Religion {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "admin_id")
     private Admin admin;
+
     @Column(nullable = false, length = 120)
     private String name;
 
@@ -40,4 +43,53 @@ public class Religion {
         updatedAt = LocalDateTime.now();
     }
 
+    // Getters and Setters
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Admin getAdmin() {
+        return admin;
+    }
+
+    public void setAdmin(Admin admin) {
+        this.admin = admin;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public Boolean getStatus() {
+        return status;
+    }
+
+    public void setStatus(Boolean status) {
+        this.status = status;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
 }

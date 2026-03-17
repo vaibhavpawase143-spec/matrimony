@@ -10,16 +10,19 @@ import java.util.List;
         indexes = {
                 @Index(name = "idx_state_name", columnList = "name"),
                 @Index(name = "idx_state_country", columnList = "country_id")
-        }
+        },
+        uniqueConstraints = @UniqueConstraint(columnNames = {"country_id", "name"})
 )
 public class State {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "admin_id")
     private Admin admin;
+
     // State name
     @Column(nullable = false, length = 120)
     private String name;
@@ -113,6 +116,10 @@ public class State {
 
     public void setCities(List<City> cities) {
         this.cities = cities;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
     }
 
     public void setUpdatedAt(LocalDateTime updatedAt) {

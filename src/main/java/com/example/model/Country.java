@@ -7,6 +7,9 @@ import java.util.List;
 @Entity
 @Table(
         name = "countries",
+        uniqueConstraints = {
+                @UniqueConstraint(columnNames = {"name"})
+        },
         indexes = {
                 @Index(name = "idx_country_name", columnList = "name")
         }
@@ -16,9 +19,11 @@ public class Country {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "admin_id")
     private Admin admin;
+
     // Country name
     @Column(nullable = false, length = 120, unique = true)
     private String name;
@@ -62,6 +67,10 @@ public class Country {
         return id;
     }
 
+    public Admin getAdmin() {
+        return admin;
+    }
+
     public String getName() {
         return name;
     }
@@ -86,6 +95,10 @@ public class Country {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public void setAdmin(Admin admin) {
+        this.admin = admin;
     }
 
     public void setName(String name) {

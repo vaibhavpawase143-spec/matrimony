@@ -8,6 +8,9 @@ import java.time.LocalDateTime;
         name = "weights",
         indexes = {
                 @Index(name = "idx_weight_value", columnList = "value")
+        },
+        uniqueConstraints = {
+                @UniqueConstraint(columnNames = {"admin_id", "value"})
         }
 )
 public class Weight {
@@ -15,9 +18,11 @@ public class Weight {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "admin_id")
     private Admin admin;
+
     // Example: 50 kg, 60 kg, etc.
     @Column(nullable = false)
     private String value;
@@ -43,4 +48,52 @@ public class Weight {
         updatedAt = LocalDateTime.now();
     }
 
+    // Getters and Setters
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {   // Added setter for id
+        this.id = id;
+    }
+
+    public Admin getAdmin() {
+        return admin;
+    }
+
+    public void setAdmin(Admin admin) {
+        this.admin = admin;
+    }
+
+    public String getValue() {
+        return value;
+    }
+
+    public void setValue(String value) {
+        this.value = value;
+    }
+
+    public Boolean getStatus() {
+        return status;
+    }
+
+    public void setStatus(Boolean status) {
+        this.status = status;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
 }
