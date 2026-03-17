@@ -4,7 +4,11 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "users")
+@Table(name = "users",
+        uniqueConstraints = {
+                @UniqueConstraint(columnNames = "email"),
+                @UniqueConstraint(columnNames = "phone")
+        })
 public class User {
 
     @Id
@@ -17,7 +21,9 @@ public class User {
     @Column(unique = true)
     private String email;
 
+    @Column(unique = true)
     private String phone;
+
     private String password;
 
     private Boolean active = true;
@@ -26,8 +32,13 @@ public class User {
 
     public User() {}
 
+    // Getters and Setters
     public Long getId() {
         return id;
+    }
+
+    public void setId(Long id) {          // Added setter for id
+        this.id = id;
     }
 
     public String getFirstName() {

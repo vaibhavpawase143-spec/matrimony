@@ -3,7 +3,10 @@ package com.example.model;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "subscription_plans")
+@Table(
+        name = "subscription_plans",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"admin_id", "name"})
+)
 public class SubscriptionPlan {
 
     @Id
@@ -24,8 +27,14 @@ public class SubscriptionPlan {
 
     public SubscriptionPlan() {}
 
+    // Getters and Setters
+
     public Long getId() {
         return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public String getName() {

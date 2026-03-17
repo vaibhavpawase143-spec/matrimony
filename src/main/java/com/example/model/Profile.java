@@ -1,11 +1,14 @@
 package com.example.model;
 
 import com.example.model.*;
-
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+
 @Entity
-@Table(name = "profiles")
+@Table(
+        name = "profiles",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"user_id"})
+)
 public class Profile {
 
     @Id
@@ -41,8 +44,14 @@ public class Profile {
 
     public Profile() {}
 
+    // Getters and Setters
+
     public Long getId() {
         return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public User getUser() {

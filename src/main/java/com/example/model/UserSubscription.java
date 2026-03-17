@@ -4,7 +4,10 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "user_subscriptions")
+@Table(name = "user_subscriptions",
+        uniqueConstraints = {
+                @UniqueConstraint(columnNames = {"user_id", "plan_id"})
+        })
 public class UserSubscription {
 
     @Id
@@ -27,8 +30,13 @@ public class UserSubscription {
 
     public UserSubscription() {}
 
+    // Getters and Setters
     public Long getId() {
         return id;
+    }
+
+    public void setId(Long id) {   // Added setter for id
+        this.id = id;
     }
 
     public User getUser() {
