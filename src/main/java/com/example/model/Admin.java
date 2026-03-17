@@ -61,6 +61,8 @@ public class Admin {
         updatedAt = LocalDateTime.now();
     }
 
+    // ================= GETTERS & SETTERS =================
+
     public Long getId() {
         return id;
     }
@@ -149,4 +151,7 @@ public class Admin {
         this.updatedAt = updatedAt;
     }
     
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
 }

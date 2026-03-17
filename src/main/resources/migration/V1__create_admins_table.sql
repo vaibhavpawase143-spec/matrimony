@@ -1,32 +1,29 @@
 CREATE TABLE admins (
-id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
 
-```
-name VARCHAR(255) NOT NULL,
+    name VARCHAR(255) NOT NULL,
 
-username VARCHAR(100) NOT NULL UNIQUE,
+    username VARCHAR(100) NOT NULL UNIQUE,
 
-email VARCHAR(150) NOT NULL UNIQUE,
+    email VARCHAR(150) NOT NULL UNIQUE,
 
-password VARCHAR(255) NOT NULL,
+    password VARCHAR(255) NOT NULL,
 
-role_id BIGINT,
+    role_id BIGINT,
 
-phone VARCHAR(20),
+    phone VARCHAR(20),
 
-status BOOLEAN DEFAULT TRUE,
+    status BOOLEAN DEFAULT TRUE,
 
-last_login TIMESTAMP,
+    last_login TIMESTAMP,
 
-created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
-updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
-CONSTRAINT fk_admin_role
-    FOREIGN KEY (role_id)
-    REFERENCES roles(id)
-```
-
+    CONSTRAINT fk_admin_role
+        FOREIGN KEY (role_id)
+        REFERENCES roles(id)
 );
 
 -- Indexes
