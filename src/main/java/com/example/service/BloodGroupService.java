@@ -1,76 +1,31 @@
 package com.example.service;
 
 import com.example.model.BloodGroup;
-import com.example.repository.BloodGroupRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 import java.util.List;
 
-@Service
-public class BloodGroupService {
-
-    @Autowired
-    private BloodGroupRepository repo;
+public interface BloodGroupService {
 
     // ✅ Get all blood groups
-    public List<BloodGroup> getAll() {
-        return repo.findAll();
-    }
+    List<BloodGroup> getAll();
 
     // ✅ Get only active blood groups
-    public List<BloodGroup> getActive() {
-        return repo.findByStatusTrue();
-    }
+    List<BloodGroup> getActive();
 
     // ✅ Get by ID
-    public BloodGroup getById(Long id) {
-        return repo.findById(id)
-                .orElseThrow(() -> new RuntimeException("Blood group not found"));
-    }
+    BloodGroup getById(Long id);
 
-    // ✅ Create blood group (with duplicate check)
-    public BloodGroup create(BloodGroup bg) {
-
-        if (repo.existsByType(bg.getType())) {
-            throw new RuntimeException("Blood group already exists");
-        }
-
-        bg.setStatus(true); // default active
-
-        return repo.save(bg);
-    }
+    // ✅ Create blood group
+    BloodGroup create(BloodGroup bg);
 
     // ✅ Update blood group
-    public BloodGroup update(Long id, BloodGroup updatedBg) {
-
-        BloodGroup existing = getById(id);
-
-        // If type changed → check duplicate
-        if (!existing.getType().equals(updatedBg.getType())
-                && repo.existsByType(updatedBg.getType())) {
-            throw new RuntimeException("Blood group already exists");
-        }
-
-        existing.setType(updatedBg.getType());
-        existing.setStatus(updatedBg.getStatus());
-        existing.setAdmin(updatedBg.getAdmin());
-
-        return repo.save(existing);
-    }
+    BloodGroup update(Long id, BloodGroup bg);
 
     // ✅ Delete blood group
-    public void delete(Long id) {
-        repo.deleteById(id);
-    }
+    void delete(Long id);
 
     // ✅ Get by admin
-    public List<BloodGroup> getByAdmin(Long adminId) {
-        return repo.findByAdminId(adminId);
-    }
+    List<BloodGroup> getByAdmin(Long adminId);
 
     // ✅ Get active blood groups by admin
-    public List<BloodGroup> getActiveByAdmin(Long adminId) {
-        return repo.findByAdminIdAndStatusTrue(adminId);
-    }
+    List<BloodGroup> getActiveByAdmin(Long adminId);
 }

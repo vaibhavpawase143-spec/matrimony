@@ -1,75 +1,31 @@
 package com.example.service;
 
 import com.example.model.BrotherType;
-import com.example.repository.BrotherTypeRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 import java.util.List;
 
-@Service
-public class BrotherTypeService {
-
-    @Autowired
-    private BrotherTypeRepository repo;
+public interface BrotherTypeService {
 
     // ✅ Get all
-    public List<BrotherType> getAll() {
-        return repo.findAll();
-    }
+    List<BrotherType> getAll();
 
     // ✅ Get active
-    public List<BrotherType> getActive() {
-        return repo.findByStatusTrue();
-    }
+    List<BrotherType> getActive();
 
     // ✅ Get by ID
-    public BrotherType getById(Long id) {
-        return repo.findById(id)
-                .orElseThrow(() -> new RuntimeException("Brother type not found"));
-    }
+    BrotherType getById(Long id);
 
     // ✅ Create
-    public BrotherType create(BrotherType bt) {
-
-        if (repo.existsByValue(bt.getValue())) {
-            throw new RuntimeException("Brother type already exists");
-        }
-
-        bt.setStatus(true);
-
-        return repo.save(bt);
-    }
+    BrotherType create(BrotherType bt);
 
     // ✅ Update
-    public BrotherType update(Long id, BrotherType updated) {
-
-        BrotherType existing = getById(id);
-
-        if (!existing.getValue().equals(updated.getValue())
-                && repo.existsByValue(updated.getValue())) {
-            throw new RuntimeException("Brother type already exists");
-        }
-
-        existing.setValue(updated.getValue());
-        existing.setStatus(updated.getStatus());
-        existing.setAdmin(updated.getAdmin());
-
-        return repo.save(existing);
-    }
+    BrotherType update(Long id, BrotherType bt);
 
     // ✅ Delete
-    public void delete(Long id) {
-        repo.deleteById(id);
-    }
+    void delete(Long id);
 
     // ✅ Get by admin
-    public List<BrotherType> getByAdmin(Long adminId) {
-        return repo.findByAdminId(adminId);
-    }
+    List<BrotherType> getByAdmin(Long adminId);
 
     // ✅ Get active by admin
-    public List<BrotherType> getActiveByAdmin(Long adminId) {
-        return repo.findByAdminIdAndStatusTrue(adminId);
-    }
+    List<BrotherType> getActiveByAdmin(Long adminId);
 }

@@ -5,6 +5,7 @@ import java.util.List;
 
 public interface DrinkingService {
 
+<<<<<<< HEAD
     // Get all
     List<Drinking> getAll();
 
@@ -30,5 +31,23 @@ public interface DrinkingService {
     List<Drinking> getActiveByAdmin(Long adminId);
 
     // Search
+=======
+    List<Drinking> getAll();
+
+    List<Drinking> getActive();
+
+    Drinking getById(Long id);
+
+    Drinking create(Drinking drinking);
+
+    Drinking update(Long id, Drinking updated);
+
+    void delete(Long id);
+
+    List<Drinking> getByAdmin(Long adminId);
+
+    List<Drinking> getActiveByAdmin(Long adminId);
+
+>>>>>>> 2f23817ea585dfe5bb41fc13a9d53b5bd72a1f3f
     List<Drinking> search(String keyword);
 }
