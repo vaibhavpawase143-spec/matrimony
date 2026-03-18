@@ -1,81 +1,25 @@
 package com.example.service;
 
 import com.example.model.Diet;
-import com.example.repository.DietRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 import java.util.List;
 
-@Service
 public interface DietService {
 
-    @Autowired
-    private DietRepository repo;
+    List<Diet> getAll();
 
-    // ✅ Get all
-    public List<Diet> getAll() {
-        return repo.findAll();
-    }
+    List<Diet> getActive();
 
-    // ✅ Get active
-    public List<Diet> getActive() {
-        return repo.findByStatusTrue();
-    }
+    Diet getById(Long id);
 
-    // ✅ Get by ID
-    public Diet getById(Long id) {
-        return repo.findById(id)
-                .orElseThrow(() -> new RuntimeException("Diet not found"));
-    }
+    Diet create(Diet diet);
 
-    // ✅ Create
-    public Diet create(Diet diet) {
+    Diet update(Long id, Diet updated);
 
-        if (repo.existsByName(diet.getName())) {
-            throw new RuntimeException("Diet already exists");
-        }
+    void delete(Long id);
 
-        diet.setStatus(true);
+    List<Diet> getByAdmin(Long adminId);
 
-        return repo.save(diet);
-    }
+    List<Diet> getActiveByAdmin(Long adminId);
 
-    // ✅ Update
-    public Diet update(Long id, Diet updated) {
-
-        Diet existing = getById(id);
-
-        // duplicate check if name changed
-        if (!existing.getName().equals(updated.getName())
-                && repo.existsByName(updated.getName())) {
-            throw new RuntimeException("Diet already exists");
-        }
-
-        existing.setName(updated.getName());
-        existing.setStatus(updated.getStatus());
-        existing.setAdmin(updated.getAdmin());
-
-        return repo.save(existing);
-    }
-
-    // ✅ Delete
-    public void delete(Long id) {
-        repo.deleteById(id);
-    }
-
-    // ✅ Get by admin
-    public List<Diet> getByAdmin(Long adminId) {
-        return repo.findByAdminId(adminId);
-    }
-
-    // ✅ Get active by admin
-    public List<Diet> getActiveByAdmin(Long adminId) {
-        return repo.findByAdminIdAndStatusTrue(adminId);
-    }
-
-    // ✅ Search
-    public List<Diet> search(String keyword) {
-        return repo.findByNameContainingIgnoreCase(keyword);
-    }
+    List<Diet> search(String keyword);
 }

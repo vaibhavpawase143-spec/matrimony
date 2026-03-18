@@ -1,92 +1,40 @@
 package com.example.service;
 
 import com.example.model.City;
-import com.example.repository.CityRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 import java.util.List;
 
-@Service
-public class CityService {
-
-    @Autowired
-    private CityRepository repo;
+public interface CityService {
 
     // ✅ Get all cities
-    public List<City> getAll() {
-        return repo.findAll();
-    }
+    List<City> getAll();
 
     // ✅ Get active cities
-    public List<City> getActive() {
-        return repo.findByStatusTrue();
-    }
+    List<City> getActive();
 
     // ✅ Get by ID
-    public City getById(Long id) {
-        return repo.findById(id)
-                .orElseThrow(() -> new RuntimeException("City not found"));
-    }
+    City getById(Long id);
 
     // ✅ Create city
-    public City create(City city) {
-
-        if (repo.existsByName(city.getName())) {
-            throw new RuntimeException("City already exists");
-        }
-
-        city.setStatus(true);
-
-        return repo.save(city);
-    }
+    City create(City city);
 
     // ✅ Update city
-    public City update(Long id, City updated) {
-
-        City existing = getById(id);
-
-        // duplicate check if name changed
-        if (!existing.getName().equals(updated.getName())
-                && repo.existsByName(updated.getName())) {
-            throw new RuntimeException("City already exists");
-        }
-
-        existing.setName(updated.getName());
-        existing.setStatus(updated.getStatus());
-        existing.setAdmin(updated.getAdmin());
-        existing.setState(updated.getState());
-
-        return repo.save(existing);
-    }
+    City update(Long id, City city);
 
     // ✅ Delete city
-    public void delete(Long id) {
-        repo.deleteById(id);
-    }
+    void delete(Long id);
 
     // ✅ Get cities by state
-    public List<City> getByState(Long stateId) {
-        return repo.findByStateId(stateId);
-    }
+    List<City> getByState(Long stateId);
 
-    // ✅ Get active cities by state (dropdown use)
-    public List<City> getActiveByState(Long stateId) {
-        return repo.findByStateIdAndStatusTrue(stateId);
-    }
+    // ✅ Get active cities by state
+    List<City> getActiveByState(Long stateId);
 
     // ✅ Get by admin
-    public List<City> getByAdmin(Long adminId) {
-        return repo.findByAdminId(adminId);
-    }
+    List<City> getByAdmin(Long adminId);
 
     // ✅ Search city (global)
-    public List<City> search(String keyword) {
-        return repo.findByNameContainingIgnoreCase(keyword);
-    }
+    List<City> search(String keyword);
 
     // ✅ Search city within state
-    public List<City> searchByState(Long stateId, String keyword) {
-        return repo.findByStateIdAndNameContainingIgnoreCase(stateId, keyword);
-    }
+    List<City> searchByState(Long stateId, String keyword);
 }
