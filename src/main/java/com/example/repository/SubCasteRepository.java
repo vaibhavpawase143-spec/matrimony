@@ -11,23 +11,29 @@ import java.util.Optional;
 public interface SubCasteRepository extends JpaRepository<SubCaste, Long> {
 
     // 🔍 Find by name
-    Optional<SubCaste> findByName(String name);
+    Optional<SubCaste> findByNameIgnoreCase(String name);
 
-    // 🔍 Check duplicate (improve later with casteId)
-    boolean existsByName(String name);
+    // 🔍 Check duplicate
+    boolean existsByNameIgnoreCase(String name);
 
-    // 🔍 Get all active sub-castes
-    List<SubCaste> findByStatusTrue();
+    // ✅ Active / Inactive
+    List<SubCaste> findByIsActiveTrue();
 
-    // 🔍 Get by caste (VERY IMPORTANT)
-    List<SubCaste> findByCasteId(Long casteId);
+    List<SubCaste> findByIsActiveFalse();
 
-    // 🔍 Active sub-castes by caste (dropdown)
-    List<SubCaste> findByCasteIdAndStatusTrue(Long casteId);
-
-    // 🔍 Filter by admin
+    // 🔍 Filter by Admin (RELATION)
     List<SubCaste> findByAdminId(Long adminId);
+
+    List<SubCaste> findByAdminIdAndIsActiveTrue(Long adminId);
+
+    // 🔍 Filter by Caste (RELATION)
+    List<SubCaste> findByCaste_Id(Long casteId);
+
+    List<SubCaste> findByCaste_IdAndIsActiveTrue(Long casteId);
 
     // 🔍 Search
     List<SubCaste> findByNameContainingIgnoreCase(String keyword);
+
+    // 🔍 Optional direct field (only if exists in entity)
+    List<SubCaste> findByCasteId(Long casteId);
 }

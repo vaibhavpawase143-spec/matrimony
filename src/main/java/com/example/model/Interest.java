@@ -22,7 +22,7 @@ public class Interest {
     @JoinColumn(name = "receiver_id")
     private User receiver;
 
-    private String status;
+    private String isActive;
 
     private LocalDateTime createdAt;
 
@@ -52,12 +52,12 @@ public class Interest {
         this.receiver = receiver;
     }
 
-    public String getStatus() {
-        return status;
+    public String getisActive() {
+        return isActive;
     }
 
-    public void setStatus(String status) {
-        this.status = status;
+    public void setisActive(String isActive) {
+        this.isActive = isActive;
     }
 
     public LocalDateTime getCreatedAt() {

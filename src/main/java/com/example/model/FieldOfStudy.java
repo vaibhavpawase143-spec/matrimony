@@ -27,7 +27,7 @@ public class FieldOfStudy {
     private String name;
 
     @Column(nullable = false)
-    private Boolean status = true;
+    private Boolean isActive = true;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -58,12 +58,12 @@ public class FieldOfStudy {
         this.name = name;
     }
 
-    public Boolean getStatus() {
-        return status;
+    public Boolean getisActive() {
+        return isActive;
     }
 
-    public void setStatus(Boolean status) {
-        this.status = status;
+    public void setisActive(Boolean isActive) {
+        this.isActive = isActive;
     }
 
     public LocalDateTime getCreatedAt() {
@@ -80,5 +80,8 @@ public class FieldOfStudy {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public void setIsActive(boolean b) {
     }
 }

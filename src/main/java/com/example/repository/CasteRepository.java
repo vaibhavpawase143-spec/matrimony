@@ -16,14 +16,14 @@ public interface CasteRepository extends JpaRepository<Caste, Long> {
     // 🔍 Check duplicate
     boolean existsByName(String name);
 
-    // 🔍 Get all active castes
-    List<Caste> findByStatusTrue();
+    // ✅ Get all active castes
+    List<Caste> findByIsActiveTrue();
 
-    // 🔍 Get castes by religion (IMPORTANT relation)
+    // 🔍 Get castes by religion
     List<Caste> findByReligionId(Long religionId);
 
-    // 🔍 Active castes by religion (for dropdown)
-    List<Caste> findByReligionIdAndStatusTrue(Long religionId);
+    // ✅ Active castes by religion
+    List<Caste> findByReligionIdAndIsActiveTrue(Long religionId);
 
     // 🔍 Filter by admin
     List<Caste> findByAdminId(Long adminId);

@@ -22,4 +22,7 @@ public interface UserService {
     void deactivate(Long id);
 
     List<User> search(String keyword);
+
+    // ✅ Missing method (add this)
+    boolean existsByEmail(String email);
 }

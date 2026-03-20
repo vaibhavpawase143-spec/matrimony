@@ -11,22 +11,22 @@ import java.util.Optional;
 public interface QualificationRepository extends JpaRepository<Qualification, Long> {
 
     // 🔍 Find by name (B.Tech, MBA, M.Sc)
-    Optional<Qualification> findByName(String name);
+    Optional<Qualification> findByNameIgnoreCase(String name);
 
     // 🔍 Check duplicate
-    boolean existsByName(String name);
+    boolean existsByNameIgnoreCase(String name);
 
     // 🔍 Get all active records
-    List<Qualification> findByStatusTrue();
+    List<Qualification> findByIsActiveTrue();
 
     // 🔍 Get all inactive records
-    List<Qualification> findByStatusFalse();
+    List<Qualification> findByIsActiveFalse();
 
     // 🔍 Filter by admin
     List<Qualification> findByAdminId(Long adminId);
 
     // 🔍 Active records by admin
-    List<Qualification> findByAdminIdAndStatusTrue(Long adminId);
+    List<Qualification> findByAdminIdAndIsActiveTrue(Long adminId);
 
     // 🔍 Search
     List<Qualification> findByNameContainingIgnoreCase(String keyword);

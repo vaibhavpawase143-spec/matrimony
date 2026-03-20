@@ -1,7 +1,6 @@
 package com.example.service;
 
 import com.example.model.Shortlist;
-
 import java.util.List;
 
 public interface ShortlistService {

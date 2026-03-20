@@ -2,12 +2,14 @@ package com.example.model;
 
 import jakarta.persistence.*;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(
-    name = "body_types",
-    uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"value"})
-    }
+        name = "body_types",
+        uniqueConstraints = {
+                @UniqueConstraint(columnNames = {"value"})
+        }
 )
 public class BodyType {
 
@@ -19,16 +21,16 @@ public class BodyType {
     @JoinColumn(name = "admin_id")
     private Admin admin;
 
+    @Column(nullable = false)
     private String value;
 
-    private Boolean status = true;
+    @Column(nullable = false)
+    private Boolean isActive = true;   // active/inactive flag
 
-    // Getters and Setters
-
+    // --- Getters and Setters ---
     public Long getId() {
         return id;
     }
-
     public void setId(Long id) {
         this.id = id;
     }
@@ -36,7 +38,6 @@ public class BodyType {
     public Admin getAdmin() {
         return admin;
     }
-
     public void setAdmin(Admin admin) {
         this.admin = admin;
     }
@@ -44,16 +45,21 @@ public class BodyType {
     public String getValue() {
         return value;
     }
-
     public void setValue(String value) {
         this.value = value;
     }
 
-    public Boolean getStatus() {
-        return status;
+    public Boolean getisActive() {
+        return isActive;
+    }
+    public void setisActive(Boolean isActive) {
+        this.isActive = isActive;
     }
 
-    public void setStatus(Boolean status) {
-        this.status = status;
+    public void setCreatedAt(LocalDateTime now) {
+    }
+
+    public void setUpdatedAt(LocalDateTime now) {
+
     }
 }

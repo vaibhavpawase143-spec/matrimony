@@ -10,21 +10,27 @@ import java.util.List;
 @Repository
 public interface FamilyDetailsRepository extends JpaRepository<FamilyDetails, Long> {
 
-    // 🔍 Find by profile (VERY IMPORTANT - OneToOne)
-    Optional<FamilyDetails> findByProfileId(Long profileId);
+    // 🔍 Find by profile (OneToOne relationship)
+    Optional<FamilyDetails> findByProfile_Id(Long profileId);
 
     // 🔍 Check if profile already has family details
-    boolean existsByProfileId(Long profileId);
+    boolean existsByProfile_Id(Long profileId);
 
     // 🔍 Filter by family type
-    List<FamilyDetails> findByFamilyTypeId(Long familyTypeId);
+    List<FamilyDetails> findByFamilyType_Id(Long familyTypeId);
 
-    // 🔍 Filter by family status
-    List<FamilyDetails> findByFamilyStatusId(Long familyStatusId);
+    // ✅ FIXED (removed familyStatus, using isActive instead)
+    List<FamilyDetails> findByFamily_IsActiveTrue();
+
+    // 🔍 Filter by family id
+    List<FamilyDetails> findByFamily_Id(Long familyId);
+
+    // 🔍 Filter by family id + active
+    List<FamilyDetails> findByFamily_IdAndFamily_IsActiveTrue(Long familyId);
 
     // 🔍 Filter by brother type
-    List<FamilyDetails> findByBrotherTypeId(Long brotherTypeId);
+    List<FamilyDetails> findByBrotherType_Id(Long brotherTypeId);
 
     // 🔍 Filter by sister type
-    List<FamilyDetails> findBySisterTypeId(Long sisterTypeId);
+    List<FamilyDetails> findBySisterType_Id(Long sisterTypeId);
 }

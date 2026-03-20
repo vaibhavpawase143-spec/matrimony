@@ -19,7 +19,7 @@ public interface ReligionService {
 
     Religion update(Long id, Religion religion);
 
-    void delete(Long id);
+    void delete(Long id); // soft delete
 
     List<Religion> search(String keyword);
 

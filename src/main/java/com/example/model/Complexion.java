@@ -1,13 +1,12 @@
 package com.example.model;
 
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(
         name = "complexions",
-        uniqueConstraints = {
-                @UniqueConstraint(columnNames = {"value", "admin_id"})
-        }
+        uniqueConstraints = @UniqueConstraint(columnNames = {"admin_id", "value"})
 )
 public class Complexion {
 
@@ -19,12 +18,19 @@ public class Complexion {
     @JoinColumn(name = "admin_id")
     private Admin admin;
 
-    private String value;
+    @Column(nullable = false, length = 120)
+    private String value; // e.g., Fair, Wheatish, Dark
 
-    private Boolean status = true;
+    @Column(nullable = false)
+    private Boolean isActive = true;
 
-    // Getters and Setters
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
 
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    // --- Getters and Setters ---
     public Long getId() {
         return id;
     }
@@ -49,11 +55,39 @@ public class Complexion {
         this.value = value;
     }
 
-    public Boolean getStatus() {
-        return status;
+    public Boolean getIsActive() {
+        return isActive;
     }
 
-    public void setStatus(Boolean status) {
-        this.status = status;
+    public void setIsActive(Boolean isActive) {
+        this.isActive = isActive;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
+    // --- Lifecycle Callbacks ---
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
     }
 }

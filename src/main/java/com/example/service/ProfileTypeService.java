@@ -15,7 +15,7 @@ public interface ProfileTypeService {
 
     ProfileType update(Long id, ProfileType profileType);
 
-    void delete(Long id);
+    void delete(Long id); // soft delete
 
     List<ProfileType> getByAdmin(Long adminId);
 

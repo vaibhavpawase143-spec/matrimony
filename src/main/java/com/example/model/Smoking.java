@@ -1,6 +1,7 @@
 package com.example.model;
 
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(
@@ -16,42 +17,50 @@ public class Smoking {
     private String value;
 
     @ManyToOne
-    @JoinColumn(name="admin_id")
+    @JoinColumn(name = "admin_id")
     private Admin admin;
 
-    private Boolean status = true;
+    private Boolean isActive = true;
+
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+
+    // Lifecycle hooks to auto-set timestamps
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
 
     // Getters and Setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-    public Long getId() {
-        return id;
-    }
+    public String getValue() { return value; }
+    public void setValue(String value) { this.value = value; }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+    public Admin getAdmin() { return admin; }
+    public void setAdmin(Admin admin) { this.admin = admin; }
 
-    public String getValue() {
-        return value;
-    }
+    public Boolean getisActive() { return isActive; }
+    public void setisActive(Boolean isActive) { this.isActive = isActive; }
 
-    public void setValue(String value) {
-        this.value = value;
-    }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
-    public Admin getAdmin() {
-        return admin;
-    }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 
-    public void setAdmin(Admin admin) {
-        this.admin = admin;
-    }
 
-    public Boolean getStatus() {
-        return status;
-    }
+    public Boolean getIsActive() { return isActive; }
+    public void setIsActive(Boolean isActive) { this.isActive = isActive; }
 
-    public void setStatus(Boolean status) {
-        this.status = status;
+    public Boolean getActive() {
+        return isActive;
     }
 }

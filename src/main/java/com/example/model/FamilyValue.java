@@ -1,14 +1,9 @@
 package com.example.model;
 
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 
 @Entity
-@Table(
-        name = "family_values",
-        uniqueConstraints = {
-                @UniqueConstraint(columnNames = {"name", "admin_id"})
-        }
-)
 public class FamilyValue {
 
     @Id
@@ -17,20 +12,31 @@ public class FamilyValue {
 
     private String name;
 
-    @ManyToOne
-    @JoinColumn(name = "admin_id")
-    private Admin admin;
+    private Long adminId;
 
-    private Boolean status = true;
+    private Boolean isActive = true;
 
-    // Getters and Setters
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+
+    public FamilyValue() {}
+
+    // 🔥 Auto timestamps (BEST PRACTICE)
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    // ===== Getters & Setters =====
 
     public Long getId() {
         return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
     }
 
     public String getName() {
@@ -41,19 +47,35 @@ public class FamilyValue {
         this.name = name;
     }
 
-    public Admin getAdmin() {
-        return admin;
+    public Long getAdminId() {
+        return adminId;
     }
 
-    public void setAdmin(Admin admin) {
-        this.admin = admin;
+    public void setAdminId(Long adminId) {
+        this.adminId = adminId;
     }
 
-    public Boolean getStatus() {
-        return status;
+    public Boolean getIsActive() {
+        return isActive;
     }
 
-    public void setStatus(Boolean status) {
-        this.status = status;
+    public void setIsActive(Boolean active) {
+        isActive = active;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {  // ✅ FIX
+        this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {  // ✅ FIX
+        this.updatedAt = updatedAt;
     }
 }

@@ -28,4 +28,7 @@ public interface BrotherTypeService {
 
     // ✅ Get active by admin
     List<BrotherType> getActiveByAdmin(Long adminId);
+
+    // ✅ Search by keyword
+    List<BrotherType> search(String keyword);
 }

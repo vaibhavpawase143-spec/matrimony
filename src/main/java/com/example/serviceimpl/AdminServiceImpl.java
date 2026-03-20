@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
-public class AdminServiceImpl extends AdminService {
+public class AdminServiceImpl implements AdminService {
 
     @Autowired
     private AdminRepository repo;
@@ -42,7 +42,7 @@ public class AdminServiceImpl extends AdminService {
             throw new RuntimeException("Email already exists");
         }
 
-        admin.setStatus(true);
+        admin.setisActive(true);
 
         return repo.save(admin);
     }
@@ -58,7 +58,7 @@ public class AdminServiceImpl extends AdminService {
         existing.setEmail(updatedAdmin.getEmail());
         existing.setPhone(updatedAdmin.getPhone());
         existing.setRole(updatedAdmin.getRole());
-        existing.setStatus(updatedAdmin.getStatus());
+        existing.setisActive(updatedAdmin.getisActive());
 
         return repo.save(existing);
     }

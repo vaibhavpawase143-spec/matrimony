@@ -1,10 +1,10 @@
-CREATE TABLE manglik_status (
+CREATE TABLE manglik_isActive (
                                 id BIGSERIAL PRIMARY KEY,
                                 admin_id BIGINT,
                                 name VARCHAR(100),
-                                CONSTRAINT fk_manglik_status_admin
+                                CONSTRAINT fk_manglik_isActive_admin
                                     FOREIGN KEY (admin_id)
                                         REFERENCES admins(id),
-                                CONSTRAINT uq_manglik_status_admin_name
+                                CONSTRAINT uq_manglik_isActive_admin_name
                                     UNIQUE (admin_id, name)
 );

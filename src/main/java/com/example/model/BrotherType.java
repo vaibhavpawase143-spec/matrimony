@@ -19,6 +19,7 @@ public class BrotherType {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // 🔗 Relation with Admin
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "admin_id")
     private Admin admin;
@@ -26,8 +27,9 @@ public class BrotherType {
     @Column(nullable = false)
     private String value;
 
+    // ✅ Active field
     @Column(nullable = false)
-    private Boolean status = true;
+    private Boolean isActive = true;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -40,6 +42,7 @@ public class BrotherType {
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
     }
 
     @PreUpdate
@@ -47,7 +50,7 @@ public class BrotherType {
         updatedAt = LocalDateTime.now();
     }
 
-    // Getters and Setters
+    // ================= GETTERS & SETTERS =================
 
     public Long getId() {
         return id;
@@ -73,27 +76,19 @@ public class BrotherType {
         this.value = value;
     }
 
-    public Boolean getStatus() {
-        return status;
+    public Boolean getIsActive() {
+        return isActive;
     }
 
-    public void setStatus(Boolean status) {
-        this.status = status;
+    public void setIsActive(Boolean isActive) {
+        this.isActive = isActive;
     }
 
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
     }
 }

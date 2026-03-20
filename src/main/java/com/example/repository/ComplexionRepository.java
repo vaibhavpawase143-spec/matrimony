@@ -10,24 +10,17 @@ import java.util.Optional;
 @Repository
 public interface ComplexionRepository extends JpaRepository<Complexion, Long> {
 
-    // 🔍 Find by value (e.g., Fair, Wheatish, Dark)
     Optional<Complexion> findByValue(String value);
 
-    // 🔍 Check duplicate
     boolean existsByValue(String value);
 
-    // 🔍 Get all active records
-    List<Complexion> findByStatusTrue();
+    List<Complexion> findByIsActiveTrue();
 
-    // 🔍 Get all inactive records
-    List<Complexion> findByStatusFalse();
+    List<Complexion> findByIsActiveFalse();
 
-    // 🔍 Filter by admin
     List<Complexion> findByAdminId(Long adminId);
 
-    // 🔍 Active records by admin
-    List<Complexion> findByAdminIdAndStatusTrue(Long adminId);
+    List<Complexion> findByAdminIdAndIsActiveTrue(Long adminId);
 
-    // 🔍 Search (useful for dropdown/search)
     List<Complexion> findByValueContainingIgnoreCase(String keyword);
 }

@@ -15,7 +15,7 @@ public interface FamilyDetailsService {
 
     List<FamilyDetails> getByFamilyType(Long familyTypeId);
 
-    List<FamilyDetails> getByFamilyStatus(Long familyStatusId);
+    List<FamilyDetails> getByFamilyStatus(Long FamilyStatusId);
 
     List<FamilyDetails> getByBrotherType(Long brotherTypeId);
 

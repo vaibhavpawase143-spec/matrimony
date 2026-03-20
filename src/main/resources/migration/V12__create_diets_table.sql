@@ -7,7 +7,7 @@ admin_id BIGINT,
 
 name VARCHAR(100),
 
-status BOOLEAN DEFAULT TRUE,
+isActive BOOLEAN DEFAULT TRUE,
 
 CONSTRAINT fk_diet_admin
     FOREIGN KEY (admin_id)

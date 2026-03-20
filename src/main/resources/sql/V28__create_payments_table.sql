@@ -4,7 +4,7 @@ CREATE TABLE payments (
                           amount DOUBLE PRECISION,
                           payment_method VARCHAR(100),
                           transaction_id VARCHAR(150),
-                          payment_status VARCHAR(50),
+                          payment_isActive VARCHAR(50),
                           CONSTRAINT fk_payment_user
                               FOREIGN KEY (user_id)
                                   REFERENCES users(id),

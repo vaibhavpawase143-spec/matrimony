@@ -11,14 +11,23 @@ import java.util.Optional;
 public interface ManglikStatusRepository extends JpaRepository<ManglikStatus, Long> {
 
     // 🔍 Find by name (Yes, No, Partial)
-    Optional<ManglikStatus> findByName(String name);
+    Optional<ManglikStatus> findByNameIgnoreCase(String name);
 
     // 🔍 Check duplicate
-    boolean existsByName(String name);
+    boolean existsByNameIgnoreCase(String name);
 
     // 🔍 Filter by admin
     List<ManglikStatus> findByAdminId(Long adminId);
 
-    // 🔍 Search (for dropdown/filter)
+    // 🔍 Get all active records
+    List<ManglikStatus> findByIsActiveTrue();
+
+    // 🔍 Get all inactive records
+    List<ManglikStatus> findByIsActiveFalse();
+
+    // 🔍 Active records by admin
+    List<ManglikStatus> findByAdminIdAndIsActiveTrue(Long adminId);
+
+    // 🔍 Search
     List<ManglikStatus> findByNameContainingIgnoreCase(String keyword);
 }

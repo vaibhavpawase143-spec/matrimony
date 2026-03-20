@@ -28,7 +28,7 @@ public class Weight {
     private String value;
 
     @Column(nullable = false)
-    private Boolean status = true;
+    private Boolean isActive = true;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -73,12 +73,12 @@ public class Weight {
         this.value = value;
     }
 
-    public Boolean getStatus() {
-        return status;
+    public Boolean getisActive() {
+        return isActive;
     }
 
-    public void setStatus(Boolean status) {
-        this.status = status;
+    public void setisActive(Boolean isActive) {
+        this.isActive = isActive;
     }
 
     public LocalDateTime getCreatedAt() {

@@ -11,22 +11,22 @@ import java.util.Optional;
 public interface EducationLevelRepository extends JpaRepository<EducationLevel, Long> {
 
     // 🔍 Find by name
-    Optional<EducationLevel> findByName(String name);
+    Optional<EducationLevel> findByNameIgnoreCase(String name);
 
     // 🔍 Check duplicate
-    boolean existsByName(String name);
+    boolean existsByNameIgnoreCase(String name);
 
     // 🔍 Get all active records
-    List<EducationLevel> findByStatusTrue();
+    List<EducationLevel> findByIsActiveTrue();
 
     // 🔍 Get all inactive records
-    List<EducationLevel> findByStatusFalse();
+    List<EducationLevel> findByIsActiveFalse();
 
     // 🔍 Filter by admin
     List<EducationLevel> findByAdminId(Long adminId);
 
     // 🔍 Active records by admin
-    List<EducationLevel> findByAdminIdAndStatusTrue(Long adminId);
+    List<EducationLevel> findByAdminIdAndIsActiveTrue(Long adminId);
 
     // 🔍 Search
     List<EducationLevel> findByNameContainingIgnoreCase(String keyword);

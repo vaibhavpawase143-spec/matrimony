@@ -21,6 +21,9 @@ public interface SubCasteService {
 
     List<SubCaste> search(String keyword);
 
+    // ✅ Get active SubCastes by Admin
+    List<SubCaste> getActiveByAdmin(Long adminId);
+
     List<SubCaste> getByCaste(Long casteId);
 
     List<SubCaste> getActiveByCaste(Long casteId);

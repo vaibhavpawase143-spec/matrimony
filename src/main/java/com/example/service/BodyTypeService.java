@@ -11,6 +11,9 @@ public interface BodyTypeService {
     // ✅ Get active body types
     List<BodyType> getActive();
 
+    // ✅ Get inactive body types
+    List<BodyType> getInactive();
+
     // ✅ Get by ID
     BodyType getById(Long id);
 

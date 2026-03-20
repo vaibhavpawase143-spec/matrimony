@@ -11,23 +11,22 @@ import java.util.Optional;
 public interface DrinkingRepository extends JpaRepository<Drinking, Long> {
 
     // 🔍 Find by value (Never, Occasionally, Regularly)
-    Optional<Drinking> findByValue(String value);
-
+    Optional<Drinking> findByValueIgnoreCase(String value);
+    List<Drinking> findByNameContainingIgnoreCase(String name);
     // 🔍 Check duplicate
-    boolean existsByValue(String value);
+    boolean existsByValueIgnoreCase(String value);
 
-    // 🔍 Get all active records
-    List<Drinking> findByStatusTrue();
+    // ✅ Active records
+    List<Drinking> findByIsActiveTrue();
 
-    // 🔍 Get all inactive records
-    List<Drinking> findByStatusFalse();
+    List<Drinking> findByIsActiveFalse();
 
     // 🔍 Filter by admin
     List<Drinking> findByAdminId(Long adminId);
 
-    // 🔍 Active records by admin
-    List<Drinking> findByAdminIdAndStatusTrue(Long adminId);
+    // ✅ Active by admin
+    List<Drinking> findByAdminIdAndIsActiveTrue(Long adminId);
 
-    // 🔍 Search (for dropdown/filter)
+    // ✅ FIXED SEARCH
     List<Drinking> findByValueContainingIgnoreCase(String keyword);
 }

@@ -20,6 +20,9 @@ public class PartnerPreference {
     private Integer minAge;
     private Integer maxAge;
 
+    private Double minHeight;
+    private Double maxHeight;
+
     @ManyToOne
     @JoinColumn(name = "religion_id")
     private Religion religion;
@@ -33,60 +36,30 @@ public class PartnerPreference {
     private City city;
 
     // Getters and Setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-    public Long getId() {
-        return id;
-    }
+    public User getUser() { return user; }
+    public void setUser(User user) { this.user = user; }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+    public Integer getMinAge() { return minAge; }
+    public void setMinAge(Integer minAge) { this.minAge = minAge; }
 
-    public User getUser() {
-        return user;
-    }
+    public Integer getMaxAge() { return maxAge; }
+    public void setMaxAge(Integer maxAge) { this.maxAge = maxAge; }
 
-    public void setUser(User user) {
-        this.user = user;
-    }
+    public Double getMinHeight() { return minHeight; }
+    public void setMinHeight(Double minHeight) { this.minHeight = minHeight; }
 
-    public Integer getMinAge() {
-        return minAge;
-    }
+    public Double getMaxHeight() { return maxHeight; }
+    public void setMaxHeight(Double maxHeight) { this.maxHeight = maxHeight; }
 
-    public void setMinAge(Integer minAge) {
-        this.minAge = minAge;
-    }
+    public Religion getReligion() { return religion; }
+    public void setReligion(Religion religion) { this.religion = religion; }
 
-    public Integer getMaxAge() {
-        return maxAge;
-    }
+    public Caste getCaste() { return caste; }
+    public void setCaste(Caste caste) { this.caste = caste; }
 
-    public void setMaxAge(Integer maxAge) {
-        this.maxAge = maxAge;
-    }
-
-    public Religion getReligion() {
-        return religion;
-    }
-
-    public void setReligion(Religion religion) {
-        this.religion = religion;
-    }
-
-    public Caste getCaste() {
-        return caste;
-    }
-
-    public void setCaste(Caste caste) {
-        this.caste = caste;
-    }
-
-    public City getCity() {
-        return city;
-    }
-
-    public void setCity(City city) {
-        this.city = city;
-    }
+    public City getCity() { return city; }
+    public void setCity(City city) { this.city = city; }
 }

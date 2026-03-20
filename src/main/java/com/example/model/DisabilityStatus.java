@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 
 @Entity
 @Table(
-        name = "disability_status",
+        name = "disability_isActive",
         uniqueConstraints = {
                 @UniqueConstraint(columnNames = {"value", "admin_id"})
         }
@@ -21,10 +21,9 @@ public class DisabilityStatus {
 
     private String value;
 
-    private Boolean status = true;
+    private Boolean isActive = true;
 
     // Getters and Setters
-
     public Long getId() {
         return id;
     }
@@ -49,11 +48,11 @@ public class DisabilityStatus {
         this.value = value;
     }
 
-    public Boolean getStatus() {
-        return status;
+    public Boolean getisActive() {
+        return isActive;
     }
 
-    public void setStatus(Boolean status) {
-        this.status = status;
+    public void setisActive(Boolean isActive) {
+        this.isActive = isActive;
     }
 }

@@ -5,29 +5,22 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
-import java.util.Optional;
 
 @Repository
 public interface SubscriptionPlanRepository extends JpaRepository<SubscriptionPlan, Long> {
 
-    // 🔍 Find by name
-    Optional<SubscriptionPlan> findByName(String name);
+    // 🔍 Get all active records
+    List<SubscriptionPlan> findByIsActiveTrue();
 
-    // 🔍 Check duplicate
-    boolean existsByName(String name);
-
-    // 🔍 Get active plans (VERY IMPORTANT)
-    List<SubscriptionPlan> findByActiveTrue();
-
-    // 🔍 Get inactive plans
-    List<SubscriptionPlan> findByActiveFalse();
+    // 🔍 Get all inactive records
+    List<SubscriptionPlan> findByIsActiveFalse();
 
     // 🔍 Filter by admin
     List<SubscriptionPlan> findByAdminId(Long adminId);
 
-    // 🔍 Active plans by admin
-    List<SubscriptionPlan> findByAdminIdAndActiveTrue(Long adminId);
+    // 🔍 Active records by admin
+    List<SubscriptionPlan> findByAdminIdAndIsActiveTrue(Long adminId);
 
-    // 🔍 Search plans
+    // 🔍 Search (dropdown/filter)
     List<SubscriptionPlan> findByNameContainingIgnoreCase(String keyword);
 }
