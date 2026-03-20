@@ -5,19 +5,14 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ShortlistRepository extends JpaRepository<Shortlist, Long> {
 
-    // 🔍 Get all shortlisted profiles by user
-    List<Shortlist> findByUserId(Long userId);
+    boolean existsByUser_IdAndProfile_Id(Long userId, Long profileId);
 
-    // 🔍 Check if already shortlisted (VERY IMPORTANT)
-    boolean existsByUserIdAndProfileId(Long userId, Long profileId);
+    Optional<Shortlist> findByUser_IdAndProfile_Id(Long userId, Long profileId);
 
-    // 🔍 Remove shortlist (used in un-shortlist)
-    void deleteByUserIdAndProfileId(Long userId, Long profileId);
-
-    // 🔍 Get specific shortlist
-    Shortlist findByUserIdAndProfileId(Long userId, Long profileId);
+    List<Shortlist> findByUser_Id(Long userId);
 }

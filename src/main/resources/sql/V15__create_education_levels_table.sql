@@ -6,7 +6,7 @@ CREATE TABLE education_levels (
 
                                   name VARCHAR(150) NOT NULL,
 
-                                  status BOOLEAN NOT NULL DEFAULT TRUE,
+                                  isActive BOOLEAN NOT NULL DEFAULT TRUE,
 
                                   created_at TIMESTAMP NULL,
 

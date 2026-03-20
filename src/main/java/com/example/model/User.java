@@ -15,30 +15,47 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
     private String firstName;
+
+    @Column(nullable = false)
     private String lastName;
 
-    @Column(unique = true)
+    @Column(nullable = false, unique = true)
     private String email;
 
-    @Column(unique = true)
+    @Column(nullable = false, unique = true)
     private String phone;
 
+    @Column(nullable = false)
     private String password;
 
+    @Column(nullable = false)
     private Boolean active = true;
 
+    @Column(updatable = false)
     private LocalDateTime createdAt;
+
+    private LocalDateTime updatedAt;
 
     public User() {}
 
-    // Getters and Setters
-    public Long getId() {
-        return id;
+    // 🔥 Auto timestamps (BEST PRACTICE)
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
     }
 
-    public void setId(Long id) {          // Added setter for id
-        this.id = id;
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    // ================== GETTERS & SETTERS ==================
+
+    public Long getId() {
+        return id;
     }
 
     public String getFirstName() {
@@ -55,6 +72,10 @@ public class User {
 
     public void setLastName(String lastName) {
         this.lastName = lastName;
+    }
+
+    public String getFullName() {   // 🔥 Extra helper method
+        return firstName + " " + lastName;
     }
 
     public String getEmail() {
@@ -93,7 +114,7 @@ public class User {
         return createdAt;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
     }
 }

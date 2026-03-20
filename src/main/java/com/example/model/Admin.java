@@ -17,43 +17,41 @@ public class Admin {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Full name of admin
     @Column(nullable = false)
     private String name;
 
-    // Username for login
     @Column(nullable = false, unique = true)
     private String username;
 
-    // Email for login and communication
     @Column(nullable = false, unique = true)
     private String email;
 
-    // Encrypted password
     @Column(nullable = false)
     private String password;
 
-    // Role (Super Admin, Moderator, etc.)
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "role_id")
     private Role role;
 
-    // Contact number
     private String phone;
 
-    // Active / Inactive
-    private Boolean status = true;
+    @Column(nullable = false)
+    private Boolean isActive = true;
 
-    // Last login tracking
     private LocalDateTime lastLogin;
 
-    // Audit fields
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    public Admin() {}
 
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
     }
 
     @PreUpdate
@@ -65,10 +63,6 @@ public class Admin {
 
     public Long getId() {
         return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
     }
 
     public String getName() {
@@ -119,12 +113,22 @@ public class Admin {
         this.phone = phone;
     }
 
-    public Boolean getStatus() {
-        return status;
+    // ✅ SUPPORT OLD METHOD (your service uses this)
+    public Boolean getisActive() {
+        return isActive;
     }
 
-    public void setStatus(Boolean status) {
-        this.status = status;
+    public void setisActive(Boolean isActive) {
+        this.isActive = isActive;
+    }
+
+    // ✅ ALSO SUPPORT STANDARD METHOD (for future safety)
+    public Boolean getIsActive() {
+        return isActive;
+    }
+
+    public void setIsActive(Boolean isActive) {
+        this.isActive = isActive;
     }
 
     public LocalDateTime getLastLogin() {
@@ -139,16 +143,6 @@ public class Admin {
         return createdAt;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-    
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
     }

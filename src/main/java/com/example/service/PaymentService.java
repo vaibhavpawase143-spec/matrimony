@@ -14,7 +14,7 @@ public interface PaymentService {
 
     Payment getByTransactionId(String transactionId);
 
-    List<Payment> getByStatus(String status);
+    List<Payment> getByisActive(String isActive);
 
-    List<Payment> getByUserAndStatus(Long userId, String status);
+    List<Payment> getByUserAndisActive(Long userId, String isActive);
 }

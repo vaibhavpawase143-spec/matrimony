@@ -26,7 +26,7 @@ public class Caste {
     @JoinColumn(name = "religion_id")
     private Religion religion;
 
-    private Boolean status = true;
+    private Boolean isActive = true;
 
     // Getters and Setters
 
@@ -62,11 +62,11 @@ public class Caste {
         this.religion = religion;
     }
 
-    public Boolean getStatus() {
-        return status;
+    public Boolean getisActive() {
+        return isActive;
     }
 
-    public void setStatus(Boolean status) {
-        this.status = status;
+    public void setisActive(Boolean isActive) {
+        this.isActive = isActive;
     }
 }

@@ -19,7 +19,7 @@ public interface SubscriptionPlanService {
 
     SubscriptionPlan update(Long id, SubscriptionPlan plan);
 
-    void delete(Long id);
+    void delete(Long id); // soft delete
 
     List<SubscriptionPlan> search(String keyword);
 

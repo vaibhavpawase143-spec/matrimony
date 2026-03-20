@@ -15,7 +15,7 @@ public interface RoleService {
 
     Role update(Long id, Role role);
 
-    void delete(Long id);
+    void delete(Long id); // soft delete
 
     List<Role> search(String keyword);
 

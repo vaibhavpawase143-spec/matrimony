@@ -2,7 +2,7 @@ CREATE TABLE interests (
                            id BIGSERIAL PRIMARY KEY,
                            sender_id BIGINT,
                            receiver_id BIGINT,
-                           status VARCHAR(20),
+                           isActive VARCHAR(20),
                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                            CONSTRAINT fk_interest_sender
                                FOREIGN KEY (sender_id)

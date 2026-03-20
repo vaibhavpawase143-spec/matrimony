@@ -5,25 +5,26 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface InterestRepository extends JpaRepository<Interest, Long> {
 
-    // 🔍 Interests sent by user
-    List<Interest> findBySenderId(Long senderId);
+    // ✅ Find by sender
+    List<Interest> findBySender_Id(Long senderId);
 
-    // 🔍 Interests received by user
-    List<Interest> findByReceiverId(Long receiverId);
+    // ✅ Find by receiver
+    List<Interest> findByReceiver_Id(Long receiverId);
 
-    // 🔍 Check if already sent (VERY IMPORTANT)
-    boolean existsBySenderIdAndReceiverId(Long senderId, Long receiverId);
+    // ✅ Find by sender + receiver
+    Optional<Interest> findBySender_IdAndReceiver_Id(Long senderId, Long receiverId);
 
-    // 🔍 Get by sender + status
-    List<Interest> findBySenderIdAndStatus(Long senderId, String status);
+    // ✅ Find by receiver + status (PENDING)
+    List<Interest> findByReceiver_IdAndIsActiveIgnoreCase(Long receiverId, String isActive);
 
-    // 🔍 Get by receiver + status
-    List<Interest> findByReceiverIdAndStatus(Long receiverId, String status);
+    // ✅ Find by sender + status
+    List<Interest> findBySender_IdAndIsActiveIgnoreCase(Long senderId, String isActive);
 
-    // 🔍 Get specific interest
-    Interest findBySenderIdAndReceiverId(Long senderId, Long receiverId);
+    // ✅ Find all by status
+    List<Interest> findByIsActiveIgnoreCase(String isActive);
 }

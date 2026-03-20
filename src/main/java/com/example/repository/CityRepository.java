@@ -10,27 +10,23 @@ import java.util.Optional;
 @Repository
 public interface CityRepository extends JpaRepository<City, Long> {
 
-    // 🔍 Find by name
     Optional<City> findByName(String name);
 
-    // 🔍 Check duplicate
     boolean existsByName(String name);
 
-    // 🔍 Get all active cities
-    List<City> findByStatusTrue();
+    // ✅ Active cities
+    List<City> findByIsActiveTrue();
 
-    // 🔍 Get cities by state (IMPORTANT)
-    List<City> findByStateId(Long stateId);
+    // ✅ By state (RELATION SAFE)
+    List<City> findByState_Id(Long stateId);
 
-    // 🔍 Active cities by state (used in dropdown)
-    List<City> findByStateIdAndStatusTrue(Long stateId);
+    List<City> findByState_IdAndIsActiveTrue(Long stateId);
 
-    // 🔍 Filter by admin
+    // ✅ By admin
     List<City> findByAdminId(Long adminId);
 
-    // 🔍 Search city (for autocomplete)
+    // ✅ Search
     List<City> findByNameContainingIgnoreCase(String keyword);
 
-    // 🔍 Search within state
-    List<City> findByStateIdAndNameContainingIgnoreCase(Long stateId, String keyword);
+    List<City> findByState_IdAndNameContainingIgnoreCase(Long stateId, String keyword);
 }

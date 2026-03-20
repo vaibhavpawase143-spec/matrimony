@@ -4,55 +4,40 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "user_subscriptions",
-        uniqueConstraints = {
-                @UniqueConstraint(columnNames = {"user_id", "plan_id"})
-        })
 public class UserSubscription {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id")
-    private User user;
-
-    @ManyToOne
-    @JoinColumn(name = "plan_id")
-    private SubscriptionPlan plan;
+    private Long userId;
+    private Long planId;
 
     private LocalDateTime startDate;
-
     private LocalDateTime endDate;
 
-    private Boolean active;
+    private Boolean isActive = true; // ✅ ADD THIS
 
-    public UserSubscription() {}
+    // ===== Getters & Setters =====
 
-    // Getters and Setters
     public Long getId() {
         return id;
     }
 
-    public void setId(Long id) {   // Added setter for id
-        this.id = id;
+    public Long getUserId() {
+        return userId;
     }
 
-    public User getUser() {
-        return user;
+    public void setUserId(Long userId) {
+        this.userId = userId;
     }
 
-    public void setUser(User user) {
-        this.user = user;
+    public Long getPlanId() {
+        return planId;
     }
 
-    public SubscriptionPlan getPlan() {
-        return plan;
-    }
-
-    public void setPlan(SubscriptionPlan plan) {
-        this.plan = plan;
+    public void setPlanId(Long planId) {
+        this.planId = planId;
     }
 
     public LocalDateTime getStartDate() {
@@ -71,11 +56,11 @@ public class UserSubscription {
         this.endDate = endDate;
     }
 
-    public Boolean getActive() {
-        return active;
+    public Boolean getIsActive() {   // ✅ ADD
+        return isActive;
     }
 
-    public void setActive(Boolean active) {
-        this.active = active;
+    public void setIsActive(Boolean active) {  // ✅ ADD
+        isActive = active;
     }
 }

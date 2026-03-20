@@ -1,9 +1,6 @@
 package com.example.model;
 
-import com.example.model.BrotherType;
-import com.example.model.FamilyStatus;
 import jakarta.persistence.*;
-import com.example.model.Profile;
 
 @Entity
 @Table(
@@ -18,19 +15,29 @@ public class FamilyDetails {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // 🔗 Profile (One-to-One)
     @OneToOne
+    @JoinColumn(name = "profile_id")
     private Profile profile;
 
+    // 🔗 Family Type
     @ManyToOne
+    @JoinColumn(name = "family_type_id")
     private FamilyType familyType;
 
+    // 🔗 Family (FIXED)
     @ManyToOne
-    private FamilyStatus familyStatus;
+    @JoinColumn(name = "family_id")
+    private Family family;
 
+    // 🔗 Brother Type
     @ManyToOne
+    @JoinColumn(name = "brother_type_id")
     private BrotherType brotherType;
 
+    // 🔗 Sister Type
     @ManyToOne
+    @JoinColumn(name = "sister_type_id")
     private SisterType sisterType;
 
     private String fatherOccupation;
@@ -38,14 +45,10 @@ public class FamilyDetails {
 
     public FamilyDetails() {}
 
-    // Getters and Setters
+    // ================= GETTERS & SETTERS =================
 
     public Long getId() {
         return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
     }
 
     public Profile getProfile() {
@@ -64,12 +67,12 @@ public class FamilyDetails {
         this.familyType = familyType;
     }
 
-    public FamilyStatus getFamilyStatus() {
-        return familyStatus;
+    public Family getFamily() {   // ✅ FIXED
+        return family;
     }
 
-    public void setFamilyStatus(FamilyStatus familyStatus) {
-        this.familyStatus = familyStatus;
+    public void setFamily(Family family) {   // ✅ FIXED
+        this.family = family;
     }
 
     public BrotherType getBrotherType() {

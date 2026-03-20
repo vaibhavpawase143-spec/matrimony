@@ -19,15 +19,21 @@ public class Employed {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // ✅ Relation
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "admin_id")
     private Admin admin;
 
+    // ✅ Needed for repository (findByAdminId)
+    @Column(name = "admin_id", insertable = false, updatable = false)
+    private Long adminId;
+
     @Column(nullable = false, length = 100)
     private String name;
 
+    // ✅ ONLY ONE FIELD (no confusion now)
     @Column(nullable = false)
-    private Boolean status = true;
+    private Boolean isActive = true;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -37,24 +43,22 @@ public class Employed {
 
     public Employed() {}
 
+    // ✅ Auto timestamps (NO NEED to set in service)
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
     }
 
     @PreUpdate
     protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
     }
 
-    // Getters and Setters
+    // ===== Getters & Setters =====
 
     public Long getId() {
         return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
     }
 
     public Admin getAdmin() {
@@ -65,6 +69,10 @@ public class Employed {
         this.admin = admin;
     }
 
+    public Long getAdminId() {
+        return adminId;
+    }
+
     public String getName() {
         return name;
     }
@@ -73,27 +81,19 @@ public class Employed {
         this.name = name;
     }
 
-    public Boolean getStatus() {
-        return status;
+    public Boolean getisActive() {
+        return isActive;
     }
 
-    public void setStatus(Boolean status) {
-        this.status = status;
+    public void setisActive(Boolean isActive) {
+        this.isActive = isActive;
     }
 
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
     }
 }

@@ -13,21 +13,20 @@ public interface BrotherTypeRepository extends JpaRepository<BrotherType, Long> 
     // 🔍 Find by value
     Optional<BrotherType> findByValue(String value);
 
-    // 🔍 Check duplicate before insert
+    // 🔍 Check duplicate
     boolean existsByValue(String value);
 
-    // 🔍 Get all active records
-    List<BrotherType> findByStatusTrue();
+    // ✅ Active / Inactive (using isActive)
+    List<BrotherType> findByIsActiveTrue();
 
-    // 🔍 Get all inactive records
-    List<BrotherType> findByStatusFalse();
+    List<BrotherType> findByIsActiveFalse();
 
-    // 🔍 Filter by admin
+    // 🔍 Filter by admin (RELATION)
     List<BrotherType> findByAdminId(Long adminId);
 
-    // 🔍 Active records by admin
-    List<BrotherType> findByAdminIdAndStatusTrue(Long adminId);
+    // ✅ Active by admin
+    List<BrotherType> findByAdminIdAndIsActiveTrue(Long adminId);
 
-    // 🔍 Search (useful for dropdown/filter)
+    // 🔍 Search
     List<BrotherType> findByValueContainingIgnoreCase(String keyword);
 }

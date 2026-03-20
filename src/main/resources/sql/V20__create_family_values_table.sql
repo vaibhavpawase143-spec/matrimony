@@ -6,7 +6,7 @@ CREATE TABLE family_values (
 
                                admin_id BIGINT,
 
-                               status BOOLEAN DEFAULT TRUE,
+                               isActive BOOLEAN DEFAULT TRUE,
 
                                CONSTRAINT fk_family_values_admin
                                    FOREIGN KEY (admin_id)

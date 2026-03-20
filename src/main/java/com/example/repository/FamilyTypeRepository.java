@@ -10,24 +10,23 @@ import java.util.Optional;
 @Repository
 public interface FamilyTypeRepository extends JpaRepository<FamilyType, Long> {
 
-    // 🔍 Find by name
-    Optional<FamilyType> findByName(String name);
+    // 🔍 Find by name (case-insensitive preferred)
+    Optional<FamilyType> findByNameIgnoreCase(String name);
 
     // 🔍 Check duplicate
-    boolean existsByName(String name);
+    boolean existsByNameIgnoreCase(String name);
 
-    // 🔍 Get all active records
-    List<FamilyType> findByStatusTrue();
+    // ✅ STANDARD FIELD (isActive)
+    List<FamilyType> findByIsActiveTrue();
 
-    // 🔍 Get all inactive records
-    List<FamilyType> findByStatusFalse();
+    List<FamilyType> findByIsActiveFalse();
 
-    // 🔍 Filter by admin
+    // 🔍 Filter by admin (RELATION SAFE)
     List<FamilyType> findByAdminId(Long adminId);
 
-    // 🔍 Active records by admin
-    List<FamilyType> findByAdminIdAndStatusTrue(Long adminId);
+    // ✅ Active records by admin
+    List<FamilyType> findByAdminIdAndIsActiveTrue(Long adminId);
 
-    // 🔍 Search (for dropdown/search)
+    // 🔍 Search
     List<FamilyType> findByNameContainingIgnoreCase(String keyword);
 }

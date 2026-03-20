@@ -17,7 +17,7 @@ public interface StateService {
 
     State update(Long id, State state);
 
-    void delete(Long id);
+    void delete(Long id); // soft delete
 
     List<State> search(String keyword);
 

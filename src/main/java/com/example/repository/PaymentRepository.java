@@ -5,22 +5,21 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
-    // 🔍 Get payments by user
-    List<Payment> findByUserId(Long userId);
-
-    // 🔍 Get by transaction id (VERY IMPORTANT)
-    Payment findByTransactionId(String transactionId);
-
-    // 🔍 Check duplicate transaction
     boolean existsByTransactionId(String transactionId);
 
-    // 🔍 Filter by payment status
-    List<Payment> findByPaymentStatus(String status);
+    Optional<Payment> findByTransactionId(String transactionId);
 
-    // 🔍 User + status
-    List<Payment> findByUserIdAndPaymentStatus(Long userId, String status);
+    // ✅ By user
+    List<Payment> findByUser_Id(Long userId);
+
+    // ✅ By status
+    List<Payment> findByIsActiveIgnoreCase(String isActive);
+
+    // ✅ By user + status
+    List<Payment> findByUser_IdAndIsActiveIgnoreCase(Long userId, String isActive);
 }

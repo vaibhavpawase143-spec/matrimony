@@ -10,24 +10,24 @@ import java.util.List;
 @Repository
 public interface ProfileRepository extends JpaRepository<Profile, Long> {
 
-    // 🔍 Get profile by user (VERY IMPORTANT - OneToOne)
-    Optional<Profile> findByUserId(Long userId);
+    // 🔍 Get profile by user (OneToOne relationship)
+    Optional<Profile> findByUser_Id(Long userId);
 
     // 🔍 Check if profile exists for user
-    boolean existsByUserId(Long userId);
+    boolean existsByUser_Id(Long userId);
 
     // 🔍 Filter by religion
-    List<Profile> findByReligionId(Long religionId);
+    List<Profile> findByReligion_Id(Long religionId);
 
     // 🔍 Filter by caste
-    List<Profile> findByCasteId(Long casteId);
+    List<Profile> findByCaste_Id(Long casteId);
 
     // 🔍 Filter by city
-    List<Profile> findByCityId(Long cityId);
+    List<Profile> findByCity_Id(Long cityId);
 
-    // 🔍 Filter by education
-    List<Profile> findByEducationLevelId(Long educationLevelId);
+    // 🔍 Filter by education level
+    List<Profile> findByEducationLevel_Id(Long educationLevelId);
 
     // 🔍 Filter by occupation
-    List<Profile> findByOccupationId(Long occupationId);
+    List<Profile> findByOccupation_Id(Long occupationId);
 }

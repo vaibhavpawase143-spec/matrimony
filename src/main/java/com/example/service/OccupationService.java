@@ -19,7 +19,7 @@ public interface OccupationService {
 
     Occupation update(Long id, Occupation occupation);
 
-    void delete(Long id);
+    void delete(Long id); // soft delete
 
     List<Occupation> search(String keyword);
 

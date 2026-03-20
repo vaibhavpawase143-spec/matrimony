@@ -10,24 +10,21 @@ import java.util.Optional;
 @Repository
 public interface EmployedRepository extends JpaRepository<Employed, Long> {
 
-    // 🔍 Find by name
     Optional<Employed> findByName(String name);
 
-    // 🔍 Check duplicate
     boolean existsByName(String name);
 
-    // 🔍 Get all active records
-    List<Employed> findByStatusTrue();
+    // ✅ STANDARD FIELD (isActive)
+    List<Employed> findByIsActiveTrue();
 
-    // 🔍 Get all inactive records
-    List<Employed> findByStatusFalse();
+    List<Employed> findByIsActiveFalse();
 
     // 🔍 Filter by admin
     List<Employed> findByAdminId(Long adminId);
 
-    // 🔍 Active records by admin
-    List<Employed> findByAdminIdAndStatusTrue(Long adminId);
+    // ✅ Active by admin
+    List<Employed> findByAdminIdAndIsActiveTrue(Long adminId);
 
-    // 🔍 Search (for dropdown/search)
+    // 🔍 Search
     List<Employed> findByNameContainingIgnoreCase(String keyword);
 }

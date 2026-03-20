@@ -2,7 +2,7 @@ CREATE TABLE mother_tongues (
                                 id BIGSERIAL PRIMARY KEY,
                                 admin_id BIGINT,
                                 name VARCHAR(120),
-                                status BOOLEAN DEFAULT TRUE,
+                                isActive BOOLEAN DEFAULT TRUE,
                                 created_at TIMESTAMP NULL,
                                 updated_at TIMESTAMP NULL,
                                 CONSTRAINT fk_mother_tongue_admin

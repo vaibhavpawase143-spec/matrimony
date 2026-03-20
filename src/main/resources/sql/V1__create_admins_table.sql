@@ -13,7 +13,7 @@ CREATE TABLE admins (
 
     phone VARCHAR(20),
 
-    status BOOLEAN DEFAULT TRUE,
+    isActive BOOLEAN DEFAULT TRUE,
 
     last_login TIMESTAMP,
 

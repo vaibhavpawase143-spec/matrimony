@@ -11,7 +11,7 @@ public interface WeightRepository extends JpaRepository<Weight, Long> {
 
 
     // Find all active weights
-    List<Weight> findByStatusTrue();
+    List<Weight> findByIsActiveTrue();
 
     // Find by value (example: "60 kg")
     List<Weight> findByValue(String value);
@@ -20,7 +20,7 @@ public interface WeightRepository extends JpaRepository<Weight, Long> {
     List<Weight> findByAdminId(Long adminId);
 
     // Find active weights by admin
-    List<Weight> findByAdminIdAndStatusTrue(Long adminId);
+    List<Weight> findByAdminIdAndIsActiveTrue(Long adminId);
 
 
 }

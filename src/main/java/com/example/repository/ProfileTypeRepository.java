@@ -5,16 +5,15 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
-import java.util.Optional;
 
 @Repository
 public interface ProfileTypeRepository extends JpaRepository<ProfileType, Long> {
 
-    // 🔍 Find by name (Public, Private, Premium)
-    Optional<ProfileType> findByName(String name);
+    // 🔍 Get all active records
+    List<ProfileType> findByIsActiveTrue();
 
-    // 🔍 Check duplicate
-    boolean existsByName(String name);
+    // 🔍 Get all inactive records
+    List<ProfileType> findByIsActiveFalse();
 
     // 🔍 Filter by admin
     List<ProfileType> findByAdminId(Long adminId);

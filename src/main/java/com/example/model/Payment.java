@@ -2,6 +2,7 @@ package com.example.model;
 
 import com.example.model.User;
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(
@@ -14,64 +15,65 @@ public class Payment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
     private User user;
 
+    @Column(nullable = false)
     private Double amount;
 
+    @Column(nullable = false, length = 50)
     private String paymentMethod;
 
+    @Column(nullable = false, unique = true)
     private String transactionId;
 
-    private String paymentStatus;
+    @Column(nullable = false, length = 20)
+    private String isActive = "PENDING";   // ✅ default isActive
 
-    // Getters and Setters
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
 
-    public Long getId() {
-        return id;
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    public Payment() {}
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        if (isActive == null) {
+            isActive = "PENDING";
+        }
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
     }
 
-    public User getUser() {
-        return user;
-    }
+    // --- Getters and Setters ---
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-    public void setUser(User user) {
-        this.user = user;
-    }
+    public User getUser() { return user; }
+    public void setUser(User user) { this.user = user; }
 
-    public Double getAmount() {
-        return amount;
-    }
+    public Double getAmount() { return amount; }
+    public void setAmount(Double amount) { this.amount = amount; }
 
-    public void setAmount(Double amount) {
-        this.amount = amount;
-    }
+    public String getPaymentMethod() { return paymentMethod; }
+    public void setPaymentMethod(String paymentMethod) { this.paymentMethod = paymentMethod; }
 
-    public String getPaymentMethod() {
-        return paymentMethod;
-    }
+    public String getTransactionId() { return transactionId; }
+    public void setTransactionId(String transactionId) { this.transactionId = transactionId; }
 
-    public void setPaymentMethod(String paymentMethod) {
-        this.paymentMethod = paymentMethod;
-    }
+    public String getisActive() { return isActive; }
+    public void setisActive(String isActive) { this.isActive = isActive; }
 
-    public String getTransactionId() {
-        return transactionId;
-    }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
-    public void setTransactionId(String transactionId) {
-        this.transactionId = transactionId;
-    }
-
-    public String getPaymentStatus() {
-        return paymentStatus;
-    }
-
-    public void setPaymentStatus(String paymentStatus) {
-        this.paymentStatus = paymentStatus;
-    }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 }

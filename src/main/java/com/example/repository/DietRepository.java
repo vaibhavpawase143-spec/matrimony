@@ -16,18 +16,17 @@ public interface DietRepository extends JpaRepository<Diet, Long> {
     // 🔍 Check duplicate
     boolean existsByName(String name);
 
-    // 🔍 Get all active diets
-    List<Diet> findByStatusTrue();
+    // ✅ STANDARD FIELD (isActive)
+    List<Diet> findByIsActiveTrue();
 
-    // 🔍 Get all inactive diets
-    List<Diet> findByStatusFalse();
+    List<Diet> findByIsActiveFalse();
 
     // 🔍 Filter by admin
     List<Diet> findByAdminId(Long adminId);
 
-    // 🔍 Active diets by admin
-    List<Diet> findByAdminIdAndStatusTrue(Long adminId);
+    // ✅ Active diets by admin
+    List<Diet> findByAdminIdAndIsActiveTrue(Long adminId);
 
-    // 🔍 Search (for dropdown / autocomplete)
+    // 🔍 Search
     List<Diet> findByNameContainingIgnoreCase(String keyword);
 }

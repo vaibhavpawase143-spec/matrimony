@@ -6,7 +6,7 @@ CREATE TABLE drinking (
 
                           admin_id BIGINT,
 
-                          status BOOLEAN DEFAULT TRUE,
+                          isActive BOOLEAN DEFAULT TRUE,
 
                           CONSTRAINT fk_drinking_admin
                               FOREIGN KEY (admin_id)

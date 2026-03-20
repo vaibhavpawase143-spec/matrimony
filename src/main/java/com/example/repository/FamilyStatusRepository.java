@@ -1,6 +1,6 @@
 package com.example.repository;
 
-import com.example.model.FamilyStatus;
+import com.example.model.Family;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -8,26 +8,26 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface FamilyStatusRepository extends JpaRepository<FamilyStatus, Long> {
+public interface FamilyStatusRepository extends JpaRepository<Family, Long> {
 
-    // 🔍 Find by name
-    Optional<FamilyStatus> findByName(String name);
+    // 🔍 Find by name (case-insensitive)
+    Optional<Family> findByNameIgnoreCase(String name);
 
-    // 🔍 Check duplicate
-    boolean existsByName(String name);
+    // 🔍 Check duplicate (case-insensitive)
+    boolean existsByNameIgnoreCase(String name);
 
     // 🔍 Get all active records
-    List<FamilyStatus> findByStatusTrue();
+    List<Family> findByIsActiveTrue();
 
     // 🔍 Get all inactive records
-    List<FamilyStatus> findByStatusFalse();
+    List<Family> findByIsActiveFalse();
 
     // 🔍 Filter by admin
-    List<FamilyStatus> findByAdminId(Long adminId);
+    List<Family> findByAdminId(Long adminId);
 
     // 🔍 Active records by admin
-    List<FamilyStatus> findByAdminIdAndStatusTrue(Long adminId);
+    List<Family> findByAdminIdAndIsActiveTrue(Long adminId);
 
     // 🔍 Search (dropdown/filter)
-    List<FamilyStatus> findByNameContainingIgnoreCase(String keyword);
+    List<Family> findByNameContainingIgnoreCase(String keyword);
 }

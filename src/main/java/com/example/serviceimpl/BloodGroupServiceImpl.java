@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 @Service
-public class BloodGroupServiceImpl extends BloodGroupService {
+public class BloodGroupServiceImpl implements BloodGroupService {
 
     @Autowired
     private BloodGroupRepository repo;
@@ -24,7 +24,7 @@ public class BloodGroupServiceImpl extends BloodGroupService {
     // ✅ Get active
     @Override
     public List<BloodGroup> getActive() {
-        return repo.findByStatusTrue();
+        return repo.findByIsActiveTrue();
     }
 
     // ✅ Get by ID
@@ -42,7 +42,7 @@ public class BloodGroupServiceImpl extends BloodGroupService {
             throw new RuntimeException("Blood group already exists");
         }
 
-        bg.setStatus(true);
+        bg.setisActive(true);
 
         return repo.save(bg);
     }
@@ -59,7 +59,7 @@ public class BloodGroupServiceImpl extends BloodGroupService {
         }
 
         existing.setType(updatedBg.getType());
-        existing.setStatus(updatedBg.getStatus());
+        existing.setisActive(updatedBg.getisActive());
         existing.setAdmin(updatedBg.getAdmin());
 
         return repo.save(existing);
@@ -80,6 +80,6 @@ public class BloodGroupServiceImpl extends BloodGroupService {
     // ✅ Get active by admin
     @Override
     public List<BloodGroup> getActiveByAdmin(Long adminId) {
-        return repo.findByAdminIdAndStatusTrue(adminId);
+        return repo.findByAdminIdAndIsActiveTrue(adminId);
     }
 }

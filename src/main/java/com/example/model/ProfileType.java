@@ -1,6 +1,7 @@
 package com.example.model;
 
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(
@@ -17,31 +18,43 @@ public class ProfileType {
     @JoinColumn(name = "admin_id")
     private Admin admin;
 
+    @Column(nullable = false)
     private String name;
 
+    @Column(nullable = false)
+    private Boolean isActive = true;
+
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+
+    // Lifecycle hooks
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
+
     // Getters and Setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-    public Long getId() {
-        return id;
-    }
+    public Admin getAdmin() { return admin; }
+    public void setAdmin(Admin admin) { this.admin = admin; }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
 
-    public Admin getAdmin() {
-        return admin;
-    }
+    public Boolean getIsActive() { return isActive; }
+    public void setIsActive(Boolean isActive) { this.isActive = isActive; }
 
-    public void setAdmin(Admin admin) {
-        this.admin = admin;
-    }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 }

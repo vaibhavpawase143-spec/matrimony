@@ -8,7 +8,7 @@ CREATE TABLE castes (
 
                         religion_id BIGINT,
 
-                        status BOOLEAN DEFAULT TRUE,
+                        isActive BOOLEAN DEFAULT TRUE,
 
                         CONSTRAINT fk_caste_admin
                             FOREIGN KEY (admin_id)

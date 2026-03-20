@@ -7,7 +7,7 @@ import java.util.Optional;
 
 public interface ManglikStatusService {
 
-    ManglikStatus save(ManglikStatus manglikStatus);
+    ManglikStatus save(ManglikStatus ManglikStatus);
 
     Optional<ManglikStatus> getById(Long id);
 

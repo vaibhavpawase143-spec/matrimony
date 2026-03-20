@@ -23,42 +23,37 @@ public class State {
     @JoinColumn(name = "admin_id")
     private Admin admin;
 
-    // State name
     @Column(nullable = false, length = 120)
     private String name;
 
-    // Active / Inactive
     @Column(nullable = false)
-    private Boolean status = true;
+    private Boolean isActive = true;
 
-    // Many states belong to one country
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "country_id", nullable = false)
     private Country country;
 
-    // One state has many cities
     @OneToMany(mappedBy = "state", cascade = CascadeType.ALL)
     private List<City> cities;
 
-    // Audit fields
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    public State() {
-    }
+    public State() {}
 
-    public State(String name, Boolean status, Country country) {
+    public State(String name, Boolean isActive, Country country) {
         this.name = name;
-        this.status = status;
+        this.isActive = isActive;
         this.country = country;
     }
 
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
     }
 
     @PreUpdate
@@ -66,63 +61,28 @@ public class State {
         updatedAt = LocalDateTime.now();
     }
 
-    // Getters
+    // Getters and Setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-    public Long getId() {
-        return id;
-    }
+    public Admin getAdmin() { return admin; }
+    public void setAdmin(Admin admin) { this.admin = admin; }
 
-    public String getName() {
-        return name;
-    }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
 
-    public Boolean getStatus() {
-        return status;
-    }
+    public Boolean getIsActive() { return isActive; }
+    public void setIsActive(Boolean isActive) { this.isActive = isActive; }
 
-    public Country getCountry() {
-        return country;
-    }
+    public Country getCountry() { return country; }
+    public void setCountry(Country country) { this.country = country; }
 
-    public List<City> getCities() {
-        return cities;
-    }
+    public List<City> getCities() { return cities; }
+    public void setCities(List<City> cities) { this.cities = cities; }
 
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    // Setters
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public void setStatus(Boolean status) {
-        this.status = status;
-    }
-
-    public void setCountry(Country country) {
-        this.country = country;
-    }
-
-    public void setCities(List<City> cities) {
-        this.cities = cities;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 }
