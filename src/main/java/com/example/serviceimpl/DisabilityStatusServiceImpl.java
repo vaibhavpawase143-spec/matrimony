@@ -2,13 +2,13 @@ package com.example.serviceimpl;
 
 import com.example.model.DisabilityStatus;
 import com.example.repository.DisabilityStatusRepository;
+import com.example.service.DisabilityStatusService;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
-public class DisabilityStatusServiceImpl {
+public class DisabilityStatusServiceImpl implements DisabilityStatusService {
 
     private final DisabilityStatusRepository repo;
 
@@ -17,38 +17,60 @@ public class DisabilityStatusServiceImpl {
         this.repo = repo;
     }
 
-    // ✅ Get all active records
-    public List<DisabilityStatus> getAllActive() {
+    @Override
+    public List<DisabilityStatus> getAll() {
+        return repo.findAll();
+    }
+
+    @Override
+    public List<DisabilityStatus> getActive() {
         return repo.findByIsActiveTrue();
     }
 
-    // ❌ Get all inactive records
-    public List<DisabilityStatus> getAllInactive() {
-        return repo.findByIsActiveFalse();
+    @Override
+    public DisabilityStatus getById(Long id) {
+        return repo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Not found"));
     }
 
-    // 🔍 Find by value
-    public Optional<DisabilityStatus> getByValue(String value) {
-        return repo.findByValue(value);
+    @Override
+    public DisabilityStatus create(DisabilityStatus ds) {
+        return repo.save(ds);
     }
 
-    // 🔍 Check duplicate
-    public boolean existsByValue(String value) {
-        return repo.existsByValue(value);
+    @Override
+    public DisabilityStatus update(Long id, DisabilityStatus updated) {
+        DisabilityStatus existing = repo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Not found"));
+
+        existing.setValue(updated.getValue());
+        existing.setIsActive(updated.getIsActive());
+        existing.setAdminId(updated.getAdminId());
+
+        return repo.save(existing);
     }
 
-    // 🔍 Get records by adminId
+    @Override
+    public void delete(Long id) {
+        DisabilityStatus existing = repo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Not found"));
+
+        existing.setIsActive(false);
+        repo.save(existing);
+    }
+
+    @Override
     public List<DisabilityStatus> getByAdmin(Long adminId) {
         return repo.findByAdminId(adminId);
     }
 
-    // ✅ Get active records by adminId
+    @Override
     public List<DisabilityStatus> getActiveByAdmin(Long adminId) {
         return repo.findByAdminIdAndIsActiveTrue(adminId);
     }
 
-    // 🔍 Search by keyword
-    public List<DisabilityStatus> searchByKeyword(String keyword) {
+    @Override
+    public List<DisabilityStatus> search(String keyword) {
         return repo.findByValueContainingIgnoreCase(keyword);
     }
 }
