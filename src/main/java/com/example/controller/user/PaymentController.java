@@ -1,4 +1,4 @@
-package com.example.controller.user; // user folder
+package com.example.controller.user;
 
 import com.example.model.Payment;
 import com.example.service.PaymentService;
@@ -41,15 +41,17 @@ public class PaymentController {
         return ResponseEntity.notFound().build();
     }
 
-    // Get payments by status
-    @GetMapping("/status/{status}")
-    public ResponseEntity<List<Payment>> getByStatus(@PathVariable String status) {
-        return ResponseEntity.ok(paymentService.getByStatus(status));
+    // ✅ Using isActive instead of status
+    @GetMapping("/active/{isActive}")
+    public ResponseEntity<List<Payment>> getByIsActive(@PathVariable Boolean isActive) {
+        return ResponseEntity.ok(paymentService.getByIsActive(isActive));
     }
 
-    // Get payments by user and status
-    @GetMapping("/user/{userId}/status/{status}")
-    public ResponseEntity<List<Payment>> getByUserAndStatus(@PathVariable Long userId, @PathVariable String status) {
-        return ResponseEntity.ok(paymentService.getByUserAndStatus(userId, status));
+    // Get payments by user and active status
+    @GetMapping("/user/{userId}/active/{isActive}")
+    public ResponseEntity<List<Payment>> getByUserAndIsActive(
+            @PathVariable Long userId,
+            @PathVariable Boolean isActive) {
+        return ResponseEntity.ok(paymentService.getByUserAndIsActive(userId, isActive));
     }
 }

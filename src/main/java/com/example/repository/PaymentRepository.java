@@ -17,9 +17,15 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     // ✅ By user
     List<Payment> findByUser_Id(Long userId);
 
-    // ✅ By status
+    
+    // ✅ By user + status
+    
+
+    List<Payment> findByIsActive(Boolean isActive);
+
     List<Payment> findByIsActiveIgnoreCase(String isActive);
 
-    // ✅ By user + status
+    List<Payment> findByUserIdAndIsActive(Long userId, Boolean isActive);
+
     List<Payment> findByUser_IdAndIsActiveIgnoreCase(Long userId, String isActive);
 }

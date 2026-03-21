@@ -60,4 +60,14 @@ public class PaymentServiceImpl implements PaymentService {
     public List<Payment> getByUserAndisActive(Long userId, String isActive) {
         return repo.findByUser_IdAndIsActiveIgnoreCase(userId, isActive);
     }
+
+    @Override
+    public List<Payment> getByIsActive(Boolean isActive) {
+        return repo.findByIsActive(isActive);
+    }
+
+    @Override
+    public List<Payment> getByUserAndIsActive(Long userId, Boolean isActive) {
+        return repo.findByUserIdAndIsActive(userId, isActive);
+    }
 }

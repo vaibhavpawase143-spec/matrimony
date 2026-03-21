@@ -17,4 +17,8 @@ public interface PaymentService {
     List<Payment> getByisActive(String isActive);
 
     List<Payment> getByUserAndisActive(Long userId, String isActive);
+
+    List<Payment> getByIsActive(Boolean isActive);
+
+    List<Payment> getByUserAndIsActive(Long userId, Boolean isActive);
 }
