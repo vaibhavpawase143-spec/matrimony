@@ -1,19 +1,18 @@
-package com.example.controller;
+package com.example.controller.user;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
 public class TestController {
 
-    @RequestMapping("/test")
+    @GetMapping("/test")
     public String test() {
-        return "demo";
-    }
-    @RequestMapping("/demo")
-    public String login() {
-        return "index";
+        return "demo";   // MUST match demo.html
     }
 
+    @GetMapping("/")
+    public String home() {
+        return "index";
+    }
 }

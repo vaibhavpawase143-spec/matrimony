@@ -25,10 +25,16 @@
 
     <dependencies>
 
-        <!-- ✅ Web (includes Jackson for JSON) -->
+        <!-- ✅ Web -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <!-- ✅ Thymeleaf (🔥 REQUIRED for HTML pages) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-thymeleaf</artifactId>
         </dependency>
 
         <!-- ✅ JPA -->
@@ -56,7 +62,11 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
-
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-devtools</artifactId>
+            <scope>runtime</scope>
+        </dependency>
         <!-- ✅ Testing -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
