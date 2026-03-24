@@ -1,4 +1,4 @@
-package com.example.controller;
+package com.example.controller.user;
 
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
