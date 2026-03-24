@@ -10,24 +10,30 @@ import java.util.Optional;
 @Repository
 public interface ManglikStatusRepository extends JpaRepository<ManglikStatus, Long> {
 
-    // 🔍 Find by name (Yes, No, Partial)
+    // 🔍 Find by name
+    Optional<ManglikStatus> findByName(String name);
+
+    // 🔥 Case-insensitive
     Optional<ManglikStatus> findByNameIgnoreCase(String name);
 
-    // 🔍 Check duplicate
+    // ✅ Duplicate check
+    boolean existsByName(String name);
+
     boolean existsByNameIgnoreCase(String name);
 
-    // 🔍 Filter by admin
-    List<ManglikStatus> findByAdminId(Long adminId);
-
-    // 🔍 Get all active records
+    // 🔍 Active / Inactive
     List<ManglikStatus> findByIsActiveTrue();
-
-    // 🔍 Get all inactive records
     List<ManglikStatus> findByIsActiveFalse();
 
-    // 🔍 Active records by admin
+    // 🔍 Admin-based filtering
+    List<ManglikStatus> findByAdminId(Long adminId);
+
+    // ✅ Active by admin
     List<ManglikStatus> findByAdminIdAndIsActiveTrue(Long adminId);
 
-    // 🔍 Search
+    // 🔍 Search (global)
     List<ManglikStatus> findByNameContainingIgnoreCase(String keyword);
+
+    // 🔥 Search within admin
+    List<ManglikStatus> findByAdminIdAndNameContainingIgnoreCase(Long adminId, String keyword);
 }

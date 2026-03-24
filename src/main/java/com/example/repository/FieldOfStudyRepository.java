@@ -10,23 +10,30 @@ import java.util.Optional;
 @Repository
 public interface FieldOfStudyRepository extends JpaRepository<FieldOfStudy, Long> {
 
-    // 🔍 Find by name (case-insensitive recommended)
+    // 🔍 Find by name
+    Optional<FieldOfStudy> findByName(String name);
+
+    // 🔥 Case-insensitive
     Optional<FieldOfStudy> findByNameIgnoreCase(String name);
 
-    // 🔍 Check duplicate
+    // ✅ Duplicate check
+    boolean existsByName(String name);
+
     boolean existsByNameIgnoreCase(String name);
 
-    // ✅ STANDARD FIELD (isActive)
+    // 🔍 Active / Inactive
     List<FieldOfStudy> findByIsActiveTrue();
-
     List<FieldOfStudy> findByIsActiveFalse();
 
-    // 🔍 Filter by admin (RELATION SAFE)
+    // 🔍 Admin-based filtering
     List<FieldOfStudy> findByAdminId(Long adminId);
 
-    // ✅ Active records by admin
+    // ✅ Active by admin
     List<FieldOfStudy> findByAdminIdAndIsActiveTrue(Long adminId);
 
-    // 🔍 Search
+    // 🔍 Search (global)
     List<FieldOfStudy> findByNameContainingIgnoreCase(String keyword);
+
+    // 🔥 Search within admin
+    List<FieldOfStudy> findByAdminIdAndNameContainingIgnoreCase(Long adminId, String keyword);
 }

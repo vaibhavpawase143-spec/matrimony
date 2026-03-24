@@ -3,7 +3,6 @@ package com.example.serviceimpl;
 import com.example.model.PartnerPreference;
 import com.example.repository.PartnerPreferenceRepository;
 import com.example.service.PartnerPreferenceService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -12,68 +11,80 @@ import java.util.Optional;
 @Service
 public class PartnerPreferenceServiceImpl implements PartnerPreferenceService {
 
-    @Autowired
-    private PartnerPreferenceRepository repo;
+    private final PartnerPreferenceRepository repository;
 
-    // ✅ Create
-    @Override
-    public PartnerPreference create(PartnerPreference preference) {
-        Long userId = preference.getUser().getId();
-
-        if (repo.existsByUser_Id(userId)) {
-            throw new RuntimeException("PartnerPreference already exists for userId: " + userId);
-        }
-
-        return repo.save(preference);
+    public PartnerPreferenceServiceImpl(PartnerPreferenceRepository repository) {
+        this.repository = repository;
     }
 
-    // ✅ Update by userId
+    // ✅ Save preference (with duplicate check)
     @Override
-    public PartnerPreference update(Long userId, PartnerPreference preference) {
-        PartnerPreference existing = repo.findByUser_Id(userId)
-                .orElseThrow(() -> new RuntimeException("PartnerPreference not found for userId: " + userId));
+    public PartnerPreference savePreference(PartnerPreference preference) {
 
-        existing.setReligion(preference.getReligion());
-        existing.setCaste(preference.getCaste());
-        existing.setCity(preference.getCity());
-        existing.setMinAge(preference.getMinAge());
-        existing.setMaxAge(preference.getMaxAge());
-        existing.setMinHeight(preference.getMinHeight());
-        existing.setMaxHeight(preference.getMaxHeight());
+        Long userId = preference.getUser().getId();
 
-        return repo.save(existing);
+        if (repository.existsByUserId(userId)) {
+            throw new RuntimeException("Preference already exists for this user!");
+        }
+
+        return repository.save(preference);
+    }
+
+    // ✅ Get by ID
+    @Override
+    public Optional<PartnerPreference> getById(Long id) {
+        return repository.findById(id);
     }
 
     // ✅ Get by userId
     @Override
     public Optional<PartnerPreference> getByUserId(Long userId) {
-        return repo.findByUser_Id(userId);
+        return repository.findByUserId(userId);
     }
 
-    // ✅ Delete by userId
+    // ✅ Get all
     @Override
-    public void delete(Long userId) {
-        PartnerPreference existing = repo.findByUser_Id(userId)
-                .orElseThrow(() -> new RuntimeException("PartnerPreference not found for userId: " + userId));
-
-        repo.delete(existing);
+    public List<PartnerPreference> getAll() {
+        return repository.findAll();
     }
 
-    // ✅ Filter by religion
+    // ✅ Delete
+    @Override
+    public void delete(Long id) {
+        repository.deleteById(id);
+    }
+
+    // 🔍 Filters
+
     @Override
     public List<PartnerPreference> getByReligion(Long religionId) {
-        return repo.findByReligion_Id(religionId);
+        return repository.findByReligionId(religionId);
     }
 
-    // ✅ Filter by caste
     @Override
     public List<PartnerPreference> getByCaste(Long casteId) {
-        return repo.findByCaste_Id(casteId);
+        return repository.findByCasteId(casteId);
     }
 
-    // ✅ Filter by city
     @Override
     public List<PartnerPreference> getByCity(Long cityId) {
-        return repo.findByCity_Id(cityId);
+        return repository.findByCityId(cityId);
+    }
+
+    // 🔥 Advanced filters
+
+    @Override
+    public List<PartnerPreference> getByReligionAndCaste(Long religionId, Long casteId) {
+        return repository.findByReligionIdAndCasteId(religionId, casteId);
+    }
+
+    @Override
+    public List<PartnerPreference> getByReligionAndCity(Long religionId, Long cityId) {
+        return repository.findByReligionIdAndCityId(religionId, cityId);
+    }
+
+    @Override
+    public List<PartnerPreference> getByCasteAndCity(Long casteId, Long cityId) {
+        return repository.findByCasteIdAndCityId(casteId, cityId);
     }
 }

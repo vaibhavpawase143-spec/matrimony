@@ -3,92 +3,104 @@ package com.example.serviceimpl;
 import com.example.model.Occupation;
 import com.example.repository.OccupationRepository;
 import com.example.service.OccupationService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 @Service
 public class OccupationServiceImpl implements OccupationService {
 
-    @Autowired
-    private OccupationRepository repo;
+    private final OccupationRepository occupationRepository;
+
+    public OccupationServiceImpl(OccupationRepository occupationRepository) {
+        this.occupationRepository = occupationRepository;
+    }
 
     // ✅ Create
     @Override
     public Occupation create(Occupation occupation) {
-        occupation.setCreatedAt(LocalDateTime.now());
-        occupation.setUpdatedAt(LocalDateTime.now());
-        occupation.setIsActive(true);
-        return repo.save(occupation);
+
+        Long adminId = occupation.getAdmin().getId();
+
+        if (occupationRepository.existsByNameIgnoreCaseAndAdminId(
+                occupation.getName(), adminId)) {
+            throw new RuntimeException("Occupation already exists for this admin: " + occupation.getName());
+        }
+
+        return occupationRepository.save(occupation);
     }
 
-    // ✅ Get all
-    @Override
-    public List<Occupation> getAll() {
-        return repo.findAll();
-    }
-
-    // ✅ Get all active
-    @Override
-    public List<Occupation> getAllActive() {
-        return repo.findByIsActiveTrue();
-    }
-
-    // ✅ Get all inactive
-    @Override
-    public List<Occupation> getAllInactive() {
-        return repo.findByIsActiveFalse();
-    }
-
-    // ✅ Get by ID
-    @Override
-    public Optional<Occupation> getById(Long id) {
-        return repo.findById(id);
-    }
-
-    // ✅ Update
+    // 🔄 Update
     @Override
     public Occupation update(Long id, Occupation occupation) {
-        Occupation existing = repo.findById(id)
+
+        Occupation existing = occupationRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Occupation not found with id: " + id));
 
+        Long adminId = existing.getAdmin().getId();
+
+        occupationRepository.findByNameIgnoreCaseAndAdminId(
+                        occupation.getName(), adminId)
+                .ifPresent(o -> {
+                    if (!o.getId().equals(id)) {
+                        throw new RuntimeException("Occupation already exists for this admin: " + occupation.getName());
+                    }
+                });
+
+        // ✏️ Update fields
         existing.setName(occupation.getName());
         existing.setIsActive(occupation.getIsActive());
-        existing.setUpdatedAt(LocalDateTime.now());
 
-        return repo.save(existing);
+        return occupationRepository.save(existing);
     }
 
-    // ✅ Delete (Soft Delete)
+    // ❌ Delete
     @Override
     public void delete(Long id) {
-        Occupation existing = repo.findById(id)
+        Occupation existing = occupationRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Occupation not found with id: " + id));
 
-        existing.setIsActive(false);
-        existing.setUpdatedAt(LocalDateTime.now());
-
-        repo.save(existing);
+        occupationRepository.delete(existing);
     }
 
-    // ✅ Search
+    // 🔍 Get by ID
     @Override
-    public List<Occupation> search(String keyword) {
-        return repo.findByNameContainingIgnoreCase(keyword);
+    public Optional<Occupation> getById(Long id) {
+        return occupationRepository.findById(id);
     }
 
-    // ✅ Get by admin
+    // 🔍 Admin-based
     @Override
     public List<Occupation> getByAdmin(Long adminId) {
-        return repo.findByAdminId(adminId);
+        return occupationRepository.findByAdminId(adminId);
     }
 
-    // ✅ Get active by admin
     @Override
     public List<Occupation> getActiveByAdmin(Long adminId) {
-        return repo.findByAdminIdAndIsActiveTrue(adminId);
+        return occupationRepository.findByAdminIdAndIsActiveTrue(adminId);
+    }
+
+    @Override
+    public List<Occupation> getInactiveByAdmin(Long adminId) {
+        return occupationRepository.findByAdminIdAndIsActiveFalse(adminId);
+    }
+
+    // 🔍 Find by name
+    @Override
+    public Optional<Occupation> getByNameAndAdmin(String name, Long adminId) {
+        return occupationRepository.findByNameIgnoreCaseAndAdminId(name, adminId);
+    }
+
+    // ✅ Duplicate check
+    @Override
+    public boolean existsByNameAndAdmin(String name, Long adminId) {
+        return occupationRepository.existsByNameIgnoreCaseAndAdminId(name, adminId);
+    }
+
+    // 🔍 Search
+    @Override
+    public List<Occupation> searchByAdmin(Long adminId, String keyword) {
+        return occupationRepository.findByAdminIdAndNameContainingIgnoreCase(adminId, keyword);
     }
 }

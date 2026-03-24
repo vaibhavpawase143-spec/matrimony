@@ -3,74 +3,82 @@ package com.example.serviceimpl;
 import com.example.model.Role;
 import com.example.repository.RoleRepository;
 import com.example.service.RoleService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 @Service
 public class RoleServiceImpl implements RoleService {
 
-    @Autowired
-    private RoleRepository repo;
+    private final RoleRepository repository;
 
-    // ✅ Create
-    @Override
-    public Role create(Role role) {
-        role.setCreatedAt(LocalDateTime.now());
-        role.setUpdatedAt(LocalDateTime.now());
-        role.setIsActive(true); // optional but recommended
-        return repo.save(role);
+    public RoleServiceImpl(RoleRepository repository) {
+        this.repository = repository;
     }
 
-    // ✅ Get all
+    // ✅ Save (admin-wise duplicate check)
     @Override
-    public List<Role> getAll() {
-        return repo.findAll();
+    public Role save(Role role) {
+
+        String name = role.getName();
+        Long adminId = role.getAdmin().getId();
+
+        Optional<Role> existing =
+                repository.findByNameIgnoreCaseAndAdminId(name, adminId);
+
+        if (existing.isPresent() &&
+                !existing.get().getId().equals(role.getId())) {
+            throw new RuntimeException("Role already exists for this admin!");
+        }
+
+        return repository.save(role);
     }
 
     // ✅ Get by ID
     @Override
     public Optional<Role> getById(Long id) {
-        return repo.findById(id);
+        return repository.findById(id);
     }
 
-    // ✅ Update
+    // 🔍 Get all
     @Override
-    public Role update(Long id, Role role) {
-        Role existing = repo.findById(id)
-                .orElseThrow(() -> new RuntimeException("Role not found with id: " + id));
-
-        existing.setName(role.getName());
-        existing.setIsActive(role.getIsActive());
-        existing.setUpdatedAt(LocalDateTime.now());
-
-        return repo.save(existing);
+    public List<Role> getAll() {
+        return repository.findAll();
     }
 
-    // ✅ Delete (Soft Delete recommended)
-    @Override
-    public void delete(Long id) {
-        Role existing = repo.findById(id)
-                .orElseThrow(() -> new RuntimeException("Role not found with id: " + id));
-
-        existing.setIsActive(false);
-        existing.setUpdatedAt(LocalDateTime.now());
-
-        repo.save(existing);
-    }
-
-    // ✅ Search
-    @Override
-    public List<Role> search(String keyword) {
-        return repo.findByNameContainingIgnoreCase(keyword);
-    }
-
-    // ✅ Get by admin
+    // 🔍 Get by admin
     @Override
     public List<Role> getByAdmin(Long adminId) {
-        return repo.findByAdminId(adminId);
+        return repository.findByAdminId(adminId);
+    }
+
+    // 🔍 Active / Inactive
+    @Override
+    public List<Role> getActiveByAdmin(Long adminId) {
+        return repository.findByAdminIdAndIsActiveTrue(adminId);
+    }
+
+    @Override
+    public List<Role> getInactiveByAdmin(Long adminId) {
+        return repository.findByAdminIdAndIsActiveFalse(adminId);
+    }
+
+    // 🔍 Search
+    @Override
+    public List<Role> searchByAdmin(Long adminId, String keyword) {
+        return repository.findByAdminIdAndNameContainingIgnoreCase(adminId, keyword);
+    }
+
+    // 🔍 Find by name
+    @Override
+    public Optional<Role> getByNameAndAdmin(String name, Long adminId) {
+        return repository.findByNameIgnoreCaseAndAdminId(name, adminId);
+    }
+
+    // ✅ Delete
+    @Override
+    public void delete(Long id) {
+        repository.deleteById(id);
     }
 }

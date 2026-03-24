@@ -3,7 +3,6 @@ package com.example.serviceimpl;
 import com.example.model.User;
 import com.example.repository.UserRepository;
 import com.example.service.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -12,52 +11,89 @@ import java.util.Optional;
 @Service
 public class UserServiceImpl implements UserService {
 
-    @Autowired
-    private UserRepository repo;
+    private final UserRepository repository;
+
+    public UserServiceImpl(UserRepository repository) {
+        this.repository = repository;
+    }
 
     // ✅ Register
     @Override
     public User register(User user) {
 
-        if (existsByEmail(user.getEmail())) {
-            throw new RuntimeException("Email already registered: " + user.getEmail());
+        if (repository.existsByEmailIgnoreCaseOrPhone(user.getEmail(), user.getPhone())) {
+            throw new RuntimeException("Email or phone already exists!");
         }
 
-        // 🔥 No need to set timestamps (handled automatically)
-        user.setActive(true);
+        user.setIsActive(true);
 
-        return repo.save(user);
+        // 👉 IMPORTANT: In real app, password should be encrypted
+        return repository.save(user);
     }
 
-    // ✅ Login
+    // 🔐 Login
     @Override
-    public Optional<User> login(String email, String password) {
-        return repo.findByEmailAndPasswordAndActiveTrue(email, password);
+    public User login(String email, String password) {
+
+        User user = repository.findByEmailIgnoreCaseAndIsActiveTrue(email)
+                .orElseThrow(() -> new RuntimeException("Invalid email or user inactive"));
+
+        // 👉 Plain password check (for now)
+        if (!user.getPassword().equals(password)) {
+            throw new RuntimeException("Invalid password");
+        }
+
+        return user;
     }
 
-    // ✅ Get by ID
+    // 🔍 Get by ID
     @Override
     public Optional<User> getById(Long id) {
-        return repo.findById(id);
+        return repository.findById(id);
     }
 
-    // ✅ Get all
+    // 🔍 Get by email
+    @Override
+    public Optional<User> getByEmail(String email) {
+        return repository.findByEmailIgnoreCase(email);
+    }
+
+    // 🔍 Get all
     @Override
     public List<User> getAll() {
-        return repo.findAll();
+        return repository.findAll();
     }
 
-    // ✅ Get all active users
+    // 🔍 Active users
     @Override
-    public List<User> getAllActive() {
-        return repo.findByActiveTrue();
+    public List<User> getActiveUsers() {
+        return repository.findByIsActiveTrue();
+    }
+
+    // 🔍 Search
+    @Override
+    public List<User> search(String keyword) {
+        return repository
+                .findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCaseOrEmailContainingIgnoreCase(
+                        keyword, keyword, keyword
+                );
     }
 
     // ✅ Update
     @Override
     public User update(Long id, User user) {
-        User existing = repo.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+
+        User existing = repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found!"));
+
+        // Optional duplicate check (if email/phone changed)
+        if (!existing.getEmail().equalsIgnoreCase(user.getEmail()) ||
+                !existing.getPhone().equals(user.getPhone())) {
+
+            if (repository.existsByEmailIgnoreCaseOrPhone(user.getEmail(), user.getPhone())) {
+                throw new RuntimeException("Email or phone already exists!");
+            }
+        }
 
         existing.setFirstName(user.getFirstName());
         existing.setLastName(user.getLastName());
@@ -65,29 +101,17 @@ public class UserServiceImpl implements UserService {
         existing.setPhone(user.getPhone());
         existing.setPassword(user.getPassword());
 
-        return repo.save(existing);
+        return repository.save(existing);
     }
 
-    // ✅ Deactivate (Soft Delete)
+    // ❌ Soft delete
     @Override
     public void deactivate(Long id) {
-        User existing = repo.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
 
-        existing.setActive(false);
+        User user = repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found!"));
 
-        repo.save(existing);
-    }
-
-    // ✅ Search
-    @Override
-    public List<User> search(String keyword) {
-        return repo.findByFirstNameContainingIgnoreCaseOrEmailContainingIgnoreCase(keyword, keyword);
-    }
-
-    // ✅ Check email exists
-    @Override
-    public boolean existsByEmail(String email) {
-        return repo.existsByEmail(email);
+        user.setIsActive(false);
+        repository.save(user);
     }
 }

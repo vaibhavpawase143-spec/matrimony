@@ -5,22 +5,26 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface WeightRepository extends JpaRepository<Weight, Long> {
 
+    // 🔍 Find by value (admin-specific, case-insensitive)
+    Optional<Weight> findByValueIgnoreCaseAndAdminId(String value, Long adminId);
 
-    // Find all active weights
-    List<Weight> findByIsActiveTrue();
+    // 🔍 Check duplicate (admin-specific)
+    boolean existsByValueIgnoreCaseAndAdminId(String value, Long adminId);
 
-    // Find by value (example: "60 kg")
-    List<Weight> findByValue(String value);
-
-    // Find by admin id
+    // 🔍 Get all weights by admin
     List<Weight> findByAdminId(Long adminId);
 
-    // Find active weights by admin
+    // 🔍 Active weights by admin
     List<Weight> findByAdminIdAndIsActiveTrue(Long adminId);
 
+    // 🔍 Inactive weights by admin
+    List<Weight> findByAdminIdAndIsActiveFalse(Long adminId);
 
+    // 🔍 Search (admin + keyword)
+    List<Weight> findByAdminIdAndValueContainingIgnoreCase(Long adminId, String keyword);
 }

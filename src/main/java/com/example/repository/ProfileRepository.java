@@ -4,30 +4,43 @@ import com.example.model.Profile;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.Optional;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ProfileRepository extends JpaRepository<Profile, Long> {
 
-    // 🔍 Get profile by user (OneToOne relationship)
-    Optional<Profile> findByUser_Id(Long userId);
+    // 🔍 Get profile by user (OneToOne)
+    Optional<Profile> findByUserId(Long userId);
 
-    // 🔍 Check if profile exists for user
-    boolean existsByUser_Id(Long userId);
+    // 🔍 Check if profile exists
+    boolean existsByUserId(Long userId);
 
     // 🔍 Filter by religion
-    List<Profile> findByReligion_Id(Long religionId);
+    List<Profile> findByReligionId(Long religionId);
 
     // 🔍 Filter by caste
-    List<Profile> findByCaste_Id(Long casteId);
+    List<Profile> findByCasteId(Long casteId);
 
     // 🔍 Filter by city
-    List<Profile> findByCity_Id(Long cityId);
+    List<Profile> findByCityId(Long cityId);
 
-    // 🔍 Filter by education level
-    List<Profile> findByEducationLevel_Id(Long educationLevelId);
+    // 🔍 Filter by education
+    List<Profile> findByEducationLevelId(Long educationLevelId);
 
     // 🔍 Filter by occupation
-    List<Profile> findByOccupation_Id(Long occupationId);
+    List<Profile> findByOccupationId(Long occupationId);
+
+    // 🔥 Active profiles
+    List<Profile> findByIsActiveTrue();
+
+    // 🔥 Advanced filters (REAL USE CASES)
+
+    List<Profile> findByReligionIdAndCasteId(Long religionId, Long casteId);
+
+    List<Profile> findByCityIdAndEducationLevelId(Long cityId, Long educationLevelId);
+
+    List<Profile> findByOccupationIdAndCityId(Long occupationId, Long cityId);
+
+    List<Profile> findByReligionIdAndCityIdAndIsActiveTrue(Long religionId, Long cityId);
 }

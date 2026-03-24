@@ -2,67 +2,95 @@ package com.example.serviceimpl;
 
 import com.example.model.SubCaste;
 import com.example.repository.SubCasteRepository;
+import com.example.service.SubCasteService;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
 
 @Service
-public class SubCasteServiceImpl {
+public class SubCasteServiceImpl implements SubCasteService {
 
-    private final SubCasteRepository repo;
+    private final SubCasteRepository repository;
 
-    public SubCasteServiceImpl(SubCasteRepository repo) {
-        this.repo = repo;
+    public SubCasteServiceImpl(SubCasteRepository repository) {
+        this.repository = repository;
     }
 
-    // ✅ Get all active
-    public List<SubCaste> getAllActive() {
-        return repo.findByIsActiveTrue();
+    // ✅ Save (admin-wise duplicate check)
+    @Override
+    public SubCaste save(SubCaste subCaste) {
+
+        String name = subCaste.getName();
+        Long adminId = subCaste.getAdmin().getId();
+
+        Optional<SubCaste> existing =
+                repository.findByNameIgnoreCaseAndAdminId(name, adminId);
+
+        if (existing.isPresent() &&
+                !existing.get().getId().equals(subCaste.getId())) {
+            throw new RuntimeException("SubCaste already exists for this admin!");
+        }
+
+        return repository.save(subCaste);
     }
 
-    // ❌ Get all inactive
-    public List<SubCaste> getAllInactive() {
-        return repo.findByIsActiveFalse();
+    // ✅ Get by ID
+    @Override
+    public Optional<SubCaste> getById(Long id) {
+        return repository.findById(id);
     }
 
-    // 🔍 Find by name
-    public Optional<SubCaste> getByName(String name) {
-        return repo.findByNameIgnoreCase(name);
-    }
-
-    // 🔍 Check duplicate
-    public boolean existsByName(String name) {
-        return repo.existsByNameIgnoreCase(name);
+    // 🔍 Get all
+    @Override
+    public List<SubCaste> getAll() {
+        return repository.findAll();
     }
 
     // 🔍 Get by admin
+    @Override
     public List<SubCaste> getByAdmin(Long adminId) {
-        return repo.findByAdminId(adminId);
+        return repository.findByAdminId(adminId);
     }
 
-    // ✅ Active by admin
+    // 🔍 Active / Inactive
+    @Override
     public List<SubCaste> getActiveByAdmin(Long adminId) {
-        return repo.findByAdminIdAndIsActiveTrue(adminId);
+        return repository.findByAdminIdAndIsActiveTrue(adminId);
     }
 
-    // 🔍 Get by caste
-    public List<SubCaste> getByCaste(Long casteId) {
-        return repo.findByCaste_Id(casteId);
+    @Override
+    public List<SubCaste> getInactiveByAdmin(Long adminId) {
+        return repository.findByAdminIdAndIsActiveFalse(adminId);
     }
 
-    // ✅ Active by caste
-    public List<SubCaste> getActiveByCaste(Long casteId) {
-        return repo.findByCaste_IdAndIsActiveTrue(casteId);
+    // 🔍 Caste + admin
+    @Override
+    public List<SubCaste> getByCasteAndAdmin(Long casteId, Long adminId) {
+        return repository.findByCaste_IdAndAdminId(casteId, adminId);
+    }
+
+    // 🔍 Active by caste + admin
+    @Override
+    public List<SubCaste> getActiveByCasteAndAdmin(Long casteId, Long adminId) {
+        return repository.findByCaste_IdAndAdminIdAndIsActiveTrue(casteId, adminId);
     }
 
     // 🔍 Search
-    public List<SubCaste> search(String keyword) {
-        return repo.findByNameContainingIgnoreCase(keyword);
+    @Override
+    public List<SubCaste> searchByAdmin(Long adminId, String keyword) {
+        return repository.findByAdminIdAndNameContainingIgnoreCase(adminId, keyword);
     }
 
-    // 🔍 Optional direct field
-    public List<SubCaste> getByCasteId(Long casteId) {
-        return repo.findByCasteId(casteId);
+    // 🔍 Find by name
+    @Override
+    public Optional<SubCaste> getByNameAndAdmin(String name, Long adminId) {
+        return repository.findByNameIgnoreCaseAndAdminId(name, adminId);
+    }
+
+    // ✅ Delete
+    @Override
+    public void delete(Long id) {
+        repository.deleteById(id);
     }
 }

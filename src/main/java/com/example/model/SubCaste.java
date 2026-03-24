@@ -6,7 +6,11 @@ import java.time.LocalDateTime;
 @Entity
 @Table(
         name = "sub_castes",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"caste_id", "name"})
+        uniqueConstraints = @UniqueConstraint(columnNames = {"caste_id", "name"}),
+        indexes = {
+                @Index(name = "idx_subcaste_name", columnList = "name"),
+                @Index(name = "idx_subcaste_caste", columnList = "caste_id")
+        }
 )
 public class SubCaste {
 
@@ -18,46 +22,85 @@ public class SubCaste {
     @JoinColumn(name = "admin_id")
     private Admin admin;
 
+    @Column(nullable = false, length = 120)
     private String name;
 
-    @ManyToOne
-    @JoinColumn(name="caste_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "caste_id", nullable = false)
     private Caste caste;
 
+    @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    public SubCaste() {}
+
+    // 🔥 Lifecycle hooks (fixed)
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+
+        if (this.isActive == null) {
+            this.isActive = true;
+        }
     }
 
     @PreUpdate
     protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
     }
 
-    // Getters and Setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    // ===== Getters =====
 
-    public Admin getAdmin() { return admin; }
-    public void setAdmin(Admin admin) { this.admin = admin; }
+    public Long getId() {
+        return id;
+    }
 
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
+    public Admin getAdmin() {
+        return admin;
+    }
 
-    public Caste getCaste() { return caste; }
-    public void setCaste(Caste caste) { this.caste = caste; }
+    public String getName() {
+        return name;
+    }
 
-    public Boolean getisActive() { return isActive; }
-    public void setisActive(Boolean isActive) { this.isActive = isActive; }
+    public Caste getCaste() {
+        return caste;
+    }
 
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public Boolean getIsActive() {   // ✅ FIXED
+        return isActive;
+    }
 
-    public LocalDateTime getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    // ===== Setters =====
+
+    public void setAdmin(Admin admin) {
+        this.admin = admin;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setCaste(Caste caste) {
+        this.caste = caste;
+    }
+
+    public void setIsActive(Boolean isActive) {
+        this.isActive = isActive;
+    }
 }

@@ -6,7 +6,13 @@ import java.time.LocalDateTime;
 @Entity
 @Table(
         name = "complexions",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"admin_id", "value"})
+        uniqueConstraints = {
+                @UniqueConstraint(columnNames = {"admin_id", "value"})
+        },
+        indexes = {
+                @Index(name = "idx_complexion_admin", columnList = "admin_id"),
+                @Index(name = "idx_complexion_active", columnList = "is_active")
+        }
 )
 public class Complexion {
 
@@ -15,13 +21,13 @@ public class Complexion {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "admin_id")
+    @JoinColumn(name = "admin_id") // add nullable=false if needed
     private Admin admin;
 
     @Column(nullable = false, length = 120)
-    private String value; // e.g., Fair, Wheatish, Dark
+    private String value;
 
-    @Column(nullable = false)
+    @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -30,13 +36,23 @@ public class Complexion {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    // --- Getters and Setters ---
-    public Long getId() {
-        return id;
+    public Complexion() {}
+
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    // --- Getters and Setters ---
+
+    public Long getId() {
+        return id;
     }
 
     public Admin getAdmin() {
@@ -67,27 +83,7 @@ public class Complexion {
         return createdAt;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-
-    // --- Lifecycle Callbacks ---
-    @PrePersist
-    protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
     }
 }

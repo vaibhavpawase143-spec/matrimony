@@ -7,10 +7,11 @@ import java.time.LocalDateTime;
 @Table(
         name = "family_types",
         uniqueConstraints = {
-                @UniqueConstraint(columnNames = {"name", "admin_id"})
+                @UniqueConstraint(name = "uk_family_type_name_admin", columnNames = {"name", "admin_id"})
         },
         indexes = {
-                @Index(name = "idx_family_type_name", columnList = "name")
+                @Index(name = "idx_family_type_name", columnList = "name"),
+                @Index(name = "idx_family_type_active", columnList = "is_active")
         }
 )
 public class FamilyType {
@@ -26,7 +27,7 @@ public class FamilyType {
     @Column(nullable = false, length = 100)
     private String name;
 
-    @Column(nullable = false)
+    @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -40,6 +41,7 @@ public class FamilyType {
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
     }
 
     @PreUpdate
@@ -47,14 +49,10 @@ public class FamilyType {
         updatedAt = LocalDateTime.now();
     }
 
-    // Getters and Setters
+    // Getters & Setters
 
     public Long getId() {
         return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
     }
 
     public Admin getAdmin() {
@@ -73,11 +71,11 @@ public class FamilyType {
         this.name = name;
     }
 
-    public Boolean getisActive() {
+    public Boolean getIsActive() {   // ✅ FIXED
         return isActive;
     }
 
-    public void setisActive(Boolean isActive) {
+    public void setIsActive(Boolean isActive) {
         this.isActive = isActive;
     }
 
@@ -85,15 +83,7 @@ public class FamilyType {
         return createdAt;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
     }
 }

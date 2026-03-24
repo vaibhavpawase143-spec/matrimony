@@ -19,13 +19,30 @@ public class PartnerPreferenceController {
     // Create new partner preference
     @PostMapping
     public ResponseEntity<PartnerPreference> create(@RequestBody PartnerPreference preference) {
-        return ResponseEntity.ok(preferenceService.create(preference));
+        return ResponseEntity.ok(preferenceService.savePreference(preference));
     }
 
     // Update partner preference
     @PutMapping("/{userId}")
-    public ResponseEntity<PartnerPreference> update(@PathVariable Long userId, @RequestBody PartnerPreference updated) {
-        return ResponseEntity.ok(preferenceService.update(userId, updated));
+    public ResponseEntity<PartnerPreference> update(
+            @PathVariable Long userId,
+            @RequestBody PartnerPreference updated) {
+
+        PartnerPreference existing = preferenceService.getByUserId(userId)
+                .orElseThrow(() -> new RuntimeException("Preference not found"));
+
+        // 🔥 Update only fields (DO NOT replace object)
+        existing.setMinAge(updated.getMinAge());
+        existing.setMaxAge(updated.getMaxAge());
+        existing.setMinHeight(updated.getMinHeight());
+        existing.setMaxHeight(updated.getMaxHeight());
+        existing.setReligion(updated.getReligion());
+        existing.setCaste(updated.getCaste());
+        existing.setCity(updated.getCity());
+
+        PartnerPreference saved = preferenceService.savePreference(existing);
+
+        return ResponseEntity.ok(saved);
     }
 
     // Get by userId

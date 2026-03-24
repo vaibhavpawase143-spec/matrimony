@@ -7,25 +7,39 @@ import java.util.Optional;
 
 public interface FieldOfStudyService {
 
-    FieldOfStudy save(FieldOfStudy fieldOfStudy);
+    // 🔍 Basic CRUD
+    FieldOfStudy create(FieldOfStudy fieldOfStudy);
+
+    FieldOfStudy update(Long id, FieldOfStudy fieldOfStudy);
+
+    void delete(Long id);
 
     Optional<FieldOfStudy> getById(Long id);
 
-    Optional<FieldOfStudy> getByName(String name);
-
     List<FieldOfStudy> getAll();
 
-    List<FieldOfStudy> getAllActive();
+    // 🔍 Find by name
+    Optional<FieldOfStudy> getByName(String name);
 
-    List<FieldOfStudy> getAllInactive();
+    Optional<FieldOfStudy> getByNameIgnoreCase(String name);
 
+    // ✅ Duplicate check
+    boolean existsByName(String name);
+
+    boolean existsByNameIgnoreCase(String name);
+
+    // 🔍 Active / Inactive
+    List<FieldOfStudy> getActive();
+
+    List<FieldOfStudy> getInactive();
+
+    // 🔍 Admin-based
     List<FieldOfStudy> getByAdmin(Long adminId);
 
     List<FieldOfStudy> getActiveByAdmin(Long adminId);
 
-    List<FieldOfStudy> searchByName(String keyword);
+    // 🔍 Search
+    List<FieldOfStudy> search(String keyword);
 
-    FieldOfStudy update(Long id, FieldOfStudy updated);
-
-    void delete(Long id); // soft delete
+    List<FieldOfStudy> searchByAdmin(Long adminId, String keyword);
 }

@@ -7,17 +7,29 @@ import java.util.Optional;
 
 public interface ProfileTypeService {
 
-    ProfileType create(ProfileType profileType);
+    // ✅ Create / Save
+    ProfileType save(ProfileType profileType);
 
-    List<ProfileType> getAll();
-
+    // ✅ Get by ID
     Optional<ProfileType> getById(Long id);
 
-    ProfileType update(Long id, ProfileType profileType);
+    // 🔍 Get all
+    List<ProfileType> getAll();
 
-    void delete(Long id); // soft delete
-
+    // 🔍 Get by admin
     List<ProfileType> getByAdmin(Long adminId);
 
-    List<ProfileType> search(String keyword);
+    // 🔍 Active / Inactive
+    List<ProfileType> getActiveByAdmin(Long adminId);
+
+    List<ProfileType> getInactiveByAdmin(Long adminId);
+
+    // 🔍 Search
+    List<ProfileType> searchByAdmin(Long adminId, String keyword);
+
+    // 🔍 Find by name (admin-specific)
+    Optional<ProfileType> getByNameAndAdmin(String name, Long adminId);
+
+    // ✅ Delete
+    void delete(Long id);
 }

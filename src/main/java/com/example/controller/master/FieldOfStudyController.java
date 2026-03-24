@@ -1,87 +1,133 @@
-package com.example.controller.master; // master folder
+package com.example.controller.master;
 
+import com.example.dto.request.FieldOfStudyRequestDTO;
+import com.example.dto.response.FieldOfStudyResponseDTO;
+import com.example.model.Admin;
 import com.example.model.FieldOfStudy;
 import com.example.service.FieldOfStudyService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/field-of-study")
+@RequestMapping("/api/fields-of-study")
+@RequiredArgsConstructor
 public class FieldOfStudyController {
 
-    @Autowired
-    private FieldOfStudyService fieldOfStudyService;
+    private final FieldOfStudyService fieldOfStudyService;
 
-    // Create new FieldOfStudy
+    // ✅ Create
     @PostMapping
-    public ResponseEntity<FieldOfStudy> save(@RequestBody FieldOfStudy fieldOfStudy) {
-        return ResponseEntity.ok(fieldOfStudyService.save(fieldOfStudy));
+    public FieldOfStudyResponseDTO create(@RequestBody FieldOfStudyRequestDTO dto) {
+
+        FieldOfStudy entity = mapToEntity(dto);
+
+        FieldOfStudy saved = fieldOfStudyService.create(entity);
+
+        return mapToResponse(saved);
     }
 
-    // Get by ID
-    @GetMapping("/{id}")
-    public ResponseEntity<FieldOfStudy> getById(@PathVariable Long id) {
-        Optional<FieldOfStudy> fs = fieldOfStudyService.getById(id);
-        return fs.map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
-    }
-
-    // Get by name
-    @GetMapping("/name/{name}")
-    public ResponseEntity<FieldOfStudy> getByName(@PathVariable String name) {
-        Optional<FieldOfStudy> fs = fieldOfStudyService.getByName(name);
-        return fs.map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
-    }
-
-    // Get all
-    @GetMapping
-    public ResponseEntity<List<FieldOfStudy>> getAll() {
-        return ResponseEntity.ok(fieldOfStudyService.getAll());
-    }
-
-    // Get all active
-    @GetMapping("/active")
-    public ResponseEntity<List<FieldOfStudy>> getAllActive() {
-        return ResponseEntity.ok(fieldOfStudyService.getAllActive());
-    }
-
-    // Get all inactive
-    @GetMapping("/inactive")
-    public ResponseEntity<List<FieldOfStudy>> getAllInactive() {
-        return ResponseEntity.ok(fieldOfStudyService.getAllInactive());
-    }
-
-    // Get by admin
-    @GetMapping("/admin/{adminId}")
-    public ResponseEntity<List<FieldOfStudy>> getByAdmin(@PathVariable Long adminId) {
-        return ResponseEntity.ok(fieldOfStudyService.getByAdmin(adminId));
-    }
-
-    // Get active by admin
-    @GetMapping("/admin/{adminId}/active")
-    public ResponseEntity<List<FieldOfStudy>> getActiveByAdmin(@PathVariable Long adminId) {
-        return ResponseEntity.ok(fieldOfStudyService.getActiveByAdmin(adminId));
-    }
-
-    // Search by name keyword
-    @GetMapping("/search")
-    public ResponseEntity<List<FieldOfStudy>> search(@RequestParam String keyword) {
-        return ResponseEntity.ok(fieldOfStudyService.searchByName(keyword));
-    }
-
-    // Update
+    // 🔄 Update
     @PutMapping("/{id}")
-    public ResponseEntity<FieldOfStudy> update(@PathVariable Long id, @RequestBody FieldOfStudy updated) {
-        return ResponseEntity.ok(fieldOfStudyService.update(id, updated));
+    public FieldOfStudyResponseDTO update(
+            @PathVariable Long id,
+            @RequestBody FieldOfStudyRequestDTO dto
+    ) {
+        FieldOfStudy entity = mapToEntity(dto);
+
+        FieldOfStudy updated = fieldOfStudyService.update(id, entity);
+
+        return mapToResponse(updated);
     }
 
-    // Soft delete
+    // ❌ Delete
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
+    public String delete(@PathVariable Long id) {
         fieldOfStudyService.delete(id);
-        return ResponseEntity.noContent().build();
+        return "FieldOfStudy deleted successfully";
+    }
+
+    // 🔍 Get by ID
+    @GetMapping("/{id}")
+    public FieldOfStudyResponseDTO getById(@PathVariable Long id) {
+        FieldOfStudy field = fieldOfStudyService.getById(id)
+                .orElseThrow(() -> new RuntimeException("FieldOfStudy not found"));
+
+        return mapToResponse(field);
+    }
+
+    // 🔍 Get all
+    @GetMapping
+    public List<FieldOfStudyResponseDTO> getAll() {
+        return fieldOfStudyService.getAll()
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    // 🔍 Get active
+    @GetMapping("/active")
+    public List<FieldOfStudyResponseDTO> getActive() {
+        return fieldOfStudyService.getActive()
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    // 🔍 Get by admin
+    @GetMapping("/admin/{adminId}")
+    public List<FieldOfStudyResponseDTO> getByAdmin(@PathVariable Long adminId) {
+        return fieldOfStudyService.getByAdmin(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    // 🔍 Search
+    @GetMapping("/search")
+    public List<FieldOfStudyResponseDTO> search(@RequestParam String keyword) {
+        return fieldOfStudyService.search(keyword)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    // ===============================
+    // 🔁 MAPPING METHODS
+    // ===============================
+
+    private FieldOfStudy mapToEntity(FieldOfStudyRequestDTO dto) {
+
+        FieldOfStudy entity = new FieldOfStudy();
+
+        entity.setName(dto.getName());
+        entity.setIsActive(dto.getIsActive());
+
+        if (dto.getAdminId() != null) {
+            Admin admin = new Admin();
+            admin.setId(dto.getAdminId());
+            entity.setAdmin(admin);
+        }
+
+        return entity;
+    }
+
+    private FieldOfStudyResponseDTO mapToResponse(FieldOfStudy entity) {
+
+        FieldOfStudyResponseDTO dto = new FieldOfStudyResponseDTO();
+
+        dto.setId(entity.getId());
+        dto.setName(entity.getName());
+        dto.setIsActive(entity.getIsActive());
+        dto.setCreatedAt(entity.getCreatedAt());
+        dto.setUpdatedAt(entity.getUpdatedAt());
+
+        if (entity.getAdmin() != null) {
+            dto.setAdminId(entity.getAdmin().getId());
+        }
+
+        return dto;
     }
 }

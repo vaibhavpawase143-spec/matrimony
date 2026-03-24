@@ -1,87 +1,117 @@
-package com.example.controller.master; // master folder
+package com.example.controller.master;
 
+import com.example.dto.request.FamilyStatusRequestDto;
+import com.example.dto.response.FamilyStatusResponseDto;
+import com.example.model.Admin;
 import com.example.model.FamilyStatus;
 import com.example.service.FamilyStatusService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/family-status")
+@RequestMapping("/api/master/family-status")
 public class FamilyStatusController {
 
-    @Autowired
-    private FamilyStatusService familyStatusService;
+    private final FamilyStatusService service;
 
-    // Create a new FamilyStatus
+    public FamilyStatusController(FamilyStatusService service) {
+        this.service = service;
+    }
+
+    // ✅ Create
     @PostMapping
-    public ResponseEntity<FamilyStatus> save(@RequestBody FamilyStatus familyStatus) {
-        return ResponseEntity.ok(familyStatusService.save(familyStatus));
+    public FamilyStatusResponseDto create(@Valid @RequestBody FamilyStatusRequestDto dto) {
+        return mapToResponse(service.create(mapToEntity(dto)));
     }
 
-    // Get by ID
-    @GetMapping("/{id}")
-    public ResponseEntity<FamilyStatus> getById(@PathVariable Long id) {
-        Optional<FamilyStatus> fs = familyStatusService.getById(id);
-        return fs.map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
-    }
-
-    // Get by name
-    @GetMapping("/name/{name}")
-    public ResponseEntity<FamilyStatus> getByName(@PathVariable String name) {
-        Optional<FamilyStatus> fs = familyStatusService.getByName(name);
-        return fs.map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
-    }
-
-    // Get all
-    @GetMapping
-    public ResponseEntity<List<FamilyStatus>> getAll() {
-        return ResponseEntity.ok(familyStatusService.getAll());
-    }
-
-    // Get all active
-    @GetMapping("/active")
-    public ResponseEntity<List<FamilyStatus>> getAllActive() {
-        return ResponseEntity.ok(familyStatusService.getAllActive());
-    }
-
-    // Get all inactive
-    @GetMapping("/inactive")
-    public ResponseEntity<List<FamilyStatus>> getAllInactive() {
-        return ResponseEntity.ok(familyStatusService.getAllInactive());
-    }
-
-    // Get by admin
-    @GetMapping("/admin/{adminId}")
-    public ResponseEntity<List<FamilyStatus>> getByAdmin(@PathVariable Long adminId) {
-        return ResponseEntity.ok(familyStatusService.getByAdmin(adminId));
-    }
-
-    // Get active by admin
-    @GetMapping("/admin/{adminId}/active")
-    public ResponseEntity<List<FamilyStatus>> getActiveByAdmin(@PathVariable Long adminId) {
-        return ResponseEntity.ok(familyStatusService.getActiveByAdmin(adminId));
-    }
-
-    // Search by name keyword
-    @GetMapping("/search")
-    public ResponseEntity<List<FamilyStatus>> search(@RequestParam String keyword) {
-        return ResponseEntity.ok(familyStatusService.searchByName(keyword));
-    }
-
-    // Update
+    // 🔄 Update
     @PutMapping("/{id}")
-    public ResponseEntity<FamilyStatus> update(@PathVariable Long id, @RequestBody FamilyStatus updated) {
-        return ResponseEntity.ok(familyStatusService.update(id, updated));
+    public FamilyStatusResponseDto update(@PathVariable Long id,
+                                          @Valid @RequestBody FamilyStatusRequestDto dto) {
+        return mapToResponse(service.update(id, mapToEntity(dto)));
     }
 
-    // Soft delete
+    // ❌ Delete
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        familyStatusService.delete(id);
-        return ResponseEntity.noContent().build();
+    public String delete(@PathVariable Long id) {
+        service.delete(id);
+        return "FamilyStatus deleted successfully";
+    }
+
+    // 🔍 Get by ID
+    @GetMapping("/{id}")
+    public FamilyStatusResponseDto getById(@PathVariable Long id) {
+        return service.getById(id)
+                .map(this::mapToResponse)
+                .orElseThrow(() -> new RuntimeException("FamilyStatus not found"));
+    }
+
+    // 🔍 Get all
+    @GetMapping
+    public List<FamilyStatusResponseDto> getAll() {
+        return service.getAll()
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    // 🔍 Active
+    @GetMapping("/active")
+    public List<FamilyStatusResponseDto> getActive() {
+        return service.getActive()
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    // 🔍 By Admin
+    @GetMapping("/admin/{adminId}")
+    public List<FamilyStatusResponseDto> getByAdmin(@PathVariable Long adminId) {
+        return service.getByAdmin(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    // 🔍 Search
+    @GetMapping("/search")
+    public List<FamilyStatusResponseDto> search(@RequestParam String keyword) {
+        return service.search(keyword)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    // =========================
+    // 🔁 MAPPING (SAFE VERSION)
+    // =========================
+
+    private FamilyStatus mapToEntity(FamilyStatusRequestDto dto) {
+
+        FamilyStatus entity = new FamilyStatus();
+
+        Admin admin = new Admin();
+        admin.setId(dto.getAdminId());
+
+        entity.setAdmin(admin);
+        entity.setName(dto.getName());
+        entity.setIsActive(dto.getIsActive());
+
+        return entity;
+    }
+
+    private FamilyStatusResponseDto mapToResponse(FamilyStatus entity) {
+
+        return FamilyStatusResponseDto.builder()
+                .id(entity.getId())
+                .name(entity.getName())
+                .isActive(entity.getIsActive())
+                .createdAt(entity.getCreatedAt())
+                .updatedAt(entity.getUpdatedAt())
+                .adminId(entity.getAdminId()) // 🔥 optimized
+                .build();
     }
 }

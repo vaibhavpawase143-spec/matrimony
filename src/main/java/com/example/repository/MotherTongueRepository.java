@@ -10,24 +10,21 @@ import java.util.Optional;
 @Repository
 public interface MotherTongueRepository extends JpaRepository<MotherTongue, Long> {
 
-    // 🔍 Find by name (Hindi, Marathi, English)
-    Optional<MotherTongue> findByNameIgnoreCase(String name);
+    // 🔍 Find by name (admin-specific)
+    Optional<MotherTongue> findByNameIgnoreCaseAndAdminId(String name, Long adminId);
 
-    // 🔍 Check duplicate
-    boolean existsByNameIgnoreCase(String name);
+    // 🔍 Check duplicate (admin-specific)
+    boolean existsByNameIgnoreCaseAndAdminId(String name, Long adminId);
 
-    // 🔍 Get all active records
-    List<MotherTongue> findByIsActiveTrue();
-
-    // 🔍 Get all inactive records
-    List<MotherTongue> findByIsActiveFalse();
-
-    // 🔍 Filter by admin
+    // 🔍 Get all records by admin
     List<MotherTongue> findByAdminId(Long adminId);
 
     // 🔍 Active records by admin
     List<MotherTongue> findByAdminIdAndIsActiveTrue(Long adminId);
 
-    // 🔍 Search (dropdown/filter)
-    List<MotherTongue> findByNameContainingIgnoreCase(String keyword);
+    // 🔍 Inactive records by admin
+    List<MotherTongue> findByAdminIdAndIsActiveFalse(Long adminId);
+
+    // 🔍 Search (admin + keyword)
+    List<MotherTongue> findByAdminIdAndNameContainingIgnoreCase(Long adminId, String keyword);
 }

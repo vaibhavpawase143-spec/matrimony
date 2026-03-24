@@ -1,62 +1,131 @@
-package com.example.controller.master; // master folder
+package com.example.controller.master;
 
+import com.example.dto.request.ProfileTypeRequestDTO;
+import com.example.dto.response.ProfileTypeResponseDTO;
+import com.example.model.Admin;
 import com.example.model.ProfileType;
 import com.example.service.ProfileTypeService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/profile-types")
+@RequiredArgsConstructor
 public class ProfileTypeController {
 
-    @Autowired
-    private ProfileTypeService profileTypeService;
+    private final ProfileTypeService service;
 
-    // Create new ProfileType
+    // ===== CREATE / UPDATE =====
     @PostMapping
-    public ResponseEntity<ProfileType> create(@RequestBody ProfileType pt) {
-        return ResponseEntity.ok(profileTypeService.create(pt));
+    public ProfileTypeResponseDTO save(@Valid @RequestBody ProfileTypeRequestDTO dto) {
+
+        ProfileType entity = mapToEntity(dto);
+
+        ProfileType saved = service.save(entity);
+
+        return mapToResponse(saved);
     }
 
-    // Get all
-    @GetMapping
-    public ResponseEntity<List<ProfileType>> getAll() {
-        return ResponseEntity.ok(profileTypeService.getAll());
-    }
-
-    // Get by ID
+    // ===== GET BY ID =====
     @GetMapping("/{id}")
-    public ResponseEntity<ProfileType> getById(@PathVariable Long id) {
-        Optional<ProfileType> pt = profileTypeService.getById(id);
-        return pt.map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
+    public ProfileTypeResponseDTO getById(@PathVariable Long id) {
+        ProfileType pt = service.getById(id)
+                .orElseThrow(() -> new RuntimeException("ProfileType not found"));
+
+        return mapToResponse(pt);
     }
 
-    // Update
-    @PutMapping("/{id}")
-    public ResponseEntity<ProfileType> update(@PathVariable Long id, @RequestBody ProfileType updated) {
-        return ResponseEntity.ok(profileTypeService.update(id, updated));
+    // ===== GET ALL =====
+    @GetMapping
+    public List<ProfileTypeResponseDTO> getAll() {
+        return service.getAll()
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
     }
 
-    // Delete
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        profileTypeService.delete(id);
-        return ResponseEntity.noContent().build();
-    }
-
-    // Get by admin
+    // ===== GET BY ADMIN =====
     @GetMapping("/admin/{adminId}")
-    public ResponseEntity<List<ProfileType>> getByAdmin(@PathVariable Long adminId) {
-        return ResponseEntity.ok(profileTypeService.getByAdmin(adminId));
+    public List<ProfileTypeResponseDTO> getByAdmin(@PathVariable Long adminId) {
+        return service.getByAdmin(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
     }
 
-    // Search
-    @GetMapping("/search")
-    public ResponseEntity<List<ProfileType>> search(@RequestParam String keyword) {
-        return ResponseEntity.ok(profileTypeService.search(keyword));
+    // ===== ACTIVE =====
+    @GetMapping("/admin/{adminId}/active")
+    public List<ProfileTypeResponseDTO> getActive(@PathVariable Long adminId) {
+        return service.getActiveByAdmin(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    // ===== INACTIVE =====
+    @GetMapping("/admin/{adminId}/inactive")
+    public List<ProfileTypeResponseDTO> getInactive(@PathVariable Long adminId) {
+        return service.getInactiveByAdmin(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    // ===== SEARCH =====
+    @GetMapping("/admin/{adminId}/search")
+    public List<ProfileTypeResponseDTO> search(
+            @PathVariable Long adminId,
+            @RequestParam String keyword) {
+
+        return service.searchByAdmin(adminId, keyword)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    // ===== DELETE =====
+    @DeleteMapping("/{id}")
+    public String delete(@PathVariable Long id) {
+        service.delete(id);
+        return "ProfileType deleted successfully";
+    }
+
+    // =========================
+    // 🔥 MAPPING
+    // =========================
+
+    private ProfileType mapToEntity(ProfileTypeRequestDTO dto) {
+
+        ProfileType pt = new ProfileType();
+
+        // 🔥 set admin only with ID
+        Admin admin = new Admin();
+        admin.setId(dto.getAdminId());
+        pt.setAdmin(admin);
+
+        pt.setName(dto.getName());
+
+        if (dto.getIsActive() != null) {
+            pt.setIsActive(dto.getIsActive());
+        }
+
+        return pt;
+    }
+
+    private ProfileTypeResponseDTO mapToResponse(ProfileType pt) {
+
+        return ProfileTypeResponseDTO.builder()
+                .id(pt.getId())
+                .adminId(pt.getAdmin() != null ? pt.getAdmin().getId() : null)
+                .adminName(pt.getAdmin() != null ? pt.getAdmin().getName() : null) // adjust field
+                .name(pt.getName())
+                .isActive(pt.getIsActive())
+                .createdAt(pt.getCreatedAt())
+                .updatedAt(pt.getUpdatedAt())
+                .build();
     }
 }

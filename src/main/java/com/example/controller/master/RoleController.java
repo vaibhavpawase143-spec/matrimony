@@ -1,62 +1,177 @@
-package com.example.controller.master; // master folder
+package com.example.controller.master;
 
+import com.example.dto.request.RoleRequestDTO;
+import com.example.dto.response.RoleResponseDTO;
+import com.example.model.Admin;
 import com.example.model.Role;
 import com.example.service.RoleService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/roles")
+@RequestMapping("/api/master/roles")
+@RequiredArgsConstructor
 public class RoleController {
 
-    @Autowired
-    private RoleService roleService;
+    private final RoleService service;
 
-    // Create new Role
+    // =========================
+    // CREATE
+    // =========================
     @PostMapping
-    public ResponseEntity<Role> create(@RequestBody Role role) {
-        return ResponseEntity.ok(roleService.create(role));
+    public RoleResponseDTO create(@Valid @RequestBody RoleRequestDTO dto) {
+
+        Role entity = mapToEntity(dto);
+
+        Role saved = service.save(entity);
+
+        return mapToResponse(saved);
     }
 
-    // Get all roles
-    @GetMapping
-    public ResponseEntity<List<Role>> getAll() {
-        return ResponseEntity.ok(roleService.getAll());
-    }
-
-    // Get role by ID
-    @GetMapping("/{id}")
-    public ResponseEntity<Role> getById(@PathVariable Long id) {
-        Optional<Role> r = roleService.getById(id);
-        return r.map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
-    }
-
-    // Update role
+    // =========================
+    // UPDATE
+    // =========================
     @PutMapping("/{id}")
-    public ResponseEntity<Role> update(@PathVariable Long id, @RequestBody Role updated) {
-        return ResponseEntity.ok(roleService.update(id, updated));
+    public RoleResponseDTO update(
+            @PathVariable Long id,
+            @Valid @RequestBody RoleRequestDTO dto) {
+
+        Role existing = service.getById(id)
+                .orElseThrow(() -> new RuntimeException("Role not found"));
+
+        updateEntity(existing, dto);
+
+        Role updated = service.save(existing);
+
+        return mapToResponse(updated);
     }
 
-    // Delete role
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        roleService.delete(id);
-        return ResponseEntity.noContent().build();
+    // =========================
+    // GET BY ID
+    // =========================
+    @GetMapping("/{id}")
+    public RoleResponseDTO getById(@PathVariable Long id) {
+
+        Role role = service.getById(id)
+                .orElseThrow(() -> new RuntimeException("Role not found"));
+
+        return mapToResponse(role);
     }
 
-    // Search roles
-    @GetMapping("/search")
-    public ResponseEntity<List<Role>> search(@RequestParam String keyword) {
-        return ResponseEntity.ok(roleService.search(keyword));
+    // =========================
+    // GET ALL
+    // =========================
+    @GetMapping
+    public List<RoleResponseDTO> getAll() {
+
+        return service.getAll()
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
     }
 
-    // Get roles by admin
+    // =========================
+    // ADMIN APIs
+    // =========================
+
     @GetMapping("/admin/{adminId}")
-    public ResponseEntity<List<Role>> getByAdmin(@PathVariable Long adminId) {
-        return ResponseEntity.ok(roleService.getByAdmin(adminId));
+    public List<RoleResponseDTO> getByAdmin(@PathVariable Long adminId) {
+
+        return service.getByAdmin(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @GetMapping("/admin/{adminId}/active")
+    public List<RoleResponseDTO> getActive(@PathVariable Long adminId) {
+
+        return service.getActiveByAdmin(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @GetMapping("/admin/{adminId}/inactive")
+    public List<RoleResponseDTO> getInactive(@PathVariable Long adminId) {
+
+        return service.getInactiveByAdmin(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    // =========================
+    // SEARCH
+    // =========================
+    @GetMapping("/admin/{adminId}/search")
+    public List<RoleResponseDTO> search(
+            @PathVariable Long adminId,
+            @RequestParam String keyword) {
+
+        return service.searchByAdmin(adminId, keyword)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    // =========================
+    // DELETE
+    // =========================
+    @DeleteMapping("/{id}")
+    public String delete(@PathVariable Long id) {
+        service.delete(id);
+        return "Role deleted successfully";
+    }
+
+    // =========================
+    // 🔥 MAPPING
+    // =========================
+
+    private Role mapToEntity(RoleRequestDTO dto) {
+
+        Role role = new Role();
+
+        Admin admin = new Admin();
+        admin.setId(dto.getAdminId());
+        role.setAdmin(admin);
+
+        role.setName(dto.getName());
+
+        if (dto.getIsActive() != null) {
+            role.setIsActive(dto.getIsActive());
+        }
+
+        return role;
+    }
+
+    private void updateEntity(Role role, RoleRequestDTO dto) {
+
+        // 🚫 DO NOT update admin
+
+        if (dto.getName() != null) {
+            role.setName(dto.getName());
+        }
+
+        if (dto.getIsActive() != null) {
+            role.setIsActive(dto.getIsActive());
+        }
+    }
+
+    private RoleResponseDTO mapToResponse(Role role) {
+
+        return RoleResponseDTO.builder()
+                .id(role.getId())
+                .adminId(role.getAdmin() != null ? role.getAdmin().getId() : null)
+                .adminName(role.getAdmin() != null ? role.getAdmin().getName() : null)
+                .name(role.getName())
+                .isActive(role.getIsActive())
+                .createdAt(role.getCreatedAt())
+                .updatedAt(role.getUpdatedAt())
+                .build();
     }
 }

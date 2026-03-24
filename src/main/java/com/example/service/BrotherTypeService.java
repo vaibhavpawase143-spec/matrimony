@@ -5,30 +5,17 @@ import java.util.List;
 
 public interface BrotherTypeService {
 
-    // ✅ Get all
-    List<BrotherType> getAll();
+    BrotherType create(BrotherType entity, Long adminId);
 
-    // ✅ Get active
-    List<BrotherType> getActive();
+    BrotherType getById(Long id, Long adminId);
 
-    // ✅ Get by ID
-    BrotherType getById(Long id);
+    List<BrotherType> getAll(Long adminId);
 
-    // ✅ Create
-    BrotherType create(BrotherType bt);
+    List<BrotherType> getActive(Long adminId);
 
-    // ✅ Update
-    BrotherType update(Long id, BrotherType bt);
+    BrotherType update(Long id, BrotherType entity, Long adminId);
 
-    // ✅ Delete
-    void delete(Long id);
+    void delete(Long id, Long adminId);
 
-    // ✅ Get by admin
-    List<BrotherType> getByAdmin(Long adminId);
-
-    // ✅ Get active by admin
-    List<BrotherType> getActiveByAdmin(Long adminId);
-
-    // ✅ Search by keyword
-    List<BrotherType> search(String keyword);
+    List<BrotherType> search(String keyword, Long adminId);
 }

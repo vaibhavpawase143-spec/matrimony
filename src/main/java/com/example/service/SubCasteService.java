@@ -7,26 +7,35 @@ import java.util.Optional;
 
 public interface SubCasteService {
 
-    SubCaste create(SubCaste subCaste);
+    // ✅ Create / Save
+    SubCaste save(SubCaste subCaste);
 
-    List<SubCaste> getAll();
-
-    List<SubCaste> getAllActive();
-
+    // ✅ Get by ID
     Optional<SubCaste> getById(Long id);
 
-    SubCaste update(Long id, SubCaste subCaste);
+    // 🔍 Get all
+    List<SubCaste> getAll();
 
-    void delete(Long id);
+    // 🔍 Get by admin
+    List<SubCaste> getByAdmin(Long adminId);
 
-    List<SubCaste> search(String keyword);
-
-    // ✅ Get active SubCastes by Admin
+    // 🔍 Active / Inactive
     List<SubCaste> getActiveByAdmin(Long adminId);
 
-    List<SubCaste> getByCaste(Long casteId);
+    List<SubCaste> getInactiveByAdmin(Long adminId);
 
-    List<SubCaste> getActiveByCaste(Long casteId);
+    // 🔍 Filter by caste + admin
+    List<SubCaste> getByCasteAndAdmin(Long casteId, Long adminId);
 
-    List<SubCaste> getByAdmin(Long adminId);
+    // 🔍 Active by caste + admin
+    List<SubCaste> getActiveByCasteAndAdmin(Long casteId, Long adminId);
+
+    // 🔍 Search
+    List<SubCaste> searchByAdmin(Long adminId, String keyword);
+
+    // 🔍 Find by name
+    Optional<SubCaste> getByNameAndAdmin(String name, Long adminId);
+
+    // ✅ Delete
+    void delete(Long id);
 }

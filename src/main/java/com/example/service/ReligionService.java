@@ -7,23 +7,29 @@ import java.util.Optional;
 
 public interface ReligionService {
 
-    Religion create(Religion religion);
+    // ✅ Create / Save
+    Religion save(Religion religion);
 
-    List<Religion> getAll();
-
-    List<Religion> getAllActive();
-
-    List<Religion> getAllInactive();
-
+    // ✅ Get by ID
     Optional<Religion> getById(Long id);
 
-    Religion update(Long id, Religion religion);
+    // 🔍 Get all
+    List<Religion> getAll();
 
-    void delete(Long id); // soft delete
-
-    List<Religion> search(String keyword);
-
+    // 🔍 Get by admin
     List<Religion> getByAdmin(Long adminId);
 
+    // 🔍 Active / Inactive
     List<Religion> getActiveByAdmin(Long adminId);
+
+    List<Religion> getInactiveByAdmin(Long adminId);
+
+    // 🔍 Search
+    List<Religion> searchByAdmin(Long adminId, String keyword);
+
+    // 🔍 Find by name (admin-specific)
+    Optional<Religion> getByNameAndAdmin(String name, Long adminId);
+
+    // ✅ Delete
+    void delete(Long id);
 }

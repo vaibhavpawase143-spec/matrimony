@@ -3,7 +3,6 @@ package com.example.serviceimpl;
 import com.example.model.FamilyDetails;
 import com.example.repository.FamilyDetailsRepository;
 import com.example.service.FamilyDetailsService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -12,73 +11,104 @@ import java.util.Optional;
 @Service
 public class FamilyDetailsServiceImpl implements FamilyDetailsService {
 
-    @Autowired
-    private FamilyDetailsRepository repo;
+    private final FamilyDetailsRepository familyDetailsRepository;
 
-    // ✅ Save
-    @Override
-    public FamilyDetails saveFamilyDetails(FamilyDetails familyDetails) {
-        return repo.save(familyDetails);
+    public FamilyDetailsServiceImpl(FamilyDetailsRepository familyDetailsRepository) {
+        this.familyDetailsRepository = familyDetailsRepository;
     }
 
-    // ✅ Get by profileId
+    // ✅ Create
     @Override
-    public Optional<FamilyDetails> getByProfileId(Long profileId) {
-        return repo.findByProfile_Id(profileId);
+    public FamilyDetails create(FamilyDetails familyDetails) {
+
+        // 🔥 One-to-one validation (Profile should have only one record)
+        if (familyDetailsRepository.existsByProfile_Id(familyDetails.getProfile().getId())) {
+            throw new RuntimeException("FamilyDetails already exists for this profile");
+        }
+
+        return familyDetailsRepository.save(familyDetails);
     }
 
-    // ✅ Exists by profileId
+    // 🔄 Update
     @Override
-    public boolean existsByProfileId(Long profileId) {
-        return repo.existsByProfile_Id(profileId);
+    public FamilyDetails update(Long id, FamilyDetails familyDetails) {
+
+        FamilyDetails existing = familyDetailsRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("FamilyDetails not found with id: " + id));
+
+        // ✏️ Update fields (adjust based on your model)
+        existing.setFamilyType(familyDetails.getFamilyType());
+        existing.setFamily(familyDetails.getFamily());
+        existing.setBrotherType(familyDetails.getBrotherType());
+        existing.setSisterType(familyDetails.getSisterType());
+        existing.setIsActive(familyDetails.getIsActive());
+
+        return familyDetailsRepository.save(existing);
     }
 
-    // ✅ Get by family type
+    // ❌ Delete
+    @Override
+    public void delete(Long id) {
+        FamilyDetails existing = familyDetailsRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("FamilyDetails not found with id: " + id));
+
+        familyDetailsRepository.delete(existing);
+    }
+
+    // 🔍 Get by ID
+    @Override
+    public Optional<FamilyDetails> getById(Long id) {
+        return familyDetailsRepository.findById(id);
+    }
+
+    // 🔍 Get all
+    @Override
+    public List<FamilyDetails> getAll() {
+        return familyDetailsRepository.findAll();
+    }
+
+    // 🔍 Profile-based
+    @Override
+    public Optional<FamilyDetails> getByProfile(Long profileId) {
+        return familyDetailsRepository.findByProfile_Id(profileId);
+    }
+
+    @Override
+    public boolean existsByProfile(Long profileId) {
+        return familyDetailsRepository.existsByProfile_Id(profileId);
+    }
+
+    // 🔍 FamilyType
     @Override
     public List<FamilyDetails> getByFamilyType(Long familyTypeId) {
-        return repo.findByFamilyType_Id(familyTypeId);
+        return familyDetailsRepository.findByFamilyType_Id(familyTypeId);
     }
 
-    // ✅ Get by family isActive
+    // 🔍 Family
     @Override
-    public List<FamilyDetails> getByFamilyStatus(Long FamilyStatusId) {
-        return repo.findByFamily_IsActiveTrue();
+    public List<FamilyDetails> getByFamily(Long familyId) {
+        return familyDetailsRepository.findByFamily_Id(familyId);
     }
 
-    // ✅ Get by brother type
+    @Override
+    public List<FamilyDetails> getActiveByFamily(Long familyId) {
+        return familyDetailsRepository.findByFamily_IdAndFamily_IsActiveTrue(familyId);
+    }
+
+    // 🔍 Brother / Sister
     @Override
     public List<FamilyDetails> getByBrotherType(Long brotherTypeId) {
-        return repo.findByBrotherType_Id(brotherTypeId);
+        return familyDetailsRepository.findByBrotherType_Id(brotherTypeId);
     }
 
-    // ✅ Get by sister type
     @Override
     public List<FamilyDetails> getBySisterType(Long sisterTypeId) {
-        return repo.findBySisterType_Id(sisterTypeId);
+        return familyDetailsRepository.findBySisterType_Id(sisterTypeId);
     }
 
-    // ✅ Update by profileId
+    // 🔍 Profile Active
     @Override
-    public FamilyDetails updateFamilyDetails(Long profileId, FamilyDetails updatedDetails) {
-        FamilyDetails existing = repo.findByProfile_Id(profileId)
-                .orElseThrow(() -> new RuntimeException("FamilyDetails not found for profileId: " + profileId));
-
-        // Update relationships directly
-
-        existing.setFamilyType(updatedDetails.getFamilyType());
-        existing.setBrotherType(updatedDetails.getBrotherType());
-        existing.setSisterType(updatedDetails.getSisterType());
-
-        // Update simple fields
-        existing.setFatherOccupation(updatedDetails.getFatherOccupation());
-        existing.setMotherOccupation(updatedDetails.getMotherOccupation());
-
-        return repo.save(existing);
-    }
-
-    // ✅ Delete by ID
-    @Override
-    public void deleteById(Long id) {
-        repo.deleteById(id);
+    public List<FamilyDetails> getActiveByProfile(Long profileId) {
+        return familyDetailsRepository.findByProfile_IdAndIsActiveTrue(profileId);
     }
 }

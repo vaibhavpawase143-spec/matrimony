@@ -1,80 +1,136 @@
-package com.example.controller.master; // master folder
+package com.example.controller.master;
 
+import com.example.dto.request.MotherTongueRequestDTO;
+import com.example.dto.response.MotherTongueResponseDTO;
+import com.example.model.Admin;
 import com.example.model.MotherTongue;
 import com.example.service.MotherTongueService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
+
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/mother-tongues")
+@RequiredArgsConstructor
 public class MotherTongueController {
 
-    @Autowired
-    private MotherTongueService motherTongueService;
+    private final MotherTongueService motherTongueService;
 
-    // Create new MotherTongue
+    // ✅ Create
     @PostMapping
-    public ResponseEntity<MotherTongue> create(@RequestBody MotherTongue mt) {
-        return ResponseEntity.ok(motherTongueService.create(mt));
+    public MotherTongueResponseDTO create(@Valid @RequestBody MotherTongueRequestDTO dto) {
+
+        MotherTongue entity = mapToEntity(dto);
+        MotherTongue saved = motherTongueService.create(entity);
+
+        return mapToResponse(saved);
     }
 
-    // Get all
-    @GetMapping
-    public ResponseEntity<List<MotherTongue>> getAll() {
-        return ResponseEntity.ok(motherTongueService.getAll());
-    }
-
-    // Get all active
-    @GetMapping("/active")
-    public ResponseEntity<List<MotherTongue>> getAllActive() {
-        return ResponseEntity.ok(motherTongueService.getAllActive());
-    }
-
-    // Get all inactive
-    @GetMapping("/inactive")
-    public ResponseEntity<List<MotherTongue>> getAllInactive() {
-        return ResponseEntity.ok(motherTongueService.getAllInactive());
-    }
-
-    // Get by ID
-    @GetMapping("/{id}")
-    public ResponseEntity<MotherTongue> getById(@PathVariable Long id) {
-        Optional<MotherTongue> mt = motherTongueService.getById(id);
-        return mt.map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
-    }
-
-    // Update
+    // 🔄 Update
     @PutMapping("/{id}")
-    public ResponseEntity<MotherTongue> update(@PathVariable Long id, @RequestBody MotherTongue updated) {
-        return ResponseEntity.ok(motherTongueService.update(id, updated));
+    public MotherTongueResponseDTO update(
+            @PathVariable Long id,
+            @Valid @RequestBody MotherTongueRequestDTO dto
+    ) {
+        MotherTongue entity = mapToEntity(dto);
+        MotherTongue updated = motherTongueService.update(id, entity);
+
+        return mapToResponse(updated);
     }
 
-    // Soft delete
+    // ❌ Delete
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
+    public String delete(@PathVariable Long id) {
         motherTongueService.delete(id);
-        return ResponseEntity.noContent().build();
+        return "MotherTongue deleted successfully";
     }
 
-    // Search
-    @GetMapping("/search")
-    public ResponseEntity<List<MotherTongue>> search(@RequestParam String keyword) {
-        return ResponseEntity.ok(motherTongueService.search(keyword));
+    // 🔍 Get by ID
+    @GetMapping("/{id}")
+    public MotherTongueResponseDTO getById(@PathVariable Long id) {
+        MotherTongue data = motherTongueService.getById(id)
+                .orElseThrow(() -> new RuntimeException("MotherTongue not found"));
+
+        return mapToResponse(data);
     }
 
-    // Get by admin
+    // 🔍 Get by Admin
     @GetMapping("/admin/{adminId}")
-    public ResponseEntity<List<MotherTongue>> getByAdmin(@PathVariable Long adminId) {
-        return ResponseEntity.ok(motherTongueService.getByAdmin(adminId));
+    public List<MotherTongueResponseDTO> getByAdmin(@PathVariable Long adminId) {
+        return motherTongueService.getByAdmin(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
     }
 
-    // Get active by admin
+    // 🔍 Active by Admin
     @GetMapping("/admin/{adminId}/active")
-    public ResponseEntity<List<MotherTongue>> getActiveByAdmin(@PathVariable Long adminId) {
-        return ResponseEntity.ok(motherTongueService.getActiveByAdmin(adminId));
+    public List<MotherTongueResponseDTO> getActive(@PathVariable Long adminId) {
+        return motherTongueService.getActiveByAdmin(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    // 🔍 Inactive by Admin
+    @GetMapping("/admin/{adminId}/inactive")
+    public List<MotherTongueResponseDTO> getInactive(@PathVariable Long adminId) {
+        return motherTongueService.getInactiveByAdmin(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    // 🔍 Search
+    @GetMapping("/admin/{adminId}/search")
+    public List<MotherTongueResponseDTO> search(
+            @PathVariable Long adminId,
+            @RequestParam String keyword
+    ) {
+        return motherTongueService.searchByAdmin(adminId, keyword)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    // ===============================
+    // 🔁 Mapping Methods
+    // ===============================
+
+    private MotherTongue mapToEntity(MotherTongueRequestDTO dto) {
+
+        MotherTongue entity = new MotherTongue();
+
+        entity.setName(dto.getName());
+        entity.setIsActive(dto.getIsActive());
+
+        if (dto.getAdminId() != null) {
+            Admin admin = new Admin();
+            admin.setId(dto.getAdminId());
+            entity.setAdmin(admin);
+        }
+
+        return entity;
+    }
+
+    private MotherTongueResponseDTO mapToResponse(MotherTongue entity) {
+
+        MotherTongueResponseDTO dto = new MotherTongueResponseDTO();
+
+        dto.setId(entity.getId());
+        dto.setName(entity.getName());
+        dto.setIsActive(entity.getIsActive());
+        dto.setCreatedAt(entity.getCreatedAt());
+        dto.setUpdatedAt(entity.getUpdatedAt());
+
+        if (entity.getAdmin() != null) {
+            dto.setAdminId(entity.getAdmin().getId());
+        }
+
+        return dto;
     }
 }

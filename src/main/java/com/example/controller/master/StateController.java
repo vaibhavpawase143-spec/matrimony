@@ -1,80 +1,206 @@
-package com.example.controller.master; // master folder
+package com.example.controller.master;
 
+import com.example.dto.request.StateRequestDTO;
+import com.example.dto.response.StateResponseDTO;
+import com.example.model.Admin;
+import com.example.model.Country;
 import com.example.model.State;
 import com.example.service.StateService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/states")
+@RequestMapping("/api/master/states")
+@RequiredArgsConstructor
 public class StateController {
 
-    @Autowired
-    private StateService stateService;
+    private final StateService service;
 
-    // Create new State
+    // =========================
+    // CREATE
+    // =========================
     @PostMapping
-    public ResponseEntity<State> create(@RequestBody State state) {
-        return ResponseEntity.ok(stateService.create(state));
+    public StateResponseDTO create(@Valid @RequestBody StateRequestDTO dto) {
+
+        State entity = mapToEntity(dto);
+        State saved = service.save(entity);
+
+        return mapToResponse(saved);
     }
 
-    // Get all
-    @GetMapping
-    public ResponseEntity<List<State>> getAll() {
-        return ResponseEntity.ok(stateService.getAll());
-    }
-
-    // Get all active
-    @GetMapping("/active")
-    public ResponseEntity<List<State>> getAllActive() {
-        return ResponseEntity.ok(stateService.getAllActive());
-    }
-
-    // Get by ID
-    @GetMapping("/{id}")
-    public ResponseEntity<State> getById(@PathVariable Long id) {
-        Optional<State> s = stateService.getById(id);
-        return s.map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
-    }
-
-    // Update
+    // =========================
+    // UPDATE
+    // =========================
     @PutMapping("/{id}")
-    public ResponseEntity<State> update(@PathVariable Long id, @RequestBody State updated) {
-        return ResponseEntity.ok(stateService.update(id, updated));
+    public StateResponseDTO update(
+            @PathVariable Long id,
+            @Valid @RequestBody StateRequestDTO dto) {
+
+        State existing = service.getById(id)
+                .orElseThrow(() -> new RuntimeException("State not found"));
+
+        updateEntity(existing, dto);
+
+        State updated = service.save(existing);
+
+        return mapToResponse(updated);
     }
 
-    // Delete
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        stateService.delete(id);
-        return ResponseEntity.noContent().build();
+    // =========================
+    // GET BY ID
+    // =========================
+    @GetMapping("/{id}")
+    public StateResponseDTO getById(@PathVariable Long id) {
+
+        State s = service.getById(id)
+                .orElseThrow(() -> new RuntimeException("State not found"));
+
+        return mapToResponse(s);
     }
 
-    // Search
-    @GetMapping("/search")
-    public ResponseEntity<List<State>> search(@RequestParam String keyword) {
-        return ResponseEntity.ok(stateService.search(keyword));
+    // =========================
+    // GET ALL
+    // =========================
+    @GetMapping
+    public List<StateResponseDTO> getAll() {
+
+        return service.getAll()
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
     }
 
-    // Get by Country
-    @GetMapping("/country/{countryId}")
-    public ResponseEntity<List<State>> getByCountry(@PathVariable Long countryId) {
-        return ResponseEntity.ok(stateService.getByCountry(countryId));
-    }
+    // =========================
+    // ADMIN APIs
+    // =========================
 
-    // Get active by Country
-    @GetMapping("/country/{countryId}/active")
-    public ResponseEntity<List<State>> getActiveByCountry(@PathVariable Long countryId) {
-        return ResponseEntity.ok(stateService.getActiveByCountry(countryId));
-    }
-
-    // Get by Admin
     @GetMapping("/admin/{adminId}")
-    public ResponseEntity<List<State>> getByAdmin(@PathVariable Long adminId) {
-        return ResponseEntity.ok(stateService.getByAdmin(adminId));
+    public List<StateResponseDTO> getByAdmin(@PathVariable Long adminId) {
+
+        return service.getByAdmin(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @GetMapping("/admin/{adminId}/active")
+    public List<StateResponseDTO> getActive(@PathVariable Long adminId) {
+
+        return service.getActiveByAdmin(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    // =========================
+    // COUNTRY FILTER
+    // =========================
+
+    @GetMapping("/country/{countryId}/admin/{adminId}")
+    public List<StateResponseDTO> getByCountryAndAdmin(
+            @PathVariable Long countryId,
+            @PathVariable Long adminId) {
+
+        return service.getByCountryAndAdmin(countryId, adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @GetMapping("/country/{countryId}/admin/{adminId}/active")
+    public List<StateResponseDTO> getActiveByCountryAndAdmin(
+            @PathVariable Long countryId,
+            @PathVariable Long adminId) {
+
+        return service.getActiveByCountryAndAdmin(countryId, adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    // =========================
+    // SEARCH
+    // =========================
+    @GetMapping("/admin/{adminId}/search")
+    public List<StateResponseDTO> search(
+            @PathVariable Long adminId,
+            @RequestParam String keyword) {
+
+        return service.searchByAdmin(adminId, keyword)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    // =========================
+    // DELETE
+    // =========================
+    @DeleteMapping("/{id}")
+    public String delete(@PathVariable Long id) {
+        service.delete(id);
+        return "State deleted successfully";
+    }
+
+    // =========================
+    // 🔥 MAPPING
+    // =========================
+
+    private State mapToEntity(StateRequestDTO dto) {
+
+        State s = new State();
+
+        Admin admin = new Admin();
+        admin.setId(dto.getAdminId());
+        s.setAdmin(admin);
+
+        Country country = new Country();
+        country.setId(dto.getCountryId());
+        s.setCountry(country);
+
+        s.setName(dto.getName());
+
+        if (dto.getIsActive() != null) {
+            s.setIsActive(dto.getIsActive());
+        }
+
+        return s;
+    }
+
+    private void updateEntity(State s, StateRequestDTO dto) {
+
+        // 🚫 DO NOT update admin
+
+        if (dto.getCountryId() != null) {
+            Country country = new Country();
+            country.setId(dto.getCountryId());
+            s.setCountry(country);
+        }
+
+        if (dto.getName() != null) {
+            s.setName(dto.getName());
+        }
+
+        if (dto.getIsActive() != null) {
+            s.setIsActive(dto.getIsActive());
+        }
+    }
+
+    private StateResponseDTO mapToResponse(State s) {
+
+        return StateResponseDTO.builder()
+                .id(s.getId())
+                .adminId(s.getAdmin() != null ? s.getAdmin().getId() : null)
+                .adminName(s.getAdmin() != null ? s.getAdmin().getName() : null)
+                .countryId(s.getCountry() != null ? s.getCountry().getId() : null)
+                .countryName(s.getCountry() != null ? s.getCountry().getName() : null)
+                .name(s.getName())
+                .isActive(s.getIsActive())
+                .createdAt(s.getCreatedAt())
+                .updatedAt(s.getUpdatedAt())
+                .build();
     }
 }

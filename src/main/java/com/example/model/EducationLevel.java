@@ -10,7 +10,8 @@ import java.time.LocalDateTime;
                 @UniqueConstraint(columnNames = {"name", "admin_id"})
         },
         indexes = {
-                @Index(name = "idx_education_level_name", columnList = "name")
+                @Index(name = "idx_education_level_name", columnList = "name"),
+                @Index(name = "idx_education_level_active", columnList = "is_active")
         }
 )
 public class EducationLevel {
@@ -23,16 +24,18 @@ public class EducationLevel {
     @JoinColumn(name = "admin_id")
     private Admin admin;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 100)
     private String name;
 
-    @Column(nullable = false)
+    @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    // Lifecycle hooks for timestamps
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
@@ -44,9 +47,9 @@ public class EducationLevel {
         updatedAt = LocalDateTime.now();
     }
 
-    // Getters and Setters
+    // Getters & Setters
+
     public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
 
     public Admin getAdmin() { return admin; }
     public void setAdmin(Admin admin) { this.admin = admin; }
@@ -58,8 +61,6 @@ public class EducationLevel {
     public void setIsActive(Boolean isActive) { this.isActive = isActive; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
     public LocalDateTime getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 }

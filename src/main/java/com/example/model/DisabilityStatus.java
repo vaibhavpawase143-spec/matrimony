@@ -1,12 +1,17 @@
 package com.example.model;
 
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(
-        name = "disability_isActive",
+        name = "disability_statuses",
         uniqueConstraints = {
                 @UniqueConstraint(columnNames = {"value", "admin_id"})
+        },
+        indexes = {
+                @Index(name = "idx_disability_admin", columnList = "admin_id"),
+                @Index(name = "idx_disability_active", columnList = "is_active")
         }
 )
 public class DisabilityStatus {
@@ -19,17 +24,35 @@ public class DisabilityStatus {
     @JoinColumn(name = "admin_id")
     private Admin admin;
 
+    @Column(nullable = false, length = 100)
     private String value;
 
+    @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 
-    // Getters and Setters
-    public Long getId() {
-        return id;
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    public DisabilityStatus() {}
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
+
+    // --- Getters & Setters ---
+
+    public Long getId() {
+        return id;
     }
 
     public Admin getAdmin() {
@@ -48,11 +71,19 @@ public class DisabilityStatus {
         this.value = value;
     }
 
-    public Boolean getisActive() {
+    public Boolean getIsActive() {   // ✅ FIXED
         return isActive;
     }
 
-    public void setisActive(Boolean isActive) {
+    public void setIsActive(Boolean isActive) {
         this.isActive = isActive;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
     }
 }

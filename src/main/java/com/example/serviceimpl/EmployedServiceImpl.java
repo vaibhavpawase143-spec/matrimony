@@ -3,79 +3,125 @@ package com.example.serviceimpl;
 import com.example.model.Employed;
 import com.example.repository.EmployedRepository;
 import com.example.service.EmployedService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class EmployedServiceImpl implements EmployedService {
 
-    @Autowired
-    private EmployedRepository repo;
+    private final EmployedRepository employedRepository;
 
-    // ✅ Get all
-    @Override
-    public List<Employed> getAll() {
-        return repo.findAll();
-    }
-
-    // ✅ Get active
-    @Override
-    public List<Employed> getActive() {
-        return repo.findByIsActiveTrue();
-    }
-
-    // ✅ Get by ID
-    @Override
-    public Employed getById(Long id) {
-        return repo.findById(id)
-                .orElseThrow(() -> new RuntimeException("Employed not found with id: " + id));
+    public EmployedServiceImpl(EmployedRepository employedRepository) {
+        this.employedRepository = employedRepository;
     }
 
     // ✅ Create
     @Override
-    public Employed create(Employed emp) {
-        emp.setisActive(true);   // only needed field
-        return repo.save(emp);
+    public Employed create(Employed employed) {
+
+        if (employedRepository.existsByNameIgnoreCase(employed.getName())) {
+            throw new RuntimeException("Employed already exists: " + employed.getName());
+        }
+
+        return employedRepository.save(employed);
     }
 
-    // ✅ Update
+    // 🔄 Update
     @Override
-    public Employed update(Long id, Employed updated) {
-        Employed existing = getById(id);
+    public Employed update(Long id, Employed employed) {
 
-        existing.setName(updated.getName());
-        existing.setisActive(updated.getisActive());
+        Employed existing = employedRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Employed not found with id: " + id));
 
-        return repo.save(existing);
+        employedRepository.findByNameIgnoreCase(employed.getName())
+                .ifPresent(e -> {
+                    if (!e.getId().equals(id)) {
+                        throw new RuntimeException("Employed already exists: " + employed.getName());
+                    }
+                });
+
+        // ✏️ Update fields
+        existing.setName(employed.getName());
+        existing.setIsActive(employed.getIsActive());
+
+        return employedRepository.save(existing);
     }
 
-    // ✅ Delete (Soft delete)
+    // ❌ Delete
     @Override
     public void delete(Long id) {
-        Employed existing = getById(id);
+        Employed existing = employedRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Employed not found with id: " + id));
 
-        existing.setisActive(false);   // deactivate
-        repo.save(existing);
+        employedRepository.delete(existing);
     }
 
-    // ✅ Get by admin
+    // 🔍 Get by ID
+    @Override
+    public Optional<Employed> getById(Long id) {
+        return employedRepository.findById(id);
+    }
+
+    // 🔍 Get all
+    @Override
+    public List<Employed> getAll() {
+        return employedRepository.findAll();
+    }
+
+    // 🔍 Find by name
+    @Override
+    public Optional<Employed> getByName(String name) {
+        return employedRepository.findByName(name);
+    }
+
+    @Override
+    public Optional<Employed> getByNameIgnoreCase(String name) {
+        return employedRepository.findByNameIgnoreCase(name);
+    }
+
+    // ✅ Duplicate check
+    @Override
+    public boolean existsByName(String name) {
+        return employedRepository.existsByName(name);
+    }
+
+    @Override
+    public boolean existsByNameIgnoreCase(String name) {
+        return employedRepository.existsByNameIgnoreCase(name);
+    }
+
+    // 🔍 Active / Inactive
+    @Override
+    public List<Employed> getActive() {
+        return employedRepository.findByIsActiveTrue();
+    }
+
+    @Override
+    public List<Employed> getInactive() {
+        return employedRepository.findByIsActiveFalse();
+    }
+
+    // 🔍 Admin-based
     @Override
     public List<Employed> getByAdmin(Long adminId) {
-        return repo.findByAdminId(adminId);
+        return employedRepository.findByAdminId(adminId);
     }
 
-    // ✅ Get active by admin
     @Override
     public List<Employed> getActiveByAdmin(Long adminId) {
-        return repo.findByAdminIdAndIsActiveTrue(adminId);
+        return employedRepository.findByAdminIdAndIsActiveTrue(adminId);
     }
 
-    // ✅ Search
+    // 🔍 Search
     @Override
     public List<Employed> search(String keyword) {
-        return repo.findByNameContainingIgnoreCase(keyword);
+        return employedRepository.findByNameContainingIgnoreCase(keyword);
+    }
+
+    @Override
+    public List<Employed> searchByAdmin(Long adminId, String keyword) {
+        return employedRepository.findByAdminIdAndNameContainingIgnoreCase(adminId, keyword);
     }
 }

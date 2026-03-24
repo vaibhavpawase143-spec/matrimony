@@ -7,25 +7,39 @@ import java.util.Optional;
 
 public interface ManglikStatusService {
 
-    ManglikStatus save(ManglikStatus ManglikStatus);
+    // 🔍 Basic CRUD
+    ManglikStatus create(ManglikStatus manglikStatus);
+
+    ManglikStatus update(Long id, ManglikStatus manglikStatus);
+
+    void delete(Long id);
 
     Optional<ManglikStatus> getById(Long id);
 
-    Optional<ManglikStatus> getByName(String name);
-
     List<ManglikStatus> getAll();
 
-    List<ManglikStatus> getAllActive();
+    // 🔍 Find by name
+    Optional<ManglikStatus> getByName(String name);
 
-    List<ManglikStatus> getAllInactive();
+    Optional<ManglikStatus> getByNameIgnoreCase(String name);
 
+    // ✅ Duplicate check
+    boolean existsByName(String name);
+
+    boolean existsByNameIgnoreCase(String name);
+
+    // 🔍 Active / Inactive
+    List<ManglikStatus> getActive();
+
+    List<ManglikStatus> getInactive();
+
+    // 🔍 Admin-based
     List<ManglikStatus> getByAdmin(Long adminId);
 
     List<ManglikStatus> getActiveByAdmin(Long adminId);
 
-    List<ManglikStatus> searchByName(String keyword);
+    // 🔍 Search
+    List<ManglikStatus> search(String keyword);
 
-    ManglikStatus update(Long id, ManglikStatus updated);
-
-    void delete(Long id); // soft delete
+    List<ManglikStatus> searchByAdmin(Long adminId, String keyword);
 }

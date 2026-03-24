@@ -1,133 +1,95 @@
 package com.example.serviceimpl;
 
 import com.example.model.Interest;
-import com.example.model.User;
 import com.example.repository.InterestRepository;
-import com.example.repository.UserRepository;
 import com.example.service.InterestService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class InterestServiceImpl implements InterestService {
 
-    @Autowired
-    private InterestRepository repo;
+    private final InterestRepository interestRepository;
 
-    @Autowired
-    private UserRepository userRepo;
-
-    // ✅ Create new interest
-    @Override
-    public Interest create(Long senderId, Long receiverId) {
-        User senderUser = userRepo.findById(senderId)
-                .orElseThrow(() -> new RuntimeException("Sender not found with id: " + senderId));
-
-        User receiverUser = userRepo.findById(receiverId)
-                .orElseThrow(() -> new RuntimeException("Receiver not found with id: " + receiverId));
-
-        Interest interest = new Interest();
-        interest.setSender(senderUser);
-        interest.setReceiver(receiverUser);
-        interest.setisActive("PENDING");
-        interest.setCreatedAt(LocalDateTime.now());
-
-        return repo.save(interest);
+    public InterestServiceImpl(InterestRepository interestRepository) {
+        this.interestRepository = interestRepository;
     }
 
-    // ✅ Get all interests
+    // ✅ Send Interest
     @Override
-    public List<Interest> getAll() {
-        return repo.findAll();
+    public Interest sendInterest(Interest interest) {
+
+        Long senderId = interest.getSender().getId();
+        Long receiverId = interest.getReceiver().getId();
+
+        if (senderId.equals(receiverId)) {
+            throw new RuntimeException("You cannot send interest to yourself");
+        }
+
+        if (interestRepository.findBySender_IdAndReceiver_Id(senderId, receiverId).isPresent()) {
+            throw new RuntimeException("Interest already sent");
+        }
+
+        interest.setStatus("PENDING");
+
+        return interestRepository.save(interest);
     }
 
-    // ✅ Get by ID
+    // 🔄 Accept / Reject
     @Override
-    public Interest getById(Long id) {
-        return repo.findById(id)
+    public Interest updateStatus(Long id, String status) {
+
+        Interest existing = interestRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Interest not found with id: " + id));
+
+        existing.setStatus(status);
+        existing.setIsActive(false);
+
+        return interestRepository.save(existing);
     }
 
-    // ✅ Get by sender
-    @Override
-    public List<Interest> getBySender(Long senderId) {
-        return repo.findBySender_Id(senderId);
-    }
-
-    // ✅ Get by receiver
-    @Override
-    public List<Interest> getByReceiver(Long receiverId) {
-        return repo.findByReceiver_Id(receiverId);
-    }
-
-    // ✅ Update status
-    @Override
-    public Interest updateisActive(Long id, String isActive) {
-        Interest existing = getById(id);
-        existing.setisActive(isActive);
-        return repo.save(existing);
-    }
-
-    // ✅ Delete interest
     @Override
     public void delete(Long id) {
-        Interest existing = getById(id);
-        repo.delete(existing);
-    }
-
-    // ✅ Send interest (alias)
-    @Override
-    public Interest sendInterest(Long senderId, Long receiverId) {
-        return create(senderId, receiverId);
-    }
-
-    // ✅ Get sent interests
-    @Override
-    public List<Interest> getSentInterests(Long senderId) {
-        return repo.findBySender_Id(senderId);
-    }
-
-    // ✅ Get received interests
-    @Override
-    public List<Interest> getReceivedInterests(Long receiverId) {
-        return repo.findByReceiver_Id(receiverId);
-    }
-
-    // ✅ Get pending received interests
-    @Override
-    public List<Interest> getReceivedPending(Long receiverId) {
-        return repo.findByReceiver_IdAndIsActiveIgnoreCase(receiverId, "PENDING");
-    }
-
-    // ✅ Accept interest
-    @Override
-    public Interest acceptInterest(Long senderId, Long receiverId) {
-        Interest interest = repo.findBySender_IdAndReceiver_Id(senderId, receiverId)
+        Interest existing = interestRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Interest not found"));
 
-        interest.setisActive("ACCEPTED");
-        return repo.save(interest);
+        interestRepository.delete(existing);
     }
 
-    // ✅ Reject interest
     @Override
-    public Interest rejectInterest(Long senderId, Long receiverId) {
-        Interest interest = repo.findBySender_IdAndReceiver_Id(senderId, receiverId)
-                .orElseThrow(() -> new RuntimeException("Interest not found"));
-
-        interest.setisActive("REJECTED");
-        return repo.save(interest);
+    public Optional<Interest> getById(Long id) {
+        return interestRepository.findById(id);
     }
 
-    // ✅ Cancel interest
     @Override
-    public void cancelInterest(Long senderId, Long receiverId) {
-        Interest interest = repo.findBySender_IdAndReceiver_Id(senderId, receiverId)
-                .orElseThrow(() -> new RuntimeException("Interest not found"));
+    public List<Interest> getBySender(Long senderId) {
+        return interestRepository.findBySender_Id(senderId);
+    }
 
-        repo.delete(interest);
+    @Override
+    public List<Interest> getBySenderAndStatus(Long senderId, String status) {
+        return interestRepository.findBySender_IdAndStatusIgnoreCase(senderId, status);
+    }
+
+    @Override
+    public List<Interest> getByReceiver(Long receiverId) {
+        return interestRepository.findByReceiver_Id(receiverId);
+    }
+
+    @Override
+    public List<Interest> getByReceiverAndStatus(Long receiverId, String status) {
+        return interestRepository.findByReceiver_IdAndStatusIgnoreCase(receiverId, status);
+    }
+
+    @Override
+    public Optional<Interest> getBySenderAndReceiver(Long senderId, Long receiverId) {
+        return interestRepository.findBySender_IdAndReceiver_Id(senderId, receiverId);
+    }
+
+    @Override
+    public List<Interest> getByStatus(String status) {
+        return interestRepository.findByStatusIgnoreCase(status);
     }
 }

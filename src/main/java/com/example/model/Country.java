@@ -11,7 +11,8 @@ import java.util.List;
                 @UniqueConstraint(columnNames = {"name"})
         },
         indexes = {
-                @Index(name = "idx_country_name", columnList = "name")
+                @Index(name = "idx_country_name", columnList = "name"),
+                @Index(name = "idx_country_active", columnList = "is_active")
         }
 )
 public class Country {
@@ -24,13 +25,13 @@ public class Country {
     @JoinColumn(name = "admin_id")
     private Admin admin;
 
-    @Column(nullable = false, length = 120, unique = true)
+    @Column(nullable = false, length = 120)
     private String name;
 
-    @Column(nullable = false)
+    @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 
-    @OneToMany(mappedBy = "country", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "country", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<State> states;
 
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -58,8 +59,8 @@ public class Country {
     }
 
     // Getters and Setters
+
     public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
 
     public Admin getAdmin() { return admin; }
     public void setAdmin(Admin admin) { this.admin = admin; }
@@ -74,8 +75,10 @@ public class Country {
     public void setStates(List<State> states) { this.states = states; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
     public LocalDateTime getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
 }

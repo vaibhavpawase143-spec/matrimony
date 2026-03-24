@@ -3,98 +3,125 @@ package com.example.serviceimpl;
 import com.example.model.FamilyType;
 import com.example.repository.FamilyTypeRepository;
 import com.example.service.FamilyTypeService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 @Service
 public class FamilyTypeServiceImpl implements FamilyTypeService {
 
-    @Autowired
-    private FamilyTypeRepository repo;
+    private final FamilyTypeRepository familyTypeRepository;
 
-    // ✅ Save
-    @Override
-    public FamilyType save(FamilyType familyType) {
-        familyType.setCreatedAt(LocalDateTime.now());
-        familyType.setUpdatedAt(LocalDateTime.now());
-        familyType.setisActive(true);
-        return repo.save(familyType);
+    public FamilyTypeServiceImpl(FamilyTypeRepository familyTypeRepository) {
+        this.familyTypeRepository = familyTypeRepository;
     }
 
-    // ✅ Get by ID
+    // ✅ Create
     @Override
-    public Optional<FamilyType> getById(Long id) {
-        return repo.findById(id);
+    public FamilyType create(FamilyType familyType) {
+
+        if (familyTypeRepository.existsByNameIgnoreCase(familyType.getName())) {
+            throw new RuntimeException("FamilyType already exists: " + familyType.getName());
+        }
+
+        return familyTypeRepository.save(familyType);
     }
 
-    // ✅ Get by Name
+    // 🔄 Update
     @Override
-    public Optional<FamilyType> getByName(String name) {
-        return repo.findByNameIgnoreCase(name);
-    }
+    public FamilyType update(Long id, FamilyType familyType) {
 
-    // ✅ Get all
-    @Override
-    public List<FamilyType> getAll() {
-        return repo.findAll();
-    }
-
-    // ✅ Get all active
-    @Override
-    public List<FamilyType> getAllActive() {
-        return repo.findByIsActiveTrue();   // ✅ fixed
-    }
-
-    // ✅ Get all inactive
-    @Override
-    public List<FamilyType> getAllInactive() {
-        return repo.findByIsActiveFalse();  // ✅ fixed
-    }
-
-    // ✅ Get by admin
-    @Override
-    public List<FamilyType> getByAdmin(Long adminId) {
-        return repo.findByAdminId(adminId);
-    }
-
-    // ✅ Get active by admin
-    @Override
-    public List<FamilyType> getActiveByAdmin(Long adminId) {
-       return repo.findByAdminIdAndIsActiveTrue(adminId);  // ✅ fixed
-    }
-
-    // ✅ Search by name
-    @Override
-    public List<FamilyType> searchByName(String keyword) {
-        return repo.findByNameContainingIgnoreCase(keyword);
-    }
-
-    // ✅ Update
-    @Override
-    public FamilyType update(Long id, FamilyType updated) {
-        FamilyType existing = repo.findById(id)
+        FamilyType existing = familyTypeRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("FamilyType not found with id: " + id));
 
-        existing.setName(updated.getName());
-        existing.setisActive(updated.getisActive());   // ✅ fixed
-        existing.setUpdatedAt(LocalDateTime.now());
+        familyTypeRepository.findByNameIgnoreCase(familyType.getName())
+                .ifPresent(f -> {
+                    if (!f.getId().equals(id)) {
+                        throw new RuntimeException("FamilyType already exists: " + familyType.getName());
+                    }
+                });
 
-        return repo.save(existing);
+        // ✏️ Update fields
+        existing.setName(familyType.getName());
+        existing.setIsActive(familyType.getIsActive());
+
+        return familyTypeRepository.save(existing);
     }
 
-    // ✅ Soft Delete
+    // ❌ Delete
     @Override
     public void delete(Long id) {
-        FamilyType existing = repo.findById(id)
+        FamilyType existing = familyTypeRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("FamilyType not found with id: " + id));
 
-        existing.setisActive(false);   // ✅ fixed
-        existing.setUpdatedAt(LocalDateTime.now());
+        familyTypeRepository.delete(existing);
+    }
 
-        repo.save(existing);
+    // 🔍 Get by ID
+    @Override
+    public Optional<FamilyType> getById(Long id) {
+        return familyTypeRepository.findById(id);
+    }
+
+    // 🔍 Get all
+    @Override
+    public List<FamilyType> getAll() {
+        return familyTypeRepository.findAll();
+    }
+
+    // 🔍 Find by name
+    @Override
+    public Optional<FamilyType> getByName(String name) {
+        return familyTypeRepository.findByName(name);
+    }
+
+    @Override
+    public Optional<FamilyType> getByNameIgnoreCase(String name) {
+        return familyTypeRepository.findByNameIgnoreCase(name);
+    }
+
+    // ✅ Duplicate check
+    @Override
+    public boolean existsByName(String name) {
+        return familyTypeRepository.existsByName(name);
+    }
+
+    @Override
+    public boolean existsByNameIgnoreCase(String name) {
+        return familyTypeRepository.existsByNameIgnoreCase(name);
+    }
+
+    // 🔍 Active / Inactive
+    @Override
+    public List<FamilyType> getActive() {
+        return familyTypeRepository.findByIsActiveTrue();
+    }
+
+    @Override
+    public List<FamilyType> getInactive() {
+        return familyTypeRepository.findByIsActiveFalse();
+    }
+
+    // 🔍 Admin-based
+    @Override
+    public List<FamilyType> getByAdmin(Long adminId) {
+        return familyTypeRepository.findByAdminId(adminId);
+    }
+
+    @Override
+    public List<FamilyType> getActiveByAdmin(Long adminId) {
+        return familyTypeRepository.findByAdminIdAndIsActiveTrue(adminId);
+    }
+
+    // 🔍 Search
+    @Override
+    public List<FamilyType> search(String keyword) {
+        return familyTypeRepository.findByNameContainingIgnoreCase(keyword);
+    }
+
+    @Override
+    public List<FamilyType> searchByAdmin(Long adminId, String keyword) {
+        return familyTypeRepository.findByAdminIdAndNameContainingIgnoreCase(adminId, keyword);
     }
 }

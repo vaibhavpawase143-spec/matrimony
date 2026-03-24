@@ -7,23 +7,33 @@ import java.util.Optional;
 
 public interface StateService {
 
-    State create(State state);
+    // ✅ Create / Save
+    State save(State state);
 
-    List<State> getAll();
-
-    List<State> getAllActive();
-
+    // ✅ Get by ID
     Optional<State> getById(Long id);
 
-    State update(Long id, State state);
+    // 🔍 Get all
+    List<State> getAll();
 
-    void delete(Long id); // soft delete
-
-    List<State> search(String keyword);
-
-    List<State> getByCountry(Long countryId);
-
-    List<State> getActiveByCountry(Long countryId);
-
+    // 🔍 Get by admin
     List<State> getByAdmin(Long adminId);
+
+    // 🔍 Active states by admin
+    List<State> getActiveByAdmin(Long adminId);
+
+    // 🔍 Get by country + admin
+    List<State> getByCountryAndAdmin(Long countryId, Long adminId);
+
+    // 🔍 Active by country + admin
+    List<State> getActiveByCountryAndAdmin(Long countryId, Long adminId);
+
+    // 🔍 Search
+    List<State> searchByAdmin(Long adminId, String keyword);
+
+    // 🔍 Find by name (admin-specific)
+    Optional<State> getByNameAndAdmin(String name, Long adminId);
+
+    // ✅ Delete
+    void delete(Long id);
 }

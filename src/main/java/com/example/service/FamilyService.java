@@ -7,25 +7,28 @@ import java.util.Optional;
 
 public interface FamilyService {
 
-    Family save(Family family);
+    Family create(Family family);
+
+    Family update(Long id, Family family);
+
+    void delete(Long id);
 
     Optional<Family> getById(Long id);
 
-    Optional<Family> getByName(String name);
-
     List<Family> getAll();
 
-    List<Family> getAllActive();
+    Optional<Family> getByName(String name);
+    Optional<Family> getByNameIgnoreCase(String name);
 
-    List<Family> getAllInactive();
+    boolean existsByName(String name);
+    boolean existsByNameIgnoreCase(String name);
+
+    List<Family> getActive();
+    List<Family> getInactive();
 
     List<Family> getByAdmin(Long adminId);
-
     List<Family> getActiveByAdmin(Long adminId);
 
-    List<Family> searchByName(String keyword);
-
-    Family update(Long id, Family updated);
-
-    void delete(Long id);
+    List<Family> search(String keyword);
+    List<Family> searchByAdmin(Long adminId, String keyword);
 }

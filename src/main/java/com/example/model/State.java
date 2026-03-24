@@ -7,11 +7,11 @@ import java.util.List;
 @Entity
 @Table(
         name = "states",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"country_id", "name"}),
         indexes = {
                 @Index(name = "idx_state_name", columnList = "name"),
                 @Index(name = "idx_state_country", columnList = "country_id")
-        },
-        uniqueConstraints = @UniqueConstraint(columnNames = {"country_id", "name"})
+        }
 )
 public class State {
 
@@ -26,14 +26,15 @@ public class State {
     @Column(nullable = false, length = 120)
     private String name;
 
-    @Column(nullable = false)
+    @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "country_id", nullable = false)
     private Country country;
 
-    @OneToMany(mappedBy = "state", cascade = CascadeType.ALL)
+    // ⚠️ Avoid heavy loading (keep lazy, no cascade ALL)
+    @OneToMany(mappedBy = "state", fetch = FetchType.LAZY)
     private List<City> cities;
 
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -50,39 +51,80 @@ public class State {
         this.country = country;
     }
 
+    // 🔥 Lifecycle hooks (improved)
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+
+        if (this.isActive == null) {
+            this.isActive = true;
+        }
     }
 
     @PreUpdate
     protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
     }
 
-    // Getters and Setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    // ===== Getters =====
 
-    public Admin getAdmin() { return admin; }
-    public void setAdmin(Admin admin) { this.admin = admin; }
+    public Long getId() {
+        return id;
+    }
 
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
+    public Admin getAdmin() {
+        return admin;
+    }
 
-    public Boolean getIsActive() { return isActive; }
-    public void setIsActive(Boolean isActive) { this.isActive = isActive; }
+    public String getName() {
+        return name;
+    }
 
-    public Country getCountry() { return country; }
-    public void setCountry(Country country) { this.country = country; }
+    public Boolean getIsActive() {
+        return isActive;
+    }
 
-    public List<City> getCities() { return cities; }
-    public void setCities(List<City> cities) { this.cities = cities; }
+    public Country getCountry() {
+        return country;
+    }
 
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public List<City> getCities() {
+        return cities;
+    }
 
-    public LocalDateTime getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    // ===== Setters =====
+
+    public void setAdmin(Admin admin) {
+        this.admin = admin;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setIsActive(Boolean isActive) {
+        this.isActive = isActive;
+    }
+
+    public void setCountry(Country country) {
+        this.country = country;
+    }
+
+    public void setCities(List<City> cities) {
+        this.cities = cities;
+    }
+
+
+    public void setId(Long stateId) {
+        this.id = stateId;
+    }
 }

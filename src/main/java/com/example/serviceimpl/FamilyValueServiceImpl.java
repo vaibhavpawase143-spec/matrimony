@@ -3,98 +3,125 @@ package com.example.serviceimpl;
 import com.example.model.FamilyValue;
 import com.example.repository.FamilyValueRepository;
 import com.example.service.FamilyValueService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 @Service
 public class FamilyValueServiceImpl implements FamilyValueService {
 
-    @Autowired
-    private FamilyValueRepository repo;
+    private final FamilyValueRepository familyValueRepository;
 
-    // ✅ Save
-    @Override
-    public FamilyValue save(FamilyValue familyValue) {
-        familyValue.setCreatedAt(LocalDateTime.now());
-        familyValue.setUpdatedAt(LocalDateTime.now());
-        familyValue.setIsActive(true);
-        return repo.save(familyValue);
+    public FamilyValueServiceImpl(FamilyValueRepository familyValueRepository) {
+        this.familyValueRepository = familyValueRepository;
     }
 
-    // ✅ Get by ID
+    // ✅ Create
     @Override
-    public Optional<FamilyValue> getById(Long id) {
-        return repo.findById(id);
+    public FamilyValue create(FamilyValue familyValue) {
+
+        if (familyValueRepository.existsByNameIgnoreCase(familyValue.getName())) {
+            throw new RuntimeException("FamilyValue already exists: " + familyValue.getName());
+        }
+
+        return familyValueRepository.save(familyValue);
     }
 
-    // ✅ Get by Name
+    // 🔄 Update
     @Override
-    public Optional<FamilyValue> getByName(String name) {
-        return repo.findByNameIgnoreCase(name);
-    }
+    public FamilyValue update(Long id, FamilyValue familyValue) {
 
-    // ✅ Get all
-    @Override
-    public List<FamilyValue> getAll() {
-        return repo.findAll();
-    }
-
-    // ✅ Get all active
-    @Override
-    public List<FamilyValue> getAllActive() {
-        return repo.findByIsActiveTrue();
-    }
-
-    // ✅ Get all inactive
-    @Override
-    public List<FamilyValue> getAllInactive() {
-        return repo.findByIsActiveFalse();
-    }
-
-    // ✅ Get by admin
-    @Override
-    public List<FamilyValue> getByAdmin(Long adminId) {
-        return repo.findByAdminId(adminId);
-    }
-
-    // ✅ Get active by admin
-    @Override
-    public List<FamilyValue> getActiveByAdmin(Long adminId) {
-        return repo.findByAdminIdAndIsActiveTrue(adminId);
-    }
-
-    // ✅ Search by name
-    @Override
-    public List<FamilyValue> searchByName(String keyword) {
-        return repo.findByNameContainingIgnoreCase(keyword);
-    }
-
-    // ✅ Update
-    @Override
-    public FamilyValue update(Long id, FamilyValue updated) {
-        FamilyValue existing = repo.findById(id)
+        FamilyValue existing = familyValueRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("FamilyValue not found with id: " + id));
 
-        existing.setName(updated.getName());
-        existing.setIsActive(updated.getIsActive());
-        existing.setUpdatedAt(LocalDateTime.now());
+        familyValueRepository.findByNameIgnoreCase(familyValue.getName())
+                .ifPresent(f -> {
+                    if (!f.getId().equals(id)) {
+                        throw new RuntimeException("FamilyValue already exists: " + familyValue.getName());
+                    }
+                });
 
-        return repo.save(existing);
+        // ✏️ Update fields
+        existing.setName(familyValue.getName());
+        existing.setIsActive(familyValue.getIsActive());
+
+        return familyValueRepository.save(existing);
     }
 
-    // ✅ Soft Delete
+    // ❌ Delete
     @Override
     public void delete(Long id) {
-        FamilyValue existing = repo.findById(id)
+        FamilyValue existing = familyValueRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("FamilyValue not found with id: " + id));
 
-        existing.setIsActive(false);
-        existing.setUpdatedAt(LocalDateTime.now());
+        familyValueRepository.delete(existing);
+    }
 
-        repo.save(existing);
+    // 🔍 Get by ID
+    @Override
+    public Optional<FamilyValue> getById(Long id) {
+        return familyValueRepository.findById(id);
+    }
+
+    // 🔍 Get all
+    @Override
+    public List<FamilyValue> getAll() {
+        return familyValueRepository.findAll();
+    }
+
+    // 🔍 Find by name
+    @Override
+    public Optional<FamilyValue> getByName(String name) {
+        return familyValueRepository.findByName(name);
+    }
+
+    @Override
+    public Optional<FamilyValue> getByNameIgnoreCase(String name) {
+        return familyValueRepository.findByNameIgnoreCase(name);
+    }
+
+    // ✅ Duplicate check
+    @Override
+    public boolean existsByName(String name) {
+        return familyValueRepository.existsByName(name);
+    }
+
+    @Override
+    public boolean existsByNameIgnoreCase(String name) {
+        return familyValueRepository.existsByNameIgnoreCase(name);
+    }
+
+    // 🔍 Active / Inactive
+    @Override
+    public List<FamilyValue> getActive() {
+        return familyValueRepository.findByIsActiveTrue();
+    }
+
+    @Override
+    public List<FamilyValue> getInactive() {
+        return familyValueRepository.findByIsActiveFalse();
+    }
+
+    // 🔍 Admin-based
+    @Override
+    public List<FamilyValue> getByAdmin(Long adminId) {
+        return familyValueRepository.findByAdminId(adminId);
+    }
+
+    @Override
+    public List<FamilyValue> getActiveByAdmin(Long adminId) {
+        return familyValueRepository.findByAdminIdAndIsActiveTrue(adminId);
+    }
+
+    // 🔍 Search
+    @Override
+    public List<FamilyValue> search(String keyword) {
+        return familyValueRepository.findByNameContainingIgnoreCase(keyword);
+    }
+
+    @Override
+    public List<FamilyValue> searchByAdmin(Long adminId, String keyword) {
+        return familyValueRepository.findByAdminIdAndNameContainingIgnoreCase(adminId, keyword);
     }
 }

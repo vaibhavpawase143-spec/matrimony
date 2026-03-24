@@ -1,72 +1,129 @@
 package com.example.controller.master;
 
+import com.example.dto.request.CountryRequestDTO;
+import com.example.dto.response.CountryResponseDTO;
+import com.example.model.Admin;
 import com.example.model.Country;
 import com.example.service.CountryService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/master/countries")
+@RequestMapping("/api/countries")
+@RequiredArgsConstructor
 public class CountryController {
 
-    private final CountryService service;
+    private final CountryService countryService;
 
-    public CountryController(CountryService service) {
-        this.service = service;
-    }
-
-    // Get all countries
-    @GetMapping
-    public List<Country> getAll() {
-        return service.getAll();
-    }
-
-    // Get active countries
-    @GetMapping("/active")
-    public List<Country> getActive() {
-        return service.getActive();
-    }
-
-    // Get country by ID
-    @GetMapping("/{id}")
-    public Country getById(@PathVariable Long id) {
-        return service.getById(id);
-    }
-
-    // Create country
+    // ================= CREATE =================
     @PostMapping
-    public Country create(@RequestBody Country country) {
-        return service.create(country);
+    public CountryResponseDTO create(@Valid @RequestBody CountryRequestDTO dto) {
+
+        Country saved = countryService.create(mapToEntity(dto));
+        return mapToResponse(saved);
     }
 
-    // Update country
-    @PutMapping("/{id}")
-    public Country update(@PathVariable Long id, @RequestBody Country country) {
-        return service.update(id, country);
+    // ================= GET BY ID =================
+    @GetMapping("/{id}")
+    public CountryResponseDTO getById(@PathVariable Long id) {
+
+        return countryService.getById(id)
+                .map(this::mapToResponse)
+                .orElseThrow(() -> new RuntimeException("Country not found"));
     }
 
-    // Delete country
-    @DeleteMapping("/{id}")
-    public void delete(@PathVariable Long id) {
-        service.delete(id);
+    // ================= GET ALL =================
+    @GetMapping
+    public List<CountryResponseDTO> getAll() {
+
+        return countryService.getAll()
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
     }
 
-    // Get by admin
+    // ================= GET ACTIVE =================
+    @GetMapping("/active")
+    public List<CountryResponseDTO> getActive() {
+
+        return countryService.getActive()
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    // ================= GET BY ADMIN =================
     @GetMapping("/admin/{adminId}")
-    public List<Country> getByAdmin(@PathVariable Long adminId) {
-        return service.getByAdmin(adminId);
+    public List<CountryResponseDTO> getByAdmin(@PathVariable Long adminId) {
+
+        return countryService.getByAdmin(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
     }
 
-    // Get active by admin
-    @GetMapping("/admin/{adminId}/active")
-    public List<Country> getActiveByAdmin(@PathVariable Long adminId) {
-        return service.getActiveByAdmin(adminId);
-    }
-
-    // Search country
+    // ================= SEARCH =================
     @GetMapping("/search")
-    public List<Country> search(@RequestParam String keyword) {
-        return service.search(keyword);
+    public List<CountryResponseDTO> search(@RequestParam String keyword) {
+
+        return countryService.search(keyword)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    // ================= UPDATE =================
+    @PutMapping("/{id}")
+    public CountryResponseDTO update(@PathVariable Long id,
+                                     @Valid @RequestBody CountryRequestDTO dto) {
+
+        Country updated = countryService.update(id, mapToEntity(dto));
+        return mapToResponse(updated);
+    }
+
+    // ================= DELETE =================
+    @DeleteMapping("/{id}")
+    public String delete(@PathVariable Long id) {
+
+        countryService.delete(id);
+        return "Country deleted successfully";
+    }
+
+    // ================= MAPPERS =================
+
+    private Country mapToEntity(CountryRequestDTO dto) {
+
+        Country country = new Country();
+
+        country.setName(dto.getName());
+
+        // Admin mapping
+        Admin admin = new Admin();
+        admin.setId(dto.getAdminId());
+        country.setAdmin(admin);
+
+        country.setIsActive(dto.getIsActive() != null ? dto.getIsActive() : true);
+
+        return country;
+    }
+
+    private CountryResponseDTO mapToResponse(Country country) {
+
+        CountryResponseDTO dto = new CountryResponseDTO();
+
+        dto.setId(country.getId());
+        dto.setName(country.getName());
+        dto.setIsActive(country.getIsActive());
+        dto.setCreatedAt(country.getCreatedAt());
+
+        if (country.getAdmin() != null) {
+            dto.setAdminId(country.getAdmin().getId());
+        }
+
+        return dto;
     }
 }

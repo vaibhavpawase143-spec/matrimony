@@ -10,24 +10,21 @@ import java.util.Optional;
 @Repository
 public interface QualificationRepository extends JpaRepository<Qualification, Long> {
 
-    // 🔍 Find by name (B.Tech, MBA, M.Sc)
-    Optional<Qualification> findByNameIgnoreCase(String name);
+    // 🔍 Find by name (admin-specific)
+    Optional<Qualification> findByNameIgnoreCaseAndAdminId(String name, Long adminId);
 
-    // 🔍 Check duplicate
-    boolean existsByNameIgnoreCase(String name);
+    // 🔍 Check duplicate (admin-specific)
+    boolean existsByNameIgnoreCaseAndAdminId(String name, Long adminId);
 
-    // 🔍 Get all active records
-    List<Qualification> findByIsActiveTrue();
-
-    // 🔍 Get all inactive records
-    List<Qualification> findByIsActiveFalse();
-
-    // 🔍 Filter by admin
+    // 🔍 Get all records by admin
     List<Qualification> findByAdminId(Long adminId);
 
     // 🔍 Active records by admin
     List<Qualification> findByAdminIdAndIsActiveTrue(Long adminId);
 
-    // 🔍 Search
-    List<Qualification> findByNameContainingIgnoreCase(String keyword);
+    // 🔍 Inactive records by admin
+    List<Qualification> findByAdminIdAndIsActiveFalse(Long adminId);
+
+    // 🔍 Search (admin + keyword)
+    List<Qualification> findByAdminIdAndNameContainingIgnoreCase(Long adminId, String keyword);
 }

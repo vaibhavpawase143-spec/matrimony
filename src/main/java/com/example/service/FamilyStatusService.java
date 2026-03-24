@@ -1,30 +1,45 @@
 package com.example.service;
 
 import com.example.model.FamilyStatus;
+
 import java.util.List;
 import java.util.Optional;
 
 public interface FamilyStatusService {
 
-    FamilyStatus save(FamilyStatus familyStatus);
+    // 🔍 Basic CRUD
+    FamilyStatus create(FamilyStatus familyStatus);
+
+    FamilyStatus update(Long id, FamilyStatus familyStatus);
+
+    void delete(Long id);
 
     Optional<FamilyStatus> getById(Long id);
 
-    Optional<FamilyStatus> getByName(String name);
-
     List<FamilyStatus> getAll();
 
-    List<FamilyStatus> getAllActive();
+    // 🔍 Find by name
+    Optional<FamilyStatus> getByName(String name);
 
-    List<FamilyStatus> getAllInactive();
+    Optional<FamilyStatus> getByNameIgnoreCase(String name);
 
+    // ✅ Duplicate check
+    boolean existsByName(String name);
+
+    boolean existsByNameIgnoreCase(String name);
+
+    // 🔍 Active / Inactive
+    List<FamilyStatus> getActive();
+
+    List<FamilyStatus> getInactive();
+
+    // 🔍 Admin-based
     List<FamilyStatus> getByAdmin(Long adminId);
 
     List<FamilyStatus> getActiveByAdmin(Long adminId);
 
-    List<FamilyStatus> searchByName(String keyword);
+    // 🔍 Search
+    List<FamilyStatus> search(String keyword);
 
-    FamilyStatus update(Long id, FamilyStatus updated);
-
-    void delete(Long id);
+    List<FamilyStatus> searchByAdmin(Long adminId, String keyword);
 }

@@ -1,8 +1,9 @@
-package com.example.controller.user; // user folder
+package com.example.controller.user;
 
 import com.example.model.Interest;
+import com.example.model.User;
+import com.example.repository.UserRepository;
 import com.example.service.InterestService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -12,49 +13,76 @@ import java.util.List;
 @RequestMapping("/api/interests")
 public class InterestController {
 
-    @Autowired
-    private InterestService interestService;
+    private final InterestService interestService;
+    private final UserRepository userRepository;
 
-    // Send interest
-    @PostMapping("/send")
-    public ResponseEntity<Interest> sendInterest(@RequestParam Long senderId, @RequestParam Long receiverId) {
-        return ResponseEntity.ok(interestService.sendInterest(senderId, receiverId));
+    public InterestController(InterestService interestService,
+                              UserRepository userRepository) {
+        this.interestService = interestService;
+        this.userRepository = userRepository;
     }
 
-    // Get sent interests
+    // ✅ Send interest
+    @PostMapping("/send")
+    public ResponseEntity<Interest> sendInterest(
+            @RequestParam Long senderId,
+            @RequestParam Long receiverId) {
+
+        User sender = userRepository.findById(senderId)
+                .orElseThrow(() -> new RuntimeException("Sender not found"));
+
+        User receiver = userRepository.findById(receiverId)
+                .orElseThrow(() -> new RuntimeException("Receiver not found"));
+
+        Interest interest = new Interest();
+        interest.setSender(sender);
+        interest.setReceiver(receiver);
+
+        Interest saved = interestService.sendInterest(interest);
+
+        return ResponseEntity.ok(saved);
+    }
+
+    // ✅ Get sent interests
     @GetMapping("/sent/{senderId}")
     public ResponseEntity<List<Interest>> getSent(@PathVariable Long senderId) {
-        return ResponseEntity.ok(interestService.getSentInterests(senderId));
+        return ResponseEntity.ok(interestService.getBySender(senderId));
     }
 
-    // Get received interests
+    // ✅ Get received interests
     @GetMapping("/received/{receiverId}")
     public ResponseEntity<List<Interest>> getReceived(@PathVariable Long receiverId) {
-        return ResponseEntity.ok(interestService.getReceivedInterests(receiverId));
+        return ResponseEntity.ok(interestService.getByReceiver(receiverId));
     }
 
-    // Get received pending interests
+    // ✅ Get received pending interests
     @GetMapping("/received/{receiverId}/pending")
     public ResponseEntity<List<Interest>> getReceivedPending(@PathVariable Long receiverId) {
-        return ResponseEntity.ok(interestService.getReceivedPending(receiverId));
+        return ResponseEntity.ok(
+                interestService.getByReceiverAndStatus(receiverId, "PENDING")
+        );
     }
 
-    // Accept interest
-    @PostMapping("/accept")
-    public ResponseEntity<Interest> accept(@RequestParam Long senderId, @RequestParam Long receiverId) {
-        return ResponseEntity.ok(interestService.acceptInterest(senderId, receiverId));
+    // ✅ Accept interest
+    @PostMapping("/accept/{id}")
+    public ResponseEntity<Interest> accept(@PathVariable Long id) {
+        return ResponseEntity.ok(
+                interestService.updateStatus(id, "ACCEPTED")
+        );
     }
 
-    // Reject interest
-    @PostMapping("/reject")
-    public ResponseEntity<Interest> reject(@RequestParam Long senderId, @RequestParam Long receiverId) {
-        return ResponseEntity.ok(interestService.rejectInterest(senderId, receiverId));
+    // ✅ Reject interest
+    @PostMapping("/reject/{id}")
+    public ResponseEntity<Interest> reject(@PathVariable Long id) {
+        return ResponseEntity.ok(
+                interestService.updateStatus(id, "REJECTED")
+        );
     }
 
-    // Cancel interest
-    @PostMapping("/cancel")
-    public ResponseEntity<Void> cancel(@RequestParam Long senderId, @RequestParam Long receiverId) {
-        interestService.cancelInterest(senderId, receiverId);
+    // ✅ Delete / Cancel interest
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        interestService.delete(id);
         return ResponseEntity.noContent().build();
     }
 }

@@ -1,87 +1,132 @@
-package com.example.controller.master; // master folder
+package com.example.controller.master;
 
+import com.example.dto.request.HeightRequestDTO;
+import com.example.dto.responce.HeightResponseDTO;
+import com.example.model.Admin;
 import com.example.model.Height;
 import com.example.service.HeightService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
+
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/heights")
+@RequiredArgsConstructor
 public class HeightController {
 
-    @Autowired
-    private HeightService heightService;
+    private final HeightService heightService;
 
-    // Create new Height
+    // ✅ Create
     @PostMapping
-    public ResponseEntity<Height> save(@RequestBody Height height) {
-        return ResponseEntity.ok(heightService.save(height));
+    public HeightResponseDTO create(@RequestBody HeightRequestDTO dto) {
+
+        Height entity = mapToEntity(dto);
+        Height saved = heightService.create(entity);
+
+        return mapToResponse(saved);
     }
 
-    // Get by ID
-    @GetMapping("/{id}")
-    public ResponseEntity<Height> getById(@PathVariable Long id) {
-        Optional<Height> h = heightService.getById(id);
-        return h.map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
-    }
-
-    // Get by height value
-    @GetMapping("/value/{heightValue}")
-    public ResponseEntity<Height> getByHeight(@PathVariable("heightValue") String heightValue) {
-        Optional<Height> h = heightService.getByHeight(heightValue);
-        return h.map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
-    }
-
-    // Get all
-    @GetMapping
-    public ResponseEntity<List<Height>> getAll() {
-        return ResponseEntity.ok(heightService.getAll());
-    }
-
-    // Get all active
-    @GetMapping("/active")
-    public ResponseEntity<List<Height>> getAllActive() {
-        return ResponseEntity.ok(heightService.getAllActive());
-    }
-
-    // Get all inactive
-    @GetMapping("/inactive")
-    public ResponseEntity<List<Height>> getAllInactive() {
-        return ResponseEntity.ok(heightService.getAllInactive());
-    }
-
-    // Get by admin
-    @GetMapping("/admin/{adminId}")
-    public ResponseEntity<List<Height>> getByAdmin(@PathVariable Long adminId) {
-        return ResponseEntity.ok(heightService.getByAdmin(adminId));
-    }
-
-    // Get active by admin
-    @GetMapping("/admin/{adminId}/active")
-    public ResponseEntity<List<Height>> getActiveByAdmin(@PathVariable Long adminId) {
-        return ResponseEntity.ok(heightService.getActiveByAdmin(adminId));
-    }
-
-    // Search by height keyword
-    @GetMapping("/search")
-    public ResponseEntity<List<Height>> search(@RequestParam String keyword) {
-        return ResponseEntity.ok(heightService.searchByHeight(keyword));
-    }
-
-    // Update
+    // 🔄 Update
     @PutMapping("/{id}")
-    public ResponseEntity<Height> update(@PathVariable Long id, @RequestBody Height updated) {
-        return ResponseEntity.ok(heightService.update(id, updated));
+    public HeightResponseDTO update(
+            @PathVariable Long id,
+            @RequestBody HeightRequestDTO dto
+    ) {
+        Height entity = mapToEntity(dto);
+        Height updated = heightService.update(id, entity);
+
+        return mapToResponse(updated);
     }
 
-    // Soft delete
+    // ❌ Delete
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
+    public String delete(@PathVariable Long id) {
         heightService.delete(id);
-        return ResponseEntity.noContent().build();
+        return "Height deleted successfully";
+    }
+
+    // 🔍 Get by ID
+    @GetMapping("/{id}")
+    public HeightResponseDTO getById(@PathVariable Long id) {
+        Height height = heightService.getById(id)
+                .orElseThrow(() -> new RuntimeException("Height not found"));
+
+        return mapToResponse(height);
+    }
+
+    // 🔍 Get all
+    @GetMapping
+    public List<HeightResponseDTO> getAll() {
+        return heightService.getAll()
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    // 🔍 Get active
+    @GetMapping("/active")
+    public List<HeightResponseDTO> getActive() {
+        return heightService.getActive()
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    // 🔍 Get by admin
+    @GetMapping("/admin/{adminId}")
+    public List<HeightResponseDTO> getByAdmin(@PathVariable Long adminId) {
+        return heightService.getByAdmin(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    // 🔍 Search
+    @GetMapping("/search")
+    public List<HeightResponseDTO> search(@RequestParam String keyword) {
+        return heightService.search(keyword)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    // ===============================
+    // 🔁 MAPPING METHODS
+    // ===============================
+
+    private Height mapToEntity(HeightRequestDTO dto) {
+
+        Height entity = new Height();
+
+        entity.setHeight(dto.getHeight());
+        entity.setIsActive(dto.getIsActive());
+
+        if (dto.getAdminId() != null) {
+            Admin admin = new Admin();
+            admin.setId(dto.getAdminId());
+            entity.setAdmin(admin);
+        }
+
+        return entity;
+    }
+
+    private HeightResponseDTO mapToResponse(Height entity) {
+
+        HeightResponseDTO dto = new HeightResponseDTO();
+
+        dto.setId(entity.getId());
+        dto.setHeight(entity.getHeight());
+        dto.setIsActive(entity.getIsActive());
+        dto.setCreatedAt(entity.getCreatedAt());
+        dto.setUpdatedAt(entity.getUpdatedAt());
+
+        if (entity.getAdmin() != null) {
+            dto.setAdminId(entity.getAdmin().getId());
+        }
+
+        return dto;
     }
 }

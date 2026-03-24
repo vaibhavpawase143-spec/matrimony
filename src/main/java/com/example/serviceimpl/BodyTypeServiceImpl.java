@@ -1,85 +1,116 @@
 package com.example.serviceimpl;
 
+import com.example.model.Admin;
 import com.example.model.BodyType;
+import com.example.repository.AdminRepository;
 import com.example.repository.BodyTypeRepository;
 import com.example.service.BodyTypeService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class BodyTypeServiceImpl implements BodyTypeService {
 
-    private final BodyTypeRepository repo;
+    private final BodyTypeRepository bodyTypeRepository;
+    private final AdminRepository adminRepository;
 
-    public BodyTypeServiceImpl(BodyTypeRepository repo) {
-        this.repo = repo;
-    }
-
-    // ✅ Get all body types
+    // ✅ Create
     @Override
-    public List<BodyType> getAll() {
-        return repo.findAll();
-    }
+    public BodyType create(BodyType bodyType, Long adminId) {
 
-    // ✅ Get active body types
-    @Override
-    public List<BodyType> getActive() {
-        return repo.findByIsActiveTrue();
-    }
+        Admin admin = adminRepository.findById(adminId)
+                .orElseThrow(() -> new RuntimeException("Admin not found"));
 
-    // ✅ Get inactive body types
-    @Override
-    public List<BodyType> getInactive() {
-        return repo.findByIsActiveFalse();
+        // 🔍 Duplicate check
+        boolean exists = bodyTypeRepository.findAll().stream()
+                .anyMatch(bt -> bt.getValue().equalsIgnoreCase(bodyType.getValue())
+                        && bt.getAdmin().getId().equals(adminId));
+
+        if (exists) {
+            throw new RuntimeException("Body type already exists");
+        }
+
+        bodyType.setAdmin(admin);
+
+        return bodyTypeRepository.save(bodyType);
     }
 
     // ✅ Get by ID
     @Override
-    public BodyType getById(Long id) {
-        return repo.findById(id).get();
+    public BodyType getById(Long id, Long adminId) {
+
+        BodyType bt = bodyTypeRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Body type not found"));
+
+        if (!bt.getAdmin().getId().equals(adminId)) {
+            throw new RuntimeException("Unauthorized access");
+        }
+
+        return bt;
     }
 
-    // ✅ Create body type
+    // ✅ Get all
     @Override
-    public BodyType create(BodyType bodyType) {
-        bodyType.setisActive(true);   // default active
-        bodyType.setCreatedAt(LocalDateTime.now());
-        bodyType.setUpdatedAt(LocalDateTime.now());
-        return repo.save(bodyType);
+    public List<BodyType> getAll(Long adminId) {
+
+        return bodyTypeRepository.findAll()
+                .stream()
+                .filter(bt -> bt.getAdmin().getId().equals(adminId))
+                .toList();
     }
 
-    // ✅ Update body type
+    // ✅ Get active
     @Override
-    public BodyType update(Long id, BodyType bodyType) {
-        BodyType existing = repo.findById(id)
-                .orElseThrow(() -> new RuntimeException("BodyType not found with id: " + id));
+    public List<BodyType> getActive(Long adminId) {
 
-        existing.setValue(bodyType.getValue());
-        existing.setisActive(bodyType.getisActive());
-        existing.setUpdatedAt(LocalDateTime.now());
-
-        return repo.save(existing);
+        return bodyTypeRepository.findAll()
+                .stream()
+                .filter(bt -> bt.getAdmin().getId().equals(adminId)
+                        && Boolean.TRUE.equals(bt.getIsActive()))
+                .toList();
     }
 
-    // ✅ Delete body type
+    // ✅ Get inactive
     @Override
-    public void delete(Long id) {
-        BodyType existing = repo.findById(id)
-                .orElseThrow(() -> new RuntimeException("BodyType not found with id: " + id));
-        repo.delete(existing);
+    public List<BodyType> getInactive(Long adminId) {
+
+        return bodyTypeRepository.findAll()
+                .stream()
+                .filter(bt -> bt.getAdmin().getId().equals(adminId)
+                        && Boolean.FALSE.equals(bt.getIsActive()))
+                .toList();
     }
 
-    // ✅ Get by admin
+    // ✅ Update
     @Override
-    public List<BodyType> getByAdmin(Long adminId) {
-        return repo.findByAdminId(adminId);
+    public BodyType update(Long id, BodyType updated, Long adminId) {
+
+        BodyType existing = getById(id, adminId);
+
+        // 🔍 Duplicate check
+        boolean exists = bodyTypeRepository.findAll().stream()
+                .anyMatch(bt -> bt.getValue().equalsIgnoreCase(updated.getValue())
+                        && bt.getAdmin().getId().equals(adminId)
+                        && !bt.getId().equals(id));
+
+        if (exists) {
+            throw new RuntimeException("Body type already exists");
+        }
+
+        existing.setValue(updated.getValue());
+        existing.setIsActive(updated.getIsActive());
+
+        return bodyTypeRepository.save(existing);
     }
 
-    // ✅ Get active by admin
+    // ✅ Delete
     @Override
-    public List<BodyType> getActiveByAdmin(Long adminId) {
-        return repo.findByAdminIdAndIsActiveTrue(adminId);
+    public void delete(Long id, Long adminId) {
+
+        BodyType bt = getById(id, adminId);
+        bodyTypeRepository.delete(bt);
     }
 }

@@ -1,11 +1,15 @@
 package com.example.model;
 
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(
         name = "partner_preferences",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"user_id"})
+        uniqueConstraints = @UniqueConstraint(columnNames = {"user_id"}),
+        indexes = {
+                @Index(name = "idx_pref_user", columnList = "user_id")
+        }
 )
 public class PartnerPreference {
 
@@ -13,8 +17,9 @@ public class PartnerPreference {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne
-    @JoinColumn(name = "user_id")
+    // 🔥 One preference per user
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
     private Integer minAge;
@@ -23,43 +28,131 @@ public class PartnerPreference {
     private Double minHeight;
     private Double maxHeight;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "religion_id")
     private Religion religion;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "caste_id")
     private Caste caste;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "city_id")
     private City city;
 
-    // Getters and Setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    // 🔥 Audit fields (IMPORTANT)
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive = true;
 
-    public User getUser() { return user; }
-    public void setUser(User user) { this.user = user; }
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
 
-    public Integer getMinAge() { return minAge; }
-    public void setMinAge(Integer minAge) { this.minAge = minAge; }
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 
-    public Integer getMaxAge() { return maxAge; }
-    public void setMaxAge(Integer maxAge) { this.maxAge = maxAge; }
+    public PartnerPreference() {}
 
-    public Double getMinHeight() { return minHeight; }
-    public void setMinHeight(Double minHeight) { this.minHeight = minHeight; }
+    // 🔥 Lifecycle hooks
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
 
-    public Double getMaxHeight() { return maxHeight; }
-    public void setMaxHeight(Double maxHeight) { this.maxHeight = maxHeight; }
+        if (this.isActive == null) {
+            this.isActive = true;
+        }
+    }
 
-    public Religion getReligion() { return religion; }
-    public void setReligion(Religion religion) { this.religion = religion; }
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
 
-    public Caste getCaste() { return caste; }
-    public void setCaste(Caste caste) { this.caste = caste; }
+    // ===== Getters =====
 
-    public City getCity() { return city; }
-    public void setCity(City city) { this.city = city; }
+    public Long getId() {
+        return id;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public Integer getMinAge() {
+        return minAge;
+    }
+
+    public Integer getMaxAge() {
+        return maxAge;
+    }
+
+    public Double getMinHeight() {
+        return minHeight;
+    }
+
+    public Double getMaxHeight() {
+        return maxHeight;
+    }
+
+    public Religion getReligion() {
+        return religion;
+    }
+
+    public Caste getCaste() {
+        return caste;
+    }
+
+    public City getCity() {
+        return city;
+    }
+
+    public Boolean getIsActive() {
+        return isActive;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    // ===== Setters =====
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    public void setMinAge(Integer minAge) {
+        this.minAge = minAge;
+    }
+
+    public void setMaxAge(Integer maxAge) {
+        this.maxAge = maxAge;
+    }
+
+    public void setMinHeight(Double minHeight) {
+        this.minHeight = minHeight;
+    }
+
+    public void setMaxHeight(Double maxHeight) {
+        this.maxHeight = maxHeight;
+    }
+
+    public void setReligion(Religion religion) {
+        this.religion = religion;
+    }
+
+    public void setCaste(Caste caste) {
+        this.caste = caste;
+    }
+
+    public void setCity(City city) {
+        this.city = city;
+    }
+
+    public void setIsActive(Boolean isActive) {
+        this.isActive = isActive;
+    }
 }

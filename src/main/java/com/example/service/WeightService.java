@@ -7,21 +7,29 @@ import java.util.Optional;
 
 public interface WeightService {
 
-    Weight create(Weight weight);
+    // ✅ Create / Save
+    Weight save(Weight weight);
 
-    List<Weight> getAll();
-
-    List<Weight> getAllActive();
-
+    // 🔍 Get by ID
     Optional<Weight> getById(Long id);
 
-    Weight update(Long id, Weight weight);
+    // 🔍 Get all
+    List<Weight> getAll();
 
-    void delete(Long id);
-
+    // 🔍 Get by admin
     List<Weight> getByAdmin(Long adminId);
 
+    // 🔍 Active / Inactive
     List<Weight> getActiveByAdmin(Long adminId);
 
-    List<Weight> search(String keyword);
+    List<Weight> getInactiveByAdmin(Long adminId);
+
+    // 🔍 Search
+    List<Weight> searchByAdmin(Long adminId, String keyword);
+
+    // 🔍 Find by value
+    Optional<Weight> getByValueAndAdmin(String value, Long adminId);
+
+    // ❌ Delete (soft delete recommended)
+    void delete(Long id);
 }

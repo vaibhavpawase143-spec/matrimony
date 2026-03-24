@@ -11,17 +11,24 @@ import java.util.Optional;
 public interface PartnerPreferenceRepository extends JpaRepository<PartnerPreference, Long> {
 
     // 🔍 Prevent duplicate preference for same user
-    boolean existsByUser_Id(Long userId);
+    boolean existsByUserId(Long userId);
 
     // 🔍 Find by userId
-    Optional<PartnerPreference> findByUser_Id(Long userId);
+    Optional<PartnerPreference> findByUserId(Long userId);
 
     // 🔍 Filter by religion
-    List<PartnerPreference> findByReligion_Id(Long religionId);
+    List<PartnerPreference> findByReligionId(Long religionId);
 
     // 🔍 Filter by caste
-    List<PartnerPreference> findByCaste_Id(Long casteId);
+    List<PartnerPreference> findByCasteId(Long casteId);
 
     // 🔍 Filter by city
-    List<PartnerPreference> findByCity_Id(Long cityId);
+    List<PartnerPreference> findByCityId(Long cityId);
+
+    // 🔥 Advanced filtering (VERY USEFUL)
+    List<PartnerPreference> findByReligionIdAndCasteId(Long religionId, Long casteId);
+
+    List<PartnerPreference> findByReligionIdAndCityId(Long religionId, Long cityId);
+
+    List<PartnerPreference> findByCasteIdAndCityId(Long casteId, Long cityId);
 }

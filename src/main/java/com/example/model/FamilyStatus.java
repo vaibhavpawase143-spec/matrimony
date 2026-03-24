@@ -4,42 +4,55 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "family_status")
+@Table(
+        name = "family_status",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_family_status_name_admin", columnNames = {"name", "admin_id"})
+        },
+        indexes = {
+                @Index(name = "idx_family_status_admin", columnList = "admin_id"),
+                @Index(name = "idx_family_status_active", columnList = "is_active")
+        }
+)
 public class FamilyStatus {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false, length = 100)
     private String name;
 
-    @Column(nullable = false)
-    private Boolean active = true;
+    // ✅ FIXED
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive = true;
 
-    // assuming each record belongs to an admin
-    @Column(name = "admin_id")
+    // ✅ FIXED (consistent with project)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "admin_id")
+    private Admin admin;
+
+    // for query usage
+    @Column(name = "admin_id", insertable = false, updatable = false)
     private Long adminId;
 
-    @Column(name = "created_at")
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    // Constructors
     public FamilyStatus() {}
 
-    public FamilyStatus(String name, Boolean active, Long adminId) {
+    public FamilyStatus(String name, Boolean isActive) {
         this.name = name;
-        this.active = active;
-        this.adminId = adminId;
+        this.isActive = isActive;
     }
 
-    // Auto set timestamps
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
     }
 
     @PreUpdate
@@ -47,7 +60,7 @@ public class FamilyStatus {
         updatedAt = LocalDateTime.now();
     }
 
-    // Getters and Setters
+    // Getters & Setters
 
     public Long getId() {
         return id;
@@ -61,20 +74,24 @@ public class FamilyStatus {
         this.name = name;
     }
 
-    public Boolean getActive() {
-        return active;
+    public Boolean getIsActive() {
+        return isActive;
     }
 
-    public void setActive(Boolean active) {
-        this.active = active;
+    public void setIsActive(Boolean active) {
+        isActive = active;
+    }
+
+    public Admin getAdmin() {
+        return admin;
+    }
+
+    public void setAdmin(Admin admin) {
+        this.admin = admin;
     }
 
     public Long getAdminId() {
         return adminId;
-    }
-
-    public void setAdminId(Long adminId) {
-        this.adminId = adminId;
     }
 
     public LocalDateTime getCreatedAt() {

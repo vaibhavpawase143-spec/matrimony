@@ -10,18 +10,24 @@ import java.util.Optional;
 @Repository
 public interface UserSubscriptionRepository extends JpaRepository<UserSubscription, Long> {
 
-    // 🔍 Get all subscriptions of user
+    // 🔍 Get all subscriptions of user (history)
     List<UserSubscription> findByUserId(Long userId);
 
-    // 🔍 Get active subscription of user (FIXED)
+    // 🔍 Get active subscription of user
     Optional<UserSubscription> findByUserIdAndIsActiveTrue(Long userId);
 
-    // 🔍 Check if user has active subscription (FIXED)
+    // 🔍 Check if user has active subscription
     boolean existsByUserIdAndIsActiveTrue(Long userId);
 
     // 🔍 Get subscriptions by plan
-    List<UserSubscription> findByPlanId(Long planId);
+    List<UserSubscription> findBySubscriptionPlanId(Long planId);
 
-    // 🔍 Get inactive subscriptions (FIXED)
+    // 🔍 Active subscriptions by plan
+    List<UserSubscription> findBySubscriptionPlanIdAndIsActiveTrue(Long planId);
+
+    // 🔍 Inactive subscriptions (all)
     List<UserSubscription> findByIsActiveFalse();
+
+    // 🔍 Inactive subscriptions by user (history)
+    List<UserSubscription> findByUserIdAndIsActiveFalse(Long userId);
 }

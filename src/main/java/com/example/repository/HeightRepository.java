@@ -10,21 +10,30 @@ import java.util.Optional;
 @Repository
 public interface HeightRepository extends JpaRepository<Height, Long> {
 
-    // 🔍 Find by height (exact match, case-insensitive)
+    // 🔍 Find by height
+    Optional<Height> findByHeight(String height);
+
+    // 🔥 Case-insensitive
     Optional<Height> findByHeightIgnoreCase(String height);
 
-    // 🔍 Get all active records
-    List<Height> findByIsActiveTrue();
+    // ✅ Duplicate check
+    boolean existsByHeight(String height);
 
-    // 🔍 Get all inactive records
+    boolean existsByHeightIgnoreCase(String height);
+
+    // 🔍 Active / Inactive
+    List<Height> findByIsActiveTrue();
     List<Height> findByIsActiveFalse();
 
-    // 🔍 Filter by admin
+    // 🔍 Admin-based filtering
     List<Height> findByAdminId(Long adminId);
 
-    // 🔍 Active records by admin
+    // ✅ Active by admin
     List<Height> findByAdminIdAndIsActiveTrue(Long adminId);
 
-    // 🔍 Search (dropdown/filter)
+    // 🔍 Search (global)
     List<Height> findByHeightContainingIgnoreCase(String keyword);
+
+    // 🔥 Search within admin
+    List<Height> findByAdminIdAndHeightContainingIgnoreCase(Long adminId, String keyword);
 }

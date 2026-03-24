@@ -3,90 +3,70 @@ package com.example.serviceimpl;
 import com.example.model.Admin;
 import com.example.repository.AdminRepository;
 import com.example.service.AdminService;
-
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
 public class AdminServiceImpl implements AdminService {
 
-    @Autowired
-    private AdminRepository repo;
+    private final AdminRepository adminRepository;
 
-    // ✅ Get all admins
-    @Override
-    public List<Admin> getAll() {
-        return repo.findAll();
-    }
-
-    // ✅ Get admin by ID
-    @Override
-    public Admin getById(Long id) {
-        return repo.findById(id)
-                .orElseThrow(() -> new RuntimeException("Admin not found"));
-    }
-
-    // ✅ Create admin
     @Override
     public Admin create(Admin admin) {
 
-        if (repo.existsByUsername(admin.getUsername())) {
-            throw new RuntimeException("Username already exists");
-        }
-
-        if (repo.existsByEmail(admin.getEmail())) {
+        if (adminRepository.existsByEmail(admin.getEmail())) {
             throw new RuntimeException("Email already exists");
         }
 
-        admin.setisActive(true);
+        if (adminRepository.existsByUsername(admin.getUsername())) {
+            throw new RuntimeException("Username already exists");
+        }
 
-        return repo.save(admin);
+        return adminRepository.save(admin);
     }
 
-    // ✅ Update admin
+    @Override
+    public Admin getById(Long id) {
+        return adminRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Admin not found with id: " + id));
+    }
+
+    @Override
+    public List<Admin> getAll() {
+        return adminRepository.findAll();
+    }
+
     @Override
     public Admin update(Long id, Admin updatedAdmin) {
 
         Admin existing = getById(id);
 
         existing.setName(updatedAdmin.getName());
-        existing.setUsername(updatedAdmin.getUsername());
         existing.setEmail(updatedAdmin.getEmail());
-        existing.setPhone(updatedAdmin.getPhone());
-        existing.setRole(updatedAdmin.getRole());
-        existing.setisActive(updatedAdmin.getisActive());
+        existing.setUsername(updatedAdmin.getUsername());
+        existing.setPassword(updatedAdmin.getPassword());
 
-        return repo.save(existing);
+        return adminRepository.save(existing);
     }
 
-    // ✅ Delete admin
     @Override
     public void delete(Long id) {
-        repo.deleteById(id);
+        Admin admin = getById(id);
+        adminRepository.delete(admin);
     }
 
-    // ✅ Login
     @Override
     public Admin login(String username, String password) {
 
-        Optional<Admin> optionalAdmin = repo.findByUsername(username);
-
-        if (optionalAdmin.isEmpty()) {
-            throw new RuntimeException("Invalid username or password");
-        }
-
-        Admin admin = optionalAdmin.get();
+        Admin admin = adminRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Invalid username"));
 
         if (!admin.getPassword().equals(password)) {
-            throw new RuntimeException("Invalid username or password");
+            throw new RuntimeException("Invalid password");
         }
-
-        admin.setLastLogin(LocalDateTime.now());
-        repo.save(admin);
 
         return admin;
     }

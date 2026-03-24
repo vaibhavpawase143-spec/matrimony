@@ -1,5 +1,9 @@
 package com.example.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
@@ -11,6 +15,7 @@ import java.time.LocalDateTime;
                 @Index(name = "idx_admin_username", columnList = "username")
         }
 )
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Admin {
 
     @Id
@@ -26,6 +31,7 @@ public class Admin {
     @Column(nullable = false, unique = true)
     private String email;
 
+    @JsonIgnore
     @Column(nullable = false)
     private String password;
 
@@ -41,16 +47,27 @@ public class Admin {
     private LocalDateTime lastLogin;
 
     @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
+    private LocalDateTime createdAt = LocalDateTime.now();
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    // ✅ Default constructor
     public Admin() {}
+
+    // ✅ For JSON (only id)
+    @JsonCreator
+    public Admin(@JsonProperty("id") Long id) {
+        this.id = id;
+    }
+
+    // ================= LIFECYCLE =================
 
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
         updatedAt = LocalDateTime.now();
     }
 
@@ -67,6 +84,10 @@ public class Admin {
 
     public String getName() {
         return name;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public void setName(String name) {
@@ -113,16 +134,6 @@ public class Admin {
         this.phone = phone;
     }
 
-    // ✅ SUPPORT OLD METHOD (your service uses this)
-    public Boolean getisActive() {
-        return isActive;
-    }
-
-    public void setisActive(Boolean isActive) {
-        this.isActive = isActive;
-    }
-
-    // ✅ ALSO SUPPORT STANDARD METHOD (for future safety)
     public Boolean getIsActive() {
         return isActive;
     }

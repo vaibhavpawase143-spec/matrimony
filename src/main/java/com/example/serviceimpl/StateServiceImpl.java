@@ -3,94 +3,89 @@ package com.example.serviceimpl;
 import com.example.model.State;
 import com.example.repository.StateRepository;
 import com.example.service.StateService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 @Service
 public class StateServiceImpl implements StateService {
 
-    @Autowired
-    private StateRepository repo;
+    private final StateRepository repository;
 
-    // ✅ Create
-    @Override
-    public State create(State state) {
-        state.setCreatedAt(LocalDateTime.now());
-        state.setUpdatedAt(LocalDateTime.now());
-        state.setIsActive(true);
-        return repo.save(state);
+    public StateServiceImpl(StateRepository repository) {
+        this.repository = repository;
     }
 
-    // ✅ Get all
+    // ✅ Save (admin-wise duplicate check)
     @Override
-    public List<State> getAll() {
-        return repo.findAll();
-    }
+    public State save(State state) {
 
-    // ✅ Get all active
-    @Override
-    public List<State> getAllActive() {
-        return repo.findByIsActiveTrue();
+        String name = state.getName();
+        Long adminId = state.getAdmin().getId();
+
+        Optional<State> existing =
+                repository.findByNameIgnoreCaseAndAdminId(name, adminId);
+
+        if (existing.isPresent() &&
+                !existing.get().getId().equals(state.getId())) {
+            throw new RuntimeException("State already exists for this admin!");
+        }
+
+        return repository.save(state);
     }
 
     // ✅ Get by ID
     @Override
     public Optional<State> getById(Long id) {
-        return repo.findById(id);
+        return repository.findById(id);
     }
 
-    // ✅ Update
+    // 🔍 Get all
     @Override
-    public State update(Long id, State state) {
-        State existing = repo.findById(id)
-                .orElseThrow(() -> new RuntimeException("State not found with id: " + id));
-
-        existing.setName(state.getName());
-        existing.setCountry(state.getCountry());
-        existing.setIsActive(state.getIsActive());
-        existing.setUpdatedAt(LocalDateTime.now());
-
-        return repo.save(existing);
+    public List<State> getAll() {
+        return repository.findAll();
     }
 
-    // ✅ Delete (Soft Delete)
-    @Override
-    public void delete(Long id) {
-        State existing = repo.findById(id)
-                .orElseThrow(() -> new RuntimeException("State not found with id: " + id));
-
-        existing.setIsActive(false);
-        existing.setUpdatedAt(LocalDateTime.now());
-
-        repo.save(existing);
-    }
-
-    // ✅ Search
-    @Override
-    public List<State> search(String keyword) {
-        return repo.findByNameContainingIgnoreCase(keyword);
-    }
-
-    // ✅ Get by country
-    // ✅ Get by country
-    @Override
-    public List<State> getByCountry(Long countryId) {
-        return repo.findByCountry_Id(countryId);
-    }
-
-    // ✅ Get active by country
-    @Override
-    public List<State> getActiveByCountry(Long countryId) {
-        return repo.findByCountry_IdAndIsActiveTrue(countryId);
-    }
-
-    // ✅ Get by admin
+    // 🔍 Get by admin
     @Override
     public List<State> getByAdmin(Long adminId) {
-        return repo.findByAdminId(adminId);
+        return repository.findByAdminId(adminId);
+    }
+
+    // 🔍 Active states
+    @Override
+    public List<State> getActiveByAdmin(Long adminId) {
+        return repository.findByAdminIdAndIsActiveTrue(adminId);
+    }
+
+    // 🔍 Country + admin
+    @Override
+    public List<State> getByCountryAndAdmin(Long countryId, Long adminId) {
+        return repository.findByCountry_IdAndAdminId(countryId, adminId);
+    }
+
+    // 🔍 Active by country + admin
+    @Override
+    public List<State> getActiveByCountryAndAdmin(Long countryId, Long adminId) {
+        return repository.findByCountry_IdAndAdminIdAndIsActiveTrue(countryId, adminId);
+    }
+
+    // 🔍 Search
+    @Override
+    public List<State> searchByAdmin(Long adminId, String keyword) {
+        return repository.findByAdminIdAndNameContainingIgnoreCase(adminId, keyword);
+    }
+
+    // 🔍 Find by name
+    @Override
+    public Optional<State> getByNameAndAdmin(String name, Long adminId) {
+        return repository.findByNameIgnoreCaseAndAdminId(name, adminId);
+    }
+
+    // ✅ Delete
+    @Override
+    public void delete(Long id) {
+        repository.deleteById(id);
     }
 }

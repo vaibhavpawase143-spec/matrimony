@@ -19,13 +19,13 @@ public class FamilyDetailsController {
     // Save family details
     @PostMapping
     public ResponseEntity<FamilyDetails> save(@RequestBody FamilyDetails familyDetails) {
-        return ResponseEntity.ok(familyDetailsService.saveFamilyDetails(familyDetails));
+        return ResponseEntity.ok(familyDetailsService.create(familyDetails));
     }
 
     // Get family details by profile ID
     @GetMapping("/profile/{profileId}")
     public ResponseEntity<FamilyDetails> getByProfileId(@PathVariable Long profileId) {
-        Optional<FamilyDetails> details = familyDetailsService.getByProfileId(profileId);
+        Optional<FamilyDetails> details = familyDetailsService.getByProfile(profileId);
         return details.map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -33,7 +33,7 @@ public class FamilyDetailsController {
     // Check if family details exist for a profile
     @GetMapping("/profile/{profileId}/exists")
     public ResponseEntity<Boolean> existsByProfileId(@PathVariable Long profileId) {
-        return ResponseEntity.ok(familyDetailsService.existsByProfileId(profileId));
+        return ResponseEntity.ok(familyDetailsService.existsByProfile(profileId));
     }
 
     // Get family details by family type
@@ -45,7 +45,7 @@ public class FamilyDetailsController {
     // Get family details by family status
     @GetMapping("/family-status/{familyStatusId}")
     public ResponseEntity<List<FamilyDetails>> getByFamilyStatus(@PathVariable Long familyStatusId) {
-        return ResponseEntity.ok(familyDetailsService.getByFamilyStatus(familyStatusId));
+        return ResponseEntity.ok(familyDetailsService.getActiveByFamily(familyStatusId));
     }
 
     // Get family details by brother type
@@ -63,13 +63,13 @@ public class FamilyDetailsController {
     // Update family details
     @PutMapping("/profile/{profileId}")
     public ResponseEntity<FamilyDetails> update(@PathVariable Long profileId, @RequestBody FamilyDetails updated) {
-        return ResponseEntity.ok(familyDetailsService.updateFamilyDetails(profileId, updated));
+        return ResponseEntity.ok(familyDetailsService.update(profileId, updated));
     }
 
     // Delete family details by ID
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
-        familyDetailsService.deleteById(id);
+        familyDetailsService.delete(id);
         return ResponseEntity.noContent().build();
     }
 }
