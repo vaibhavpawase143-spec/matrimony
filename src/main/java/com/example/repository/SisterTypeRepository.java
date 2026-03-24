@@ -10,24 +10,21 @@ import java.util.Optional;
 @Repository
 public interface SisterTypeRepository extends JpaRepository<SisterType, Long> {
 
-    // 🔍 Find by value
-    Optional<SisterType> findByValue(String value);
+    // 🔍 Find by value (admin-specific)
+    Optional<SisterType> findByValueIgnoreCaseAndAdminId(String value, Long adminId);
 
-    // 🔍 Check duplicate
-    boolean existsByValue(String value);
+    // 🔍 Check duplicate (admin-specific)
+    boolean existsByValueIgnoreCaseAndAdminId(String value, Long adminId);
 
-    // 🔍 Get all active records
-    List<SisterType> findByIsActiveTrue();
-
-    // 🔍 Get all inactive records
-    List<SisterType> findByIsActiveFalse();
-
-    // 🔍 Filter by admin
+    // 🔍 Get all records by admin
     List<SisterType> findByAdminId(Long adminId);
 
     // 🔍 Active records by admin
     List<SisterType> findByAdminIdAndIsActiveTrue(Long adminId);
 
-    // 🔍 Search (useful for dropdown/search)
-    List<SisterType> findByValueContainingIgnoreCase(String keyword);
+    // 🔍 Inactive records by admin
+    List<SisterType> findByAdminIdAndIsActiveFalse(Long adminId);
+
+    // 🔍 Search (admin + keyword)
+    List<SisterType> findByAdminIdAndValueContainingIgnoreCase(Long adminId, String keyword);
 }

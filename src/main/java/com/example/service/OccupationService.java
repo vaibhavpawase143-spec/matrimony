@@ -7,23 +7,28 @@ import java.util.Optional;
 
 public interface OccupationService {
 
+    // 🔍 Basic CRUD
     Occupation create(Occupation occupation);
-
-    List<Occupation> getAll();
-
-    List<Occupation> getAllActive();
-
-    List<Occupation> getAllInactive();
-
-    Optional<Occupation> getById(Long id);
 
     Occupation update(Long id, Occupation occupation);
 
-    void delete(Long id); // soft delete
+    void delete(Long id);
 
-    List<Occupation> search(String keyword);
+    Optional<Occupation> getById(Long id);
 
+    // 🔍 Admin-based
     List<Occupation> getByAdmin(Long adminId);
 
     List<Occupation> getActiveByAdmin(Long adminId);
+
+    List<Occupation> getInactiveByAdmin(Long adminId);
+
+    // 🔍 Find by name (admin-specific)
+    Optional<Occupation> getByNameAndAdmin(String name, Long adminId);
+
+    // ✅ Duplicate check
+    boolean existsByNameAndAdmin(String name, Long adminId);
+
+    // 🔍 Search
+    List<Occupation> searchByAdmin(Long adminId, String keyword);
 }

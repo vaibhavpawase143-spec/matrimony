@@ -3,92 +3,103 @@ package com.example.serviceimpl;
 import com.example.model.MotherTongue;
 import com.example.repository.MotherTongueRepository;
 import com.example.service.MotherTongueService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 @Service
 public class MotherTongueServiceImpl implements MotherTongueService {
 
-    @Autowired
-    private MotherTongueRepository repo;
+    private final MotherTongueRepository motherTongueRepository;
+
+    public MotherTongueServiceImpl(MotherTongueRepository motherTongueRepository) {
+        this.motherTongueRepository = motherTongueRepository;
+    }
 
     // ✅ Create
     @Override
     public MotherTongue create(MotherTongue motherTongue) {
-        motherTongue.setCreatedAt(LocalDateTime.now());
-        motherTongue.setUpdatedAt(LocalDateTime.now());
-        motherTongue.setIsActive(true);
-        return repo.save(motherTongue);
+
+        Long adminId = motherTongue.getAdmin().getId();
+
+        if (motherTongueRepository.existsByNameIgnoreCaseAndAdminId(
+                motherTongue.getName(), adminId)) {
+            throw new RuntimeException("MotherTongue already exists for this admin: " + motherTongue.getName());
+        }
+
+        return motherTongueRepository.save(motherTongue);
     }
 
-    // ✅ Get all
-    @Override
-    public List<MotherTongue> getAll() {
-        return repo.findAll();
-    }
-
-    // ✅ Get all active
-    @Override
-    public List<MotherTongue> getAllActive() {
-        return repo.findByIsActiveTrue();
-    }
-
-    // ✅ Get all inactive
-    @Override
-    public List<MotherTongue> getAllInactive() {
-        return repo.findByIsActiveFalse();
-    }
-
-    // ✅ Get by ID
-    @Override
-    public Optional<MotherTongue> getById(Long id) {
-        return repo.findById(id);
-    }
-
-    // ✅ Update
+    // 🔄 Update
     @Override
     public MotherTongue update(Long id, MotherTongue motherTongue) {
-        MotherTongue existing = repo.findById(id)
+
+        MotherTongue existing = motherTongueRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("MotherTongue not found with id: " + id));
 
+        Long adminId = existing.getAdmin().getId();
+        motherTongueRepository.findByNameIgnoreCaseAndAdminId(
+                        motherTongue.getName(), adminId)
+                .ifPresent(m -> {
+                    if (!m.getId().equals(id)) {
+                        throw new RuntimeException("MotherTongue already exists for this admin: " + motherTongue.getName());
+                    }
+                });
+
+        // ✏️ Update fields
         existing.setName(motherTongue.getName());
         existing.setIsActive(motherTongue.getIsActive());
-        existing.setUpdatedAt(LocalDateTime.now());
 
-        return repo.save(existing);
+        return motherTongueRepository.save(existing);
     }
 
-    // ✅ Delete (Soft Delete recommended)
+    // ❌ Delete
     @Override
     public void delete(Long id) {
-        MotherTongue existing = repo.findById(id)
+        MotherTongue existing = motherTongueRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("MotherTongue not found with id: " + id));
 
-        existing.setIsActive(false);
-        existing.setUpdatedAt(LocalDateTime.now());
-
-        repo.save(existing);
+        motherTongueRepository.delete(existing);
     }
 
-    // ✅ Search
+    // 🔍 Get by ID
     @Override
-    public List<MotherTongue> search(String keyword) {
-        return repo.findByNameContainingIgnoreCase(keyword);
+    public Optional<MotherTongue> getById(Long id) {
+        return motherTongueRepository.findById(id);
     }
 
-    // ✅ Get by admin
+    // 🔍 Admin-based
     @Override
     public List<MotherTongue> getByAdmin(Long adminId) {
-        return repo.findByAdminId(adminId);
+        return motherTongueRepository.findByAdminId(adminId);
     }
 
-    // ✅ Get active by admin
     @Override
     public List<MotherTongue> getActiveByAdmin(Long adminId) {
-        return repo.findByAdminIdAndIsActiveTrue(adminId);
+        return motherTongueRepository.findByAdminIdAndIsActiveTrue(adminId);
+    }
+
+    @Override
+    public List<MotherTongue> getInactiveByAdmin(Long adminId) {
+        return motherTongueRepository.findByAdminIdAndIsActiveFalse(adminId);
+    }
+
+    // 🔍 Find by name (admin-specific)
+    @Override
+    public Optional<MotherTongue> getByNameAndAdmin(String name, Long adminId) {
+        return motherTongueRepository.findByNameIgnoreCaseAndAdminId(name, adminId);
+    }
+
+    // ✅ Duplicate check
+    @Override
+    public boolean existsByNameAndAdmin(String name, Long adminId) {
+        return motherTongueRepository.existsByNameIgnoreCaseAndAdminId(name, adminId);
+    }
+
+    // 🔍 Search
+    @Override
+    public List<MotherTongue> searchByAdmin(Long adminId, String keyword) {
+        return motherTongueRepository.findByAdminIdAndNameContainingIgnoreCase(adminId, keyword);
     }
 }

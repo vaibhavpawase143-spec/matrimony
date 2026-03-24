@@ -1,40 +1,52 @@
 package com.example.service;
 
 import com.example.model.City;
+
 import java.util.List;
+import java.util.Optional;
 
 public interface CityService {
 
-    // ✅ Get all cities
-    List<City> getAll();
+    // 🔍 Basic CRUD
+    City saveCity(City city);
 
-    // ✅ Get active cities
-    List<City> getActive();
+    Optional<City> getCityById(Long id);
 
-    // ✅ Get by ID
-    City getById(Long id);
+    List<City> getAllCities();
 
-    // ✅ Create city
-    City create(City city);
+    void deleteCity(Long id);
 
-    // ✅ Update city
-    City update(Long id, City city);
+    // 🔍 Find by name
+    Optional<City> getByName(String name);
 
-    // ✅ Delete city
-    void delete(Long id);
+    Optional<City> getByNameIgnoreCase(String name);
 
-    // ✅ Get cities by state
-    List<City> getByState(Long stateId);
+    // ✅ Duplicate check
+    boolean existsByName(String name);
 
-    // ✅ Get active cities by state
-    List<City> getActiveByState(Long stateId);
+    boolean existsByNameIgnoreCase(String name);
 
-    // ✅ Get by admin
-    List<City> getByAdmin(Long adminId);
+    // 🔍 Active / Inactive
+    List<City> getActiveCities();
 
-    // ✅ Search city (global)
-    List<City> search(String keyword);
+    List<City> getInactiveCities();
 
-    // ✅ Search city within state
+    // 🔍 State-based
+    List<City> getCitiesByState(Long stateId);
+
+    List<City> getActiveCitiesByState(Long stateId);
+
+    Optional<City> getByStateAndName(Long stateId, String name);
+
+    // 🔍 Admin-based
+    List<City> getCitiesByAdmin(Long adminId);
+
+    List<City> getActiveCitiesByAdmin(Long adminId);
+
+    // 🔍 Search
+    List<City> searchByName(String keyword);
+
     List<City> searchByState(Long stateId, String keyword);
+
+    List<City> searchByAdmin(Long adminId, String keyword);
 }

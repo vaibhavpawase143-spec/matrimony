@@ -7,23 +7,29 @@ import java.util.Optional;
 
 public interface SmokingService {
 
-    Smoking create(Smoking smoking);
+    // ✅ Create / Save
+    Smoking save(Smoking smoking);
 
-    List<Smoking> getAll();
-
-    List<Smoking> getAllActive();
-
-    List<Smoking> getAllInactive();
-
+    // ✅ Get by ID
     Optional<Smoking> getById(Long id);
 
-    Smoking update(Long id, Smoking smoking);
+    // 🔍 Get all
+    List<Smoking> getAll();
 
-    void delete(Long id);
-
-    List<Smoking> search(String keyword);
-
+    // 🔍 Get by admin
     List<Smoking> getByAdmin(Long adminId);
 
+    // 🔍 Active / Inactive
     List<Smoking> getActiveByAdmin(Long adminId);
+
+    List<Smoking> getInactiveByAdmin(Long adminId);
+
+    // 🔍 Search
+    List<Smoking> searchByAdmin(Long adminId, String keyword);
+
+    // 🔍 Find by value (admin-specific)
+    Optional<Smoking> getByValueAndAdmin(String value, Long adminId);
+
+    // ✅ Delete
+    void delete(Long id);
 }

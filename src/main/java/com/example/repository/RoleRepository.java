@@ -5,19 +5,26 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface RoleRepository extends JpaRepository<Role, Long> {
 
-    // 🔍 Get all active records
-    List<Role> findByIsActiveTrue();
+    // 🔍 Find by name (admin-specific)
+    Optional<Role> findByNameIgnoreCaseAndAdminId(String name, Long adminId);
 
-    // 🔍 Get all inactive records
-    List<Role> findByIsActiveFalse();
+    // 🔍 Check duplicate (admin-specific)
+    boolean existsByNameIgnoreCaseAndAdminId(String name, Long adminId);
 
-    // 🔍 Filter by admin
+    // 🔍 Get all records by admin
     List<Role> findByAdminId(Long adminId);
 
-    // 🔍 Search
-    List<Role> findByNameContainingIgnoreCase(String keyword);
+    // 🔍 Active records by admin
+    List<Role> findByAdminIdAndIsActiveTrue(Long adminId);
+
+    // 🔍 Inactive records by admin
+    List<Role> findByAdminIdAndIsActiveFalse(Long adminId);
+
+    // 🔍 Search (admin + keyword)
+    List<Role> findByAdminIdAndNameContainingIgnoreCase(Long adminId, String keyword);
 }

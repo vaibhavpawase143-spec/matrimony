@@ -3,95 +3,106 @@ package com.example.serviceimpl;
 import com.example.model.SubscriptionPlan;
 import com.example.repository.SubscriptionPlanRepository;
 import com.example.service.SubscriptionPlanService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 @Service
 public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
 
-    @Autowired
-    private SubscriptionPlanRepository repo;
+    private final SubscriptionPlanRepository repository;
+
+    public SubscriptionPlanServiceImpl(SubscriptionPlanRepository repository) {
+        this.repository = repository;
+    }
 
     // ✅ Create
     @Override
     public SubscriptionPlan create(SubscriptionPlan plan) {
-        plan.setCreatedAt(LocalDateTime.now());
-        plan.setUpdatedAt(LocalDateTime.now());
+
+        String name = plan.getName();
+        Long adminId = plan.getAdmin().getId();
+
+        if (repository.existsByNameIgnoreCaseAndAdminId(name, adminId)) {
+            throw new RuntimeException("Subscription plan already exists!");
+        }
+
         plan.setIsActive(true);
-        return repo.save(plan);
+        return repository.save(plan);
     }
 
-    // ✅ Get all
-    @Override
-    public List<SubscriptionPlan> getAll() {
-        return repo.findAll();
-    }
-
-    // ✅ Get all active
-    @Override
-    public List<SubscriptionPlan> getAllActive() {
-        return repo.findByIsActiveTrue();
-    }
-
-    // ✅ Get all inactive
-    @Override
-    public List<SubscriptionPlan> getAllInactive() {
-        return repo.findByIsActiveFalse();
-    }
-
-    // ✅ Get by ID
+    // 🔍 Get by ID
     @Override
     public Optional<SubscriptionPlan> getById(Long id) {
-        return repo.findById(id);
+        return repository.findById(id);
+    }
+
+    // 🔍 Get all
+    @Override
+    public List<SubscriptionPlan> getAll() {
+        return repository.findAll();
+    }
+
+    // 🔍 Get by admin
+    @Override
+    public List<SubscriptionPlan> getByAdmin(Long adminId) {
+        return repository.findByAdminId(adminId);
+    }
+
+    // 🔍 Active by admin
+    @Override
+    public List<SubscriptionPlan> getActiveByAdmin(Long adminId) {
+        return repository.findByAdminIdAndIsActiveTrue(adminId);
+    }
+
+    // 🔍 Inactive by admin
+    @Override
+    public List<SubscriptionPlan> getInactiveByAdmin(Long adminId) {
+        return repository.findByAdminIdAndIsActiveFalse(adminId);
+    }
+
+    // 🔍 Search (admin-based)
+    @Override
+    public List<SubscriptionPlan> searchByAdmin(Long adminId, String keyword) {
+        return repository.findByAdminIdAndNameContainingIgnoreCase(adminId, keyword);
     }
 
     // ✅ Update
     @Override
     public SubscriptionPlan update(Long id, SubscriptionPlan plan) {
-        SubscriptionPlan existing = repo.findById(id)
-                .orElseThrow(() -> new RuntimeException("SubscriptionPlan not found with id: " + id));
+
+        SubscriptionPlan existing = repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Plan not found!"));
+
+        String name = plan.getName();
+        Long adminId = plan.getAdmin().getId();
+
+        Optional<SubscriptionPlan> duplicate =
+                repository.findByNameIgnoreCaseAndAdminId(name, adminId);
+
+        if (duplicate.isPresent() &&
+                !duplicate.get().getId().equals(id)) {
+            throw new RuntimeException("Subscription plan already exists!");
+        }
 
         existing.setName(plan.getName());
         existing.setPrice(plan.getPrice());
         existing.setDuration(plan.getDuration());
         existing.setDescription(plan.getDescription());
         existing.setIsActive(plan.getIsActive());
-        existing.setUpdatedAt(LocalDateTime.now());
 
-        return repo.save(existing);
+        return repository.save(existing);
     }
 
-    // ✅ Delete (Soft Delete)
+    // ❌ Soft delete
     @Override
     public void delete(Long id) {
-        SubscriptionPlan existing = repo.findById(id)
-                .orElseThrow(() -> new RuntimeException("SubscriptionPlan not found with id: " + id));
 
-        existing.setIsActive(false);
-        existing.setUpdatedAt(LocalDateTime.now());
+        SubscriptionPlan plan = repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Plan not found!"));
 
-        repo.save(existing);
-    }
-
-    // ✅ Search
-    @Override
-    public List<SubscriptionPlan> search(String keyword) {
-        return repo.findByNameContainingIgnoreCase(keyword);
-    }
-
-    // ✅ Get by admin
-    @Override
-    public List<SubscriptionPlan> getByAdmin(Long adminId) {
-        return repo.findByAdminId(adminId);
-    }
-
-    // ✅ Get active by admin
-    @Override
-    public List<SubscriptionPlan> getActiveByAdmin(Long adminId) {
-        return repo.findByAdminIdAndIsActiveTrue(adminId);
+        plan.setIsActive(false);
+        repository.save(plan);
     }
 }

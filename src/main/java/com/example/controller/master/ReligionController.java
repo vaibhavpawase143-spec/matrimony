@@ -1,80 +1,177 @@
-package com.example.controller.master; // master folder
+package com.example.controller.master;
 
+import com.example.dto.request.ReligionRequestDTO;
+import com.example.dto.response.ReligionResponseDTO;
+import com.example.model.Admin;
 import com.example.model.Religion;
 import com.example.service.ReligionService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/religions")
+@RequiredArgsConstructor
 public class ReligionController {
 
-    @Autowired
-    private ReligionService religionService;
+    private final ReligionService service;
 
-    // Create new Religion
+    // =========================
+    // ✅ CREATE
+    // =========================
     @PostMapping
-    public ResponseEntity<Religion> create(@RequestBody Religion religion) {
-        return ResponseEntity.ok(religionService.create(religion));
+    public ReligionResponseDTO create(@Valid @RequestBody ReligionRequestDTO dto) {
+
+        Religion entity = mapToEntity(dto);
+
+        Religion saved = service.save(entity);
+
+        return mapToResponse(saved);
     }
 
-    // Get all
-    @GetMapping
-    public ResponseEntity<List<Religion>> getAll() {
-        return ResponseEntity.ok(religionService.getAll());
-    }
-
-    // Get all active
-    @GetMapping("/active")
-    public ResponseEntity<List<Religion>> getAllActive() {
-        return ResponseEntity.ok(religionService.getAllActive());
-    }
-
-    // Get all inactive
-    @GetMapping("/inactive")
-    public ResponseEntity<List<Religion>> getAllInactive() {
-        return ResponseEntity.ok(religionService.getAllInactive());
-    }
-
-    // Get by ID
-    @GetMapping("/{id}")
-    public ResponseEntity<Religion> getById(@PathVariable Long id) {
-        Optional<Religion> r = religionService.getById(id);
-        return r.map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
-    }
-
-    // Update
+    // =========================
+    // ✅ UPDATE
+    // =========================
     @PutMapping("/{id}")
-    public ResponseEntity<Religion> update(@PathVariable Long id, @RequestBody Religion updated) {
-        return ResponseEntity.ok(religionService.update(id, updated));
+    public ReligionResponseDTO update(
+            @PathVariable Long id,
+            @Valid @RequestBody ReligionRequestDTO dto) {
+
+        Religion existing = service.getById(id)
+                .orElseThrow(() -> new RuntimeException("Religion not found"));
+
+        updateEntity(existing, dto);
+
+        Religion updated = service.save(existing);
+
+        return mapToResponse(updated);
     }
 
-    // Delete
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        religionService.delete(id);
-        return ResponseEntity.noContent().build();
+    // =========================
+    // ✅ GET BY ID
+    // =========================
+    @GetMapping("/{id}")
+    public ReligionResponseDTO getById(@PathVariable Long id) {
+
+        Religion r = service.getById(id)
+                .orElseThrow(() -> new RuntimeException("Religion not found"));
+
+        return mapToResponse(r);
     }
 
-    // Search
-    @GetMapping("/search")
-    public ResponseEntity<List<Religion>> search(@RequestParam String keyword) {
-        return ResponseEntity.ok(religionService.search(keyword));
+    // =========================
+    // ✅ GET ALL
+    // =========================
+    @GetMapping
+    public List<ReligionResponseDTO> getAll() {
+
+        return service.getAll()
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
     }
 
-    // Get by admin
+    // =========================
+    // 🔍 ADMIN APIs
+    // =========================
+
     @GetMapping("/admin/{adminId}")
-    public ResponseEntity<List<Religion>> getByAdmin(@PathVariable Long adminId) {
-        return ResponseEntity.ok(religionService.getByAdmin(adminId));
+    public List<ReligionResponseDTO> getByAdmin(@PathVariable Long adminId) {
+
+        return service.getByAdmin(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
     }
 
-    // Get active by admin
     @GetMapping("/admin/{adminId}/active")
-    public ResponseEntity<List<Religion>> getActiveByAdmin(@PathVariable Long adminId) {
-        return ResponseEntity.ok(religionService.getActiveByAdmin(adminId));
+    public List<ReligionResponseDTO> getActive(@PathVariable Long adminId) {
+
+        return service.getActiveByAdmin(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @GetMapping("/admin/{adminId}/inactive")
+    public List<ReligionResponseDTO> getInactive(@PathVariable Long adminId) {
+
+        return service.getInactiveByAdmin(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    // =========================
+    // 🔍 SEARCH
+    // =========================
+    @GetMapping("/admin/{adminId}/search")
+    public List<ReligionResponseDTO> search(
+            @PathVariable Long adminId,
+            @RequestParam String keyword) {
+
+        return service.searchByAdmin(adminId, keyword)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    // =========================
+    // ❌ DELETE
+    // =========================
+    @DeleteMapping("/{id}")
+    public String delete(@PathVariable Long id) {
+        service.delete(id);
+        return "Religion deleted successfully";
+    }
+
+    // =========================
+    // 🔥 MAPPING
+    // =========================
+
+    private Religion mapToEntity(ReligionRequestDTO dto) {
+
+        Religion r = new Religion();
+
+        Admin admin = new Admin();
+        admin.setId(dto.getAdminId());
+        r.setAdmin(admin);
+
+        r.setName(dto.getName());
+
+        if (dto.getIsActive() != null) {
+            r.setIsActive(dto.getIsActive());
+        }
+
+        return r;
+    }
+
+    private void updateEntity(Religion r, ReligionRequestDTO dto) {
+
+        // 🚫 DO NOT update admin
+
+        if (dto.getName() != null) {
+            r.setName(dto.getName());
+        }
+
+        if (dto.getIsActive() != null) {
+            r.setIsActive(dto.getIsActive());
+        }
+    }
+
+    private ReligionResponseDTO mapToResponse(Religion r) {
+
+        return ReligionResponseDTO.builder()
+                .id(r.getId())
+                .adminId(r.getAdmin() != null ? r.getAdmin().getId() : null)
+                .adminName(r.getAdmin() != null ? r.getAdmin().getName() : null) // adjust if needed
+                .name(r.getName())
+                .isActive(r.getIsActive())
+                .createdAt(r.getCreatedAt())
+                .updatedAt(r.getUpdatedAt())
+                .build();
     }
 }

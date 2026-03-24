@@ -3,7 +3,6 @@ package com.example.serviceimpl;
 import com.example.model.Profile;
 import com.example.repository.ProfileRepository;
 import com.example.service.ProfileService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -12,82 +11,101 @@ import java.util.Optional;
 @Service
 public class ProfileServiceImpl implements ProfileService {
 
-    @Autowired
-    private ProfileRepository repo;
+    private final ProfileRepository repository;
 
-    // ✅ Create
-    @Override
-    public Profile create(Profile profile) {
-        return repo.save(profile);
+    public ProfileServiceImpl(ProfileRepository repository) {
+        this.repository = repository;
     }
 
-    // ✅ Update by User ID
+    // ✅ Save profile (One profile per user)
     @Override
-    public Profile update(Long userId, Profile updated) {
-        Profile existing = repo.findByUser_Id(userId)
-                .orElseThrow(() -> new RuntimeException("Profile not found for userId: " + userId));
+    public Profile saveProfile(Profile profile) {
 
-        // Update fields
-        existing.setAbout(updated.getAbout());
-        existing.setReligion(updated.getReligion());
-        existing.setCaste(updated.getCaste());
-        existing.setEducationLevel(updated.getEducationLevel());
-        existing.setOccupation(updated.getOccupation());
-        existing.setHeight(updated.getHeight());
-        existing.setWeight(updated.getWeight());
-        existing.setCity(updated.getCity());
-        existing.setUser(updated.getUser()); // update linked user if needed
+        Long userId = profile.getUser().getId();
 
-        return repo.save(existing);
+        if (repository.existsByUserId(userId)) {
+            throw new RuntimeException("Profile already exists for this user!");
+        }
+
+        return repository.save(profile);
     }
 
-    // ✅ Get by User ID
+    // ✅ Get by ID
+    @Override
+    public Optional<Profile> getById(Long id) {
+        return repository.findById(id);
+    }
+
+    // 🔍 Get by userId
     @Override
     public Optional<Profile> getByUserId(Long userId) {
-        return repo.findByUser_Id(userId);
+        return repository.findByUserId(userId);
     }
 
-    // ✅ Delete by User ID
-    @Override
-    public void delete(Long userId) {
-        Profile existing = repo.findByUser_Id(userId)
-                .orElseThrow(() -> new RuntimeException("Profile not found for userId: " + userId));
-        repo.delete(existing);
-    }
-
-    // ✅ Get all
+    // 🔍 Get all
     @Override
     public List<Profile> getAll() {
-        return repo.findAll();
+        return repository.findAll();
     }
 
-    // ✅ Get by Religion
+    // 🔥 Active profiles
+    @Override
+    public List<Profile> getActiveProfiles() {
+        return repository.findByIsActiveTrue();
+    }
+
+    // 🔍 Filters
+
     @Override
     public List<Profile> getByReligion(Long religionId) {
-        return repo.findByReligion_Id(religionId);
+        return repository.findByReligionId(religionId);
     }
 
-    // ✅ Get by Caste
     @Override
     public List<Profile> getByCaste(Long casteId) {
-        return repo.findByCaste_Id(casteId);
+        return repository.findByCasteId(casteId);
     }
 
-    // ✅ Get by City
     @Override
     public List<Profile> getByCity(Long cityId) {
-        return repo.findByCity_Id(cityId);
+        return repository.findByCityId(cityId);
     }
 
-    // ✅ Get by Education Level
     @Override
     public List<Profile> getByEducation(Long educationLevelId) {
-        return repo.findByEducationLevel_Id(educationLevelId);
+        return repository.findByEducationLevelId(educationLevelId);
     }
 
-    // ✅ Get by Occupation
     @Override
     public List<Profile> getByOccupation(Long occupationId) {
-        return repo.findByOccupation_Id(occupationId);
+        return repository.findByOccupationId(occupationId);
+    }
+
+    // 🔥 Advanced filters
+
+    @Override
+    public List<Profile> getByReligionAndCaste(Long religionId, Long casteId) {
+        return repository.findByReligionIdAndCasteId(religionId, casteId);
+    }
+
+    @Override
+    public List<Profile> getByCityAndEducation(Long cityId, Long educationLevelId) {
+        return repository.findByCityIdAndEducationLevelId(cityId, educationLevelId);
+    }
+
+    @Override
+    public List<Profile> getByOccupationAndCity(Long occupationId, Long cityId) {
+        return repository.findByOccupationIdAndCityId(occupationId, cityId);
+    }
+
+    @Override
+    public List<Profile> getActiveByReligionAndCity(Long religionId, Long cityId) {
+        return repository.findByReligionIdAndCityIdAndIsActiveTrue(religionId, cityId);
+    }
+
+    // ✅ Delete
+    @Override
+    public void delete(Long id) {
+        repository.deleteById(id);
     }
 }

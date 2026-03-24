@@ -7,21 +7,37 @@ import java.util.Optional;
 
 public interface FamilyDetailsService {
 
-    FamilyDetails saveFamilyDetails(FamilyDetails familyDetails);
+    // 🔍 Basic CRUD
+    FamilyDetails create(FamilyDetails familyDetails);
 
-    Optional<FamilyDetails> getByProfileId(Long profileId);
+    FamilyDetails update(Long id, FamilyDetails familyDetails);
 
-    boolean existsByProfileId(Long profileId);
+    void delete(Long id);
 
+    Optional<FamilyDetails> getById(Long id);
+
+    List<FamilyDetails> getAll();
+
+    // 🔍 Profile-based (One-to-One)
+    Optional<FamilyDetails> getByProfile(Long profileId);
+
+    boolean existsByProfile(Long profileId);
+
+    // 🔍 FamilyType
     List<FamilyDetails> getByFamilyType(Long familyTypeId);
 
-    List<FamilyDetails> getByFamilyStatus(Long FamilyStatusId);
+    // 🔍 Family
+    List<FamilyDetails> getByFamily(Long familyId);
 
+    List<FamilyDetails> getActiveByFamily(Long familyId);
+
+    // 🔍 Brother / Sister
     List<FamilyDetails> getByBrotherType(Long brotherTypeId);
 
     List<FamilyDetails> getBySisterType(Long sisterTypeId);
 
-    FamilyDetails updateFamilyDetails(Long profileId, FamilyDetails updatedDetails);
+    // 🔍 Profile Active
+    List<FamilyDetails> getActiveByProfile(Long profileId);
 
-    void deleteById(Long id);
+
 }

@@ -2,97 +2,126 @@ package com.example.serviceimpl;
 
 import com.example.model.FieldOfStudy;
 import com.example.repository.FieldOfStudyRepository;
+import com.example.service.FieldOfStudyService;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 @Service
-public class FieldOfStudyServiceImpl {
+public class FieldOfStudyServiceImpl implements FieldOfStudyService {
 
-    private final FieldOfStudyRepository repo;
+    private final FieldOfStudyRepository fieldOfStudyRepository;
 
-    // ✅ Constructor Injection (Best Practice)
-    public FieldOfStudyServiceImpl(FieldOfStudyRepository repo) {
-        this.repo = repo;
+    public FieldOfStudyServiceImpl(FieldOfStudyRepository fieldOfStudyRepository) {
+        this.fieldOfStudyRepository = fieldOfStudyRepository;
     }
 
-    // ✅ Get all records
-    public List<FieldOfStudy> getAll() {
-        return repo.findAll();
-    }
-
-    // ✅ Get active records
-    public List<FieldOfStudy> getAllActive() {
-        return repo.findByIsActiveTrue();
-    }
-
-    // ✅ Get inactive records
-    public List<FieldOfStudy> getAllInactive() {
-        return repo.findByIsActiveFalse();
-    }
-
-    // ✅ Get by ID
-    public Optional<FieldOfStudy> getById(Long id) {
-        return repo.findById(id);
-    }
-
-    // ✅ Get by Name (FIXED METHOD)
-    public Optional<FieldOfStudy> getByName(String name) {
-        return repo.findByNameIgnoreCase(name);
-    }
-
-    // ✅ Search by keyword
-    public List<FieldOfStudy> search(String keyword) {
-        return repo.findByNameContainingIgnoreCase(keyword);
-    }
-
-    // ✅ Get by Admin ID
-    public List<FieldOfStudy> getByAdminId(Long adminId) {
-        return repo.findByAdminId(adminId);
-    }
-
-    // ✅ Get active by Admin ID
-    public List<FieldOfStudy> getActiveByAdminId(Long adminId) {
-        return repo.findByAdminIdAndIsActiveTrue(adminId);
-    }
-
-    // ✅ Create new record
+    // ✅ Create
+    @Override
     public FieldOfStudy create(FieldOfStudy fieldOfStudy) {
 
-        // 🔒 Duplicate check
-        if (repo.existsByNameIgnoreCase(fieldOfStudy.getName())) {
-            throw new RuntimeException("Field of Study already exists!");
+        if (fieldOfStudyRepository.existsByNameIgnoreCase(fieldOfStudy.getName())) {
+            throw new RuntimeException("FieldOfStudy already exists: " + fieldOfStudy.getName());
         }
 
-        fieldOfStudy.setIsActive(true);
-        fieldOfStudy.setCreatedAt(LocalDateTime.now());
-
-        return repo.save(fieldOfStudy);
+        return fieldOfStudyRepository.save(fieldOfStudy);
     }
 
-    // ✅ Update record
-    public FieldOfStudy update(Long id, FieldOfStudy updatedData) {
+    // 🔄 Update
+    @Override
+    public FieldOfStudy update(Long id, FieldOfStudy fieldOfStudy) {
 
-        FieldOfStudy existing = repo.findById(id)
+        FieldOfStudy existing = fieldOfStudyRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("FieldOfStudy not found with id: " + id));
 
-        // 🔄 Update fields
-        existing.setName(updatedData.getName());
-        existing.setUpdatedAt(LocalDateTime.now());
+        fieldOfStudyRepository.findByNameIgnoreCase(fieldOfStudy.getName())
+                .ifPresent(f -> {
+                    if (!f.getId().equals(id)) {
+                        throw new RuntimeException("FieldOfStudy already exists: " + fieldOfStudy.getName());
+                    }
+                });
 
-        return repo.save(existing);
+        // ✏️ Update fields
+        existing.setName(fieldOfStudy.getName());
+        existing.setIsActive(fieldOfStudy.getIsActive());
+
+        return fieldOfStudyRepository.save(existing);
     }
 
-    // ✅ Soft delete (set inactive)
+    // ❌ Delete
+    @Override
     public void delete(Long id) {
-        FieldOfStudy existing = repo.findById(id)
+        FieldOfStudy existing = fieldOfStudyRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("FieldOfStudy not found with id: " + id));
 
-        existing.setIsActive(false);
-        existing.setUpdatedAt(LocalDateTime.now());
+        fieldOfStudyRepository.delete(existing);
+    }
 
-        repo.save(existing);
+    // 🔍 Get by ID
+    @Override
+    public Optional<FieldOfStudy> getById(Long id) {
+        return fieldOfStudyRepository.findById(id);
+    }
+
+    // 🔍 Get all
+    @Override
+    public List<FieldOfStudy> getAll() {
+        return fieldOfStudyRepository.findAll();
+    }
+
+    // 🔍 Find by name
+    @Override
+    public Optional<FieldOfStudy> getByName(String name) {
+        return fieldOfStudyRepository.findByName(name);
+    }
+
+    @Override
+    public Optional<FieldOfStudy> getByNameIgnoreCase(String name) {
+        return fieldOfStudyRepository.findByNameIgnoreCase(name);
+    }
+
+    // ✅ Duplicate check
+    @Override
+    public boolean existsByName(String name) {
+        return fieldOfStudyRepository.existsByName(name);
+    }
+
+    @Override
+    public boolean existsByNameIgnoreCase(String name) {
+        return fieldOfStudyRepository.existsByNameIgnoreCase(name);
+    }
+
+    // 🔍 Active / Inactive
+    @Override
+    public List<FieldOfStudy> getActive() {
+        return fieldOfStudyRepository.findByIsActiveTrue();
+    }
+
+    @Override
+    public List<FieldOfStudy> getInactive() {
+        return fieldOfStudyRepository.findByIsActiveFalse();
+    }
+
+    // 🔍 Admin-based
+    @Override
+    public List<FieldOfStudy> getByAdmin(Long adminId) {
+        return fieldOfStudyRepository.findByAdminId(adminId);
+    }
+
+    @Override
+    public List<FieldOfStudy> getActiveByAdmin(Long adminId) {
+        return fieldOfStudyRepository.findByAdminIdAndIsActiveTrue(adminId);
+    }
+
+    // 🔍 Search
+    @Override
+    public List<FieldOfStudy> search(String keyword) {
+        return fieldOfStudyRepository.findByNameContainingIgnoreCase(keyword);
+    }
+
+    @Override
+    public List<FieldOfStudy> searchByAdmin(Long adminId, String keyword) {
+        return fieldOfStudyRepository.findByAdminIdAndNameContainingIgnoreCase(adminId, keyword);
     }
 }

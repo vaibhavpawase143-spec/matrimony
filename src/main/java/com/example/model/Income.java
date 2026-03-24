@@ -6,7 +6,10 @@ import java.time.LocalDateTime;
 @Entity
 @Table(
         name = "incomes",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"admin_id", "range"})
+        uniqueConstraints = @UniqueConstraint(columnNames = {"admin_id", "range"}),
+        indexes = {
+                @Index(name = "idx_income_range", columnList = "range")
+        }
 )
 public class Income {
 
@@ -18,11 +21,11 @@ public class Income {
     @JoinColumn(name = "admin_id")
     private Admin admin;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 50)
     private String range;
 
-    @Column(nullable = false)
-    private Boolean isActive = true;   // active/inactive flag
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive = true;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -30,32 +33,59 @@ public class Income {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    public Income() {}
+
+    // 🔥 Lifecycle hooks (FIXED)
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+
+        if (this.isActive == null) {
+            this.isActive = true;
+        }
     }
 
     @PreUpdate
     protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
     }
 
-    // Getters and Setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    // ===== Getters & Setters =====
 
-    public Admin getAdmin() { return admin; }
-    public void setAdmin(Admin admin) { this.admin = admin; }
+    public Long getId() {
+        return id;
+    }
 
-    public String getRange() { return range; }
-    public void setRange(String range) { this.range = range; }
+    public Admin getAdmin() {
+        return admin;
+    }
 
-    public Boolean getisActive() { return isActive; }
-    public void setisActive(Boolean isActive) { this.isActive = isActive; }
+    public void setAdmin(Admin admin) {
+        this.admin = admin;
+    }
 
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public String getRange() {
+        return range;
+    }
 
-    public LocalDateTime getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+    public void setRange(String range) {
+        this.range = range;
+    }
+
+    public Boolean getIsActive() {   // ✅ FIXED naming
+        return isActive;
+    }
+
+    public void setIsActive(Boolean isActive) {  // ✅ FIXED
+        this.isActive = isActive;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
 }

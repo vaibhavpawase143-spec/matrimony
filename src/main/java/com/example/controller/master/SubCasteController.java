@@ -1,80 +1,206 @@
-package com.example.controller.master; // master folder
+package com.example.controller.master;
 
+import com.example.dto.request.SubCasteRequestDTO;
+import com.example.dto.response.SubCasteResponseDTO;
+import com.example.model.Admin;
+import com.example.model.Caste;
 import com.example.model.SubCaste;
+import com.example.repository.AdminRepository;
+import com.example.repository.CasteRepository;
 import com.example.service.SubCasteService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/sub-castes")
+@RequestMapping("/api/master/sub-castes")
+@RequiredArgsConstructor
 public class SubCasteController {
 
-    @Autowired
-    private SubCasteService subCasteService;
+    private final SubCasteService service;
+    private final AdminRepository adminRepository;
+    private final CasteRepository casteRepository;
 
-    // Create new SubCaste
+    // =========================
+    // CREATE
+    // =========================
     @PostMapping
-    public ResponseEntity<SubCaste> create(@RequestBody SubCaste subCaste) {
-        return ResponseEntity.ok(subCasteService.create(subCaste));
+    public SubCasteResponseDTO create(@Valid @RequestBody SubCasteRequestDTO dto) {
+
+        SubCaste entity = mapToEntity(dto);
+        SubCaste saved = service.save(entity);
+
+        return mapToResponse(saved);
     }
 
-    // Get all
-    @GetMapping
-    public ResponseEntity<List<SubCaste>> getAll() {
-        return ResponseEntity.ok(subCasteService.getAll());
-    }
-
-    // Get all active
-    @GetMapping("/active")
-    public ResponseEntity<List<SubCaste>> getAllActive() {
-        return ResponseEntity.ok(subCasteService.getAllActive());
-    }
-
-    // Get by ID
-    @GetMapping("/{id}")
-    public ResponseEntity<SubCaste> getById(@PathVariable Long id) {
-        Optional<SubCaste> sc = subCasteService.getById(id);
-        return sc.map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
-    }
-
-    // Update
+    // =========================
+    // UPDATE
+    // =========================
     @PutMapping("/{id}")
-    public ResponseEntity<SubCaste> update(@PathVariable Long id, @RequestBody SubCaste updated) {
-        return ResponseEntity.ok(subCasteService.update(id, updated));
+    public SubCasteResponseDTO update(
+            @PathVariable Long id,
+            @Valid @RequestBody SubCasteRequestDTO dto) {
+
+        SubCaste existing = service.getById(id)
+                .orElseThrow(() -> new RuntimeException("SubCaste not found"));
+
+        updateEntity(existing, dto);
+
+        SubCaste updated = service.save(existing);
+
+        return mapToResponse(updated);
     }
 
-    // Delete
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        subCasteService.delete(id);
-        return ResponseEntity.noContent().build();
+    // =========================
+    // GET BY ID
+    // =========================
+    @GetMapping("/{id}")
+    public SubCasteResponseDTO getById(@PathVariable Long id) {
+
+        SubCaste s = service.getById(id)
+                .orElseThrow(() -> new RuntimeException("SubCaste not found"));
+
+        return mapToResponse(s);
     }
 
-    // Search
-    @GetMapping("/search")
-    public ResponseEntity<List<SubCaste>> search(@RequestParam String keyword) {
-        return ResponseEntity.ok(subCasteService.search(keyword));
+    // =========================
+    // GET ALL
+    // =========================
+    @GetMapping
+    public List<SubCasteResponseDTO> getAll() {
+
+        return service.getAll()
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
     }
 
-    // Get by Caste
-    @GetMapping("/caste/{casteId}")
-    public ResponseEntity<List<SubCaste>> getByCaste(@PathVariable Long casteId) {
-        return ResponseEntity.ok(subCasteService.getByCaste(casteId));
-    }
-
-    // Get active by Caste
-    @GetMapping("/caste/{casteId}/active")
-    public ResponseEntity<List<SubCaste>> getActiveByCaste(@PathVariable Long casteId) {
-        return ResponseEntity.ok(subCasteService.getActiveByCaste(casteId));
-    }
-
-    // Get by Admin
+    // =========================
+    // ADMIN APIs
+    // =========================
     @GetMapping("/admin/{adminId}")
-    public ResponseEntity<List<SubCaste>> getByAdmin(@PathVariable Long adminId) {
-        return ResponseEntity.ok(subCasteService.getByAdmin(adminId));
+    public List<SubCasteResponseDTO> getByAdmin(@PathVariable Long adminId) {
+
+        return service.getByAdmin(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @GetMapping("/admin/{adminId}/active")
+    public List<SubCasteResponseDTO> getActive(@PathVariable Long adminId) {
+
+        return service.getActiveByAdmin(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    // =========================
+    // CASTE FILTER
+    // =========================
+    @GetMapping("/caste/{casteId}/admin/{adminId}")
+    public List<SubCasteResponseDTO> getByCasteAndAdmin(
+            @PathVariable Long casteId,
+            @PathVariable Long adminId) {
+
+        return service.getByCasteAndAdmin(casteId, adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @GetMapping("/caste/{casteId}/admin/{adminId}/active")
+    public List<SubCasteResponseDTO> getActiveByCasteAndAdmin(
+            @PathVariable Long casteId,
+            @PathVariable Long adminId) {
+
+        return service.getActiveByCasteAndAdmin(casteId, adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    // =========================
+    // SEARCH
+    // =========================
+    @GetMapping("/admin/{adminId}/search")
+    public List<SubCasteResponseDTO> search(
+            @PathVariable Long adminId,
+            @RequestParam String keyword) {
+
+        return service.searchByAdmin(adminId, keyword)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    // =========================
+    // DELETE
+    // =========================
+    @DeleteMapping("/{id}")
+    public String delete(@PathVariable Long id) {
+        service.delete(id);
+        return "SubCaste deleted successfully";
+    }
+
+    // =========================
+    // 🔥 MAPPING (FIXED)
+    // =========================
+
+    private SubCaste mapToEntity(SubCasteRequestDTO dto) {
+
+        SubCaste s = new SubCaste();
+
+        Admin admin = adminRepository.findById(dto.getAdminId())
+                .orElseThrow(() -> new RuntimeException("Admin not found"));
+
+        Caste caste = casteRepository.findById(dto.getCasteId())
+                .orElseThrow(() -> new RuntimeException("Caste not found"));
+
+        s.setAdmin(admin);
+        s.setCaste(caste);
+        s.setName(dto.getName());
+
+        if (dto.getIsActive() != null) {
+            s.setIsActive(dto.getIsActive());
+        }
+
+        return s;
+    }
+
+    private void updateEntity(SubCaste s, SubCasteRequestDTO dto) {
+
+        if (dto.getCasteId() != null) {
+            Caste caste = casteRepository.findById(dto.getCasteId())
+                    .orElseThrow(() -> new RuntimeException("Caste not found"));
+            s.setCaste(caste);
+        }
+
+        if (dto.getName() != null) {
+            s.setName(dto.getName());
+        }
+
+        if (dto.getIsActive() != null) {
+            s.setIsActive(dto.getIsActive());
+        }
+    }
+
+    private SubCasteResponseDTO mapToResponse(SubCaste s) {
+
+        return SubCasteResponseDTO.builder()
+                .id(s.getId())
+                .adminId(s.getAdmin() != null ? s.getAdmin().getId() : null)
+                .adminName(s.getAdmin() != null ? s.getAdmin().getName() : null)
+                .casteId(s.getCaste() != null ? s.getCaste().getId() : null)
+                .casteName(s.getCaste() != null ? s.getCaste().getName() : null)
+                .name(s.getName())
+                .isActive(s.getIsActive())
+                .createdAt(s.getCreatedAt())
+                .updatedAt(s.getUpdatedAt())
+                .build();
     }
 }

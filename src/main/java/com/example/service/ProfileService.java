@@ -7,16 +7,22 @@ import java.util.Optional;
 
 public interface ProfileService {
 
-    Profile create(Profile profile);
+    // ✅ Create / Save profile
+    Profile saveProfile(Profile profile);
 
-    Profile update(Long userId, Profile profile);
+    // ✅ Get by ID
+    Optional<Profile> getById(Long id);
 
+    // 🔍 Get by userId
     Optional<Profile> getByUserId(Long userId);
 
-    void delete(Long userId);
-
+    // 🔍 Get all
     List<Profile> getAll();
 
+    // 🔥 Active profiles
+    List<Profile> getActiveProfiles();
+
+    // 🔍 Filters
     List<Profile> getByReligion(Long religionId);
 
     List<Profile> getByCaste(Long casteId);
@@ -26,4 +32,16 @@ public interface ProfileService {
     List<Profile> getByEducation(Long educationLevelId);
 
     List<Profile> getByOccupation(Long occupationId);
+
+    // 🔥 Advanced filters
+    List<Profile> getByReligionAndCaste(Long religionId, Long casteId);
+
+    List<Profile> getByCityAndEducation(Long cityId, Long educationLevelId);
+
+    List<Profile> getByOccupationAndCity(Long occupationId, Long cityId);
+
+    List<Profile> getActiveByReligionAndCity(Long religionId, Long cityId);
+
+    // ✅ Delete
+    void delete(Long id);
 }

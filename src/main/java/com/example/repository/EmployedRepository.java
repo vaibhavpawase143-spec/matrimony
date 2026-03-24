@@ -10,21 +10,30 @@ import java.util.Optional;
 @Repository
 public interface EmployedRepository extends JpaRepository<Employed, Long> {
 
+    // 🔍 Find by name
     Optional<Employed> findByName(String name);
 
+    // 🔥 Case-insensitive
+    Optional<Employed> findByNameIgnoreCase(String name);
+
+    // ✅ Duplicate check
     boolean existsByName(String name);
 
-    // ✅ STANDARD FIELD (isActive)
-    List<Employed> findByIsActiveTrue();
+    boolean existsByNameIgnoreCase(String name);
 
+    // 🔍 Active / Inactive
+    List<Employed> findByIsActiveTrue();
     List<Employed> findByIsActiveFalse();
 
-    // 🔍 Filter by admin
+    // 🔍 Admin-based filtering
     List<Employed> findByAdminId(Long adminId);
 
     // ✅ Active by admin
     List<Employed> findByAdminIdAndIsActiveTrue(Long adminId);
 
-    // 🔍 Search
+    // 🔍 Search (global)
     List<Employed> findByNameContainingIgnoreCase(String keyword);
+
+    // 🔥 Search within admin
+    List<Employed> findByAdminIdAndNameContainingIgnoreCase(Long adminId, String keyword);
 }

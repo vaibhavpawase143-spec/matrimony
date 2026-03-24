@@ -10,21 +10,15 @@ import java.util.Optional;
 @Repository
 public interface InterestRepository extends JpaRepository<Interest, Long> {
 
-    // ✅ Find by sender
     List<Interest> findBySender_Id(Long senderId);
 
-    // ✅ Find by receiver
     List<Interest> findByReceiver_Id(Long receiverId);
 
-    // ✅ Find by sender + receiver
     Optional<Interest> findBySender_IdAndReceiver_Id(Long senderId, Long receiverId);
 
-    // ✅ Find by receiver + status (PENDING)
-    List<Interest> findByReceiver_IdAndIsActiveIgnoreCase(Long receiverId, String isActive);
+    List<Interest> findByReceiver_IdAndStatusIgnoreCase(Long receiverId, String status);
 
-    // ✅ Find by sender + status
-    List<Interest> findBySender_IdAndIsActiveIgnoreCase(Long senderId, String isActive);
+    List<Interest> findBySender_IdAndStatusIgnoreCase(Long senderId, String status);
 
-    // ✅ Find all by status
-    List<Interest> findByIsActiveIgnoreCase(String isActive);
+    List<Interest> findByStatusIgnoreCase(String status);
 }

@@ -4,29 +4,42 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "cities")
+@Table(
+        name = "cities",
+        uniqueConstraints = {
+                @UniqueConstraint(columnNames = {"name", "state_id"})
+        },
+        indexes = {
+                @Index(name = "idx_city_state", columnList = "state_id"),
+                @Index(name = "idx_city_active", columnList = "is_active")
+        }
+)
 public class City {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 100)
     private String name;
 
-    // ✅ Relationship with State
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "state_id", nullable = false)
     private State state;
 
-    // ✅ ADD THIS (for repository methods like findByStateId)
+    // For query optimization
     @Column(name = "state_id", insertable = false, updatable = false)
     private Long stateId;
 
-    @Column(name = "admin_id")
+    // ✅ FIXED: consistent with other entities
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "admin_id")
+    private Admin admin;
+
+    @Column(name = "admin_id", insertable = false, updatable = false)
     private Long adminId;
 
-    @Column(nullable = false)
+    @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -37,7 +50,6 @@ public class City {
 
     public City() {}
 
-    // ✅ Auto timestamps
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
@@ -71,17 +83,20 @@ public class City {
         this.state = state;
     }
 
-    // ✅ Getter for stateId (used in repository queries)
     public Long getStateId() {
         return stateId;
     }
 
-    public Long getAdminId() {
-        return adminId;
+    public Admin getAdmin() {
+        return admin;
     }
 
-    public void setAdminId(Long adminId) {
-        this.adminId = adminId;
+    public void setAdmin(Admin admin) {
+        this.admin = admin;
+    }
+
+    public Long getAdminId() {
+        return adminId;
     }
 
     public Boolean getIsActive() {
@@ -96,15 +111,7 @@ public class City {
         return createdAt;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
     }
 }

@@ -10,23 +10,41 @@ import java.util.Optional;
 @Repository
 public interface CityRepository extends JpaRepository<City, Long> {
 
+    // 🔍 Find by name
     Optional<City> findByName(String name);
 
+    // 🔥 Case-insensitive (important)
+    Optional<City> findByNameIgnoreCase(String name);
+
+    // ✅ Duplicate check
     boolean existsByName(String name);
 
-    // ✅ Active cities
-    List<City> findByIsActiveTrue();
+    boolean existsByNameIgnoreCase(String name);
 
-    // ✅ By state (RELATION SAFE)
+    // 🔍 Active / Inactive
+    List<City> findByIsActiveTrue();
+    List<City> findByIsActiveFalse();
+
+    // 🔍 State-based filtering (RELATION SAFE)
     List<City> findByState_Id(Long stateId);
 
     List<City> findByState_IdAndIsActiveTrue(Long stateId);
 
-    // ✅ By admin
+    // 🔥 State + Name (important for validation)
+    Optional<City> findByState_IdAndNameIgnoreCase(Long stateId, String name);
+
+    // 🔍 Admin-based filtering
     List<City> findByAdminId(Long adminId);
 
-    // ✅ Search
+    // 🔥 Admin + Active
+    List<City> findByAdminIdAndIsActiveTrue(Long adminId);
+
+    // 🔍 Search (global)
     List<City> findByNameContainingIgnoreCase(String keyword);
 
+    // 🔍 Search within state
     List<City> findByState_IdAndNameContainingIgnoreCase(Long stateId, String keyword);
+
+    // 🔥 Search within admin (multi-tenant support)
+    List<City> findByAdminIdAndNameContainingIgnoreCase(Long adminId, String keyword);
 }

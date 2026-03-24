@@ -3,81 +3,125 @@ package com.example.serviceimpl;
 import com.example.model.Drinking;
 import com.example.repository.DrinkingRepository;
 import com.example.service.DrinkingService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class DrinkingServiceImpl implements DrinkingService {
 
-    @Autowired
-    private DrinkingRepository repo;
+    private final DrinkingRepository drinkingRepository;
 
-    // ✅ Get all
-    @Override
-    public List<Drinking> getAll() {
-        return repo.findAll();
-    }
-
-    // ✅ Get active
-    @Override
-    public List<Drinking> getActive() {
-        return repo.findByIsActiveTrue();
-    }
-
-    // ✅ Get by ID
-    @Override
-    public Drinking getById(Long id) {
-        return repo.findById(id)
-                .orElseThrow(() -> new RuntimeException("Drinking not found with id: " + id));
+    public DrinkingServiceImpl(DrinkingRepository drinkingRepository) {
+        this.drinkingRepository = drinkingRepository;
     }
 
     // ✅ Create
     @Override
     public Drinking create(Drinking drinking) {
-        drinking.setCreatedAt(LocalDateTime.now());
-        drinking.setUpdatedAt(LocalDateTime.now());
-        drinking.setIsActive(true);
-        return repo.save(drinking);
+
+        if (drinkingRepository.existsByValueIgnoreCase(drinking.getValue())) {
+            throw new RuntimeException("Drinking already exists: " + drinking.getValue());
+        }
+
+        return drinkingRepository.save(drinking);
     }
 
-    // ✅ Update
+    // 🔄 Update
     @Override
-    public Drinking update(Long id, Drinking updated) {
-        Drinking existing = getById(id);
+    public Drinking update(Long id, Drinking drinking) {
 
-        existing.setName(updated.getName());
-        existing.setValue(updated.getValue());
-        existing.setIsActive(updated.getIsActive());
-        existing.setUpdatedAt(LocalDateTime.now());
+        Drinking existing = drinkingRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Drinking not found with id: " + id));
 
-        return repo.save(existing);
+        drinkingRepository.findByValueIgnoreCase(drinking.getValue())
+                .ifPresent(d -> {
+                    if (!d.getId().equals(id)) {
+                        throw new RuntimeException("Drinking already exists: " + drinking.getValue());
+                    }
+                });
+
+        // ✏️ Update fields
+        existing.setValue(drinking.getValue());
+        existing.setIsActive(drinking.getIsActive());
+
+        return drinkingRepository.save(existing);
     }
 
-    // ✅ Delete
+    // ❌ Delete
     @Override
     public void delete(Long id) {
-        Drinking existing = getById(id);
-        repo.delete(existing);
+        Drinking existing = drinkingRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Drinking not found with id: " + id));
+
+        drinkingRepository.delete(existing);
     }
 
-    // ✅ Get by admin
+    // 🔍 Get by ID
+    @Override
+    public Optional<Drinking> getById(Long id) {
+        return drinkingRepository.findById(id);
+    }
+
+    // 🔍 Get all
+    @Override
+    public List<Drinking> getAll() {
+        return drinkingRepository.findAll();
+    }
+
+    // 🔍 Find by value
+    @Override
+    public Optional<Drinking> getByValue(String value) {
+        return drinkingRepository.findByValue(value);
+    }
+
+    @Override
+    public Optional<Drinking> getByValueIgnoreCase(String value) {
+        return drinkingRepository.findByValueIgnoreCase(value);
+    }
+
+    // ✅ Duplicate check
+    @Override
+    public boolean existsByValue(String value) {
+        return drinkingRepository.existsByValue(value);
+    }
+
+    @Override
+    public boolean existsByValueIgnoreCase(String value) {
+        return drinkingRepository.existsByValueIgnoreCase(value);
+    }
+
+    // 🔍 Active / Inactive
+    @Override
+    public List<Drinking> getActive() {
+        return drinkingRepository.findByIsActiveTrue();
+    }
+
+    @Override
+    public List<Drinking> getInactive() {
+        return drinkingRepository.findByIsActiveFalse();
+    }
+
+    // 🔍 Admin-based
     @Override
     public List<Drinking> getByAdmin(Long adminId) {
-        return repo.findByAdminId(adminId);
+        return drinkingRepository.findByAdminId(adminId);
     }
 
-    // ✅ Get active by admin
     @Override
     public List<Drinking> getActiveByAdmin(Long adminId) {
-        return repo.findByAdminIdAndIsActiveTrue(adminId);
+        return drinkingRepository.findByAdminIdAndIsActiveTrue(adminId);
     }
 
-    // ✅ Search
+    // 🔍 Search
     @Override
     public List<Drinking> search(String keyword) {
-        return repo.findByNameContainingIgnoreCase(keyword);
+        return drinkingRepository.findByValueContainingIgnoreCase(keyword);
+    }
+
+    @Override
+    public List<Drinking> searchByAdmin(Long adminId, String keyword) {
+        return drinkingRepository.findByAdminIdAndValueContainingIgnoreCase(adminId, keyword);
     }
 }

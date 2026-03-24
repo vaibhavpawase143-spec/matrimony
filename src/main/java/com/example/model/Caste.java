@@ -1,12 +1,17 @@
 package com.example.model;
 
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(
         name = "castes",
         uniqueConstraints = {
                 @UniqueConstraint(columnNames = {"name", "religion_id"})
+        },
+        indexes = {
+                @Index(name = "idx_caste_religion", columnList = "religion_id"),
+                @Index(name = "idx_caste_active", columnList = "is_active")
         }
 )
 public class Caste {
@@ -19,23 +24,38 @@ public class Caste {
     @JoinColumn(name = "admin_id")
     private Admin admin;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 100)
     private String name;
 
-    @ManyToOne
-    @JoinColumn(name = "religion_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "religion_id") // add nullable=false if required
     private Religion religion;
 
+    @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 
-    // Getters and Setters
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    public Caste() {}
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
+
+    // ================= GETTERS & SETTERS =================
 
     public Long getId() {
         return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
     }
 
     public Admin getAdmin() {
@@ -62,11 +82,19 @@ public class Caste {
         this.religion = religion;
     }
 
-    public Boolean getisActive() {
+    public Boolean getIsActive() {   // ✅ FIXED
         return isActive;
     }
 
-    public void setisActive(Boolean isActive) {
+    public void setIsActive(Boolean isActive) {
         this.isActive = isActive;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
     }
 }

@@ -10,24 +10,21 @@ import java.util.Optional;
 @Repository
 public interface SmokingRepository extends JpaRepository<Smoking, Long> {
 
-    // 🔍 Find by value (case-insensitive)
-    Optional<Smoking> findByValueIgnoreCase(String value);
+    // 🔍 Find by value (admin-specific, case-insensitive)
+    Optional<Smoking> findByValueIgnoreCaseAndAdminId(String value, Long adminId);
 
-    // 🔍 Check duplicate
-    boolean existsByValueIgnoreCase(String value);
+    // 🔍 Check duplicate (admin-specific)
+    boolean existsByValueIgnoreCaseAndAdminId(String value, Long adminId);
 
-    // 🔍 Get all active records
-    List<Smoking> findByIsActiveTrue();
-
-    // 🔍 Get all inactive records
-    List<Smoking> findByIsActiveFalse();
-
-    // 🔍 Filter by admin
+    // 🔍 Get all records by admin
     List<Smoking> findByAdminId(Long adminId);
 
     // 🔍 Active records by admin
     List<Smoking> findByAdminIdAndIsActiveTrue(Long adminId);
 
-    // 🔍 Search (for dropdown/search)
-    List<Smoking> findByValueContainingIgnoreCase(String keyword);
+    // 🔍 Inactive records by admin
+    List<Smoking> findByAdminIdAndIsActiveFalse(Long adminId);
+
+    // 🔍 Search (admin + keyword)
+    List<Smoking> findByAdminIdAndValueContainingIgnoreCase(Long adminId, String keyword);
 }

@@ -7,22 +7,31 @@ import java.util.Optional;
 
 public interface UserService {
 
+    // ✅ Register
     User register(User user);
 
-    Optional<User> login(String email, String password);
+    // 🔐 Login
+    User login(String email, String password);
 
+    // 🔍 Get by ID
     Optional<User> getById(Long id);
 
+    // 🔍 Get by email
+    Optional<User> getByEmail(String email);
+
+    // 🔍 Get all users
     List<User> getAll();
 
-    List<User> getAllActive();
+    // 🔍 Active users
+    List<User> getActiveUsers();
 
-    User update(Long id, User user);
-
-    void deactivate(Long id);
-
+    // 🔍 Search
     List<User> search(String keyword);
 
-    // ✅ Missing method (add this)
-    boolean existsByEmail(String email);
+    // ✅ Update
+    User update(Long id, User user);
+
+    // ❌ Soft delete
+    void deactivate(Long id);
+
 }

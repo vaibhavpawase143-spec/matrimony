@@ -7,17 +7,29 @@ import java.util.Optional;
 
 public interface RoleService {
 
-    Role create(Role role);
+    // ✅ Create / Save
+    Role save(Role role);
 
-    List<Role> getAll();
-
+    // ✅ Get by ID
     Optional<Role> getById(Long id);
 
-    Role update(Long id, Role role);
+    // 🔍 Get all
+    List<Role> getAll();
 
-    void delete(Long id); // soft delete
-
-    List<Role> search(String keyword);
-
+    // 🔍 Get by admin
     List<Role> getByAdmin(Long adminId);
+
+    // 🔍 Active / Inactive
+    List<Role> getActiveByAdmin(Long adminId);
+
+    List<Role> getInactiveByAdmin(Long adminId);
+
+    // 🔍 Search
+    List<Role> searchByAdmin(Long adminId, String keyword);
+
+    // 🔍 Find by name (admin-specific)
+    Optional<Role> getByNameAndAdmin(String name, Long adminId);
+
+    // ✅ Delete
+    void delete(Long id);
 }

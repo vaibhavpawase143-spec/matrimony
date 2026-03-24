@@ -3,71 +3,70 @@ package com.example.serviceimpl;
 import com.example.model.Payment;
 import com.example.repository.PaymentRepository;
 import com.example.service.PaymentService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class PaymentServiceImpl implements PaymentService {
 
-    @Autowired
-    private PaymentRepository repo;
+    private final PaymentRepository repository;
 
-    // ✅ Create Payment
+    public PaymentServiceImpl(PaymentRepository repository) {
+        this.repository = repository;
+    }
+
     @Override
-    public Payment create(Payment payment) {
+    public Payment savePayment(Payment payment) {
 
-        if (repo.existsByTransactionId(payment.getTransactionId())) {
-            throw new RuntimeException("Transaction already exists: " + payment.getTransactionId());
+        Optional<Payment> existing = repository.findByTransactionId(payment.getTransactionId());
+
+        if (existing.isPresent()) {
+            Payment existingPayment = existing.get();
+
+            existingPayment.setStatus(payment.getStatus());
+            existingPayment.setAmount(payment.getAmount());
+            existingPayment.setPaymentMethod(payment.getPaymentMethod());
+
+            return repository.save(existingPayment);
         }
 
-        payment.setCreatedAt(LocalDateTime.now());
-        // ✅ Status handled in entity (@PrePersist → PENDING)
-
-        return repo.save(payment);
+        return repository.save(payment);
     }
 
-    // ✅ Get all payments
+    @Override
+    public Optional<Payment> getById(Long id) {
+        return repository.findById(id);
+    }
+
+    @Override
+    public Optional<Payment> getByTransactionId(String transactionId) {
+        return repository.findByTransactionId(transactionId);
+    }
+
     @Override
     public List<Payment> getAll() {
-        return repo.findAll();
+        return repository.findAll();
     }
 
-    // ✅ Get by user
     @Override
     public List<Payment> getByUser(Long userId) {
-        return repo.findByUser_Id(userId);
-    }
-
-    // ✅ Get by transactionId
-    @Override
-    public Payment getByTransactionId(String transactionId) {
-        return repo.findByTransactionId(transactionId)
-                .orElseThrow(() ->
-                        new RuntimeException("Payment not found: " + transactionId));
-    }
-
-    // ✅ Get by status (PENDING / SUCCESS / FAILED)
-    @Override
-    public List<Payment> getByisActive(String isActive) {
-        return repo.findByIsActiveIgnoreCase(isActive);
-    }
-
-    // ✅ Get by user + status
-    @Override
-    public List<Payment> getByUserAndisActive(Long userId, String isActive) {
-        return repo.findByUser_IdAndIsActiveIgnoreCase(userId, isActive);
+        return repository.findByUserId(userId);
     }
 
     @Override
-    public List<Payment> getByIsActive(Boolean isActive) {
-        return repo.findByIsActive(isActive);
+    public List<Payment> getByStatus(String status) {
+        return repository.findByStatus(status);
     }
 
     @Override
-    public List<Payment> getByUserAndIsActive(Long userId, Boolean isActive) {
-        return repo.findByUserIdAndIsActive(userId, isActive);
+    public List<Payment> getByUserAndStatus(Long userId, String status) {
+        return repository.findByUserIdAndStatus(userId, status);
+    }
+
+    @Override
+    public void delete(Long id) {
+        repository.deleteById(id);
     }
 }

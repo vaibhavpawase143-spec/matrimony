@@ -3,74 +3,82 @@ package com.example.serviceimpl;
 import com.example.model.ProfileType;
 import com.example.repository.ProfileTypeRepository;
 import com.example.service.ProfileTypeService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 @Service
 public class ProfileTypeServiceImpl implements ProfileTypeService {
 
-    @Autowired
-    private ProfileTypeRepository repo;
+    private final ProfileTypeRepository repository;
 
-    // ✅ Create
-    @Override
-    public ProfileType create(ProfileType profileType) {
-        profileType.setCreatedAt(LocalDateTime.now());
-        profileType.setUpdatedAt(LocalDateTime.now());
-        profileType.setIsActive(true);
-        return repo.save(profileType);
+    public ProfileTypeServiceImpl(ProfileTypeRepository repository) {
+        this.repository = repository;
     }
 
-    // ✅ Get all
+    // ✅ Save (admin-wise duplicate check)
     @Override
-    public List<ProfileType> getAll() {
-        return repo.findAll();
+    public ProfileType save(ProfileType profileType) {
+
+        String name = profileType.getName();
+        Long adminId = profileType.getAdmin().getId();
+
+        Optional<ProfileType> existing =
+                repository.findByNameIgnoreCaseAndAdminId(name, adminId);
+
+        if (existing.isPresent() &&
+                !existing.get().getId().equals(profileType.getId())) {
+            throw new RuntimeException("ProfileType already exists for this admin!");
+        }
+
+        return repository.save(profileType);
     }
 
     // ✅ Get by ID
     @Override
     public Optional<ProfileType> getById(Long id) {
-        return repo.findById(id);
+        return repository.findById(id);
     }
 
-    // ✅ Update
+    // 🔍 Get all
     @Override
-    public ProfileType update(Long id, ProfileType profileType) {
-        ProfileType existing = repo.findById(id)
-                .orElseThrow(() -> new RuntimeException("ProfileType not found with id: " + id));
-
-        existing.setName(profileType.getName());
-        existing.setIsActive(profileType.getIsActive());
-        existing.setUpdatedAt(LocalDateTime.now());
-
-        return repo.save(existing);
+    public List<ProfileType> getAll() {
+        return repository.findAll();
     }
 
-    // ✅ Delete (Soft Delete)
-    @Override
-    public void delete(Long id) {
-        ProfileType existing = repo.findById(id)
-                .orElseThrow(() -> new RuntimeException("ProfileType not found with id: " + id));
-
-        existing.setIsActive(false);
-        existing.setUpdatedAt(LocalDateTime.now());
-
-        repo.save(existing);
-    }
-
-    // ✅ Get by admin
+    // 🔍 Get by admin
     @Override
     public List<ProfileType> getByAdmin(Long adminId) {
-        return repo.findByAdminId(adminId);
+        return repository.findByAdminId(adminId);
     }
 
-    // ✅ Search
+    // 🔍 Active / Inactive
     @Override
-    public List<ProfileType> search(String keyword) {
-        return repo.findByNameContainingIgnoreCase(keyword);
+    public List<ProfileType> getActiveByAdmin(Long adminId) {
+        return repository.findByAdminIdAndIsActiveTrue(adminId);
+    }
+
+    @Override
+    public List<ProfileType> getInactiveByAdmin(Long adminId) {
+        return repository.findByAdminIdAndIsActiveFalse(adminId);
+    }
+
+    // 🔍 Search
+    @Override
+    public List<ProfileType> searchByAdmin(Long adminId, String keyword) {
+        return repository.findByAdminIdAndNameContainingIgnoreCase(adminId, keyword);
+    }
+
+    // 🔍 Find by name
+    @Override
+    public Optional<ProfileType> getByNameAndAdmin(String name, Long adminId) {
+        return repository.findByNameIgnoreCaseAndAdminId(name, adminId);
+    }
+
+    // ✅ Delete
+    @Override
+    public void delete(Long id) {
+        repository.deleteById(id);
     }
 }

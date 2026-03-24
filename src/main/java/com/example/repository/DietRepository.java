@@ -10,23 +10,30 @@ import java.util.Optional;
 @Repository
 public interface DietRepository extends JpaRepository<Diet, Long> {
 
-    // 🔍 Find by name (Veg, Non-Veg, Vegan)
+    // 🔍 Find by name
     Optional<Diet> findByName(String name);
 
-    // 🔍 Check duplicate
+    // 🔥 Case-insensitive (important)
+    Optional<Diet> findByNameIgnoreCase(String name);
+
+    // ✅ Duplicate check
     boolean existsByName(String name);
 
-    // ✅ STANDARD FIELD (isActive)
-    List<Diet> findByIsActiveTrue();
+    boolean existsByNameIgnoreCase(String name);
 
+    // 🔍 Active / Inactive
+    List<Diet> findByIsActiveTrue();
     List<Diet> findByIsActiveFalse();
 
-    // 🔍 Filter by admin
+    // 🔍 Admin-based filtering
     List<Diet> findByAdminId(Long adminId);
 
-    // ✅ Active diets by admin
+    // ✅ Active by admin
     List<Diet> findByAdminIdAndIsActiveTrue(Long adminId);
 
-    // 🔍 Search
+    // 🔍 Search (global)
     List<Diet> findByNameContainingIgnoreCase(String keyword);
+
+    // 🔥 Search within admin (multi-tenant support)
+    List<Diet> findByAdminIdAndNameContainingIgnoreCase(Long adminId, String keyword);
 }

@@ -1,80 +1,176 @@
-package com.example.controller.master; // master folder
+package com.example.controller.master;
 
+import com.example.dto.request.SisterTypeRequestDTO;
+import com.example.dto.response.SisterTypeResponseDTO;
+import com.example.model.Admin;
 import com.example.model.SisterType;
 import com.example.service.SisterTypeService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/sister-types")
+@RequestMapping("/api/master/sister-types")
+@RequiredArgsConstructor
 public class SisterTypeController {
 
-    @Autowired
-    private SisterTypeService sisterTypeService;
+    private final SisterTypeService service;
 
-    // Create new SisterType
+    // =========================
+    // CREATE
+    // =========================
     @PostMapping
-    public ResponseEntity<SisterType> create(@RequestBody SisterType st) {
-        return ResponseEntity.ok(sisterTypeService.create(st));
+    public SisterTypeResponseDTO create(@Valid @RequestBody SisterTypeRequestDTO dto) {
+
+        SisterType entity = mapToEntity(dto);
+        SisterType saved = service.save(entity);
+
+        return mapToResponse(saved);
     }
 
-    // Get all
-    @GetMapping
-    public ResponseEntity<List<SisterType>> getAll() {
-        return ResponseEntity.ok(sisterTypeService.getAll());
-    }
-
-    // Get all active
-    @GetMapping("/active")
-    public ResponseEntity<List<SisterType>> getAllActive() {
-        return ResponseEntity.ok(sisterTypeService.getAllActive());
-    }
-
-    // Get all inactive
-    @GetMapping("/inactive")
-    public ResponseEntity<List<SisterType>> getAllInactive() {
-        return ResponseEntity.ok(sisterTypeService.getAllInactive());
-    }
-
-    // Get by ID
-    @GetMapping("/{id}")
-    public ResponseEntity<SisterType> getById(@PathVariable Long id) {
-        Optional<SisterType> st = sisterTypeService.getById(id);
-        return st.map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
-    }
-
-    // Update
+    // =========================
+    // UPDATE
+    // =========================
     @PutMapping("/{id}")
-    public ResponseEntity<SisterType> update(@PathVariable Long id, @RequestBody SisterType updated) {
-        return ResponseEntity.ok(sisterTypeService.update(id, updated));
+    public SisterTypeResponseDTO update(
+            @PathVariable Long id,
+            @Valid @RequestBody SisterTypeRequestDTO dto) {
+
+        SisterType existing = service.getById(id)
+                .orElseThrow(() -> new RuntimeException("SisterType not found"));
+
+        updateEntity(existing, dto);
+
+        SisterType updated = service.save(existing);
+
+        return mapToResponse(updated);
     }
 
-    // Delete
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        sisterTypeService.delete(id);
-        return ResponseEntity.noContent().build();
+    // =========================
+    // GET BY ID
+    // =========================
+    @GetMapping("/{id}")
+    public SisterTypeResponseDTO getById(@PathVariable Long id) {
+
+        SisterType s = service.getById(id)
+                .orElseThrow(() -> new RuntimeException("SisterType not found"));
+
+        return mapToResponse(s);
     }
 
-    // Search
-    @GetMapping("/search")
-    public ResponseEntity<List<SisterType>> search(@RequestParam String keyword) {
-        return ResponseEntity.ok(sisterTypeService.search(keyword));
+    // =========================
+    // GET ALL
+    // =========================
+    @GetMapping
+    public List<SisterTypeResponseDTO> getAll() {
+
+        return service.getAll()
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
     }
 
-    // Get by admin
+    // =========================
+    // ADMIN APIs
+    // =========================
+
     @GetMapping("/admin/{adminId}")
-    public ResponseEntity<List<SisterType>> getByAdmin(@PathVariable Long adminId) {
-        return ResponseEntity.ok(sisterTypeService.getByAdmin(adminId));
+    public List<SisterTypeResponseDTO> getByAdmin(@PathVariable Long adminId) {
+
+        return service.getByAdmin(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
     }
 
-    // Get active by admin
     @GetMapping("/admin/{adminId}/active")
-    public ResponseEntity<List<SisterType>> getActiveByAdmin(@PathVariable Long adminId) {
-        return ResponseEntity.ok(sisterTypeService.getActiveByAdmin(adminId));
+    public List<SisterTypeResponseDTO> getActive(@PathVariable Long adminId) {
+
+        return service.getActiveByAdmin(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @GetMapping("/admin/{adminId}/inactive")
+    public List<SisterTypeResponseDTO> getInactive(@PathVariable Long adminId) {
+
+        return service.getInactiveByAdmin(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    // =========================
+    // SEARCH
+    // =========================
+    @GetMapping("/admin/{adminId}/search")
+    public List<SisterTypeResponseDTO> search(
+            @PathVariable Long adminId,
+            @RequestParam String keyword) {
+
+        return service.searchByAdmin(adminId, keyword)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    // =========================
+    // DELETE
+    // =========================
+    @DeleteMapping("/{id}")
+    public String delete(@PathVariable Long id) {
+        service.delete(id);
+        return "SisterType deleted successfully";
+    }
+
+    // =========================
+    // 🔥 MAPPING
+    // =========================
+
+    private SisterType mapToEntity(SisterTypeRequestDTO dto) {
+
+        SisterType s = new SisterType();
+
+        Admin admin = new Admin();
+        admin.setId(dto.getAdminId());
+        s.setAdmin(admin);
+
+        s.setValue(dto.getValue());
+
+        if (dto.getIsActive() != null) {
+            s.setIsActive(dto.getIsActive());
+        }
+
+        return s;
+    }
+
+    private void updateEntity(SisterType s, SisterTypeRequestDTO dto) {
+
+        // 🚫 DO NOT update admin
+
+        if (dto.getValue() != null) {
+            s.setValue(dto.getValue());
+        }
+
+        if (dto.getIsActive() != null) {
+            s.setIsActive(dto.getIsActive());
+        }
+    }
+
+    private SisterTypeResponseDTO mapToResponse(SisterType s) {
+
+        return SisterTypeResponseDTO.builder()
+                .id(s.getId())
+                .adminId(s.getAdmin() != null ? s.getAdmin().getId() : null)
+                .adminName(s.getAdmin() != null ? s.getAdmin().getName() : null)
+                .value(s.getValue())
+                .isActive(s.getIsActive())
+                .createdAt(s.getCreatedAt())
+                .updatedAt(s.getUpdatedAt())
+                .build();
     }
 }

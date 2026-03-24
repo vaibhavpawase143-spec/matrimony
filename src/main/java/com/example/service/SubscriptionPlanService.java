@@ -7,23 +7,29 @@ import java.util.Optional;
 
 public interface SubscriptionPlanService {
 
+    // ✅ Create
     SubscriptionPlan create(SubscriptionPlan plan);
 
-    List<SubscriptionPlan> getAll();
-
-    List<SubscriptionPlan> getAllActive();
-
-    List<SubscriptionPlan> getAllInactive();
-
+    // 🔍 Get by ID
     Optional<SubscriptionPlan> getById(Long id);
 
-    SubscriptionPlan update(Long id, SubscriptionPlan plan);
+    // 🔍 Get all
+    List<SubscriptionPlan> getAll();
 
-    void delete(Long id); // soft delete
-
-    List<SubscriptionPlan> search(String keyword);
-
+    // 🔍 By admin
     List<SubscriptionPlan> getByAdmin(Long adminId);
 
+    // 🔍 Active / Inactive (admin-based)
     List<SubscriptionPlan> getActiveByAdmin(Long adminId);
+
+    List<SubscriptionPlan> getInactiveByAdmin(Long adminId);
+
+    // 🔍 Search (admin-based)
+    List<SubscriptionPlan> searchByAdmin(Long adminId, String keyword);
+
+    // ✅ Update
+    SubscriptionPlan update(Long id, SubscriptionPlan plan);
+
+    // ❌ Soft delete
+    void delete(Long id);
 }

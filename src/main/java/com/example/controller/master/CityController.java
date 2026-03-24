@@ -1,83 +1,137 @@
 package com.example.controller.master;
 
+import com.example.dto.request.CityRequestDTO;
+import com.example.dto.responce.CityResponseDTO;
+import com.example.model.Admin;
 import com.example.model.City;
+import com.example.model.State;
 import com.example.service.CityService;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/master/cities")
+@RequestMapping("/api/cities")
+@RequiredArgsConstructor
 public class CityController {
 
-    @Autowired
-    private CityService service;
+    private final CityService cityService;
 
-    // ✅ Get all cities
-    @GetMapping
-    public List<City> getAll() {
-        return service.getAll();
-    }
-
-    // ✅ Get active cities
-    @GetMapping("/active")
-    public List<City> getActive() {
-        return service.getActive();
-    }
-
-    // ✅ Get by ID
-    @GetMapping("/{id}")
-    public City getById(@PathVariable Long id) {
-        return service.getById(id);
-    }
-
-    // ✅ Create city
+    // ================= CREATE =================
     @PostMapping
-    public City create(@RequestBody City city) {
-        return service.create(city);
+    public CityResponseDTO create(@Valid @RequestBody CityRequestDTO dto) {
+
+        City saved = cityService.saveCity(mapToEntity(dto));
+        return mapToResponse(saved);
     }
 
-    // ✅ Update city
-    @PutMapping("/{id}")
-    public City update(@PathVariable Long id, @RequestBody City city) {
-        return service.update(id, city);
+    // ================= GET BY ID =================
+    @GetMapping("/{id}")
+    public CityResponseDTO getById(@PathVariable Long id) {
+
+        return cityService.getCityById(id)
+                .map(this::mapToResponse)
+                .orElseThrow(() -> new RuntimeException("City not found"));
     }
 
-    // ✅ Delete city
+    // ================= GET ALL =================
+    @GetMapping
+    public List<CityResponseDTO> getAll() {
+
+        return cityService.getAllCities()
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    // ================= DELETE =================
     @DeleteMapping("/{id}")
-    public void delete(@PathVariable Long id) {
-        service.delete(id);
+    public String delete(@PathVariable Long id) {
+        cityService.deleteCity(id);
+        return "City deleted successfully";
     }
 
-    // ✅ Get cities by state
+    // ================= ACTIVE =================
+    @GetMapping("/active")
+    public List<CityResponseDTO> getActive() {
+        return cityService.getActiveCities()
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    // ================= BY STATE =================
     @GetMapping("/state/{stateId}")
-    public List<City> getByState(@PathVariable Long stateId) {
-        return service.getByState(stateId);
+    public List<CityResponseDTO> getByState(@PathVariable Long stateId) {
+
+        return cityService.getCitiesByState(stateId)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
     }
 
-    // ✅ Get active cities by state
-    @GetMapping("/state/{stateId}/active")
-    public List<City> getActiveByState(@PathVariable Long stateId) {
-        return service.getActiveByState(stateId);
-    }
-
-    // ✅ Get by admin
+    // ================= BY ADMIN =================
     @GetMapping("/admin/{adminId}")
-    public List<City> getByAdmin(@PathVariable Long adminId) {
-        return service.getByAdmin(adminId);
+    public List<CityResponseDTO> getByAdmin(@PathVariable Long adminId) {
+
+        return cityService.getCitiesByAdmin(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
     }
 
-    // ✅ Search city
+    // ================= SEARCH =================
     @GetMapping("/search")
-    public List<City> search(@RequestParam String keyword) {
-        return service.search(keyword);
+    public List<CityResponseDTO> search(@RequestParam String keyword) {
+
+        return cityService.searchByName(keyword)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
     }
 
-    // ✅ Search city by state
-    @GetMapping("/state/{stateId}/search")
-    public List<City> searchByState(@PathVariable Long stateId,
-                                    @RequestParam String keyword) {
-        return service.searchByState(stateId, keyword);
+    // ================= MAPPERS =================
+
+    private City mapToEntity(CityRequestDTO dto) {
+
+        City city = new City();
+
+        city.setName(dto.getName());
+
+        // State mapping
+        State state = new State();
+        state.setId(dto.getStateId());
+        city.setState(state);
+
+        // Admin mapping
+        Admin admin = new Admin();
+        admin.setId(dto.getAdminId());
+        city.setAdmin(admin);
+
+        city.setIsActive(dto.getIsActive() != null ? dto.getIsActive() : true);
+
+        return city;
+    }
+
+    private CityResponseDTO mapToResponse(City city) {
+
+        CityResponseDTO dto = new CityResponseDTO();
+
+        dto.setId(city.getId());
+        dto.setName(city.getName());
+        dto.setIsActive(city.getIsActive());
+        dto.setCreatedAt(city.getCreatedAt());
+
+        dto.setStateId(city.getStateId());
+        dto.setAdminId(city.getAdminId());
+
+        if (city.getState() != null) {
+            dto.setStateName(city.getState().getName());
+        }
+
+        return dto;
     }
 }

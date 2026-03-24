@@ -1,80 +1,176 @@
-package com.example.controller.master; // master folder
+package com.example.controller.master;
 
+import com.example.dto.request.SmokingRequestDTO;
+import com.example.dto.response.SmokingResponseDTO;
+import com.example.model.Admin;
 import com.example.model.Smoking;
 import com.example.service.SmokingService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/smoking")
+@RequestMapping("/api/master/smoking")
+@RequiredArgsConstructor
 public class SmokingController {
 
-    @Autowired
-    private SmokingService smokingService;
+    private final SmokingService service;
 
-    // Create new Smoking
+    // =========================
+    // CREATE
+    // =========================
     @PostMapping
-    public ResponseEntity<Smoking> create(@RequestBody Smoking smoking) {
-        return ResponseEntity.ok(smokingService.create(smoking));
+    public SmokingResponseDTO create(@Valid @RequestBody SmokingRequestDTO dto) {
+
+        Smoking entity = mapToEntity(dto);
+        Smoking saved = service.save(entity);
+
+        return mapToResponse(saved);
     }
 
-    // Get all
-    @GetMapping
-    public ResponseEntity<List<Smoking>> getAll() {
-        return ResponseEntity.ok(smokingService.getAll());
-    }
-
-    // Get all active
-    @GetMapping("/active")
-    public ResponseEntity<List<Smoking>> getAllActive() {
-        return ResponseEntity.ok(smokingService.getAllActive());
-    }
-
-    // Get all inactive
-    @GetMapping("/inactive")
-    public ResponseEntity<List<Smoking>> getAllInactive() {
-        return ResponseEntity.ok(smokingService.getAllInactive());
-    }
-
-    // Get by ID
-    @GetMapping("/{id}")
-    public ResponseEntity<Smoking> getById(@PathVariable Long id) {
-        Optional<Smoking> s = smokingService.getById(id);
-        return s.map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
-    }
-
-    // Update
+    // =========================
+    // UPDATE
+    // =========================
     @PutMapping("/{id}")
-    public ResponseEntity<Smoking> update(@PathVariable Long id, @RequestBody Smoking updated) {
-        return ResponseEntity.ok(smokingService.update(id, updated));
+    public SmokingResponseDTO update(
+            @PathVariable Long id,
+            @Valid @RequestBody SmokingRequestDTO dto) {
+
+        Smoking existing = service.getById(id)
+                .orElseThrow(() -> new RuntimeException("Smoking not found"));
+
+        updateEntity(existing, dto);
+
+        Smoking updated = service.save(existing);
+
+        return mapToResponse(updated);
     }
 
-    // Delete
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        smokingService.delete(id);
-        return ResponseEntity.noContent().build();
+    // =========================
+    // GET BY ID
+    // =========================
+    @GetMapping("/{id}")
+    public SmokingResponseDTO getById(@PathVariable Long id) {
+
+        Smoking s = service.getById(id)
+                .orElseThrow(() -> new RuntimeException("Smoking not found"));
+
+        return mapToResponse(s);
     }
 
-    // Search
-    @GetMapping("/search")
-    public ResponseEntity<List<Smoking>> search(@RequestParam String keyword) {
-        return ResponseEntity.ok(smokingService.search(keyword));
+    // =========================
+    // GET ALL
+    // =========================
+    @GetMapping
+    public List<SmokingResponseDTO> getAll() {
+
+        return service.getAll()
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
     }
 
-    // Get by admin
+    // =========================
+    // ADMIN APIs
+    // =========================
+
     @GetMapping("/admin/{adminId}")
-    public ResponseEntity<List<Smoking>> getByAdmin(@PathVariable Long adminId) {
-        return ResponseEntity.ok(smokingService.getByAdmin(adminId));
+    public List<SmokingResponseDTO> getByAdmin(@PathVariable Long adminId) {
+
+        return service.getByAdmin(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
     }
 
-    // Get active by admin
     @GetMapping("/admin/{adminId}/active")
-    public ResponseEntity<List<Smoking>> getActiveByAdmin(@PathVariable Long adminId) {
-        return ResponseEntity.ok(smokingService.getActiveByAdmin(adminId));
+    public List<SmokingResponseDTO> getActive(@PathVariable Long adminId) {
+
+        return service.getActiveByAdmin(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @GetMapping("/admin/{adminId}/inactive")
+    public List<SmokingResponseDTO> getInactive(@PathVariable Long adminId) {
+
+        return service.getInactiveByAdmin(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    // =========================
+    // SEARCH
+    // =========================
+    @GetMapping("/admin/{adminId}/search")
+    public List<SmokingResponseDTO> search(
+            @PathVariable Long adminId,
+            @RequestParam String keyword) {
+
+        return service.searchByAdmin(adminId, keyword)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    // =========================
+    // DELETE
+    // =========================
+    @DeleteMapping("/{id}")
+    public String delete(@PathVariable Long id) {
+        service.delete(id);
+        return "Smoking deleted successfully";
+    }
+
+    // =========================
+    // 🔥 MAPPING
+    // =========================
+
+    private Smoking mapToEntity(SmokingRequestDTO dto) {
+
+        Smoking s = new Smoking();
+
+        Admin admin = new Admin();
+        admin.setId(dto.getAdminId());
+        s.setAdmin(admin);
+
+        s.setValue(dto.getValue());
+
+        if (dto.getIsActive() != null) {
+            s.setIsActive(dto.getIsActive());
+        }
+
+        return s;
+    }
+
+    private void updateEntity(Smoking s, SmokingRequestDTO dto) {
+
+        // 🚫 DO NOT update admin
+
+        if (dto.getValue() != null) {
+            s.setValue(dto.getValue());
+        }
+
+        if (dto.getIsActive() != null) {
+            s.setIsActive(dto.getIsActive());
+        }
+    }
+
+    private SmokingResponseDTO mapToResponse(Smoking s) {
+
+        return SmokingResponseDTO.builder()
+                .id(s.getId())
+                .adminId(s.getAdmin() != null ? s.getAdmin().getId() : null)
+                .adminName(s.getAdmin() != null ? s.getAdmin().getName() : null)
+                .value(s.getValue())
+                .isActive(s.getIsActive())
+                .createdAt(s.getCreatedAt())
+                .updatedAt(s.getUpdatedAt())
+                .build();
     }
 }

@@ -26,20 +26,37 @@ public class FieldOfStudy {
     @Column(nullable = false)
     private String name;
 
-    @Column(nullable = false)
+    @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    // Getters and Setters
+    public FieldOfStudy() {}
+
+    // 🔥 Lifecycle Hooks (IMPORTANT)
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+
+        if (this.isActive == null) {
+            this.isActive = true;
+        }
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    // ===== Getters & Setters =====
 
     public Long getId() {
         return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
     }
 
     public Admin getAdmin() {
@@ -58,11 +75,11 @@ public class FieldOfStudy {
         this.name = name;
     }
 
-    public Boolean getisActive() {
+    public Boolean getIsActive() {   // ✅ FIXED naming
         return isActive;
     }
 
-    public void setisActive(Boolean isActive) {
+    public void setIsActive(Boolean isActive) {  // ✅ FIXED
         this.isActive = isActive;
     }
 
@@ -70,18 +87,7 @@ public class FieldOfStudy {
         return createdAt;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-
-    public void setIsActive(boolean b) {
     }
 }

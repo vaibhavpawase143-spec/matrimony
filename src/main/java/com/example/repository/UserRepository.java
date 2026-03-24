@@ -10,14 +10,14 @@ import java.util.List;
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
 
-    // 🔐 LOGIN
-    Optional<User> findByEmailAndPasswordAndActiveTrue(String email, String password);
+    // 🔐 LOGIN (fixed)
+    Optional<User> findByEmailIgnoreCaseAndIsActiveTrue(String email);
 
     // 🔍 Find by email
-    Optional<User> findByEmail(String email);
+    Optional<User> findByEmailIgnoreCase(String email);
 
     // 🔍 Check if email exists
-    boolean existsByEmail(String email);
+    boolean existsByEmailIgnoreCase(String email);
 
     // 📱 Find by phone
     Optional<User> findByPhone(String phone);
@@ -25,9 +25,16 @@ public interface UserRepository extends JpaRepository<User, Long> {
     // 📱 Check phone duplicate
     boolean existsByPhone(String phone);
 
-    // ✅ Get all active users
-    List<User> findByActiveTrue();
+    // 🔍 Combined duplicate check
+    boolean existsByEmailIgnoreCaseOrPhone(String email, String phone);
 
-    // 🔍 Search (IMPROVED 🔥)
-    List<User> findByFirstNameContainingIgnoreCaseOrEmailContainingIgnoreCase(String name, String email);
+    // ✅ Get all active users (fixed)
+    List<User> findByIsActiveTrue();
+
+    // 🔍 Search
+    List<User> findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCaseOrEmailContainingIgnoreCase(
+            String firstName,
+            String lastName,
+            String email
+    );
 }

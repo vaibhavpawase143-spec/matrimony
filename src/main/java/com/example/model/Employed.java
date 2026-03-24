@@ -7,10 +7,11 @@ import java.time.LocalDateTime;
 @Table(
         name = "employed",
         uniqueConstraints = {
-                @UniqueConstraint(columnNames = {"name", "admin_id"})
+                @UniqueConstraint(name = "uk_employed_name_admin", columnNames = {"name", "admin_id"})
         },
         indexes = {
-                @Index(name = "idx_employed_name", columnList = "name")
+                @Index(name = "idx_employed_name", columnList = "name"),
+                @Index(name = "idx_employed_active", columnList = "is_active")
         }
 )
 public class Employed {
@@ -19,20 +20,18 @@ public class Employed {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // ✅ Relation
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "admin_id")
     private Admin admin;
 
-    // ✅ Needed for repository (findByAdminId)
+    // For repository queries
     @Column(name = "admin_id", insertable = false, updatable = false)
     private Long adminId;
 
     @Column(nullable = false, length = 100)
     private String name;
 
-    // ✅ ONLY ONE FIELD (no confusion now)
-    @Column(nullable = false)
+    @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -43,7 +42,6 @@ public class Employed {
 
     public Employed() {}
 
-    // ✅ Auto timestamps (NO NEED to set in service)
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
@@ -81,11 +79,11 @@ public class Employed {
         this.name = name;
     }
 
-    public Boolean getisActive() {
+    public Boolean getIsActive() {   // ✅ FIXED
         return isActive;
     }
 
-    public void setisActive(Boolean isActive) {
+    public void setIsActive(Boolean isActive) {
         this.isActive = isActive;
     }
 

@@ -3,80 +3,125 @@ package com.example.serviceimpl;
 import com.example.model.EducationLevel;
 import com.example.repository.EducationLevelRepository;
 import com.example.service.EducationLevelService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class EducationLevelServiceImpl implements EducationLevelService {
 
-    @Autowired
-    private EducationLevelRepository repo;
+    private final EducationLevelRepository educationLevelRepository;
 
-    // ✅ Get all
-    @Override
-    public List<EducationLevel> getAll() {
-        return repo.findAll();
-    }
-
-    // ✅ Get active
-    @Override
-    public List<EducationLevel> getActive() {
-        return repo.findByIsActiveTrue();
-    }
-
-    // ✅ Get by ID
-    @Override
-    public EducationLevel getById(Long id) {
-        return repo.findById(id)
-                .orElseThrow(() -> new RuntimeException("EducationLevel not found with id: " + id));
+    public EducationLevelServiceImpl(EducationLevelRepository educationLevelRepository) {
+        this.educationLevelRepository = educationLevelRepository;
     }
 
     // ✅ Create
     @Override
-    public EducationLevel create(EducationLevel edu) {
-        edu.setCreatedAt(LocalDateTime.now());
-        edu.setUpdatedAt(LocalDateTime.now());
-        edu.setIsActive(true);
-        return repo.save(edu);
+    public EducationLevel create(EducationLevel educationLevel) {
+
+        if (educationLevelRepository.existsByNameIgnoreCase(educationLevel.getName())) {
+            throw new RuntimeException("Education level already exists: " + educationLevel.getName());
+        }
+
+        return educationLevelRepository.save(educationLevel);
     }
 
-    // ✅ Update
+    // 🔄 Update
     @Override
-    public EducationLevel update(Long id, EducationLevel updated) {
-        EducationLevel existing = getById(id);
+    public EducationLevel update(Long id, EducationLevel educationLevel) {
 
-        existing.setName(updated.getName());
-        existing.setIsActive(updated.getIsActive());
-        existing.setUpdatedAt(LocalDateTime.now());
+        EducationLevel existing = educationLevelRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Education level not found with id: " + id));
 
-        return repo.save(existing);
+        educationLevelRepository.findByNameIgnoreCase(educationLevel.getName())
+                .ifPresent(e -> {
+                    if (!e.getId().equals(id)) {
+                        throw new RuntimeException("Education level already exists: " + educationLevel.getName());
+                    }
+                });
+
+        // ✏️ Update fields
+        existing.setName(educationLevel.getName());
+        existing.setIsActive(educationLevel.getIsActive());
+
+        return educationLevelRepository.save(existing);
     }
 
-    // ✅ Delete
+    // ❌ Delete
     @Override
     public void delete(Long id) {
-        EducationLevel existing = getById(id);
-        repo.delete(existing);
+        EducationLevel existing = educationLevelRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Education level not found with id: " + id));
+
+        educationLevelRepository.delete(existing);
     }
 
-    // ✅ Get by admin
+    // 🔍 Get by ID
+    @Override
+    public Optional<EducationLevel> getById(Long id) {
+        return educationLevelRepository.findById(id);
+    }
+
+    // 🔍 Get all
+    @Override
+    public List<EducationLevel> getAll() {
+        return educationLevelRepository.findAll();
+    }
+
+    // 🔍 Find by name
+    @Override
+    public Optional<EducationLevel> getByName(String name) {
+        return educationLevelRepository.findByName(name);
+    }
+
+    @Override
+    public Optional<EducationLevel> getByNameIgnoreCase(String name) {
+        return educationLevelRepository.findByNameIgnoreCase(name);
+    }
+
+    // ✅ Duplicate check
+    @Override
+    public boolean existsByName(String name) {
+        return educationLevelRepository.existsByName(name);
+    }
+
+    @Override
+    public boolean existsByNameIgnoreCase(String name) {
+        return educationLevelRepository.existsByNameIgnoreCase(name);
+    }
+
+    // 🔍 Active / Inactive
+    @Override
+    public List<EducationLevel> getActive() {
+        return educationLevelRepository.findByIsActiveTrue();
+    }
+
+    @Override
+    public List<EducationLevel> getInactive() {
+        return educationLevelRepository.findByIsActiveFalse();
+    }
+
+    // 🔍 Admin-based
     @Override
     public List<EducationLevel> getByAdmin(Long adminId) {
-        return repo.findByAdminId(adminId);
+        return educationLevelRepository.findByAdminId(adminId);
     }
 
-    // ✅ Get active by admin
     @Override
     public List<EducationLevel> getActiveByAdmin(Long adminId) {
-        return repo.findByAdminIdAndIsActiveTrue(adminId);
+        return educationLevelRepository.findByAdminIdAndIsActiveTrue(adminId);
     }
 
-    // ✅ Search
+    // 🔍 Search
     @Override
     public List<EducationLevel> search(String keyword) {
-        return repo.findByNameContainingIgnoreCase(keyword);
+        return educationLevelRepository.findByNameContainingIgnoreCase(keyword);
+    }
+
+    @Override
+    public List<EducationLevel> searchByAdmin(Long adminId, String keyword) {
+        return educationLevelRepository.findByAdminIdAndNameContainingIgnoreCase(adminId, keyword);
     }
 }

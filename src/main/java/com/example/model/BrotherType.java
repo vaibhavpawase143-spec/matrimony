@@ -7,10 +7,14 @@ import java.time.LocalDateTime;
 @Table(
         name = "brother_types",
         indexes = {
-                @Index(name = "idx_brother_type_value", columnList = "value")
+                @Index(name = "idx_brother_type_value", columnList = "value"),
+                @Index(name = "idx_brother_type_active", columnList = "is_active")
         },
         uniqueConstraints = {
-                @UniqueConstraint(name = "uk_brother_type_admin_value", columnNames = {"admin_id", "value"})
+                @UniqueConstraint(
+                        name = "uk_brother_type_admin_value",
+                        columnNames = {"admin_id", "value"}
+                )
         }
 )
 public class BrotherType {
@@ -19,16 +23,14 @@ public class BrotherType {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // 🔗 Relation with Admin
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "admin_id")
     private Admin admin;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 50)
     private String value;
 
-    // ✅ Active field
-    @Column(nullable = false)
+    @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -50,14 +52,8 @@ public class BrotherType {
         updatedAt = LocalDateTime.now();
     }
 
-    // ================= GETTERS & SETTERS =================
-
     public Long getId() {
         return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
     }
 
     public Admin getAdmin() {

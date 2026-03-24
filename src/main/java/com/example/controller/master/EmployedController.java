@@ -1,63 +1,149 @@
-package com.example.controller.master; // Change package based on service type
+package com.example.controller.master;
 
+import com.example.dto.request.EmployedRequestDto;
+import com.example.dto.response.EmployedResponseDto;
+import com.example.model.Admin;
 import com.example.model.Employed;
 import com.example.service.EmployedService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/employed")
+@RequestMapping("/api/master/employed")
 public class EmployedController {
 
-    @Autowired
-    private EmployedService employedService;
+    private final EmployedService employedService;
 
-    @GetMapping
-    public ResponseEntity<List<Employed>> getAll() {
-        return ResponseEntity.ok(employedService.getAll());
+    public EmployedController(EmployedService employedService) {
+        this.employedService = employedService;
     }
 
-    @GetMapping("/active")
-    public ResponseEntity<List<Employed>> getActive() {
-        return ResponseEntity.ok(employedService.getActive());
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<Employed> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(employedService.getById(id));
-    }
-
+    // ✅ Create
     @PostMapping
-    public ResponseEntity<Employed> create(@RequestBody Employed emp) {
-        return ResponseEntity.ok(employedService.create(emp));
+    public EmployedResponseDto create(@Valid @RequestBody EmployedRequestDto dto) {
+        Employed entity = mapToEntity(dto);
+        return mapToResponse(employedService.create(entity));
     }
 
+    // 🔄 Update
     @PutMapping("/{id}")
-    public ResponseEntity<Employed> update(@PathVariable Long id, @RequestBody Employed updated) {
-        return ResponseEntity.ok(employedService.update(id, updated));
+    public EmployedResponseDto update(@PathVariable Long id,
+                                      @Valid @RequestBody EmployedRequestDto dto) {
+        Employed entity = mapToEntity(dto);
+        return mapToResponse(employedService.update(id, entity));
     }
 
+    // ❌ Delete
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
+    public String delete(@PathVariable Long id) {
         employedService.delete(id);
-        return ResponseEntity.noContent().build();
+        return "Employed deleted successfully";
     }
 
+    // 🔍 Get by ID
+    @GetMapping("/{id}")
+    public EmployedResponseDto getById(@PathVariable Long id) {
+        return employedService.getById(id)
+                .map(this::mapToResponse)
+                .orElseThrow(() -> new RuntimeException("Employed not found"));
+    }
+
+    // 🔍 Get all
+    @GetMapping
+    public List<EmployedResponseDto> getAll() {
+        return employedService.getAll()
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    // 🔍 Active
+    @GetMapping("/active")
+    public List<EmployedResponseDto> getActive() {
+        return employedService.getActive()
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    // 🔍 Inactive
+    @GetMapping("/inactive")
+    public List<EmployedResponseDto> getInactive() {
+        return employedService.getInactive()
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    // 🔍 By Admin
     @GetMapping("/admin/{adminId}")
-    public ResponseEntity<List<Employed>> getByAdmin(@PathVariable Long adminId) {
-        return ResponseEntity.ok(employedService.getByAdmin(adminId));
+    public List<EmployedResponseDto> getByAdmin(@PathVariable Long adminId) {
+        return employedService.getByAdmin(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
     }
 
+    // 🔍 Active by Admin
     @GetMapping("/admin/{adminId}/active")
-    public ResponseEntity<List<Employed>> getActiveByAdmin(@PathVariable Long adminId) {
-        return ResponseEntity.ok(employedService.getActiveByAdmin(adminId));
+    public List<EmployedResponseDto> getActiveByAdmin(@PathVariable Long adminId) {
+        return employedService.getActiveByAdmin(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
     }
 
+    // 🔍 Search
     @GetMapping("/search")
-    public ResponseEntity<List<Employed>> search(@RequestParam String keyword) {
-        return ResponseEntity.ok(employedService.search(keyword));
+    public List<EmployedResponseDto> search(@RequestParam String keyword) {
+        return employedService.search(keyword)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    // 🔍 Search by Admin
+    @GetMapping("/admin/{adminId}/search")
+    public List<EmployedResponseDto> searchByAdmin(@PathVariable Long adminId,
+                                                   @RequestParam String keyword) {
+        return employedService.searchByAdmin(adminId, keyword)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    // =========================
+    // 🔁 MAPPING METHODS
+    // =========================
+
+    private Employed mapToEntity(EmployedRequestDto dto) {
+        Employed entity = new Employed();
+
+        Admin admin = new Admin();
+        admin.setId(dto.getAdminId());
+
+        entity.setAdmin(admin);
+        entity.setName(dto.getName());
+        entity.setIsActive(dto.getIsActive());
+
+        return entity;
+    }
+
+    private EmployedResponseDto mapToResponse(Employed entity) {
+        EmployedResponseDto dto = new EmployedResponseDto();
+
+        dto.setId(entity.getId());
+        dto.setName(entity.getName());
+        dto.setIsActive(entity.getIsActive());
+        dto.setCreatedAt(entity.getCreatedAt());
+        dto.setUpdatedAt(entity.getUpdatedAt());
+
+        // 🔥 Use direct adminId (better performance)
+        dto.setAdminId(entity.getAdminId());
+
+        return dto;
     }
 }

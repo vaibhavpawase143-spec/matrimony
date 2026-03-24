@@ -7,25 +7,39 @@ import java.util.Optional;
 
 public interface MaritalStatusService {
 
-    MaritalStatus save(MaritalStatus maritalStatus);
+    // 🔍 Basic CRUD
+    MaritalStatus create(MaritalStatus maritalStatus);
+
+    MaritalStatus update(Long id, MaritalStatus maritalStatus);
+
+    void delete(Long id);
 
     Optional<MaritalStatus> getById(Long id);
 
-    Optional<MaritalStatus> getByName(String name);
-
     List<MaritalStatus> getAll();
 
-    List<MaritalStatus> getAllActive();
+    // 🔍 Find by name
+    Optional<MaritalStatus> getByName(String name);
 
-    List<MaritalStatus> getAllInactive();
+    Optional<MaritalStatus> getByNameIgnoreCase(String name);
 
+    // ✅ Duplicate check
+    boolean existsByName(String name);
+
+    boolean existsByNameIgnoreCase(String name);
+
+    // 🔍 Active / Inactive
+    List<MaritalStatus> getActive();
+
+    List<MaritalStatus> getInactive();
+
+    // 🔍 Admin-based
     List<MaritalStatus> getByAdmin(Long adminId);
 
     List<MaritalStatus> getActiveByAdmin(Long adminId);
 
-    List<MaritalStatus> searchByName(String keyword);
+    // 🔍 Search
+    List<MaritalStatus> search(String keyword);
 
-    MaritalStatus update(Long id, MaritalStatus updated);
-
-    void delete(Long id); // soft delete
+    List<MaritalStatus> searchByAdmin(Long adminId, String keyword);
 }

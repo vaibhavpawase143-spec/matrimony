@@ -7,23 +7,29 @@ import java.util.Optional;
 
 public interface SisterTypeService {
 
-    SisterType create(SisterType sisterType);
+    // ✅ Create / Save
+    SisterType save(SisterType sisterType);
 
-    List<SisterType> getAll();
-
-    List<SisterType> getAllActive();
-
-    List<SisterType> getAllInactive();
-
+    // ✅ Get by ID
     Optional<SisterType> getById(Long id);
 
-    SisterType update(Long id, SisterType sisterType);
+    // 🔍 Get all
+    List<SisterType> getAll();
 
-    void delete(Long id);
-
-    List<SisterType> search(String keyword);
-
+    // 🔍 Get by admin
     List<SisterType> getByAdmin(Long adminId);
 
+    // 🔍 Active / Inactive
     List<SisterType> getActiveByAdmin(Long adminId);
+
+    List<SisterType> getInactiveByAdmin(Long adminId);
+
+    // 🔍 Search
+    List<SisterType> searchByAdmin(Long adminId, String keyword);
+
+    // 🔍 Find by value (admin-specific)
+    Optional<SisterType> getByValueAndAdmin(String value, Long adminId);
+
+    // ✅ Delete
+    void delete(Long id);
 }

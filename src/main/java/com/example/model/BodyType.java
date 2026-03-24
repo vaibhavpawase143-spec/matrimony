@@ -1,7 +1,6 @@
 package com.example.model;
 
 import jakarta.persistence.*;
-
 import java.time.LocalDateTime;
 
 @Entity
@@ -9,6 +8,9 @@ import java.time.LocalDateTime;
         name = "body_types",
         uniqueConstraints = {
                 @UniqueConstraint(columnNames = {"value"})
+        },
+        indexes = {
+                @Index(name = "idx_body_type_active", columnList = "is_active")
         }
 )
 public class BodyType {
@@ -21,23 +23,38 @@ public class BodyType {
     @JoinColumn(name = "admin_id")
     private Admin admin;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 50)
     private String value;
 
-    @Column(nullable = false)
-    private Boolean isActive = true;   // active/inactive flag
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive = true;
 
-    // --- Getters and Setters ---
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    public BodyType() {}
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
+
     public Long getId() {
         return id;
-    }
-    public void setId(Long id) {
-        this.id = id;
     }
 
     public Admin getAdmin() {
         return admin;
     }
+
     public void setAdmin(Admin admin) {
         this.admin = admin;
     }
@@ -45,21 +62,24 @@ public class BodyType {
     public String getValue() {
         return value;
     }
+
     public void setValue(String value) {
         this.value = value;
     }
 
-    public Boolean getisActive() {
+    public Boolean getIsActive() {
         return isActive;
     }
-    public void setisActive(Boolean isActive) {
+
+    public void setIsActive(Boolean isActive) {
         this.isActive = isActive;
     }
 
-    public void setCreatedAt(LocalDateTime now) {
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
     }
 
-    public void setUpdatedAt(LocalDateTime now) {
-
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
     }
 }

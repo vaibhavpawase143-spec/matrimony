@@ -10,24 +10,27 @@ import java.util.Optional;
 @Repository
 public interface CasteRepository extends JpaRepository<Caste, Long> {
 
-    // 🔍 Find by name
-    Optional<Caste> findByName(String name);
+    // 🔍 Find (optional use)
+    Optional<Caste> findByNameIgnoreCase(String name);
 
-    // 🔍 Check duplicate
-    boolean existsByName(String name);
+    // 🔒 Secure fetch (VERY IMPORTANT)
+    Optional<Caste> findByIdAndAdminId(Long id, Long adminId);
 
-    // ✅ Get all active castes
-    List<Caste> findByIsActiveTrue();
+    // 🔥 Duplicate check (admin + religion scoped)
+    boolean existsByNameIgnoreCaseAndReligionIdAndAdminId(
+            String name, Long religionId, Long adminId
+    );
 
-    // 🔍 Get castes by religion
-    List<Caste> findByReligionId(Long religionId);
-
-    // ✅ Active castes by religion
-    List<Caste> findByReligionIdAndIsActiveTrue(Long religionId);
-
-    // 🔍 Filter by admin
+    // 🔍 Admin-based filtering
     List<Caste> findByAdminId(Long adminId);
 
-    // 🔍 Search caste by name
-    List<Caste> findByNameContainingIgnoreCase(String keyword);
+    List<Caste> findByAdminIdAndIsActiveTrue(Long adminId);
+
+    // 🔍 Religion + Admin
+    List<Caste> findByReligionIdAndAdminId(Long religionId, Long adminId);
+
+    List<Caste> findByReligionIdAndAdminIdAndIsActiveTrue(Long religionId, Long adminId);
+
+    // 🔍 Search (admin scoped)
+    List<Caste> findByNameContainingIgnoreCaseAndAdminId(String keyword, Long adminId);
 }

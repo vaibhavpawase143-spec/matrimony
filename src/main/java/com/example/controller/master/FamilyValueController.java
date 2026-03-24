@@ -1,87 +1,111 @@
-package com.example.controller.master; // master folder
+package com.example.controller.master;
 
+import com.example.dto.request.FamilyValueRequestDto;
+import com.example.dto.response.FamilyValueResponseDto;
 import com.example.model.FamilyValue;
 import com.example.service.FamilyValueService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/family-value")
+@RequestMapping("/api/master/family-values")
 public class FamilyValueController {
 
-    @Autowired
-    private FamilyValueService familyValueService;
+    private final FamilyValueService service;
 
-    // Create new FamilyValue
+    public FamilyValueController(FamilyValueService service) {
+        this.service = service;
+    }
+
+    // ✅ Create
     @PostMapping
-    public ResponseEntity<FamilyValue> save(@RequestBody FamilyValue familyValue) {
-        return ResponseEntity.ok(familyValueService.save(familyValue));
+    public FamilyValueResponseDto create(@Valid @RequestBody FamilyValueRequestDto dto) {
+        return mapToResponse(service.create(mapToEntity(dto)));
     }
 
-    // Get by ID
-    @GetMapping("/{id}")
-    public ResponseEntity<FamilyValue> getById(@PathVariable Long id) {
-        Optional<FamilyValue> fv = familyValueService.getById(id);
-        return fv.map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
-    }
-
-    // Get by name
-    @GetMapping("/name/{name}")
-    public ResponseEntity<FamilyValue> getByName(@PathVariable String name) {
-        Optional<FamilyValue> fv = familyValueService.getByName(name);
-        return fv.map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
-    }
-
-    // Get all
-    @GetMapping
-    public ResponseEntity<List<FamilyValue>> getAll() {
-        return ResponseEntity.ok(familyValueService.getAll());
-    }
-
-    // Get all active
-    @GetMapping("/active")
-    public ResponseEntity<List<FamilyValue>> getAllActive() {
-        return ResponseEntity.ok(familyValueService.getAllActive());
-    }
-
-    // Get all inactive
-    @GetMapping("/inactive")
-    public ResponseEntity<List<FamilyValue>> getAllInactive() {
-        return ResponseEntity.ok(familyValueService.getAllInactive());
-    }
-
-    // Get by admin
-    @GetMapping("/admin/{adminId}")
-    public ResponseEntity<List<FamilyValue>> getByAdmin(@PathVariable Long adminId) {
-        return ResponseEntity.ok(familyValueService.getByAdmin(adminId));
-    }
-
-    // Get active by admin
-    @GetMapping("/admin/{adminId}/active")
-    public ResponseEntity<List<FamilyValue>> getActiveByAdmin(@PathVariable Long adminId) {
-        return ResponseEntity.ok(familyValueService.getActiveByAdmin(adminId));
-    }
-
-    // Search by name keyword
-    @GetMapping("/search")
-    public ResponseEntity<List<FamilyValue>> search(@RequestParam String keyword) {
-        return ResponseEntity.ok(familyValueService.searchByName(keyword));
-    }
-
-    // Update
+    // 🔄 Update
     @PutMapping("/{id}")
-    public ResponseEntity<FamilyValue> update(@PathVariable Long id, @RequestBody FamilyValue updated) {
-        return ResponseEntity.ok(familyValueService.update(id, updated));
+    public FamilyValueResponseDto update(@PathVariable Long id,
+                                         @Valid @RequestBody FamilyValueRequestDto dto) {
+        return mapToResponse(service.update(id, mapToEntity(dto)));
     }
 
-    // Soft delete
+    // ❌ Delete
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        familyValueService.delete(id);
-        return ResponseEntity.noContent().build();
+    public String delete(@PathVariable Long id) {
+        service.delete(id);
+        return "FamilyValue deleted successfully";
+    }
+
+    // 🔍 Get by ID
+    @GetMapping("/{id}")
+    public FamilyValueResponseDto getById(@PathVariable Long id) {
+        return service.getById(id)
+                .map(this::mapToResponse)
+                .orElseThrow(() -> new RuntimeException("FamilyValue not found"));
+    }
+
+    // 🔍 Get all
+    @GetMapping
+    public List<FamilyValueResponseDto> getAll() {
+        return service.getAll()
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    // 🔍 Active
+    @GetMapping("/active")
+    public List<FamilyValueResponseDto> getActive() {
+        return service.getActive()
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    // 🔍 By Admin
+    @GetMapping("/admin/{adminId}")
+    public List<FamilyValueResponseDto> getByAdmin(@PathVariable Long adminId) {
+        return service.getByAdmin(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    // 🔍 Search
+    @GetMapping("/search")
+    public List<FamilyValueResponseDto> search(@RequestParam String keyword) {
+        return service.search(keyword)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    // =========================
+    // 🔁 MAPPING
+    // =========================
+
+    private FamilyValue mapToEntity(FamilyValueRequestDto dto) {
+
+        FamilyValue entity = new FamilyValue();
+
+        entity.setName(dto.getName());
+        entity.setIsActive(dto.getIsActive());
+        entity.setAdminId(dto.getAdminId());
+
+        return entity;
+    }
+
+    private FamilyValueResponseDto mapToResponse(FamilyValue entity) {
+
+        return FamilyValueResponseDto.builder()
+                .id(entity.getId())
+                .name(entity.getName())
+                .isActive(entity.getIsActive())
+                .adminId(entity.getAdminId())
+                .build();
     }
 }

@@ -3,41 +3,27 @@ package com.example.service;
 import com.example.model.Interest;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface InterestService {
 
-    // ✅ Create new interest
-    Interest create(Long senderId, Long receiverId);
+    Interest sendInterest(Interest interest);
 
-    // ✅ Get all interests
-    List<Interest> getAll();
+    Interest updateStatus(Long id, String status);
 
-    // ✅ Get by ID
-    Interest getById(Long id);
-
-    // ✅ Get by sender
-    List<Interest> getBySender(Long senderId);
-
-    // ✅ Get by receiver
-    List<Interest> getByReceiver(Long receiverId);
-
-    // ✅ Update isActive
-    Interest updateisActive(Long id, String isActive);
-
-    // ✅ Delete interest
     void delete(Long id);
 
-    Interest sendInterest(Long senderId, Long receiverId);
+    Optional<Interest> getById(Long id);
 
-    List<Interest> getSentInterests(Long senderId);
+    List<Interest> getBySender(Long senderId);
 
-    List<Interest> getReceivedInterests(Long receiverId);
+    List<Interest> getBySenderAndStatus(Long senderId, String status);
 
-    List<Interest> getReceivedPending(Long receiverId);
+    List<Interest> getByReceiver(Long receiverId);
 
-    Interest acceptInterest(Long senderId, Long receiverId);
+    List<Interest> getByReceiverAndStatus(Long receiverId, String status);
 
-    Interest rejectInterest(Long senderId, Long receiverId);
+    Optional<Interest> getBySenderAndReceiver(Long senderId, Long receiverId);
 
-    void cancelInterest(Long senderId, Long receiverId);
+    List<Interest> getByStatus(String status);
 }

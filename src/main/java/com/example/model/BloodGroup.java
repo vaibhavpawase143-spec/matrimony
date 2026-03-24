@@ -7,7 +7,8 @@ import java.time.LocalDateTime;
 @Table(
         name = "blood_groups",
         indexes = {
-                @Index(name = "idx_blood_group", columnList = "type")
+                @Index(name = "idx_blood_group", columnList = "type"),
+                @Index(name = "idx_blood_group_active", columnList = "is_active")
         }
 )
 public class BloodGroup {
@@ -17,14 +18,13 @@ public class BloodGroup {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "admin_id")
+    @JoinColumn(name = "admin_id") // add nullable=false if required
     private Admin admin;
 
-    // Example: A+, B+, O-, etc.
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false, unique = true, length = 5)
     private String type;
 
-    @Column(nullable = false)
+    @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -67,11 +67,11 @@ public class BloodGroup {
         this.type = type;
     }
 
-    public Boolean getisActive() {
+    public Boolean getIsActive() {   // ✅ FIXED
         return isActive;
     }
 
-    public void setisActive(Boolean isActive) {
+    public void setIsActive(Boolean isActive) {
         this.isActive = isActive;
     }
 

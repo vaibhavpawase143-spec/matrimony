@@ -19,13 +19,13 @@ public class ProfileController {
     // Create profile
     @PostMapping
     public ResponseEntity<Profile> create(@RequestBody Profile profile) {
-        return ResponseEntity.ok(profileService.create(profile));
+        return ResponseEntity.ok(profileService.saveProfile(profile));
     }
 
     // Update profile
     @PutMapping("/{userId}")
     public ResponseEntity<Profile> update(@PathVariable Long userId, @RequestBody Profile updated) {
-        return ResponseEntity.ok(profileService.update(userId, updated));
+        return ResponseEntity.ok(profileService.saveProfile(updated));
     }
 
     // Get by userId

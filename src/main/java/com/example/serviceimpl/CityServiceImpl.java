@@ -1,90 +1,116 @@
-package com.example.serviceimpl;
+package com.example.service.impl;
 
 import com.example.model.City;
 import com.example.repository.CityRepository;
 import com.example.service.CityService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class CityServiceImpl implements CityService {
 
-    @Autowired
-    private CityRepository repo;
+    private final CityRepository cityRepository;
 
-    // ✅ Get all
-    @Override
-    public List<City> getAll() {
-        return repo.findAll();
+    public CityServiceImpl(CityRepository cityRepository) {
+        this.cityRepository = cityRepository;
     }
 
-    // ✅ Get active
+    // 🔍 Basic CRUD
     @Override
-    public List<City> getActive() {
-        return repo.findByIsActiveTrue();
-    }
-
-    // ✅ Get by ID
-    @Override
-    public City getById(Long id) {
-        return repo.findById(id)
-                .orElseThrow(() -> new RuntimeException("City not found with id: " + id));
-    }
-
-    // ✅ Create
-    @Override
-    public City create(City city) {
-        city.setIsActive(true);
-        return repo.save(city);
-    }
-
-    // ✅ Update
-    @Override
-    public City update(Long id, City city) {
-        City existing = getById(id);
-
-        existing.setName(city.getName());
-        existing.setState(city.getState());
-        existing.setIsActive(city.getIsActive());
-
-        return repo.save(existing);
-    }
-
-    // ✅ Delete (Soft delete)
-    @Override
-    public void delete(Long id) {
-        City existing = getById(id);
-        existing.setIsActive(false);
-        repo.save(existing);
-    }
-
-    // ✅ By state
-    @Override
-    public List<City> getByState(Long stateId) {
-        return repo.findByState_Id(stateId);
+    public City saveCity(City city) {
+        return cityRepository.save(city);
     }
 
     @Override
-    public List<City> getActiveByState(Long stateId) {
-        return repo.findByState_IdAndIsActiveTrue(stateId);
+    public Optional<City> getCityById(Long id) {
+        return cityRepository.findById(id);
     }
 
-    // ✅ By admin
     @Override
-    public List<City> getByAdmin(Long adminId) {
-        return repo.findByAdminId(adminId);
+    public List<City> getAllCities() {
+        return cityRepository.findAll();
     }
 
-    // ✅ Search
     @Override
-    public List<City> search(String keyword) {
-        return repo.findByNameContainingIgnoreCase(keyword);
+    public void deleteCity(Long id) {
+        cityRepository.deleteById(id);
+    }
+
+    // 🔍 Find by name
+    @Override
+    public Optional<City> getByName(String name) {
+        return cityRepository.findByName(name);
+    }
+
+    @Override
+    public Optional<City> getByNameIgnoreCase(String name) {
+        return cityRepository.findByNameIgnoreCase(name);
+    }
+
+    // ✅ Duplicate check
+    @Override
+    public boolean existsByName(String name) {
+        return cityRepository.existsByName(name);
+    }
+
+    @Override
+    public boolean existsByNameIgnoreCase(String name) {
+        return cityRepository.existsByNameIgnoreCase(name);
+    }
+
+    // 🔍 Active / Inactive
+    @Override
+    public List<City> getActiveCities() {
+        return cityRepository.findByIsActiveTrue();
+    }
+
+    @Override
+    public List<City> getInactiveCities() {
+        return cityRepository.findByIsActiveFalse();
+    }
+
+    // 🔍 State-based
+    @Override
+    public List<City> getCitiesByState(Long stateId) {
+        return cityRepository.findByState_Id(stateId);
+    }
+
+    @Override
+    public List<City> getActiveCitiesByState(Long stateId) {
+        return cityRepository.findByState_IdAndIsActiveTrue(stateId);
+    }
+
+    @Override
+    public Optional<City> getByStateAndName(Long stateId, String name) {
+        return cityRepository.findByState_IdAndNameIgnoreCase(stateId, name);
+    }
+
+    // 🔍 Admin-based
+    @Override
+    public List<City> getCitiesByAdmin(Long adminId) {
+        return cityRepository.findByAdminId(adminId);
+    }
+
+    @Override
+    public List<City> getActiveCitiesByAdmin(Long adminId) {
+        return cityRepository.findByAdminIdAndIsActiveTrue(adminId);
+    }
+
+    // 🔍 Search
+    @Override
+    public List<City> searchByName(String keyword) {
+        return cityRepository.findByNameContainingIgnoreCase(keyword);
     }
 
     @Override
     public List<City> searchByState(Long stateId, String keyword) {
-        return repo.findByState_IdAndNameContainingIgnoreCase(stateId, keyword);
+        return cityRepository.findByState_IdAndNameContainingIgnoreCase(stateId, keyword);
+    }
+
+    @Override
+    public List<City> searchByAdmin(Long adminId, String keyword) {
+        return cityRepository.findByAdminIdAndNameContainingIgnoreCase(adminId, keyword);
     }
 }

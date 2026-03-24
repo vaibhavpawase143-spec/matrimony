@@ -1,73 +1,93 @@
 package com.example.serviceimpl;
 
+import com.example.model.Admin;
 import com.example.model.BrotherType;
+import com.example.repository.AdminRepository;
 import com.example.repository.BrotherTypeRepository;
 import com.example.service.BrotherTypeService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class BrotherTypeServiceImpl implements BrotherTypeService {
 
     private final BrotherTypeRepository repo;
+    private final AdminRepository adminRepository;
 
-    public BrotherTypeServiceImpl(BrotherTypeRepository repo) {
-        this.repo = repo;
+    // ✅ Get all (by admin)
+    @Override
+    public List<BrotherType> getAll(Long adminId) {
+        return repo.findByAdminId(adminId);
     }
 
+    // ✅ Get active (by admin)
     @Override
-    public List<BrotherType> getAll() {
-        return repo.findAll();
+    public List<BrotherType> getActive(Long adminId) {
+        return repo.findByAdminIdAndIsActiveTrue(adminId);
     }
 
+    // ✅ Get by ID (secure)
     @Override
-    public List<BrotherType> getActive() {
-        return repo.findByIsActiveTrue();
+    public BrotherType getById(Long id, Long adminId) {
+        return repo.findByIdAndAdminId(id, adminId)
+                .orElseThrow(() -> new RuntimeException("BrotherType not found"));
     }
 
+    // ✅ Create
     @Override
-    public BrotherType getById(Long id) {
-        return repo.findById(id)
-                .orElseThrow(() -> new RuntimeException("BrotherType not found with id: " + id));
-    }
+    public BrotherType create(BrotherType brotherType, Long adminId) {
 
-    @Override
-    public BrotherType create(BrotherType brotherType) {
+        Admin admin = adminRepository.findById(adminId)
+                .orElseThrow(() -> new RuntimeException("Admin not found"));
+
+        // 🔍 Duplicate check (DB level)
+        if (repo.existsByValueIgnoreCaseAndAdminId(
+                brotherType.getValue(), adminId)) {
+            throw new RuntimeException("BrotherType already exists");
+        }
+
+        brotherType.setAdmin(admin);
         brotherType.setIsActive(true);
+
         return repo.save(brotherType);
     }
 
+    // ✅ Update
     @Override
-    public BrotherType update(Long id, BrotherType brotherType) {
-        BrotherType existing = repo.findById(id)
-                .orElseThrow(() -> new RuntimeException("BrotherType not found with id: " + id));
+    public BrotherType update(Long id, BrotherType updated, Long adminId) {
 
-        existing.setValue(brotherType.getValue());
-        existing.setIsActive(brotherType.getIsActive());
+        BrotherType existing = repo.findByIdAndAdminId(id, adminId)
+                .orElseThrow(() -> new RuntimeException("BrotherType not found"));
+
+        // 🔍 Duplicate check (only if value changed)
+        if (!existing.getValue().equalsIgnoreCase(updated.getValue()) &&
+                repo.existsByValueIgnoreCaseAndAdminId(
+                        updated.getValue(), adminId)) {
+            throw new RuntimeException("BrotherType already exists");
+        }
+
+        existing.setValue(updated.getValue());
+        existing.setIsActive(updated.getIsActive());
 
         return repo.save(existing);
     }
 
+    // ✅ Delete
     @Override
-    public void delete(Long id) {
-        BrotherType existing = repo.findById(id)
-                .orElseThrow(() -> new RuntimeException("BrotherType not found with id: " + id));
+    public void delete(Long id, Long adminId) {
+
+        BrotherType existing = repo.findByIdAndAdminId(id, adminId)
+                .orElseThrow(() -> new RuntimeException("BrotherType not found"));
+
         repo.delete(existing);
     }
 
+    // ✅ Search (by admin)
     @Override
-    public List<BrotherType> getByAdmin(Long adminId) {
-        return repo.findByAdminId(adminId);
-    }
-
-    @Override
-    public List<BrotherType> getActiveByAdmin(Long adminId) {
-      return   repo.findByAdminIdAndIsActiveTrue(adminId);
-    }
-
-    @Override
-    public List<BrotherType> search(String keyword) {
-        return repo.findByValueContainingIgnoreCase(keyword);
+    public List<BrotherType> search(String keyword, Long adminId) {
+        return repo.findByValueContainingIgnoreCaseAndAdminId(keyword, adminId);
     }
 }

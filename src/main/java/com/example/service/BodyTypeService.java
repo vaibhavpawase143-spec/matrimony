@@ -5,30 +5,17 @@ import java.util.List;
 
 public interface BodyTypeService {
 
-    // ✅ Get all body types
-    List<BodyType> getAll();
+    BodyType create(BodyType bodyType, Long adminId);
 
-    // ✅ Get active body types
-    List<BodyType> getActive();
+    BodyType getById(Long id, Long adminId);
 
-    // ✅ Get inactive body types
-    List<BodyType> getInactive();
+    List<BodyType> getAll(Long adminId);
 
-    // ✅ Get by ID
-    BodyType getById(Long id);
+    List<BodyType> getActive(Long adminId);
 
-    // ✅ Create body type
-    BodyType create(BodyType bodyType);
+    List<BodyType> getInactive(Long adminId);
 
-    // ✅ Update body type
-    BodyType update(Long id, BodyType bodyType);
+    BodyType update(Long id, BodyType bodyType, Long adminId);
 
-    // ✅ Delete
-    void delete(Long id);
-
-    // ✅ Get by admin
-    List<BodyType> getByAdmin(Long adminId);
-
-    // ✅ Get active by admin
-    List<BodyType> getActiveByAdmin(Long adminId);
+    void delete(Long id, Long adminId);
 }
