@@ -5,11 +5,15 @@ import com.example.dto.request.AdminRequestDTO;
 import com.example.dto.response.AdminResponseDTO;
 import com.example.model.Admin;
 import com.example.service.AdminService;
+import com.example.security.JwtService;
+
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -18,6 +22,7 @@ import java.util.stream.Collectors;
 public class AdminController {
 
     private final AdminService adminService;
+    private final JwtService jwtService;
 
     // ================= CREATE =================
     @PostMapping
@@ -60,13 +65,19 @@ public class AdminController {
         return "Admin deleted successfully";
     }
 
-    // ================= LOGIN =================
+    // ================= LOGIN (JWT) =================
     @PostMapping("/login")
-    public AdminResponseDTO login(@Valid @RequestBody AdminLoginDTO dto) {
+    public Map<String, Object> login(@Valid @RequestBody AdminLoginDTO dto) {
 
         Admin admin = adminService.login(dto.getUsername(), dto.getPassword());
 
-        return mapToResponse(admin);
+        // 🔥 Generate JWT token
+        String token = jwtService.generateToken(admin.getUsername());
+
+        return Map.of(
+                "token", token,
+                "admin", mapToResponse(admin)
+        );
     }
 
     // ================= MAPPERS =================

@@ -1,117 +1,166 @@
 package com.example.serviceimpl;
 
+import com.example.model.Role;
 import com.example.model.User;
 import com.example.repository.UserRepository;
+import com.example.security.JwtUtil;
+import com.example.service.RoleService;
 import com.example.service.UserService;
+
+import lombok.RequiredArgsConstructor;
+
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
-    private final UserRepository repository;
+    private final UserRepository userRepository;
+    private final JwtUtil jwtUtil;
+    private final PasswordEncoder passwordEncoder;
+    private final RoleService roleService;
 
-    public UserServiceImpl(UserRepository repository) {
-        this.repository = repository;
-    }
-
-    // ✅ Register
+    // =========================
+    // ✅ REGISTER
+    // =========================
     @Override
     public User register(User user) {
 
-        if (repository.existsByEmailIgnoreCaseOrPhone(user.getEmail(), user.getPhone())) {
-            throw new RuntimeException("Email or phone already exists!");
+        if (userRepository.existsByEmailIgnoreCase(user.getEmail())) {
+            throw new RuntimeException("Email already exists");
         }
+
+        if (user.getPassword() == null || user.getPassword().isEmpty()) {
+            throw new RuntimeException("Password is required");
+        }
+
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+
+        // 🔥 Assign default role
+        Role role = roleService.getByName("USER")
+                .orElseThrow(() -> new RuntimeException("Default role not found"));
+
+        user.setRole(role);
 
         user.setIsActive(true);
 
-        // 👉 IMPORTANT: In real app, password should be encrypted
-        return repository.save(user);
+        return userRepository.save(user);
     }
 
-    // 🔐 Login
+    // =========================
+    // 🔐 LOGIN (OPTIONAL)
+    // =========================
     @Override
     public User login(String email, String password) {
 
-        User user = repository.findByEmailIgnoreCaseAndIsActiveTrue(email)
-                .orElseThrow(() -> new RuntimeException("Invalid email or user inactive"));
+        User user = userRepository
+                .findByEmailIgnoreCaseAndIsActiveTrue(email)
+                .orElseThrow(() -> new RuntimeException("User not found or inactive"));
 
-        // 👉 Plain password check (for now)
-        if (!user.getPassword().equals(password)) {
+        if (user.getPassword() == null || !passwordEncoder.matches(password, user.getPassword())) {
             throw new RuntimeException("Invalid password");
         }
 
         return user;
     }
 
-    // 🔍 Get by ID
+    // =========================
+    // 🔥 JWT LOGIN (ADVANCED)
+    // =========================
+    @Override
+    public String loginAndGenerateToken(String email, String password) {
+
+        User user = userRepository
+                .findByEmailIgnoreCaseAndIsActiveTrue(email)
+                .orElseThrow(() -> new RuntimeException("User not found or inactive"));
+
+        if (user.getPassword() == null || !passwordEncoder.matches(password, user.getPassword())) {
+            throw new RuntimeException("Invalid password");
+        }
+
+        // 🔥 ADD ROLES IN JWT
+        List<String> roles = user.getRoles()
+                .stream()
+                .map(role -> role.getName())
+                .toList();
+
+        return jwtUtil.generateToken(user.getEmail(), roles);
+    }
+
+    // =========================
+    // 🔍 GET BY ID
+    // =========================
     @Override
     public Optional<User> getById(Long id) {
-        return repository.findById(id);
+        return userRepository.findByIdAndIsActiveTrue(id);
     }
 
-    // 🔍 Get by email
+    // =========================
+    // 🔍 GET BY EMAIL
+    // =========================
     @Override
     public Optional<User> getByEmail(String email) {
-        return repository.findByEmailIgnoreCase(email);
+        return userRepository.findByEmailIgnoreCase(email);
     }
 
-    // 🔍 Get all
+    // =========================
+    // 🔍 GET ALL
+    // =========================
     @Override
     public List<User> getAll() {
-        return repository.findAll();
+        return userRepository.findAll();
     }
 
-    // 🔍 Active users
+    // =========================
+    // 🔍 ACTIVE USERS
+    // =========================
     @Override
     public List<User> getActiveUsers() {
-        return repository.findByIsActiveTrue();
+        return userRepository.findByIsActiveTrue();
     }
 
-    // 🔍 Search
+    // =========================
+    // 🔍 SEARCH
+    // =========================
     @Override
     public List<User> search(String keyword) {
-        return repository
+        return userRepository
                 .findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCaseOrEmailContainingIgnoreCase(
                         keyword, keyword, keyword
                 );
     }
 
-    // ✅ Update
+    // =========================
+    // ✅ UPDATE
+    // =========================
     @Override
-    public User update(Long id, User user) {
+    public User update(Long id, User updatedUser) {
 
-        User existing = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found!"));
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Optional duplicate check (if email/phone changed)
-        if (!existing.getEmail().equalsIgnoreCase(user.getEmail()) ||
-                !existing.getPhone().equals(user.getPhone())) {
+        user.setFirstName(updatedUser.getFirstName());
+        user.setLastName(updatedUser.getLastName());
+        user.setPhone(updatedUser.getPhone());
 
-            if (repository.existsByEmailIgnoreCaseOrPhone(user.getEmail(), user.getPhone())) {
-                throw new RuntimeException("Email or phone already exists!");
-            }
-        }
-
-        existing.setFirstName(user.getFirstName());
-        existing.setLastName(user.getLastName());
-        existing.setEmail(user.getEmail());
-        existing.setPhone(user.getPhone());
-        existing.setPassword(user.getPassword());
-
-        return repository.save(existing);
+        return userRepository.save(user);
     }
 
-    // ❌ Soft delete
+    // =========================
+    // ❌ DEACTIVATE
+    // =========================
     @Override
     public void deactivate(Long id) {
 
-        User user = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found!"));
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
         user.setIsActive(false);
-        repository.save(user);
+
+        userRepository.save(user);
     }
 }

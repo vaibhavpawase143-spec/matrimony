@@ -10,8 +10,11 @@ public interface UserService {
     // ✅ Register
     User register(User user);
 
-    // 🔐 Login
+    // 🔐 OLD Login (keep it)
     User login(String email, String password);
+
+    // 🔥 NEW JWT Login
+    String loginAndGenerateToken(String email, String password);
 
     // 🔍 Get by ID
     Optional<User> getById(Long id);
@@ -33,5 +36,4 @@ public interface UserService {
 
     // ❌ Soft delete
     void deactivate(Long id);
-
 }

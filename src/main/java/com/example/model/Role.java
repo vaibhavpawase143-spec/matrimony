@@ -2,6 +2,7 @@ package com.example.model;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.Set;
 
 @Entity
 @Table(
@@ -17,6 +18,7 @@ public class Role {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // Keep if required by your system
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "admin_id")
     private Admin admin;
@@ -33,9 +35,12 @@ public class Role {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    // 🔥 OPTIONAL (for bidirectional mapping)
+    @ManyToMany(mappedBy = "roles")
+    private Set<User> users;
+
     public Role() {}
 
-    // 🔥 Lifecycle hooks (improved)
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
@@ -53,41 +58,27 @@ public class Role {
 
     // ===== Getters =====
 
-    public Long getId() {
-        return id;
-    }
+    public Long getId() { return id; }
 
-    public Admin getAdmin() {
-        return admin;
-    }
+    public Admin getAdmin() { return admin; }
 
-    public String getName() {
-        return name;
-    }
+    public String getName() { return name; }
 
-    public Boolean getIsActive() {
-        return isActive;
-    }
+    public Boolean getIsActive() { return isActive; }
 
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
+    public LocalDateTime getCreatedAt() { return createdAt; }
 
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+
+    public Set<User> getUsers() { return users; }
 
     // ===== Setters =====
 
-    public void setAdmin(Admin admin) {
-        this.admin = admin;
-    }
+    public void setAdmin(Admin admin) { this.admin = admin; }
 
-    public void setName(String name) {
-        this.name = name;
-    }
+    public void setName(String name) { this.name = name; }
 
-    public void setIsActive(Boolean isActive) {
-        this.isActive = isActive;
-    }
+    public void setIsActive(Boolean isActive) { this.isActive = isActive; }
+
+    public void setUsers(Set<User> users) { this.users = users; }
 }
