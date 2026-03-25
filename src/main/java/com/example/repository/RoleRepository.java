@@ -10,21 +10,21 @@ import java.util.Optional;
 @Repository
 public interface RoleRepository extends JpaRepository<Role, Long> {
 
-    // 🔍 Find by name (admin-specific)
+    // ✅ GLOBAL ROLE (IMPORTANT)
+    Optional<Role> findByNameIgnoreCase(String name);
+
+    // 🔽 Keep if you need admin-specific roles later
     Optional<Role> findByNameIgnoreCaseAndAdminId(String name, Long adminId);
 
-    // 🔍 Check duplicate (admin-specific)
     boolean existsByNameIgnoreCaseAndAdminId(String name, Long adminId);
 
-    // 🔍 Get all records by admin
     List<Role> findByAdminId(Long adminId);
 
-    // 🔍 Active records by admin
     List<Role> findByAdminIdAndIsActiveTrue(Long adminId);
 
-    // 🔍 Inactive records by admin
     List<Role> findByAdminIdAndIsActiveFalse(Long adminId);
 
-    // 🔍 Search (admin + keyword)
     List<Role> findByAdminIdAndNameContainingIgnoreCase(Long adminId, String keyword);
+
+    Optional<Role> findByName(String name);
 }

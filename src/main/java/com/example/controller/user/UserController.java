@@ -1,13 +1,13 @@
 package com.example.controller.user;
 
-import com.example.dto.request.UserLoginRequestDTO;
-import com.example.dto.request.UserRegisterRequestDTO;
 import com.example.dto.response.UserResponseDTO;
 import com.example.model.Role;
 import com.example.model.User;
 import com.example.service.UserService;
+
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -15,43 +15,14 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/users")
+@RequestMapping("/api/users") // 🔒 Protected APIs
 @RequiredArgsConstructor
 public class UserController {
 
     private final UserService service;
 
     // =========================
-    // ✅ REGISTER
-    // =========================
-    @PostMapping("/register")
-    public UserResponseDTO register(@Valid @RequestBody UserRegisterRequestDTO dto) {
-
-        User user = new User();
-        user.setFirstName(dto.getFirstName());
-        user.setLastName(dto.getLastName());
-        user.setEmail(dto.getEmail());
-        user.setPhone(dto.getPhone());
-        user.setPassword(dto.getPassword());
-
-        User saved = service.register(user);
-
-        return mapToResponse(saved);
-    }
-
-    // =========================
-    // 🔐 LOGIN
-    // =========================
-    @PostMapping("/login")
-    public UserResponseDTO login(@Valid @RequestBody UserLoginRequestDTO dto) {
-
-        User user = service.login(dto.getEmail(), dto.getPassword());
-
-        return mapToResponse(user);
-    }
-
-    // =========================
-    // 🔍 GET USER
+    // 🔍 GET USER BY ID
     // =========================
     @GetMapping("/{id}")
     public UserResponseDTO getById(@PathVariable Long id) {
@@ -95,7 +66,7 @@ public class UserController {
     }
 
     // =========================
-    // ❌ DEACTIVATE
+    // ❌ DEACTIVATE USER
     // =========================
     @DeleteMapping("/{id}")
     public String deactivate(@PathVariable Long id) {
@@ -104,9 +75,16 @@ public class UserController {
     }
 
     // =========================
-    // 🔥 MAPPING
+    // 🔥 TEST API (JWT CHECK)
     // =========================
+    @GetMapping("/test")
+    public String test() {
+        return "JWT is working perfectly 🔥";
+    }
 
+    // =========================
+    // 🔁 MAPPING METHOD
+    // =========================
     private UserResponseDTO mapToResponse(User user) {
 
         Set<String> roles = user.getRoles() != null
