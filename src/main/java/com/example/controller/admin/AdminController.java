@@ -5,11 +5,12 @@ import com.example.dto.request.AdminRequestDTO;
 import com.example.dto.response.AdminResponseDTO;
 import com.example.model.Admin;
 import com.example.service.AdminService;
-import com.example.security.JwtService;
+import com.example.security.JwtUtil;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,12 +20,13 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/admins")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "*")
 public class AdminController {
 
     private final AdminService adminService;
-    private final JwtService jwtService;
+    private final JwtUtil jwtUtil; // 🔥 USE JwtUtil (NOT JwtService)
 
-    // ================= CREATE =================
+    // ================= CREATE (FIRST ADMIN OPEN) =================
     @PostMapping
     public AdminResponseDTO create(@Valid @RequestBody AdminRequestDTO dto) {
 
@@ -36,12 +38,14 @@ public class AdminController {
 
     // ================= GET BY ID =================
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public AdminResponseDTO getById(@PathVariable Long id) {
         return mapToResponse(adminService.getById(id));
     }
 
     // ================= GET ALL =================
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public List<AdminResponseDTO> getAll() {
         return adminService.getAll()
                 .stream()
@@ -51,6 +55,7 @@ public class AdminController {
 
     // ================= UPDATE =================
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public AdminResponseDTO update(@PathVariable Long id,
                                    @Valid @RequestBody AdminRequestDTO dto) {
 
@@ -60,19 +65,23 @@ public class AdminController {
 
     // ================= DELETE =================
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public String delete(@PathVariable Long id) {
         adminService.delete(id);
         return "Admin deleted successfully";
     }
 
-    // ================= LOGIN (JWT) =================
+    // ================= LOGIN (PUBLIC) =================
     @PostMapping("/login")
     public Map<String, Object> login(@Valid @RequestBody AdminLoginDTO dto) {
 
         Admin admin = adminService.login(dto.getUsername(), dto.getPassword());
 
-        // 🔥 Generate JWT token
-        String token = jwtService.generateToken(admin.getUsername());
+        // 🔥 FINAL FIX: USE EMAIL IN TOKEN
+        String token = jwtUtil.generateToken(
+                admin.getEmail(),   // ✅ IMPORTANT FIX
+                List.of("ADMIN")
+        );
 
         return Map.of(
                 "token", token,
