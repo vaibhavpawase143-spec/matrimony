@@ -2,6 +2,7 @@ package com.example.config;
 
 import com.example.security.JwtFilter;
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -15,7 +16,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
-@EnableWebSecurity   // 🔥 IMPORTANT
+@EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
@@ -25,50 +26,52 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
         http
-                // ❌ Disable CSRF (for APIs)
                 .csrf(csrf -> csrf.disable())
-
-                // ⚠️ Enable CORS (default)
                 .cors(cors -> {})
 
-                // 🔐 Authorization rules
                 .authorizeHttpRequests(auth -> auth
 
-                        // ✅ Public APIs
-                        .requestMatchers("/api/auth/**").permitAll()
+                        // ✅ PUBLIC APIs
+                        .requestMatchers(
+                                "/api/auth/**",
+                                "/api/admins/login",
+                                "/api/admins/register",
+                                "/api/users/login",
+                                "/api/users/register",
+                                "/v3/api-docs/**",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html"
+                        ).permitAll()
 
-                        // 👑 Admin APIs
-                        .requestMatchers("/api/admin/**").hasAuthority("ROLE_ADMIN")
+                        // 👑 ADMIN APIs
+                        .requestMatchers("/api/admins/**")
+                        .hasRole("ADMIN")
 
-                        // 👤 User APIs (FIXED ✅)
-                        .requestMatchers("/api/users/**").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")
+                        // 👤 USER APIs
+                        .requestMatchers("/api/users/**")
+                        .hasAnyRole("USER", "ADMIN")
 
-                        // 🔒 All other APIs
+                        // 🔒 ALL OTHER
                         .anyRequest().authenticated()
                 )
 
-                // ❌ Disable default login
                 .httpBasic(httpBasic -> httpBasic.disable())
                 .formLogin(form -> form.disable())
 
-                // 🔥 Stateless session (JWT)
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 );
 
-        // 🔥 Add JWT filter
         http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
-    // 🔥 Authentication Manager
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
 
-    // 🔐 Password Encoder
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();

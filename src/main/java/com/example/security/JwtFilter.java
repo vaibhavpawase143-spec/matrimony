@@ -36,6 +36,7 @@ public class JwtFilter extends OncePerRequestFilter {
         String path = request.getRequestURI();
 
         return path.startsWith("/api/auth")
+                || path.startsWith("/api/admins/login")   // 🔥 IMPORTANT (your login API)
                 || path.startsWith("/v3/api-docs")
                 || path.startsWith("/swagger-ui")
                 || path.startsWith("/swagger-ui.html");
@@ -54,33 +55,33 @@ public class JwtFilter extends OncePerRequestFilter {
             String authHeader = request.getHeader("Authorization");
 
             String token = null;
-            String email = null;
+            String username = null;
 
-            // ✅ Extract token safely
+            // ✅ Extract token
             if (authHeader != null && authHeader.startsWith("Bearer ")) {
                 token = authHeader.substring(7);
             }
 
-            // ✅ Extract email safely
+            // ✅ Extract username/email
             if (token != null) {
                 try {
-                    email = jwtUtil.extractEmail(token);
+                    username = jwtUtil.extractEmail(token); // or extractUsername()
                 } catch (Exception e) {
-                    // invalid token → skip
+                    // invalid token → ignore
                 }
             }
 
             // ✅ Authenticate user
-            if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 
-                UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
                 // ✅ Validate token
                 if (jwtUtil.isValid(token, userDetails.getUsername())) {
 
                     List<SimpleGrantedAuthority> authorities = Collections.emptyList();
 
-                    // 🔥 Extract roles safely
+                    // 🔥 Extract roles
                     try {
                         List<String> roles = jwtUtil.extractRoles(token);
 
@@ -91,10 +92,9 @@ public class JwtFilter extends OncePerRequestFilter {
                                     .collect(Collectors.toList());
                         }
                     } catch (Exception e) {
-                        // roles missing → fallback
+                        // roles missing → ignore
                     }
 
-                    // ✅ Final authentication object
                     UsernamePasswordAuthenticationToken authToken =
                             new UsernamePasswordAuthenticationToken(
                                     userDetails,
@@ -109,7 +109,7 @@ public class JwtFilter extends OncePerRequestFilter {
             }
 
         } catch (Exception e) {
-            // ❗ NEVER break request (prevents 500)
+            // ❗ Prevent crash
         }
 
         filterChain.doFilter(request, response);
