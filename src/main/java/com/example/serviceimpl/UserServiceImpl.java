@@ -1,5 +1,6 @@
 package com.example.serviceimpl;
 
+import com.example.dto.request.UserRegisterRequestDTO;
 import com.example.model.Role;
 import com.example.model.User;
 import com.example.repository.UserRepository;
@@ -25,7 +26,7 @@ public class UserServiceImpl implements UserService {
     private final RoleService roleService;
 
     // =========================
-    // ✅ REGISTER
+    // ✅ REGISTER (ENTITY)
     // =========================
     @Override
     public User register(User user) {
@@ -40,7 +41,6 @@ public class UserServiceImpl implements UserService {
 
         user.setPassword(passwordEncoder.encode(user.getPassword()));
 
-        // 🔥 Assign default role
         Role role = roleService.getByName("USER")
                 .orElseThrow(() -> new RuntimeException("Default role not found"));
 
@@ -52,7 +52,44 @@ public class UserServiceImpl implements UserService {
     }
 
     // =========================
-    // 🔐 LOGIN (OPTIONAL)
+    // ✅ REGISTER (DTO)
+    // =========================
+    @Override
+    public User register(UserRegisterRequestDTO request) {
+
+        if (userRepository.existsByEmailIgnoreCase(request.getEmail())) {
+            throw new RuntimeException("Email already exists");
+        }
+
+        User user = new User();
+
+        user.setFirstName(request.getFirstName());
+        user.setLastName(request.getLastName());
+        user.setEmail(request.getEmail());
+        user.setPhone(request.getPhone());
+
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+
+        // 🔥 ROLE HANDLING (ADMIN / USER)
+        String roleName = "USER"; // default
+
+        // 👉 If later you add role in DTO:
+        // if (request.getRole() != null) {
+        //     roleName = request.getRole().toUpperCase();
+        // }
+
+        Role role = roleService.getByName(roleName)
+                .orElseThrow(() -> new RuntimeException("Role not found"));
+
+        user.setRole(role);
+
+        user.setIsActive(true);
+
+        return userRepository.save(user);
+    }
+
+    // =========================
+    // 🔐 LOGIN
     // =========================
     @Override
     public User login(String email, String password) {
@@ -61,7 +98,7 @@ public class UserServiceImpl implements UserService {
                 .findByEmailIgnoreCaseAndIsActiveTrue(email)
                 .orElseThrow(() -> new RuntimeException("User not found or inactive"));
 
-        if (user.getPassword() == null || !passwordEncoder.matches(password, user.getPassword())) {
+        if (!passwordEncoder.matches(password, user.getPassword())) {
             throw new RuntimeException("Invalid password");
         }
 
@@ -69,7 +106,7 @@ public class UserServiceImpl implements UserService {
     }
 
     // =========================
-    // 🔥 JWT LOGIN (ADVANCED)
+    // 🔥 JWT LOGIN (FIXED)
     // =========================
     @Override
     public String loginAndGenerateToken(String email, String password) {
@@ -78,14 +115,14 @@ public class UserServiceImpl implements UserService {
                 .findByEmailIgnoreCaseAndIsActiveTrue(email)
                 .orElseThrow(() -> new RuntimeException("User not found or inactive"));
 
-        if (user.getPassword() == null || !passwordEncoder.matches(password, user.getPassword())) {
+        if (!passwordEncoder.matches(password, user.getPassword())) {
             throw new RuntimeException("Invalid password");
         }
 
-        // 🔥 ADD ROLES IN JWT
+        // ✅ CORRECT ROLE FIX
         List<String> roles = user.getRoles()
                 .stream()
-                .map(role -> role.getName())
+                .map(Role::getName)
                 .toList();
 
         return jwtUtil.generateToken(user.getEmail(), roles);

@@ -1,5 +1,6 @@
 package com.example.service;
 
+import com.example.dto.request.UserRegisterRequestDTO;
 import com.example.model.User;
 
 import java.util.List;
@@ -7,13 +8,18 @@ import java.util.Optional;
 
 public interface UserService {
 
-    // ✅ Register
+    // =========================
+    // ✅ REGISTER (INTERFACE MATCH)
+    // =========================
     User register(User user);
 
-    // 🔐 OLD Login (keep it)
+    // ✅ FIXED (DTO)
+    User register(UserRegisterRequestDTO request);
+
+    // 🔐 Login
     User login(String email, String password);
 
-    // 🔥 NEW JWT Login
+    // 🔥 JWT Login
     String loginAndGenerateToken(String email, String password);
 
     // 🔍 Get by ID
