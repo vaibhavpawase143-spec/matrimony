@@ -42,4 +42,5 @@ public interface UserService {
 
     // ❌ Soft delete
     void deactivate(Long id);
+
 }

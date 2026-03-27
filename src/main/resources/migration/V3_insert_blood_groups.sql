@@ -1,0 +1,17 @@
+-- Insert default blood groups
+
+INSERT INTO blood_groups (
+    admin_id,
+    type,
+    is_active,
+    created_at,
+    updated_at
+) VALUES
+(NULL, 'A+', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'A-', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'B+', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'B-', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'AB+', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'AB-', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'O+', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'O-', TRUE, CURRENT_TIMESTAMP, NULL);

@@ -17,7 +17,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -28,88 +27,66 @@ public class JwtFilter extends OncePerRequestFilter {
     private final JwtUtil jwtUtil;
     private final UserDetailsService userDetailsService;
 
-    // =========================
-    // ✅ Skip public endpoints
-    // =========================
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI();
 
         return path.startsWith("/api/auth")
-                || path.startsWith("/api/admins/login")   // 🔥 IMPORTANT (your login API)
+                || path.startsWith("/api/admins/login")
                 || path.startsWith("/v3/api-docs")
-                || path.startsWith("/swagger-ui")
-                || path.startsWith("/swagger-ui.html");
+                || path.startsWith("/swagger-ui");
     }
 
-    // =========================
-    // 🔥 MAIN FILTER LOGIC
-    // =========================
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain)
             throws ServletException, IOException {
 
+        String authHeader = request.getHeader("Authorization");
+
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         try {
-            String authHeader = request.getHeader("Authorization");
+            String token = authHeader.substring(7);
 
-            String token = null;
-            String username = null;
+            String username = jwtUtil.extractUsername(token);
 
-            // ✅ Extract token
-            if (authHeader != null && authHeader.startsWith("Bearer ")) {
-                token = authHeader.substring(7);
+            if (username == null ||
+                    SecurityContextHolder.getContext().getAuthentication() != null) {
+                filterChain.doFilter(request, response);
+                return;
             }
 
-            // ✅ Extract username/email
-            if (token != null) {
-                try {
-                    username = jwtUtil.extractEmail(token); // or extractUsername()
-                } catch (Exception e) {
-                    // invalid token → ignore
-                }
+            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+
+            if (!jwtUtil.isValid(token, userDetails.getUsername())) {
+                filterChain.doFilter(request, response);
+                return;
             }
 
-            // ✅ Authenticate user
-            if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            List<String> roles = jwtUtil.extractRoles(token);
 
-                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+            List<SimpleGrantedAuthority> authorities = roles.stream()
+                    .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
+                    .collect(Collectors.toList());
 
-                // ✅ Validate token
-                if (jwtUtil.isValid(token, userDetails.getUsername())) {
+            UsernamePasswordAuthenticationToken authToken =
+                    new UsernamePasswordAuthenticationToken(
+                            userDetails,
+                            null,
+                            authorities
+                    );
 
-                    List<SimpleGrantedAuthority> authorities = Collections.emptyList();
+            authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-                    // 🔥 Extract roles
-                    try {
-                        List<String> roles = jwtUtil.extractRoles(token);
-
-                        if (roles != null && !roles.isEmpty()) {
-                            authorities = roles.stream()
-                                    .map(role -> "ROLE_" + role)
-                                    .map(SimpleGrantedAuthority::new)
-                                    .collect(Collectors.toList());
-                        }
-                    } catch (Exception e) {
-                        // roles missing → ignore
-                    }
-
-                    UsernamePasswordAuthenticationToken authToken =
-                            new UsernamePasswordAuthenticationToken(
-                                    userDetails,
-                                    null,
-                                    authorities.isEmpty() ? userDetails.getAuthorities() : authorities
-                            );
-
-                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
-                    SecurityContextHolder.getContext().setAuthentication(authToken);
-                }
-            }
+            SecurityContextHolder.getContext().setAuthentication(authToken);
 
         } catch (Exception e) {
-            // ❗ Prevent crash
+            System.out.println("JWT ERROR: " + e.getMessage());
         }
 
         filterChain.doFilter(request, response);

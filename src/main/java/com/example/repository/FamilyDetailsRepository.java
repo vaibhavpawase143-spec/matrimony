@@ -1,6 +1,7 @@
 package com.example.repository;
 
 import com.example.model.FamilyDetails;
+import com.example.model.Profile;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -9,6 +10,8 @@ import java.util.Optional;
 
 @Repository
 public interface FamilyDetailsRepository extends JpaRepository<FamilyDetails, Long> {
+    FamilyDetails findByProfile(Profile profile);
+
 
     // 🔍 One-to-One mapping (Profile ↔ FamilyDetails)
     Optional<FamilyDetails> findByProfile_Id(Long profileId);
