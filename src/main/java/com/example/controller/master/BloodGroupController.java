@@ -1,18 +1,18 @@
 package com.example.controller.master;
+
 import com.example.dto.request.BloodGroupRequestDTO;
 import com.example.dto.response.BloodGroupResponseDTO;
-
 import com.example.model.BloodGroup;
 import com.example.service.BloodGroupService;
+
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/admins/{adminId}/blood-groups")
+@RequestMapping("/api/blood-groups/{adminId}")
 @RequiredArgsConstructor
 public class BloodGroupController {
 
@@ -24,7 +24,6 @@ public class BloodGroupController {
                                         @Valid @RequestBody BloodGroupRequestDTO dto) {
 
         BloodGroup bloodGroup = mapToEntity(dto);
-
         BloodGroup saved = bloodGroupService.create(bloodGroup, adminId);
 
         return mapToResponse(saved);
@@ -35,7 +34,8 @@ public class BloodGroupController {
     public BloodGroupResponseDTO getById(@PathVariable Long adminId,
                                          @PathVariable Long id) {
 
-        return mapToResponse(bloodGroupService.getById(id, adminId));
+        BloodGroup bg = bloodGroupService.getById(id, adminId);
+        return mapToResponse(bg);
     }
 
     // ================= GET ALL =================
@@ -45,7 +45,7 @@ public class BloodGroupController {
         return bloodGroupService.getAll(adminId)
                 .stream()
                 .map(this::mapToResponse)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     // ================= GET ACTIVE =================
@@ -55,7 +55,7 @@ public class BloodGroupController {
         return bloodGroupService.getActive(adminId)
                 .stream()
                 .map(this::mapToResponse)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     // ================= UPDATE =================
@@ -65,7 +65,6 @@ public class BloodGroupController {
                                         @Valid @RequestBody BloodGroupRequestDTO dto) {
 
         BloodGroup updated = bloodGroupService.update(id, mapToEntity(dto), adminId);
-
         return mapToResponse(updated);
     }
 
@@ -75,7 +74,6 @@ public class BloodGroupController {
                          @PathVariable Long id) {
 
         bloodGroupService.delete(id, adminId);
-
         return "Blood group deleted successfully";
     }
 
