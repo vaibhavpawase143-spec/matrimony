@@ -1,9 +1,14 @@
 package com.example.serviceimpl;
 
 import com.example.model.Admin;
+import com.example.model.Role;
 import com.example.repository.AdminRepository;
+import com.example.repository.RoleRepository;
 import com.example.service.AdminService;
+
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -13,7 +18,35 @@ import java.util.List;
 public class AdminServiceImpl implements AdminService {
 
     private final AdminRepository adminRepository;
+    private final RoleRepository roleRepository;
+    private final PasswordEncoder passwordEncoder; // 🔥 IMPORTANT
 
+    // ================= REGISTER =================
+    @Override
+    public Admin register(Admin admin) {
+
+        if (adminRepository.existsByEmail(admin.getEmail())) {
+            throw new RuntimeException("Email already exists");
+        }
+
+        if (adminRepository.existsByUsername(admin.getUsername())) {
+            throw new RuntimeException("Username already exists");
+        }
+
+        // 🔐 Encode password
+        admin.setPassword(passwordEncoder.encode(admin.getPassword()));
+
+        // 👑 Assign ADMIN role
+        Role role = roleRepository.findByName("ADMIN")
+                .orElseThrow(() -> new RuntimeException("Role not found"));
+
+        admin.setRole(role);
+        admin.setIsActive(true);
+
+        return adminRepository.save(admin);
+    }
+
+    // ================= CREATE =================
     @Override
     public Admin create(Admin admin) {
 
@@ -25,9 +58,13 @@ public class AdminServiceImpl implements AdminService {
             throw new RuntimeException("Username already exists");
         }
 
+        // 🔐 Encode password here also
+        admin.setPassword(passwordEncoder.encode(admin.getPassword()));
+
         return adminRepository.save(admin);
     }
 
+    // ================= GET =================
     @Override
     public Admin getById(Long id) {
         return adminRepository.findById(id)
@@ -39,6 +76,7 @@ public class AdminServiceImpl implements AdminService {
         return adminRepository.findAll();
     }
 
+    // ================= UPDATE =================
     @Override
     public Admin update(Long id, Admin updatedAdmin) {
 
@@ -47,24 +85,31 @@ public class AdminServiceImpl implements AdminService {
         existing.setName(updatedAdmin.getName());
         existing.setEmail(updatedAdmin.getEmail());
         existing.setUsername(updatedAdmin.getUsername());
-        existing.setPassword(updatedAdmin.getPassword());
+
+        // 🔐 Encode password if changed
+        if (updatedAdmin.getPassword() != null) {
+            existing.setPassword(passwordEncoder.encode(updatedAdmin.getPassword()));
+        }
 
         return adminRepository.save(existing);
     }
 
+    // ================= DELETE =================
     @Override
     public void delete(Long id) {
         Admin admin = getById(id);
         adminRepository.delete(admin);
     }
 
+    // ================= LOGIN =================
     @Override
     public Admin login(String username, String password) {
 
         Admin admin = adminRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Invalid username"));
 
-        if (!admin.getPassword().equals(password)) {
+        // 🔥 CORRECT PASSWORD CHECK
+        if (!passwordEncoder.matches(password, admin.getPassword())) {
             throw new RuntimeException("Invalid password");
         }
 

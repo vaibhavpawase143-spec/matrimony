@@ -19,17 +19,19 @@ public class CustomUserDetailsService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
 
-        // 🔥 Load user from DB
+        // ✅ Fetch user from DB
         User user = userRepository.findByEmailIgnoreCaseAndIsActiveTrue(email)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
 
-        // 🔥 Convert roles to authorities (CORRECT FIX)
+        // ✅ Convert roles safely
         return new org.springframework.security.core.userdetails.User(
                 user.getEmail(),
                 user.getPassword(),
-                user.getRoles().stream()
-                        .map(role -> new SimpleGrantedAuthority(role.getName())) // ✅ FIXED
+                user.getRoles() != null
+                        ? user.getRoles().stream()
+                        .map(role -> new SimpleGrantedAuthority("ROLE_" + role.getName())) // 🔥 IMPORTANT PREFIX
                         .collect(Collectors.toList())
+                        : java.util.Collections.emptyList()
         );
     }
 }

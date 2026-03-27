@@ -6,6 +6,9 @@ import java.util.List;
 
 public interface AdminService {
 
+    // ================= REGISTER =================
+    Admin register(Admin admin);
+
     Admin create(Admin admin);
 
     Admin getById(Long id);

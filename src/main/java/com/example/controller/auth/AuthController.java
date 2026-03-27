@@ -1,12 +1,15 @@
 package com.example.controller.auth;
 
 import com.example.dto.request.UserLoginRequestDTO;
+import com.example.dto.request.UserRegisterRequestDTO;
 import com.example.dto.response.LoginResponse;
-import com.example.model.User;
+import com.example.dto.response.MessageResponse;
 import com.example.service.UserService;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -18,27 +21,35 @@ public class AuthController {
     private final UserService userService;
 
     // =========================
-    // ✅ REGISTER (PUBLIC)
+    // ✅ REGISTER (PUBLIC API)
     // =========================
     @PostMapping("/register")
-    public String register(@RequestBody User user) {
+    public ResponseEntity<MessageResponse> register(
+            @Valid @RequestBody UserRegisterRequestDTO request
+    ) {
 
-        userService.register(user);   // ✅ save only
+        userService.register(request);
 
-        return "User registered successfully";   // ✅ DO NOT return entity
+        return ResponseEntity.ok(
+                new MessageResponse("User registered successfully")
+        );
     }
 
     // =========================
-    // 🔐 LOGIN (JWT)
+    // 🔐 LOGIN (PUBLIC API)
     // =========================
     @PostMapping("/login")
-    public LoginResponse login(@RequestBody UserLoginRequestDTO request) {
+    public ResponseEntity<LoginResponse> login(
+            @Valid @RequestBody UserLoginRequestDTO request
+    ) {
 
         String token = userService.loginAndGenerateToken(
                 request.getEmail(),
                 request.getPassword()
         );
 
-        return new LoginResponse(token);   // ✅ correct
+        return ResponseEntity.ok(
+                new LoginResponse(token)
+        );
     }
 }
