@@ -29,7 +29,14 @@ public class UserController {
     @PreAuthorize("hasRole('ADMIN')")
     public UserResponseDTO create(@RequestBody User user) {
 
-        // 🔥 FIX: using register() instead of create()
+        if (user.getRoles() != null) {
+            user.setRoles(
+                    user.getRoles().stream()
+                            .filter(role -> role.getName().equals("ROLE_USER") || role.getName().equals("ROLE_ADMIN"))
+                            .collect(Collectors.toSet())
+            );
+        }
+
         User savedUser = service.register(user);
 
         return mapToResponse(savedUser);
@@ -59,6 +66,19 @@ public class UserController {
                 .stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toSet());
+    }
+
+    // =========================
+    // ✏️ UPDATE USER (🔥 FINAL FIX)
+    // =========================
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('USER','ADMIN')")
+    public UserResponseDTO update(@PathVariable Long id,
+                                  @RequestBody User user) {
+
+        User updated = service.update(id, user);
+
+        return mapToResponse(updated);
     }
 
     // =========================
@@ -94,10 +114,10 @@ public class UserController {
     }
 
     // =========================
-    // ❌ DEACTIVATE USER (ADMIN ONLY)
+    // ❌ DEACTIVATE USER
     // =========================
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('USER','ADMIN')")
     public String deactivate(@PathVariable Long id) {
 
         service.deactivate(id);
@@ -119,7 +139,7 @@ public class UserController {
     }
 
     // =========================
-    // 🔥 TEST API (JWT CHECK)
+    // 🔥 TEST API
     // =========================
     @GetMapping("/test")
     @PreAuthorize("hasAnyRole('USER','ADMIN')")
@@ -128,7 +148,7 @@ public class UserController {
     }
 
     // =========================
-    // 🔁 MAPPING METHOD
+    // 🔁 MAPPER
     // =========================
     private UserResponseDTO mapToResponse(User user) {
 

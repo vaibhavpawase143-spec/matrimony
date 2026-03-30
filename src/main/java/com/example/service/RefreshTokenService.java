@@ -1,0 +1,44 @@
+package com.example.service;
+
+import com.example.model.RefreshToken;
+import com.example.repository.RefreshTokenRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
+import java.time.Instant;
+import java.util.UUID;
+
+@Service
+@RequiredArgsConstructor
+public class RefreshTokenService {
+
+    private final RefreshTokenRepository repository;
+
+    private final long REFRESH_DURATION = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+    public RefreshToken createToken(String email) {
+
+        repository.deleteByEmail(email);
+
+        RefreshToken token = RefreshToken.builder()
+                .email(email)
+                .token(UUID.randomUUID().toString())
+                .expiryDate(Instant.now().plusMillis(REFRESH_DURATION))
+                .build();
+
+        return repository.save(token);
+    }
+
+    public RefreshToken verifyToken(String token) {
+
+        RefreshToken refreshToken = repository.findByToken(token)
+                .orElseThrow(() -> new RuntimeException("Invalid refresh token"));
+
+        if (refreshToken.getExpiryDate().isBefore(Instant.now())) {
+            repository.delete(refreshToken);
+            throw new RuntimeException("Refresh token expired");
+        }
+
+        return refreshToken;
+    }
+}

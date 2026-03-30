@@ -19,7 +19,7 @@ public class AdminServiceImpl implements AdminService {
 
     private final AdminRepository adminRepository;
     private final RoleRepository roleRepository;
-    private final PasswordEncoder passwordEncoder; // 🔥 IMPORTANT
+    private final PasswordEncoder passwordEncoder;
 
     // ================= REGISTER =================
     @Override
@@ -36,8 +36,8 @@ public class AdminServiceImpl implements AdminService {
         // 🔐 Encode password
         admin.setPassword(passwordEncoder.encode(admin.getPassword()));
 
-        // 👑 Assign ADMIN role
-        Role role = roleRepository.findByName("ADMIN")
+        // 👑 Assign ADMIN role (FIXED)
+        Role role = roleRepository.findByName("ROLE_ADMIN")
                 .orElseThrow(() -> new RuntimeException("Role not found"));
 
         admin.setRole(role);
@@ -58,8 +58,15 @@ public class AdminServiceImpl implements AdminService {
             throw new RuntimeException("Username already exists");
         }
 
-        // 🔐 Encode password here also
+        // 🔐 Encode password
         admin.setPassword(passwordEncoder.encode(admin.getPassword()));
+
+        // 👑 Ensure ADMIN role here also (important)
+        Role role = roleRepository.findByName("ROLE_ADMIN")
+                .orElseThrow(() -> new RuntimeException("Role not found"));
+
+        admin.setRole(role);
+        admin.setIsActive(true);
 
         return adminRepository.save(admin);
     }
@@ -87,7 +94,7 @@ public class AdminServiceImpl implements AdminService {
         existing.setUsername(updatedAdmin.getUsername());
 
         // 🔐 Encode password if changed
-        if (updatedAdmin.getPassword() != null) {
+        if (updatedAdmin.getPassword() != null && !updatedAdmin.getPassword().isEmpty()) {
             existing.setPassword(passwordEncoder.encode(updatedAdmin.getPassword()));
         }
 
@@ -108,7 +115,7 @@ public class AdminServiceImpl implements AdminService {
         Admin admin = adminRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Invalid username"));
 
-        // 🔥 CORRECT PASSWORD CHECK
+        // 🔐 Password check
         if (!passwordEncoder.matches(password, admin.getPassword())) {
             throw new RuntimeException("Invalid password");
         }
