@@ -47,7 +47,7 @@ public class JwtFilter extends OncePerRequestFilter {
 
         String authHeader = request.getHeader("Authorization");
 
-        // 🔹 No token → continue
+        // 🔹 No token → let Spring handle (401)
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
@@ -55,45 +55,41 @@ public class JwtFilter extends OncePerRequestFilter {
 
         try {
             String token = authHeader.substring(7);
+
             String username = jwtUtil.extractUsername(token);
 
             // 🔹 If already authenticated → skip
-            if (username == null ||
-                    SecurityContextHolder.getContext().getAuthentication() != null) {
-                filterChain.doFilter(request, response);
-                return;
+            if (username != null &&
+                    SecurityContextHolder.getContext().getAuthentication() == null) {
+
+                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+
+                // 🔹 Validate token
+                if (jwtUtil.isValid(token, userDetails.getUsername())) {
+
+                    UsernamePasswordAuthenticationToken authToken =
+                            new UsernamePasswordAuthenticationToken(
+                                    userDetails,
+                                    null,
+                                    userDetails.getAuthorities()
+                            );
+
+                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                }
             }
-
-            // 🔹 Load user from DB
-            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-
-            // 🔹 Validate token
-            if (!jwtUtil.isValid(token, userDetails.getUsername())) {
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                response.getWriter().write("Invalid or expired token");
-                return;
-            }
-
-            // 🔥 IMPORTANT FIX: use authorities from DB (NOT token)
-            UsernamePasswordAuthenticationToken authToken =
-                    new UsernamePasswordAuthenticationToken(
-                            userDetails,
-                            null,
-                            userDetails.getAuthorities() // ✅ FIXED HERE
-                    );
-
-            authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
-            // 🔹 Set authentication
-            SecurityContextHolder.getContext().setAuthentication(authToken);
 
         } catch (Exception e) {
-            logger.error("JWT ERROR", e);
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.getWriter().write("Token error");
-            return;
+            // 🔥 VERY IMPORTANT FIX
+            // ❌ DO NOT send response here
+            // ❌ DO NOT return
+            // ✔ Just log and continue
+
+            logger.error("JWT ERROR: {}", e.getMessage());
         }
 
+        // 🔥 ALWAYS continue filter chain
         filterChain.doFilter(request, response);
     }
 }

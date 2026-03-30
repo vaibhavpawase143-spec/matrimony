@@ -1,6 +1,9 @@
 package com.example.config;
 
 import com.example.security.JwtFilter;
+import com.example.security.CustomAuthenticationEntryPoint;
+import com.example.security.CustomAccessDeniedHandler;
+
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.context.annotation.Bean;
@@ -22,6 +25,10 @@ public class SecurityConfig {
 
     private final JwtFilter jwtFilter;
 
+    // 🔥 ADD THESE TWO
+    private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
+    private final CustomAccessDeniedHandler customAccessDeniedHandler;
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
@@ -40,6 +47,12 @@ public class SecurityConfig {
                         .requestMatchers("/api/users/**").hasAnyRole("USER", "ADMIN")
 
                         .anyRequest().authenticated()
+                )
+
+                // 🔥 ADD THIS BLOCK (VERY IMPORTANT)
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(customAuthenticationEntryPoint)
+                        .accessDeniedHandler(customAccessDeniedHandler)
                 )
 
                 .sessionManagement(session ->

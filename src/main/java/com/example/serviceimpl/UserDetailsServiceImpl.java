@@ -5,6 +5,7 @@ import com.example.repository.*;
 import com.example.service.UserDetailsService;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.stream.Collectors;
@@ -19,6 +20,11 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     private final PartnerPreferenceRepository prefRepo;
     private final UserSubscriptionRepository subRepo;
     private final PaymentRepository paymentRepo;
+
+
+    public org.springframework.security.core.userdetails.UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+        return null;
+    }
 
     @Override
     public UserDetails getUserDetails(Long userId) {
