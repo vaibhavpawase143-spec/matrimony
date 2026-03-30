@@ -80,7 +80,7 @@ public class AdminController {
         // 🔥 FINAL FIX: USE EMAIL IN TOKEN
         String token = jwtUtil.generateToken(
                 admin.getEmail(),   // ✅ IMPORTANT FIX
-                List.of("ADMIN")
+                List.of("ROLE_ADMIN")
         );
 
         return Map.of(

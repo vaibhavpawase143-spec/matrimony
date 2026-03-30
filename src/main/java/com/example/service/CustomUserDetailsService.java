@@ -1,12 +1,12 @@
 package com.example.service;
 
-import com.example.model.Admin;
-import com.example.model.User;
 import com.example.repository.AdminRepository;
 import com.example.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.*;
 import org.springframework.stereotype.Service;
@@ -17,18 +17,17 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CustomUserDetailsService implements UserDetailsService {
 
+    private static final Logger logger = LoggerFactory.getLogger(CustomUserDetailsService.class);
+
     private final AdminRepository adminRepository;
     private final UserRepository userRepository;
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
 
-        // =========================
-        // 🔥 CHECK ADMIN FIRST
-        // =========================
         return adminRepository.findByEmail(email)
                 .map(admin -> {
-                    System.out.println("LOGIN AS ADMIN ✅");
+                    logger.info("LOGIN AS ADMIN");
 
                     return new org.springframework.security.core.userdetails.User(
                             admin.getEmail(),
@@ -37,24 +36,21 @@ public class CustomUserDetailsService implements UserDetailsService {
                     );
                 })
 
-                // =========================
-                // 🔥 CHECK USER (ACTIVE ONLY)
-                // =========================
                 .orElseGet(() ->
                         userRepository.findByEmailIgnoreCaseAndIsActiveTrue(email)
                                 .map(user -> {
-                                    System.out.println("LOGIN AS USER ✅");
+                                    logger.info("LOGIN AS USER");
 
                                     return new org.springframework.security.core.userdetails.User(
                                             user.getEmail(),
                                             user.getPassword(),
                                             user.getRoles().stream()
-                                                    .map(role -> new SimpleGrantedAuthority("ROLE_" + role.getName()))
+                                                    .map(role -> new SimpleGrantedAuthority(role.getName())) // ✅ FIXED
                                                     .toList()
                                     );
                                 })
                                 .orElseThrow(() -> {
-                                    System.out.println("USER NOT FOUND ❌");
+                                    logger.error("USER NOT FOUND");
                                     return new UsernameNotFoundException("User not found with email: " + email);
                                 })
                 );

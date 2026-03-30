@@ -10,11 +10,13 @@ import com.example.service.UserService;
 
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -41,11 +43,10 @@ public class UserServiceImpl implements UserService {
 
         user.setPassword(passwordEncoder.encode(user.getPassword()));
 
-        Role role = roleService.getByName("USER")
+        Role role = roleService.getByName("ROLE_USER")
                 .orElseThrow(() -> new RuntimeException("Default role not found"));
 
-        user.setRole(role);
-
+        user.setRoles(Set.of(role));
         user.setIsActive(true);
 
         return userRepository.save(user);
@@ -70,19 +71,10 @@ public class UserServiceImpl implements UserService {
 
         user.setPassword(passwordEncoder.encode(request.getPassword()));
 
-        // 🔥 ROLE HANDLING (ADMIN / USER)
-        String roleName = "USER"; // default
-
-        // 👉 If later you add role in DTO:
-        // if (request.getRole() != null) {
-        //     roleName = request.getRole().toUpperCase();
-        // }
-
-        Role role = roleService.getByName(roleName)
+        Role role = roleService.getByName("ROLE_USER")
                 .orElseThrow(() -> new RuntimeException("Role not found"));
 
-        user.setRole(role);
-
+        user.setRoles(Set.of(role));
         user.setIsActive(true);
 
         return userRepository.save(user);
@@ -106,7 +98,7 @@ public class UserServiceImpl implements UserService {
     }
 
     // =========================
-    // 🔥 JWT LOGIN (FIXED)
+    // 🔥 JWT LOGIN
     // =========================
     @Override
     public String loginAndGenerateToken(String email, String password) {
@@ -119,7 +111,6 @@ public class UserServiceImpl implements UserService {
             throw new RuntimeException("Invalid password");
         }
 
-        // ✅ CORRECT ROLE FIX
         List<String> roles = user.getRoles()
                 .stream()
                 .map(Role::getName)
@@ -172,13 +163,30 @@ public class UserServiceImpl implements UserService {
     }
 
     // =========================
-    // ✅ UPDATE
+    // ✅ UPDATE (FINAL OWNERSHIP FIX)
     // =========================
     @Override
     public User update(Long id, User updatedUser) {
 
+        String email = SecurityContextHolder
+                .getContext()
+                .getAuthentication()
+                .getName();
+
+        User currentUser = userRepository
+                .findByEmailIgnoreCase(email)
+                .orElseThrow(() -> new RuntimeException("Logged user not found"));
+
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+
+        boolean isAdmin = currentUser.getRoles()
+                .stream()
+                .anyMatch(role -> role.getName().equals("ROLE_ADMIN"));
+
+        if (!isAdmin && !user.getEmail().equals(email)) {
+            throw new RuntimeException("You can only update your own data");
+        }
 
         user.setFirstName(updatedUser.getFirstName());
         user.setLastName(updatedUser.getLastName());
@@ -188,13 +196,30 @@ public class UserServiceImpl implements UserService {
     }
 
     // =========================
-    // ❌ DEACTIVATE
+    // ❌ DEACTIVATE (FINAL OWNERSHIP FIX)
     // =========================
     @Override
     public void deactivate(Long id) {
 
+        String email = SecurityContextHolder
+                .getContext()
+                .getAuthentication()
+                .getName();
+
+        User currentUser = userRepository
+                .findByEmailIgnoreCase(email)
+                .orElseThrow(() -> new RuntimeException("Logged user not found"));
+
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+
+        boolean isAdmin = currentUser.getRoles()
+                .stream()
+                .anyMatch(role -> role.getName().equals("ROLE_ADMIN"));
+
+        if (!isAdmin && !user.getEmail().equals(email)) {
+            throw new RuntimeException("You can only deactivate your own account");
+        }
 
         user.setIsActive(false);
 
