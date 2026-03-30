@@ -12,6 +12,10 @@ public class UserDetails {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+
+    public void setId(Long id) {   // ✅ ADD THIS
+        this.id = id;
+    }
     // ===== USER =====
     private Long userId;
     private String fullName;
