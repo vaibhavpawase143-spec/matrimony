@@ -1,6 +1,7 @@
 package com.example.service;
 
-import com.example.model.UserDetails;
+import com.example.model.Admin;
+import com.example.model.User;
 import com.example.repository.AdminRepository;
 import com.example.repository.UserRepository;
 
@@ -12,10 +13,11 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-// 🔥 IMPORTANT IMPORT (SPRING ONE)
+// 🔥 SPRING SECURITY
 import org.springframework.security.core.userdetails.UserDetailsService;
 
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -28,81 +30,87 @@ public class CustomUserDetailsService implements UserDetailsService {
     private final UserRepository userRepository;
 
     // =========================
-    // 🔐 LOAD USER BY EMAIL (SPRING SECURITY)
+    // 🔐 AUTHENTICATION (LOGIN)
     // =========================
     @Override
     public org.springframework.security.core.userdetails.UserDetails loadUserByUsername(String email)
             throws UsernameNotFoundException {
 
-        // 🔥 CHECK ADMIN FIRST
-        return adminRepository.findByEmail(email)
-                .map(admin -> {
-                    logger.info("LOGIN AS ADMIN: {}", email);
+        // 🔥 1. CHECK ADMIN FIRST
+        Admin admin = adminRepository.findByEmail(email).orElse(null);
 
-                    return new org.springframework.security.core.userdetails.User(
-                            admin.getEmail(),
-                            admin.getPassword(),
-                            List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))
-                    );
-                })
+        if (admin != null && Boolean.TRUE.equals(admin.getIsActive())) {
+            logger.info("LOGIN AS ADMIN: {}", email);
 
-                // 🔥 IF NOT ADMIN → CHECK USER
-                .orElseGet(() ->
-                        userRepository.findByEmailIgnoreCaseAndIsActiveTrue(email)
-                                .map(user -> {
-                                    logger.info("LOGIN AS USER: {}", email);
+            return new org.springframework.security.core.userdetails.User(
+                    admin.getEmail(),
+                    admin.getPassword(),
+                    List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))
+            );
+        }
 
-                                    return new org.springframework.security.core.userdetails.User(
-                                            user.getEmail(),
-                                            user.getPassword(),
-                                            user.getRoles().stream()
-                                                    .map(role -> new SimpleGrantedAuthority(role.getName()))
-                                                    .toList()
-                                    );
-                                })
-                                .orElseThrow(() -> {
-                                    logger.error("USER NOT FOUND: {}", email);
-                                    return new UsernameNotFoundException("User not found with email: " + email);
-                                })
-                );
+        // 🔥 2. CHECK USER
+        User user = userRepository.findByEmailIgnoreCaseAndIsActiveTrue(email)
+                .orElseThrow(() -> {
+                    logger.error("USER NOT FOUND: {}", email);
+                    return new UsernameNotFoundException("User not found or inactive");
+                });
+
+        logger.info("LOGIN AS USER: {}", email);
+
+        return new org.springframework.security.core.userdetails.User(
+                user.getEmail(),
+                user.getPassword(),
+                user.getRoles().stream()
+                        .map(role -> new SimpleGrantedAuthority(role.getName()))
+                        .collect(Collectors.toList())
+        );
     }
 
     // =========================
-    // 🔍 GET USER DETAILS (CUSTOM DTO)
+    // 🔍 CUSTOM DTO (FOR TOKEN / RESPONSE)
     // =========================
-    public UserDetails getUserDetails(Long userId) {
 
-        // 🔍 Check USER first
-        return userRepository.findById(userId)
-                .map(user -> {
-                    UserDetails dto = new UserDetails();
+    public com.example.model.UserDetails getUserDetails(Long userId) {
 
-                    dto.setId(user.getId());
-                    dto.setEmail(user.getEmail());
-                    dto.setRoles(
-                            user.getRoles().stream()
-                                    .map(role -> role.getName())
-                                    .collect(Collectors.toSet())
-                    );
+        // 🔍 CHECK USER FIRST
+        User user = userRepository.findById(userId).orElse(null);
 
-                    return dto;
-                })
+        if (user != null) {
 
-                // 🔥 If not found → ADMIN
-                .orElseGet(() ->
-                        adminRepository.findById(userId)
-                                .map(admin -> {
-                                    UserDetails dto = new UserDetails();
+            com.example.model.UserDetails details = new com.example.model.UserDetails();
 
-                                    dto.setId(admin.getId());
-                                    dto.setEmail(admin.getEmail());
-                                    dto.setRoles(java.util.Set.of("ROLE_ADMIN"));
+            details.setId(user.getId());
+            details.setUserId(user.getId());
+            details.setFullName(user.getFullName());
+            details.setEmail(user.getEmail());
+            details.setPhone(user.getPhone());
+            details.setIsActive(user.getIsActive());
 
-                                    return dto;
-                                })
-                                .orElseThrow(() ->
-                                        new RuntimeException("User/Admin not found with id: " + userId)
-                                )
-                );
+            details.setRoles(
+                    user.getRoles().stream()
+                            .map(role -> role.getName())
+                            .collect(Collectors.toSet())
+            );
+
+            return details;
+        }
+
+        // 🔥 CHECK ADMIN
+        Admin admin = adminRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User/Admin not found with id: " + userId));
+
+        com.example.model.UserDetails details = new com.example.model.UserDetails();
+
+        details.setId(admin.getId());
+        details.setUserId(admin.getId());
+        details.setFullName(admin.getName());
+        details.setEmail(admin.getEmail());
+        details.setPhone(admin.getPhone());
+        details.setIsActive(admin.getIsActive());
+
+        details.setRoles(Set.of("ROLE_ADMIN"));
+
+        return details;
     }
 }
