@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
@@ -36,8 +37,10 @@ public class CustomUserDetailsService implements UserDetailsService {
     public org.springframework.security.core.userdetails.UserDetails loadUserByUsername(String email)
             throws UsernameNotFoundException {
 
-        // 🔥 1. CHECK ADMIN FIRST
-        Admin admin = adminRepository.findByEmail(email).orElse(null);
+        logger.info("LOGIN ATTEMPT: {}", email);
+
+        // 🔥 1. CHECK ADMIN FIRST (FIXED)
+        Admin admin = adminRepository.findByEmailIgnoreCase(email).orElse(null);
 
         if (admin != null && Boolean.TRUE.equals(admin.getIsActive())) {
             logger.info("LOGIN AS ADMIN: {}", email);
@@ -68,48 +71,46 @@ public class CustomUserDetailsService implements UserDetailsService {
     }
 
     // =========================
-    // 🔍 CUSTOM DTO (FOR TOKEN / RESPONSE)
+    // 🔍 CUSTOM DTO (FOR RESPONSE)
     // =========================
-
     public com.example.model.UserDetails getUserDetails(Long userId) {
 
-        // 🔍 CHECK USER FIRST
-        User user = userRepository.findById(userId).orElse(null);
+        // 🔥 CHECK ADMIN FIRST (IMPORTANT FIX)
+        Admin admin = adminRepository.findById(userId).orElse(null);
 
-        if (user != null) {
+        if (admin != null) {
 
             com.example.model.UserDetails details = new com.example.model.UserDetails();
 
-            details.setId(user.getId());
-            details.setUserId(user.getId());
-            details.setFullName(user.getFullName());
-            details.setEmail(user.getEmail());
-            details.setPhone(user.getPhone());
-            details.setIsActive(user.getIsActive());
-
-            details.setRoles(
-                    user.getRoles().stream()
-                            .map(role -> role.getName())
-                            .collect(Collectors.toSet())
-            );
+            details.setId(admin.getId());
+            details.setUserId(admin.getId());
+            details.setFullName(admin.getName());
+            details.setEmail(admin.getEmail());
+            details.setPhone(admin.getPhone());
+            details.setIsActive(admin.getIsActive());
+            details.setRoles(Set.of("ROLE_ADMIN"));
 
             return details;
         }
 
-        // 🔥 CHECK ADMIN
-        Admin admin = adminRepository.findById(userId)
+        // 🔍 THEN USER
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User/Admin not found with id: " + userId));
 
         com.example.model.UserDetails details = new com.example.model.UserDetails();
 
-        details.setId(admin.getId());
-        details.setUserId(admin.getId());
-        details.setFullName(admin.getName());
-        details.setEmail(admin.getEmail());
-        details.setPhone(admin.getPhone());
-        details.setIsActive(admin.getIsActive());
+        details.setId(user.getId());
+        details.setUserId(user.getId());
+        details.setFullName(user.getFullName());
+        details.setEmail(user.getEmail());
+        details.setPhone(user.getPhone());
+        details.setIsActive(user.getIsActive());
 
-        details.setRoles(Set.of("ROLE_ADMIN"));
+        details.setRoles(
+                user.getRoles().stream()
+                        .map(role -> role.getName())
+                        .collect(Collectors.toSet())
+        );
 
         return details;
     }
