@@ -2,6 +2,7 @@ package com.example.service;
 
 import com.example.dto.request.UserRegisterRequestDTO;
 import com.example.dto.response.PageResponse;
+import com.example.dto.response.UserResponseDTO;
 import com.example.model.User;
 
 import java.util.List;
@@ -10,42 +11,54 @@ import java.util.Optional;
 public interface UserService {
 
     // =========================
-    // ✅ REGISTER (INTERFACE MATCH)
+    // ✅ REGISTER
     // =========================
-    User register(User user);
-
-    // ✅ FIXED (DTO)
     User register(UserRegisterRequestDTO request);
 
-    // 🔐 Login
+    // =========================
+    // 🔐 LOGIN
+    // =========================
     User login(String email, String password);
 
-    // 🔥 JWT Login
+    // =========================
+    // 🔥 JWT LOGIN
+    // =========================
     String loginAndGenerateToken(String email, String password);
 
-    // 🔍 Get by ID
-    Optional<User> getById(Long id);
+    // =========================
+    // 🔍 GET BY ID (DTO)
+    // =========================
+    Optional<UserResponseDTO> getById(Long id);
 
-    // 🔍 Get by email
-    Optional<User> getByEmail(String email);
+    // =========================
+    // 🔍 GET ALL (DTO)
+    // =========================
+    List<UserResponseDTO> getAll();
 
-    // 🔍 Get all users
-    List<User> getAll();
+    // =========================
+    // 🔍 ACTIVE USERS (DTO)
+    // =========================
+    List<UserResponseDTO> getActiveUsers();
 
-    // 🔍 Active users
-    List<User> getActiveUsers();
-
-    // 🔍 Search
+    // =========================
+    // 🔍 SEARCH (ENTITY → Controller maps)
+    // =========================
     List<User> search(String keyword);
 
-    // ✅ Update
+    // =========================
+    // ✅ UPDATE
+    // =========================
     User update(Long id, User user);
 
-    // ❌ Soft delete
+    // =========================
+    // ❌ DEACTIVATE
+    // =========================
     void deactivate(Long id);
 
     // =========================
-    // 🔥 PAGINATION (NEW)
+    // 🔥 PAGINATION (DTO)
     // =========================
-    PageResponse<User> getAllUsers(int page, int size);
+    PageResponse<UserResponseDTO> getAllUsers(int page, int size);
+
+    PageResponse<UserResponseDTO> getAllUsers(int page, int size, String sortBy, String direction);
 }

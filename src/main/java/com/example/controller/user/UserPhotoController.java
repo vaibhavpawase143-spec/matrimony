@@ -6,8 +6,10 @@ import com.example.model.PhotoType;
 import com.example.model.User;
 import com.example.model.UserPhoto;
 import com.example.service.UserPhotoService;
+
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,19 +18,18 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/user-photos")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "*")
 public class UserPhotoController {
 
     private final UserPhotoService service;
 
     // =========================
-    // ✅ UPLOAD / SAVE PHOTO
+    // ✅ SAVE / UPLOAD PHOTO
     // =========================
     @PostMapping
     public UserPhotoResponseDTO save(@Valid @RequestBody UserPhotoRequestDTO dto) {
 
-        UserPhoto photo = mapToEntity(dto);
-
-        UserPhoto saved = service.save(photo);
+        UserPhoto saved = service.save(mapToEntity(dto));
 
         return mapToResponse(saved);
     }
@@ -60,7 +61,7 @@ public class UserPhotoController {
     }
 
     // =========================
-    // 🔍 GET SINGLE (PROFILE PHOTO)
+    // 🔍 GET SINGLE PHOTO
     // =========================
     @GetMapping("/user/{userId}/single/{type}")
     public UserPhotoResponseDTO getSingle(
@@ -74,7 +75,7 @@ public class UserPhotoController {
     }
 
     // =========================
-    // 🔍 CHECK EXISTS
+    // 🔍 EXISTS CHECK
     // =========================
     @GetMapping("/exists")
     public Boolean exists(
@@ -85,7 +86,7 @@ public class UserPhotoController {
     }
 
     // =========================
-    // ❌ DELETE BY TYPE
+    // ❌ DELETE PHOTO
     // =========================
     @DeleteMapping
     public String delete(
@@ -109,7 +110,7 @@ public class UserPhotoController {
     }
 
     // =========================
-    // 🔥 MAPPING
+    // 🔥 MAPPERS
     // =========================
 
     private UserPhoto mapToEntity(UserPhotoRequestDTO dto) {
@@ -118,8 +119,8 @@ public class UserPhotoController {
 
         User user = new User();
         user.setId(dto.getUserId());
-        photo.setUser(user);
 
+        photo.setUser(user);
         photo.setPhotoType(dto.getPhotoType());
         photo.setPhotoUrl(dto.getPhotoUrl());
 
