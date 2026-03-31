@@ -24,8 +24,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtFilter jwtFilter;
-
-    // 🔥 ADD THESE TWO
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
 
@@ -37,28 +35,39 @@ public class SecurityConfig {
                 .cors(cors -> {})
 
                 .authorizeHttpRequests(auth -> auth
+
+                        // ✅ PUBLIC APIs
                         .requestMatchers(
                                 "/api/auth/**",
+                                "/api/admins",
                                 "/api/admins/login",
-                                "/api/admins"
+
+                                // 🔥 SWAGGER (VERY IMPORTANT)
+                                "/v3/api-docs/**",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html"
                         ).permitAll()
 
+                        // 🔐 ROLE BASED ACCESS
                         .requestMatchers("/api/admins/**").hasRole("ADMIN")
                         .requestMatchers("/api/users/**").hasAnyRole("USER", "ADMIN")
 
+                        // 🔐 ALL OTHER APIs
                         .anyRequest().authenticated()
                 )
 
-                // 🔥 ADD THIS BLOCK (VERY IMPORTANT)
+                // 🔥 Exception Handling
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(customAuthenticationEntryPoint)
                         .accessDeniedHandler(customAccessDeniedHandler)
                 )
 
+                // 🔐 Stateless (JWT)
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
 
+                // 🔥 JWT Filter
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

@@ -1,12 +1,13 @@
 package com.example.controller.auth;
 
+import com.example.dto.request.LoginRequest;
 import com.example.dto.response.LoginResponse;
 import com.example.model.Admin;
 import com.example.model.RefreshToken;
 import com.example.repository.AdminRepository;
 import com.example.security.JwtUtil;
-
 import com.example.service.RefreshTokenService;
+
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.http.ResponseEntity;
@@ -26,29 +27,29 @@ public class AdminAuthController {
     private final JwtUtil jwtUtil;
     private final RefreshTokenService refreshTokenService;
 
-    // 🔐 ADMIN LOGIN
+    // 🔐 ADMIN LOGIN (JSON SUPPORT)
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login(
-            @RequestParam String email,
-            @RequestParam String password
-    ) {
+    public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request) {
 
-        Admin admin = adminRepository.findByEmail(email)
+        // 🔍 Find admin by email
+        Admin admin = adminRepository.findByEmailIgnoreCase(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("Admin not found"));
 
-        if (!passwordEncoder.matches(password, admin.getPassword())) {
+        // 🔐 Password validation
+        if (!passwordEncoder.matches(request.getPassword(), admin.getPassword())) {
             throw new RuntimeException("Invalid password");
         }
 
-        // 🔐 Access Token
+        // 🔐 Generate Access Token
         String accessToken = jwtUtil.generateToken(
                 admin.getEmail(),
                 List.of("ROLE_ADMIN")
         );
 
-        // 🔄 Refresh Token
+        // 🔄 Generate Refresh Token
         RefreshToken refreshToken = refreshTokenService.createToken(admin.getEmail());
 
+        // ✅ Return response
         return ResponseEntity.ok(
                 new LoginResponse(accessToken, refreshToken.getToken())
         );

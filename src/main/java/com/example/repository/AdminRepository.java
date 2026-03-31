@@ -12,13 +12,13 @@ public interface AdminRepository extends JpaRepository<Admin, Long> {
     // 🔍 Find admin by username (Login support)
     Optional<Admin> findByUsername(String username);
 
-    // 🔍 Find admin by email (Login / verification)
-    Optional<Admin> findByEmail(String email);
+    // 🔥 FIXED: Case-insensitive email search (IMPORTANT)
+    Optional<Admin> findByEmailIgnoreCase(String email);
 
     // ✅ Validation checks
     boolean existsByUsername(String username);
     boolean existsByEmail(String email);
 
-    // 🔥 Optional (useful for login with either email or username)
-    Optional<Admin> findByEmailOrUsername(String email, String username);
+    // 🔥 Optional (login using email OR username)
+    Optional<Admin> findByEmailIgnoreCaseOrUsername(String email, String username);
 }

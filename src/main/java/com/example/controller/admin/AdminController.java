@@ -24,13 +24,20 @@ import java.util.stream.Collectors;
 public class AdminController {
 
     private final AdminService adminService;
-    private final JwtUtil jwtUtil; // 🔥 USE JwtUtil (NOT JwtService)
+    private final JwtUtil jwtUtil;
 
     // ================= CREATE (FIRST ADMIN OPEN) =================
     @PostMapping
     public AdminResponseDTO create(@Valid @RequestBody AdminRequestDTO dto) {
 
         Admin admin = mapToEntity(dto);
+
+        // ❌ REMOVE PASSWORD ENCODING FROM CONTROLLER
+        // admin.setPassword(passwordEncoder.encode(dto.getPassword()));
+
+        // ✅ PASS RAW PASSWORD → SERVICE WILL ENCODE
+        admin.setPassword(dto.getPassword());
+
         Admin saved = adminService.create(admin);
 
         return mapToResponse(saved);
@@ -59,7 +66,14 @@ public class AdminController {
     public AdminResponseDTO update(@PathVariable Long id,
                                    @Valid @RequestBody AdminRequestDTO dto) {
 
-        Admin updated = adminService.update(id, mapToEntity(dto));
+        Admin admin = mapToEntity(dto);
+
+        // ✅ PASS RAW PASSWORD → SERVICE WILL ENCODE
+        if (dto.getPassword() != null && !dto.getPassword().isEmpty()) {
+            admin.setPassword(dto.getPassword());
+        }
+
+        Admin updated = adminService.update(id, admin);
         return mapToResponse(updated);
     }
 
@@ -77,9 +91,8 @@ public class AdminController {
 
         Admin admin = adminService.login(dto.getUsername(), dto.getPassword());
 
-        // 🔥 FINAL FIX: USE EMAIL IN TOKEN
         String token = jwtUtil.generateToken(
-                admin.getEmail(),   // ✅ IMPORTANT FIX
+                admin.getEmail(),
                 List.of("ROLE_ADMIN")
         );
 
@@ -97,8 +110,8 @@ public class AdminController {
         admin.setName(dto.getName());
         admin.setUsername(dto.getUsername());
         admin.setEmail(dto.getEmail());
-        admin.setPassword(dto.getPassword());
         admin.setPhone(dto.getPhone());
+        admin.setIsActive(true);
 
         return admin;
     }
