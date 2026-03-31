@@ -1,6 +1,7 @@
 package com.example.service;
 
 import com.example.dto.request.UserRegisterRequestDTO;
+import com.example.dto.response.PageResponse;
 import com.example.model.User;
 
 import java.util.List;
@@ -43,4 +44,8 @@ public interface UserService {
     // ❌ Soft delete
     void deactivate(Long id);
 
+    // =========================
+    // 🔥 PAGINATION (NEW)
+    // =========================
+    PageResponse<User> getAllUsers(int page, int size);
 }

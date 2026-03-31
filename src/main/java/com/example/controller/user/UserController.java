@@ -1,9 +1,11 @@
 package com.example.controller.user;
 
 import com.example.dto.response.UserResponseDTO;
+import com.example.dto.response.PageResponse;
 import com.example.model.Role;
 import com.example.model.User;
 import com.example.service.UserService;
+import com.example.service.CustomUserDetailsService; // ✅ ADD THIS
 
 import lombok.RequiredArgsConstructor;
 
@@ -21,6 +23,7 @@ import java.util.stream.Collectors;
 public class UserController {
 
     private final UserService service;
+    private final CustomUserDetailsService customUserDetailsService; // ✅ ADD THIS
 
     // =========================
     // ➕ CREATE USER (ADMIN ONLY)
@@ -56,6 +59,15 @@ public class UserController {
     }
 
     // =========================
+    // 🔥 NEW: ADMIN + USER DETAILS
+    // =========================
+    @GetMapping("/details/{id}")
+    @PreAuthorize("hasAnyRole('USER','ADMIN')")
+    public com.example.model.UserDetails getDetails(@PathVariable Long id) {
+        return customUserDetailsService.getUserDetails(id);
+    }
+
+    // =========================
     // 🔍 GET ALL USERS
     // =========================
     @GetMapping
@@ -69,7 +81,31 @@ public class UserController {
     }
 
     // =========================
-    // ✏️ UPDATE USER (🔥 FINAL FIX)
+    // 🔥 PAGINATION API
+    // =========================
+    @GetMapping("/paginated")
+    @PreAuthorize("hasRole('ADMIN')")
+    public PageResponse<UserResponseDTO> getPaginatedUsers(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+
+        PageResponse<User> pageData = service.getAllUsers(page, size);
+
+        return new PageResponse<>(
+                pageData.getContent()
+                        .stream()
+                        .map(this::mapToResponse)
+                        .collect(Collectors.toList()),
+                pageData.getPage(),
+                pageData.getSize(),
+                pageData.getTotalElements(),
+                pageData.getTotalPages()
+        );
+    }
+
+    // =========================
+    // ✏️ UPDATE USER
     // =========================
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('USER','ADMIN')")
@@ -77,7 +113,6 @@ public class UserController {
                                   @RequestBody User user) {
 
         User updated = service.update(id, user);
-
         return mapToResponse(updated);
     }
 
@@ -121,7 +156,6 @@ public class UserController {
     public String deactivate(@PathVariable Long id) {
 
         service.deactivate(id);
-
         return "User deactivated successfully";
     }
 

@@ -1,6 +1,7 @@
 package com.example.serviceimpl;
 
 import com.example.dto.request.UserRegisterRequestDTO;
+import com.example.dto.response.PageResponse;
 import com.example.model.Role;
 import com.example.model.User;
 import com.example.repository.UserRepository;
@@ -13,6 +14,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 
 import java.util.List;
 import java.util.Optional;
@@ -163,7 +167,7 @@ public class UserServiceImpl implements UserService {
     }
 
     // =========================
-    // ✅ UPDATE (FINAL OWNERSHIP FIX)
+    // ✅ UPDATE (OWNERSHIP)
     // =========================
     @Override
     public User update(Long id, User updatedUser) {
@@ -196,7 +200,7 @@ public class UserServiceImpl implements UserService {
     }
 
     // =========================
-    // ❌ DEACTIVATE (FINAL OWNERSHIP FIX)
+    // ❌ DEACTIVATE (OWNERSHIP)
     // =========================
     @Override
     public void deactivate(Long id) {
@@ -222,7 +226,23 @@ public class UserServiceImpl implements UserService {
         }
 
         user.setIsActive(false);
-
         userRepository.save(user);
+    }
+
+    // =========================
+    // 🔥 PAGINATION (NEW)
+    // =========================
+    @Override
+    public PageResponse<User> getAllUsers(int page, int size) {
+
+        Page<User> userPage = userRepository.findAll(PageRequest.of(page, size));
+
+        return new PageResponse<>(
+                userPage.getContent(),
+                userPage.getNumber(),
+                userPage.getSize(),
+                userPage.getTotalElements(),
+                userPage.getTotalPages()
+        );
     }
 }
