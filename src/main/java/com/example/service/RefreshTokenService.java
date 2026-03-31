@@ -16,8 +16,10 @@ public class RefreshTokenService {
 
     private final long REFRESH_DURATION = 7 * 24 * 60 * 60 * 1000; // 7 days
 
+    // 🔐 CREATE TOKEN
     public RefreshToken createToken(String email) {
 
+        // delete old token
         repository.deleteByEmail(email);
 
         RefreshToken token = RefreshToken.builder()
@@ -29,6 +31,7 @@ public class RefreshTokenService {
         return repository.save(token);
     }
 
+    // 🔍 VERIFY TOKEN
     public RefreshToken verifyToken(String token) {
 
         RefreshToken refreshToken = repository.findByToken(token)
@@ -40,5 +43,10 @@ public class RefreshTokenService {
         }
 
         return refreshToken;
+    }
+
+    // 🚪 LOGOUT (DELETE TOKEN)
+    public void deleteByEmail(String email) {
+        repository.deleteByEmail(email);
     }
 }

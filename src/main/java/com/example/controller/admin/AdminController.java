@@ -4,7 +4,9 @@ import com.example.dto.other.AdminLoginDTO;
 import com.example.dto.request.AdminRequestDTO;
 import com.example.dto.response.AdminResponseDTO;
 import com.example.model.Admin;
+import com.example.model.RefreshToken;
 import com.example.service.AdminService;
+import com.example.service.RefreshTokenService;
 import com.example.security.JwtUtil;
 
 import jakarta.validation.Valid;
@@ -25,32 +27,47 @@ public class AdminController {
 
     private final AdminService adminService;
     private final JwtUtil jwtUtil;
+    private final RefreshTokenService refreshTokenService;
 
-    // ================= CREATE (FIRST ADMIN OPEN) =================
+    // ================= CREATE ADMIN =================
     @PostMapping
     public AdminResponseDTO create(@Valid @RequestBody AdminRequestDTO dto) {
 
-        Admin admin = mapToEntity(dto);
+        Admin admin = new Admin();
 
-        // ❌ REMOVE PASSWORD ENCODING FROM CONTROLLER
-        // admin.setPassword(passwordEncoder.encode(dto.getPassword()));
-
-        // ✅ PASS RAW PASSWORD → SERVICE WILL ENCODE
+        admin.setName(dto.getName());
+        admin.setUsername(dto.getUsername());
+        admin.setEmail(dto.getEmail());
+        admin.setPhone(dto.getPhone());
         admin.setPassword(dto.getPassword());
+        admin.setIsActive(true);
 
         Admin saved = adminService.create(admin);
 
         return mapToResponse(saved);
     }
 
-    // ================= GET BY ID =================
-    @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public AdminResponseDTO getById(@PathVariable Long id) {
-        return mapToResponse(adminService.getById(id));
+    // ================= LOGIN =================
+    @PostMapping("/login")
+    public Map<String, Object> login(@Valid @RequestBody AdminLoginDTO dto) {
+
+        Admin admin = adminService.login(dto.getUsername(), dto.getPassword());
+
+        String accessToken = jwtUtil.generateToken(
+                admin.getEmail(),
+                List.of("ROLE_ADMIN")
+        );
+
+        RefreshToken refreshToken = refreshTokenService.createToken(admin.getEmail());
+
+        return Map.of(
+                "accessToken", accessToken,
+                "refreshToken", refreshToken.getToken(),
+                "admin", mapToResponse(admin)
+        );
     }
 
-    // ================= GET ALL =================
+    // ================= GET ALL ADMINS =================
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
     public List<AdminResponseDTO> getAll() {
@@ -60,61 +77,43 @@ public class AdminController {
                 .collect(Collectors.toList());
     }
 
-    // ================= UPDATE =================
-    @PutMapping("/{id}")
+    // ================= GET ADMIN BY ID =================
+    @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public AdminResponseDTO update(@PathVariable Long id,
-                                   @Valid @RequestBody AdminRequestDTO dto) {
-
-        Admin admin = mapToEntity(dto);
-
-        // ✅ PASS RAW PASSWORD → SERVICE WILL ENCODE
-        if (dto.getPassword() != null && !dto.getPassword().isEmpty()) {
-            admin.setPassword(dto.getPassword());
-        }
-
-        Admin updated = adminService.update(id, admin);
-        return mapToResponse(updated);
+    public AdminResponseDTO getById(@PathVariable Long id) {
+        return mapToResponse(adminService.getById(id));
     }
 
-    // ================= DELETE =================
-    @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public String delete(@PathVariable Long id) {
-        adminService.delete(id);
-        return "Admin deleted successfully";
+    // ================= LOGOUT =================
+    @PostMapping("/logout")
+    public String logout(@RequestBody Map<String, String> request) {
+
+        String email = request.get("email");
+
+        refreshTokenService.deleteByEmail(email);
+
+        return "Logged out successfully";
     }
 
-    // ================= LOGIN (PUBLIC) =================
-    @PostMapping("/login")
-    public Map<String, Object> login(@Valid @RequestBody AdminLoginDTO dto) {
+    // ================= REFRESH TOKEN =================
+    @PostMapping("/refresh")
+    public Map<String, String> refresh(@RequestBody Map<String, String> request) {
 
-        Admin admin = adminService.login(dto.getUsername(), dto.getPassword());
+        String token = request.get("refreshToken");
 
-        String token = jwtUtil.generateToken(
-                admin.getEmail(),
+        RefreshToken refreshToken = refreshTokenService.verifyToken(token);
+
+        String newAccessToken = jwtUtil.generateToken(
+                refreshToken.getEmail(),
                 List.of("ROLE_ADMIN")
         );
 
         return Map.of(
-                "token", token,
-                "admin", mapToResponse(admin)
+                "accessToken", newAccessToken
         );
     }
 
     // ================= MAPPERS =================
-
-    private Admin mapToEntity(AdminRequestDTO dto) {
-        Admin admin = new Admin();
-
-        admin.setName(dto.getName());
-        admin.setUsername(dto.getUsername());
-        admin.setEmail(dto.getEmail());
-        admin.setPhone(dto.getPhone());
-        admin.setIsActive(true);
-
-        return admin;
-    }
 
     private AdminResponseDTO mapToResponse(Admin admin) {
         AdminResponseDTO dto = new AdminResponseDTO();

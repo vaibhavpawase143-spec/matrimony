@@ -17,9 +17,10 @@ public class RefreshToken {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(unique = true, nullable = false)
     private String token;
 
-    private String email;
-
     private Instant expiryDate;
+
+    private String email; // keep simple (no need to change User now)
 }
