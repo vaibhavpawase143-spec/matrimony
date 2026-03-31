@@ -4,7 +4,9 @@ import com.example.model.UserPhoto;
 import com.example.model.PhotoType;
 import com.example.repository.UserPhotoRepository;
 import com.example.service.UserPhotoService;
+
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -18,60 +20,81 @@ public class UserPhotoServiceImpl implements UserPhotoService {
         this.repository = repository;
     }
 
-    // ✅ Save (handle single-type photos like PROFILE)
+    // =========================
+    // ✅ SAVE / REPLACE PHOTO
+    // =========================
     @Override
+    @Transactional
     public UserPhoto save(UserPhoto photo) {
 
         Long userId = photo.getUser().getId();
         PhotoType type = photo.getPhotoType();
 
-        // Replace single-type photos
-        if (type == PhotoType.PROFILE || type == PhotoType.KUNDALI) {
-            if (repository.existsByUserIdAndPhotoType(userId, type)) {
-                repository.deleteByUserIdAndPhotoType(userId, type);
-            }
+        // 🔥 Replace existing (PROFILE / KUNDALI)
+        if (repository.existsByUserIdAndPhotoType(userId, type)) {
+            repository.deleteByUserIdAndPhotoType(userId, type);
         }
 
         return repository.save(photo);
     }
 
-    // 🔍 Get by ID
+    // =========================
+    // 🔍 GET BY ID
+    // =========================
     @Override
     public Optional<UserPhoto> getById(Long id) {
         return repository.findById(id);
     }
 
-    // 🔍 All photos of user
+    // =========================
+    // 🔍 GET ALL BY USER
+    // =========================
     @Override
     public List<UserPhoto> getByUser(Long userId) {
         return repository.findByUserId(userId);
     }
 
-    // 🔍 By type
+    // =========================
+    // 🔍 GET BY TYPE
+    // =========================
     @Override
     public List<UserPhoto> getByUserAndType(Long userId, PhotoType photoType) {
         return repository.findByUserIdAndPhotoType(userId, photoType);
     }
 
-    // 🔍 Single photo (profile)
+    // =========================
+    // 🔍 GET SINGLE
+    // =========================
     @Override
     public Optional<UserPhoto> getSingleByUserAndType(Long userId, PhotoType photoType) {
         return repository.findFirstByUserIdAndPhotoType(userId, photoType);
     }
 
-    // 🔍 Exists
+    // =========================
+    // 🔍 EXISTS
+    // =========================
     @Override
     public boolean exists(Long userId, PhotoType photoType) {
         return repository.existsByUserIdAndPhotoType(userId, photoType);
     }
 
-    // ❌ Delete
+    // =========================
+    // ❌ DELETE
+    // =========================
     @Override
+    @Transactional
     public void deleteByUserAndType(Long userId, PhotoType photoType) {
+
+        if (!repository.existsByUserIdAndPhotoType(userId, photoType)) {
+            throw new RuntimeException("Photo not found");
+        }
+
         repository.deleteByUserIdAndPhotoType(userId, photoType);
     }
 
-    // 🔍 Get all
+    // =========================
+    // 🔍 GET ALL
+    // =========================
     @Override
     public List<UserPhoto> getAll() {
         return repository.findAll();

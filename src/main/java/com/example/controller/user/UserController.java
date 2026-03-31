@@ -1,11 +1,10 @@
 package com.example.controller.user;
 
-import com.example.dto.response.UserResponseDTO;
-import com.example.dto.response.PageResponse;
-import com.example.model.Role;
+import com.example.dto.request.UserRegisterRequestDTO;
+import com.example.dto.response.*;
 import com.example.model.User;
 import com.example.service.UserService;
-import com.example.service.CustomUserDetailsService; // ✅ ADD THIS
+import com.example.service.CustomUserDetailsService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -13,8 +12,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/users")
@@ -23,188 +21,112 @@ import java.util.stream.Collectors;
 public class UserController {
 
     private final UserService service;
-    private final CustomUserDetailsService customUserDetailsService; // ✅ ADD THIS
+    private final CustomUserDetailsService customUserDetailsService;
 
-    // =========================
-    // ➕ CREATE USER (ADMIN ONLY)
-    // =========================
+    // ================= CREATE =================
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public UserResponseDTO create(@RequestBody User user) {
+    public ApiResponse<UserResponseDTO> create(@RequestBody UserRegisterRequestDTO dto) {
 
-        if (user.getRoles() != null) {
-            user.setRoles(
-                    user.getRoles().stream()
-                            .filter(role -> role.getName().equals("ROLE_USER") || role.getName().equals("ROLE_ADMIN"))
-                            .collect(Collectors.toSet())
-            );
-        }
+        User savedUser = service.register(dto);
 
-        User savedUser = service.register(user);
+        UserResponseDTO response = service.getById(savedUser.getId())
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
-        return mapToResponse(savedUser);
+        return ApiResponse.<UserResponseDTO>builder()
+                .success(true)
+                .message("User created successfully")
+                .data(response)
+                .build();
     }
 
-    // =========================
-    // 🔍 GET USER BY ID
-    // =========================
+    // ================= GET BY ID =================
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('USER','ADMIN')")
-    public UserResponseDTO getById(@PathVariable Long id) {
+    public ApiResponse<UserResponseDTO> getById(@PathVariable Long id) {
 
-        User user = service.getById(id)
+        UserResponseDTO user = service.getById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        return mapToResponse(user);
+        return ApiResponse.<UserResponseDTO>builder()
+                .success(true)
+                .message("User fetched successfully")
+                .data(user)
+                .build();
     }
 
-    // =========================
-    // 🔥 NEW: ADMIN + USER DETAILS
-    // =========================
-    @GetMapping("/details/{id}")
-    @PreAuthorize("hasAnyRole('USER','ADMIN')")
-    public com.example.model.UserDetails getDetails(@PathVariable Long id) {
-        return customUserDetailsService.getUserDetails(id);
-    }
-
-    // =========================
-    // 🔍 GET ALL USERS
-    // =========================
+    // ================= GET ALL =================
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public Set<UserResponseDTO> getAll() {
+    public ApiResponse<List<UserResponseDTO>> getAll() {
 
-        return service.getAll()
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toSet());
+        return ApiResponse.<List<UserResponseDTO>>builder()
+                .success(true)
+                .message("Users fetched successfully")
+                .data(service.getAll())
+                .build();
     }
 
-    // =========================
-    // 🔥 PAGINATION API
-    // =========================
+    // ================= PAGINATION =================
     @GetMapping("/paginated")
     @PreAuthorize("hasRole('ADMIN')")
-    public PageResponse<UserResponseDTO> getPaginatedUsers(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+    public ApiResponse<PageResponse<UserResponseDTO>> getPaginatedUsers(
+            @RequestParam int page,
+            @RequestParam int size,
+            @RequestParam String sortBy,
+            @RequestParam String direction
     ) {
 
-        PageResponse<User> pageData = service.getAllUsers(page, size);
-
-        return new PageResponse<>(
-                pageData.getContent()
-                        .stream()
-                        .map(this::mapToResponse)
-                        .collect(Collectors.toList()),
-                pageData.getPage(),
-                pageData.getSize(),
-                pageData.getTotalElements(),
-                pageData.getTotalPages()
-        );
+        return ApiResponse.<PageResponse<UserResponseDTO>>builder()
+                .success(true)
+                .message("Users fetched successfully")
+                .data(service.getAllUsers(page, size, sortBy, direction))
+                .build();
     }
 
-    // =========================
-    // ✏️ UPDATE USER
-    // =========================
+    // ================= UPDATE =================
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('USER','ADMIN')")
-    public UserResponseDTO update(@PathVariable Long id,
-                                  @RequestBody User user) {
+    public ApiResponse<UserResponseDTO> update(@PathVariable Long id,
+                                               @RequestBody User user) {
 
-        User updated = service.update(id, user);
-        return mapToResponse(updated);
-    }
+        service.update(id, user);
 
-    // =========================
-    // ✅ VERIFY EMAIL
-    // =========================
-    @PutMapping("/{id}/verify-email")
-    @PreAuthorize("hasAnyRole('USER','ADMIN')")
-    public String verifyEmail(@PathVariable Long id) {
-
-        User user = service.getById(id)
+        UserResponseDTO updated = service.getById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
+        return ApiResponse.<UserResponseDTO>builder()
+                .success(true)
+                .message("User updated successfully")
+                .data(updated)
+                .build();
+    }
+
+    // ================= VERIFY EMAIL =================
+    @PutMapping("/{id}/verify-email")
+    public ApiResponse<String> verifyEmail(@PathVariable Long id) {
+
+        User user = service.update(id, new User());
         user.setEmailVerifiedAt(LocalDateTime.now());
         service.update(id, user);
 
-        return "Email verified successfully";
+        return ApiResponse.<String>builder()
+                .success(true)
+                .message("Email verified successfully")
+                .data(null)
+                .build();
     }
 
-    // =========================
-    // ✅ VERIFY PHONE
-    // =========================
-    @PutMapping("/{id}/verify-phone")
-    @PreAuthorize("hasAnyRole('USER','ADMIN')")
-    public String verifyPhone(@PathVariable Long id) {
-
-        User user = service.getById(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        user.setPhoneVerifiedAt(LocalDateTime.now());
-        service.update(id, user);
-
-        return "Phone verified successfully";
-    }
-
-    // =========================
-    // ❌ DEACTIVATE USER
-    // =========================
+    // ================= DELETE =================
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('USER','ADMIN')")
-    public String deactivate(@PathVariable Long id) {
+    public ApiResponse<String> deactivate(@PathVariable Long id) {
 
         service.deactivate(id);
-        return "User deactivated successfully";
-    }
 
-    // =========================
-    // 🔍 SEARCH USERS
-    // =========================
-    @GetMapping("/search")
-    @PreAuthorize("hasRole('ADMIN')")
-    public Set<UserResponseDTO> search(@RequestParam String keyword) {
-
-        return service.search(keyword)
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toSet());
-    }
-
-    // =========================
-    // 🔥 TEST API
-    // =========================
-    @GetMapping("/test")
-    @PreAuthorize("hasAnyRole('USER','ADMIN')")
-    public String test() {
-        return "JWT is working perfectly 🔥";
-    }
-
-    // =========================
-    // 🔁 MAPPER
-    // =========================
-    private UserResponseDTO mapToResponse(User user) {
-
-        Set<String> roles = user.getRoles() != null
-                ? user.getRoles().stream()
-                .map(Role::getName)
-                .collect(Collectors.toSet())
-                : null;
-
-        return UserResponseDTO.builder()
-                .id(user.getId())
-                .firstName(user.getFirstName())
-                .lastName(user.getLastName())
-                .fullName(user.getFullName())
-                .email(user.getEmail())
-                .phone(user.getPhone())
-                .isActive(user.getIsActive())
-                .emailVerified(user.getEmailVerifiedAt() != null)
-                .phoneVerified(user.getPhoneVerifiedAt() != null)
-                .roles(roles)
-                .createdAt(user.getCreatedAt())
-                .updatedAt(user.getUpdatedAt())
+        return ApiResponse.<String>builder()
+                .success(true)
+                .message("User deactivated successfully")
+                .data(null)
                 .build();
     }
 }

@@ -1,12 +1,13 @@
 package com.example.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
 @Data
+@Builder
+@NoArgsConstructor
 @AllArgsConstructor
 public class ErrorResponse {
 

@@ -2,6 +2,8 @@ package com.example.serviceimpl;
 
 import com.example.dto.request.UserRegisterRequestDTO;
 import com.example.dto.response.PageResponse;
+import com.example.dto.response.UserResponseDTO;
+import com.example.mapper.UserMapper;
 import com.example.model.Role;
 import com.example.model.User;
 import com.example.repository.UserRepository;
@@ -11,12 +13,10 @@ import com.example.service.UserService;
 
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.data.domain.*;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 
 import java.util.List;
 import java.util.Optional;
@@ -32,32 +32,7 @@ public class UserServiceImpl implements UserService {
     private final RoleService roleService;
 
     // =========================
-    // ✅ REGISTER (ENTITY)
-    // =========================
-    @Override
-    public User register(User user) {
-
-        if (userRepository.existsByEmailIgnoreCase(user.getEmail())) {
-            throw new RuntimeException("Email already exists");
-        }
-
-        if (user.getPassword() == null || user.getPassword().isEmpty()) {
-            throw new RuntimeException("Password is required");
-        }
-
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-
-        Role role = roleService.getByName("ROLE_USER")
-                .orElseThrow(() -> new RuntimeException("Default role not found"));
-
-        user.setRoles(Set.of(role));
-        user.setIsActive(true);
-
-        return userRepository.save(user);
-    }
-
-    // =========================
-    // ✅ REGISTER (DTO)
+    // REGISTER
     // =========================
     @Override
     public User register(UserRegisterRequestDTO request) {
@@ -72,7 +47,6 @@ public class UserServiceImpl implements UserService {
         user.setLastName(request.getLastName());
         user.setEmail(request.getEmail());
         user.setPhone(request.getPhone());
-
         user.setPassword(passwordEncoder.encode(request.getPassword()));
 
         Role role = roleService.getByName("ROLE_USER")
@@ -85,14 +59,14 @@ public class UserServiceImpl implements UserService {
     }
 
     // =========================
-    // 🔐 LOGIN
+    // LOGIN
     // =========================
     @Override
     public User login(String email, String password) {
 
         User user = userRepository
                 .findByEmailIgnoreCaseAndIsActiveTrue(email)
-                .orElseThrow(() -> new RuntimeException("User not found or inactive"));
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
         if (!passwordEncoder.matches(password, user.getPassword())) {
             throw new RuntimeException("Invalid password");
@@ -102,14 +76,14 @@ public class UserServiceImpl implements UserService {
     }
 
     // =========================
-    // 🔥 JWT LOGIN
+    // JWT LOGIN
     // =========================
     @Override
     public String loginAndGenerateToken(String email, String password) {
 
         User user = userRepository
                 .findByEmailIgnoreCaseAndIsActiveTrue(email)
-                .orElseThrow(() -> new RuntimeException("User not found or inactive"));
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
         if (!passwordEncoder.matches(password, user.getPassword())) {
             throw new RuntimeException("Invalid password");
@@ -124,39 +98,38 @@ public class UserServiceImpl implements UserService {
     }
 
     // =========================
-    // 🔍 GET BY ID
+    // GET BY ID (DTO)
     // =========================
     @Override
-    public Optional<User> getById(Long id) {
-        return userRepository.findByIdAndIsActiveTrue(id);
+    public Optional<UserResponseDTO> getById(Long id) {
+        return userRepository.findByIdWithRoles(id)
+                .map(UserMapper::toDTO);
     }
 
     // =========================
-    // 🔍 GET BY EMAIL
+    // GET ALL (DTO)
     // =========================
     @Override
-    public Optional<User> getByEmail(String email) {
-        return userRepository.findByEmailIgnoreCase(email);
+    public List<UserResponseDTO> getAll() {
+        return userRepository.findAllWithRoles()
+                .stream()
+                .map(UserMapper::toDTO)
+                .toList();
     }
 
     // =========================
-    // 🔍 GET ALL
+    // ACTIVE USERS (DTO)
     // =========================
     @Override
-    public List<User> getAll() {
-        return userRepository.findAll();
+    public List<UserResponseDTO> getActiveUsers() {
+        return userRepository.findActiveUsersWithRoles()
+                .stream()
+                .map(UserMapper::toDTO)
+                .toList();
     }
 
     // =========================
-    // 🔍 ACTIVE USERS
-    // =========================
-    @Override
-    public List<User> getActiveUsers() {
-        return userRepository.findByIsActiveTrue();
-    }
-
-    // =========================
-    // 🔍 SEARCH
+    // SEARCH (ENTITY)
     // =========================
     @Override
     public List<User> search(String keyword) {
@@ -167,7 +140,7 @@ public class UserServiceImpl implements UserService {
     }
 
     // =========================
-    // ✅ UPDATE (OWNERSHIP)
+    // UPDATE
     // =========================
     @Override
     public User update(Long id, User updatedUser) {
@@ -200,7 +173,7 @@ public class UserServiceImpl implements UserService {
     }
 
     // =========================
-    // ❌ DEACTIVATE (OWNERSHIP)
+    // DEACTIVATE
     // =========================
     @Override
     public void deactivate(Long id) {
@@ -230,15 +203,45 @@ public class UserServiceImpl implements UserService {
     }
 
     // =========================
-    // 🔥 PAGINATION (NEW)
+    // PAGINATION (DTO FIXED)
     // =========================
     @Override
-    public PageResponse<User> getAllUsers(int page, int size) {
+    public PageResponse<UserResponseDTO> getAllUsers(int page, int size) {
 
         Page<User> userPage = userRepository.findAll(PageRequest.of(page, size));
 
+        List<UserResponseDTO> content = userPage.getContent()
+                .stream()
+                .map(UserMapper::toDTO)
+                .toList();
+
         return new PageResponse<>(
-                userPage.getContent(),
+                content,
+                userPage.getNumber(),
+                userPage.getSize(),
+                userPage.getTotalElements(),
+                userPage.getTotalPages()
+        );
+    }
+
+    @Override
+    public PageResponse<UserResponseDTO> getAllUsers(int page, int size, String sortBy, String direction) {
+
+        Sort sort = direction.equalsIgnoreCase("desc")
+                ? Sort.by(sortBy).descending()
+                : Sort.by(sortBy).ascending();
+
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        Page<User> userPage = userRepository.findAll(pageable);
+
+        List<UserResponseDTO> content = userPage.getContent()
+                .stream()
+                .map(UserMapper::toDTO)
+                .toList();
+
+        return new PageResponse<>(
+                content,
                 userPage.getNumber(),
                 userPage.getSize(),
                 userPage.getTotalElements(),
