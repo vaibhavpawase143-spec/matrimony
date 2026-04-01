@@ -2,16 +2,18 @@ package com.example.controller.auth;
 
 import com.example.dto.request.UserLoginRequestDTO;
 import com.example.dto.request.UserRegisterRequestDTO;
-import com.example.dto.response.*;
+import com.example.dto.request.ResendVerificationRequestDTO;
+import com.example.dto.response.ApiResponse;
 import com.example.model.RefreshToken;
 import com.example.service.RefreshTokenService;
 import com.example.service.UserService;
-import com.example.security.JwtUtil;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -21,7 +23,6 @@ public class AuthController {
 
     private final UserService userService;
     private final RefreshTokenService refreshTokenService;
-    private final JwtUtil jwtUtil;
 
     // ================= REGISTER =================
     @PostMapping("/register")
@@ -31,14 +32,14 @@ public class AuthController {
 
         return ApiResponse.<String>builder()
                 .success(true)
-                .message("User registered successfully")
+                .message("User registered successfully. Please verify your email.")
                 .data(null)
                 .build();
     }
 
     // ================= LOGIN =================
     @PostMapping("/login")
-    public ApiResponse<LoginResponse> login(@Valid @RequestBody UserLoginRequestDTO request) {
+    public ApiResponse<Object> login(@Valid @RequestBody UserLoginRequestDTO request) {
 
         String accessToken = userService.loginAndGenerateToken(
                 request.getEmail(),
@@ -47,12 +48,41 @@ public class AuthController {
 
         RefreshToken refreshToken = refreshTokenService.createToken(request.getEmail());
 
-        LoginResponse response = new LoginResponse(accessToken, refreshToken.getToken());
-
-        return ApiResponse.<LoginResponse>builder()
+        return ApiResponse.builder()
                 .success(true)
                 .message("Login successful")
-                .data(response)
+                .data(Map.of(
+                        "accessToken", accessToken,
+                        "refreshToken", refreshToken.getToken()
+                ))
+                .build();
+    }
+
+    // ================= VERIFY EMAIL =================
+    @GetMapping("/verify")
+    public ApiResponse<String> verifyEmail(@RequestParam String token) {
+
+        userService.verifyEmail(token);
+
+        return ApiResponse.<String>builder()
+                .success(true)
+                .message("Email verified successfully")
+                .data(null)
+                .build();
+    }
+
+    // ================= RESEND VERIFICATION =================
+    @PostMapping("/resend-verification")
+    public ApiResponse<String> resendVerification(
+            @Valid @RequestBody ResendVerificationRequestDTO request
+    ) {
+
+        userService.resendVerification(request.getEmail());
+
+        return ApiResponse.<String>builder()
+                .success(true)
+                .message("Verification email sent successfully")
+                .data(null)
                 .build();
     }
 }

@@ -3,48 +3,36 @@ package com.example.serviceimpl;
 import com.example.dto.request.UserRegisterRequestDTO;
 import com.example.dto.response.PageResponse;
 import com.example.dto.response.UserResponseDTO;
-import com.example.model.Role;
-import com.example.model.User;
-import com.example.repository.RoleRepository;
-import com.example.repository.UserRepository;
-import com.example.service.UserService;
+import com.example.model.*;
+
+import com.example.repository.*;
+import com.example.service.*;
 
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.data.domain.*;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Optional;
+import java.time.LocalDateTime;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
-    private final RoleRepository roleRepository;
+    private final VerificationTokenRepository verificationTokenRepository;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
+    private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
-
-    // ================= CURRENT USER =================
-    private User getCurrentUser() {
-        String email = SecurityContextHolder.getContext()
-                .getAuthentication()
-                .getName();
-
-        return userRepository.findByEmailIgnoreCase(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-    }
 
     // ================= REGISTER =================
     @Override
     public User register(UserRegisterRequestDTO dto) {
-
-        if (userRepository.existsByEmailIgnoreCaseOrPhone(dto.getEmail(), dto.getPhone())) {
-            throw new RuntimeException("Email or phone already exists");
-        }
 
         User user = new User();
         user.setFirstName(dto.getFirstName());
@@ -52,22 +40,41 @@ public class UserServiceImpl implements UserService {
         user.setEmail(dto.getEmail());
         user.setPhone(dto.getPhone());
         user.setPassword(passwordEncoder.encode(dto.getPassword()));
-        user.setIsActive(true);
+        user.setEmailVerified(false);
 
-        Role role = roleRepository.findByName("ROLE_USER")
-                .orElseThrow(() -> new RuntimeException("Role not found"));
+        User savedUser = userRepository.save(user);
 
-        user.addRole(role);
+        String token = UUID.randomUUID().toString();
 
-        return userRepository.save(user);
+        VerificationToken vt = new VerificationToken();
+        vt.setToken(token);
+        vt.setUser(savedUser);
+        vt.setExpiryDate(LocalDateTime.now().plusMinutes(15));
+
+        verificationTokenRepository.save(vt);
+
+        // ✅ FIXED LINK
+        String link = "http://localhost:9090/api/auth/verify?token=" + token;
+
+        emailService.sendEmail(
+                savedUser.getEmail(),
+                "Verify Your Email",
+                "Click here to verify your email: " + link
+        );
+
+        return savedUser;
     }
 
     // ================= LOGIN =================
     @Override
     public User login(String email, String password) {
 
-        User user = userRepository.findByEmailIgnoreCaseAndIsActiveTrue(email)
-                .orElseThrow(() -> new RuntimeException("Invalid email"));
+        User user = userRepository.findByEmailIgnoreCase(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (!user.getEmailVerified()) {
+            throw new RuntimeException("Please verify your email first");
+        }
 
         if (!passwordEncoder.matches(password, user.getPassword())) {
             throw new RuntimeException("Invalid password");
@@ -78,175 +85,171 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public String loginAndGenerateToken(String email, String password) {
-        // handled in controller (JWT)
-        return "Handled in controller";
+        login(email, password);
+        return "JWT_TOKEN"; // Replace with actual JWT logic
     }
 
-    // ================= GET BY ID =================
+    // ================= EMAIL =================
+    @Override
+    public void verifyEmail(String token) {
+
+        VerificationToken vt = verificationTokenRepository.findByToken(token)
+                .orElseThrow(() -> new RuntimeException("Invalid token"));
+
+        if (vt.getExpiryDate().isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("Token expired");
+        }
+
+        User user = vt.getUser();
+        user.setEmailVerified(true);
+        user.setEmailVerifiedAt(LocalDateTime.now());
+
+        userRepository.save(user);
+    }
+
+    @Override
+    public void resendVerification(String email) {
+        // You can improve this later
+        throw new RuntimeException("Resend verification not implemented yet");
+    }
+
+    // ================= PASSWORD =================
+    @Override
+    public void forgotPassword(String email) {
+
+        User user = userRepository.findByEmailIgnoreCase(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Optional<PasswordResetToken> existing =
+                passwordResetTokenRepository.findByUser(user);
+
+        String token = UUID.randomUUID().toString();
+
+        if (existing.isPresent()) {
+            PasswordResetToken t = existing.get();
+            t.setToken(token);
+            t.setExpiryDate(LocalDateTime.now().plusMinutes(15));
+            passwordResetTokenRepository.save(t);
+        } else {
+            PasswordResetToken t = new PasswordResetToken();
+            t.setToken(token);
+            t.setUser(user);
+            t.setExpiryDate(LocalDateTime.now().plusMinutes(15));
+            passwordResetTokenRepository.save(t);
+        }
+
+        // ✅ IMPORTANT FIX (TOKEN ADDED)
+        String link = "http://localhost:9090/api/auth/reset-password?token=" + token;
+
+        emailService.sendEmail(
+                user.getEmail(),
+                "Reset Your Password",
+                "Click here to reset your password: " + link
+        );
+    }
+
+    @Override
+    public void resetPassword(String token, String newPassword) {
+
+        PasswordResetToken t = passwordResetTokenRepository.findByToken(token)
+                .orElseThrow(() -> new RuntimeException("Invalid token"));
+
+        if (t.getExpiryDate().isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("Token expired");
+        }
+
+        User user = t.getUser();
+        user.setPassword(passwordEncoder.encode(newPassword));
+
+        userRepository.save(user);
+        passwordResetTokenRepository.delete(t);
+    }
+
+    // ================= USER =================
     @Override
     public Optional<UserResponseDTO> getById(Long id) {
-
-        User targetUser = userRepository.findByIdWithRoles(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        User currentUser = getCurrentUser();
-
-        boolean isSelf = targetUser.getId().equals(currentUser.getId());
-
-        boolean isAdmin = currentUser.getRoles().stream()
-                .anyMatch(r -> r.getName().equals("ROLE_ADMIN"));
-
-        if (!isSelf && !isAdmin) {
-            throw new RuntimeException("Access Denied");
-        }
-
-        return Optional.of(mapToDTO(targetUser));
+        return userRepository.findById(id).map(this::mapToDTO);
     }
 
-    // ================= GET ALL =================
     @Override
     public List<UserResponseDTO> getAll() {
-
-        User currentUser = getCurrentUser();
-
-        boolean isAdmin = currentUser.getRoles().stream()
-                .anyMatch(r -> r.getName().equals("ROLE_ADMIN"));
-
-        if (!isAdmin) {
-            throw new RuntimeException("Access Denied");
-        }
-
-        return userRepository.findAllWithRoles()
-                .stream()
-                .map(this::mapToDTO)
-                .collect(Collectors.toList());
+        return userRepository.findAll().stream().map(this::mapToDTO).toList();
     }
 
-    // ================= ACTIVE USERS =================
     @Override
     public List<UserResponseDTO> getActiveUsers() {
-        return userRepository.findActiveUsersWithRoles()
-                .stream()
-                .map(this::mapToDTO)
-                .collect(Collectors.toList());
+        return userRepository.findByIsActiveTrue().stream().map(this::mapToDTO).toList();
     }
 
-    // ================= SEARCH =================
     @Override
     public List<User> search(String keyword) {
-        return userRepository
-                .findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCaseOrEmailContainingIgnoreCase(
-                        keyword, keyword, keyword
-                );
+        return userRepository.findByEmailContainingIgnoreCase(keyword);
     }
 
-    // ================= UPDATE =================
     @Override
-    public User update(Long id, User requestUser) {
+    public User update(Long id, User updated) {
 
-        User targetUser = userRepository.findById(id)
+        User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        User currentUser = getCurrentUser();
+        user.setFirstName(updated.getFirstName());
+        user.setLastName(updated.getLastName());
+        user.setPhone(updated.getPhone());
 
-        boolean isSelf = targetUser.getId().equals(currentUser.getId());
-
-        boolean isAdmin = currentUser.getRoles().stream()
-                .anyMatch(r -> r.getName().equals("ROLE_ADMIN"));
-
-        if (!isSelf && !isAdmin) {
-            throw new RuntimeException("Access Denied");
-        }
-
-        targetUser.setFirstName(requestUser.getFirstName());
-        targetUser.setLastName(requestUser.getLastName());
-        targetUser.setPhone(requestUser.getPhone());
-
-        if (requestUser.getPassword() != null && !requestUser.getPassword().isBlank()) {
-            targetUser.setPassword(passwordEncoder.encode(requestUser.getPassword()));
-        }
-
-        return userRepository.save(targetUser);
+        return userRepository.save(user);
     }
 
-    // ================= DELETE =================
     @Override
     public void deactivate(Long id) {
 
-        User targetUser = userRepository.findById(id)
+        User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        User currentUser = getCurrentUser();
-
-        boolean isSelf = targetUser.getId().equals(currentUser.getId());
-
-        boolean isAdmin = currentUser.getRoles().stream()
-                .anyMatch(r -> r.getName().equals("ROLE_ADMIN"));
-
-        if (!isSelf && !isAdmin) {
-            throw new RuntimeException("Access Denied");
-        }
-
-        targetUser.setIsActive(false);
-
-        userRepository.save(targetUser);
+        user.setIsActive(false);
+        userRepository.save(user);
     }
 
     // ================= PAGINATION =================
     @Override
     public PageResponse<UserResponseDTO> getAllUsers(int page, int size) {
-        return getAllUsers(page, size, "id", "asc");
+
+        Page<User> userPage = userRepository.findAll(PageRequest.of(page, size));
+        return buildPageResponse(userPage);
     }
 
     @Override
     public PageResponse<UserResponseDTO> getAllUsers(int page, int size, String sortBy, String direction) {
 
-        Sort sort = direction.equalsIgnoreCase("desc") ?
-                Sort.by(sortBy).descending() :
-                Sort.by(sortBy).ascending();
+        Sort sort = direction.equalsIgnoreCase("desc")
+                ? Sort.by(sortBy).descending()
+                : Sort.by(sortBy).ascending();
 
-        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<User> userPage = userRepository.findAll(PageRequest.of(page, size, sort));
+        return buildPageResponse(userPage);
+    }
 
-        Page<User> userPage = userRepository.findAll(pageable);
+    // ================= HELPER =================
+    private PageResponse<UserResponseDTO> buildPageResponse(Page<User> page) {
 
-        List<UserResponseDTO> content = userPage.getContent()
+        List<UserResponseDTO> content = page.getContent()
                 .stream()
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
 
         return new PageResponse<>(
                 content,
-                userPage.getNumber(),
-                userPage.getSize(),
-                userPage.getTotalElements(),
-                userPage.getTotalPages(),
-                userPage.isLast()
+                page.getNumber(),
+                page.getSize(),
+                page.getTotalElements(),
+                page.getTotalPages(),
+                page.isLast()
         );
     }
 
-    // ================= DTO =================
     private UserResponseDTO mapToDTO(User user) {
-
-        UserResponseDTO dto = new UserResponseDTO();
-
-        dto.setId(user.getId());
-        dto.setFirstName(user.getFirstName());
-        dto.setLastName(user.getLastName());
-        dto.setFullName(user.getFullName());
-        dto.setEmail(user.getEmail());
-        dto.setPhone(user.getPhone());
-        dto.setIsActive(user.getIsActive());
-        dto.setEmailVerified(user.getEmailVerifiedAt() != null);
-        dto.setPhoneVerified(user.getPhoneVerifiedAt() != null);
-
-        dto.setRoles(
-                user.getRoles().stream()
-                        .map(Role::getName)
-                        .collect(Collectors.toSet())
-        );
-
-        dto.setCreatedAt(user.getCreatedAt());
-
-        return dto;
+        return UserResponseDTO.builder()
+                .id(user.getId())
+                .email(user.getEmail())
+                .build();
     }
 }

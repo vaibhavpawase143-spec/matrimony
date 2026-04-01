@@ -39,6 +39,7 @@ public class SecurityConfig {
                         // ✅ PUBLIC APIs
                         .requestMatchers(
                                 "/api/auth/**",
+                                "/api/public/**",
                                 "/api/admins",
                                 "/api/admins/login",
 

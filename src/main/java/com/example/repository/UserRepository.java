@@ -52,4 +52,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     @Query("SELECT DISTINCT u FROM User u LEFT JOIN FETCH u.roles WHERE u.isActive = true")
     List<User> findActiveUsersWithRoles();
+
+
+    List<User> findByEmailContainingIgnoreCase(String keyword);
 }

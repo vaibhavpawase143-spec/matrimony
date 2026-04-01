@@ -28,4 +28,7 @@ public class UserResponseDTO {
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    public void setActive(Boolean isActive) {
+    }
 }
