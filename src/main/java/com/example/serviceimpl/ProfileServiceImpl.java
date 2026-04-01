@@ -1,60 +1,122 @@
 package com.example.serviceimpl;
 
 import com.example.model.Profile;
+import com.example.model.User;
 import com.example.repository.ProfileRepository;
+import com.example.repository.UserRepository;
 import com.example.service.ProfileService;
+
+import lombok.RequiredArgsConstructor;
+
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
 public class ProfileServiceImpl implements ProfileService {
 
     private final ProfileRepository repository;
+    private final UserRepository userRepository;
 
-    public ProfileServiceImpl(ProfileRepository repository) {
-        this.repository = repository;
+    // ================= CURRENT USER =================
+    private User getCurrentUser() {
+        String email = SecurityContextHolder.getContext()
+                .getAuthentication()
+                .getName();
+
+        return userRepository.findByEmailIgnoreCase(email) // ✅ FIXED
+                .orElseThrow(() -> new RuntimeException("User not found"));
     }
 
-    // ✅ Save profile (One profile per user)
+    // ================= SAVE PROFILE =================
     @Override
     public Profile saveProfile(Profile profile) {
 
-        Long userId = profile.getUser().getId();
+        User currentUser = getCurrentUser();
 
-        if (repository.existsByUserId(userId)) {
+        if (repository.existsByUserId(currentUser.getId())) {
             throw new RuntimeException("Profile already exists for this user!");
         }
+
+        profile.setUser(currentUser); // 🔥 FORCE ownership
 
         return repository.save(profile);
     }
 
-    // ✅ Get by ID
+    // ================= GET BY ID =================
     @Override
     public Optional<Profile> getById(Long id) {
-        return repository.findById(id);
+
+        Profile profile = repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Profile not found"));
+
+        User currentUser = getCurrentUser();
+
+        boolean isOwner = profile.getUser().getId().equals(currentUser.getId());
+
+        boolean isAdmin = currentUser.getRoles().stream()
+                .anyMatch(r -> r.getName().equals("ROLE_ADMIN"));
+
+        if (!isOwner && !isAdmin) {
+            throw new RuntimeException("Access Denied");
+        }
+
+        return Optional.of(profile);
     }
 
-    // 🔍 Get by userId
+    // ================= GET MY PROFILE =================
     @Override
     public Optional<Profile> getByUserId(Long userId) {
-        return repository.findByUserId(userId);
+        User currentUser = getCurrentUser();
+        return repository.findByUserId(currentUser.getId());
     }
 
-    // 🔍 Get all
+    // ================= GET ALL =================
     @Override
     public List<Profile> getAll() {
+
+        User currentUser = getCurrentUser();
+
+        boolean isAdmin = currentUser.getRoles().stream()
+                .anyMatch(r -> r.getName().equals("ROLE_ADMIN"));
+
+        if (!isAdmin) {
+            throw new RuntimeException("Access Denied");
+        }
+
         return repository.findAll();
     }
 
-    // 🔥 Active profiles
+    // ================= DELETE =================
+    @Override
+    public void delete(Long id) {
+
+        Profile profile = repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Profile not found"));
+
+        User currentUser = getCurrentUser();
+
+        boolean isOwner = profile.getUser().getId().equals(currentUser.getId());
+
+        boolean isAdmin = currentUser.getRoles().stream()
+                .anyMatch(r -> r.getName().equals("ROLE_ADMIN"));
+
+        if (!isOwner && !isAdmin) {
+            throw new RuntimeException("Access Denied");
+        }
+
+        repository.delete(profile);
+    }
+
+    // ================= FILTER METHODS =================
+
     @Override
     public List<Profile> getActiveProfiles() {
         return repository.findByIsActiveTrue();
     }
-
-    // 🔍 Filters
 
     @Override
     public List<Profile> getByReligion(Long religionId) {
@@ -81,8 +143,6 @@ public class ProfileServiceImpl implements ProfileService {
         return repository.findByOccupationId(occupationId);
     }
 
-    // 🔥 Advanced filters
-
     @Override
     public List<Profile> getByReligionAndCaste(Long religionId, Long casteId) {
         return repository.findByReligionIdAndCasteId(religionId, casteId);
@@ -101,11 +161,5 @@ public class ProfileServiceImpl implements ProfileService {
     @Override
     public List<Profile> getActiveByReligionAndCity(Long religionId, Long cityId) {
         return repository.findByReligionIdAndCityIdAndIsActiveTrue(religionId, cityId);
-    }
-
-    // ✅ Delete
-    @Override
-    public void delete(Long id) {
-        repository.deleteById(id);
     }
 }

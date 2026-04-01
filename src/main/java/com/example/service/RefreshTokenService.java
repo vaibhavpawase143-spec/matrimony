@@ -2,6 +2,7 @@ package com.example.service;
 
 import com.example.model.RefreshToken;
 import com.example.repository.RefreshTokenRepository;
+import jakarta.transaction.Transactional; // ✅ IMPORTANT
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -46,6 +47,7 @@ public class RefreshTokenService {
     }
 
     // 🚪 LOGOUT (DELETE TOKEN)
+    @Transactional  // 🔥 VERY IMPORTANT FIX
     public void deleteByEmail(String email) {
         repository.deleteByEmail(email);
     }

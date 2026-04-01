@@ -11,6 +11,8 @@ import java.util.List;
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
 
+    // ================= AUTH =================
+
     Optional<User> findByEmailIgnoreCaseAndIsActiveTrue(String email);
 
     Optional<User> findByEmailIgnoreCase(String email);
@@ -23,24 +25,31 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     boolean existsByEmailIgnoreCaseOrPhone(String email, String phone);
 
+
+    // ================= BASIC FETCH =================
+
     List<User> findByIsActiveTrue();
 
     Optional<User> findByIdAndIsActiveTrue(Long id);
+
+
+    // ================= SEARCH =================
 
     List<User> findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCaseOrEmailContainingIgnoreCase(
             String firstName,
             String lastName,
             String email
     );
-    // 🔥 GET ALL USERS WITH ROLES
+
+
+    // ================= ROLE FETCH =================
+
     @Query("SELECT DISTINCT u FROM User u LEFT JOIN FETCH u.roles")
     List<User> findAllWithRoles();
 
-    // 🔥 GET USER BY ID WITH ROLES
     @Query("SELECT u FROM User u LEFT JOIN FETCH u.roles WHERE u.id = :id AND u.isActive = true")
     Optional<User> findByIdWithRoles(Long id);
 
-    // 🔥 ACTIVE USERS WITH ROLES
     @Query("SELECT DISTINCT u FROM User u LEFT JOIN FETCH u.roles WHERE u.isActive = true")
     List<User> findActiveUsersWithRoles();
 }
