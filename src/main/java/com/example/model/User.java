@@ -40,11 +40,15 @@ public class User {
     @Column(name = "is_active")
     private Boolean isActive = true;
 
+    // 🔥 EMAIL VERIFICATION (NEW)
+    @Column(name = "email_verified")
+    private Boolean emailVerified = false;
+
     private LocalDateTime emailVerifiedAt;
     private LocalDateTime phoneVerifiedAt;
 
-    // 🔥 FINAL FIX HERE
-    @ManyToMany(fetch = FetchType.EAGER)   // ✅ IMPORTANT
+    // 🔐 ROLES
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "user_roles",
             joinColumns = @JoinColumn(name = "user_id"),
@@ -57,6 +61,8 @@ public class User {
 
     public User() {}
 
+    // ================= LIFECYCLE =================
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
@@ -65,12 +71,18 @@ public class User {
         if (this.isActive == null) {
             this.isActive = true;
         }
+
+        if (this.emailVerified == null) {
+            this.emailVerified = false;
+        }
     }
 
     @PreUpdate
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
     }
+
+    // ================= HELPERS =================
 
     public String getFullName() {
         return (firstName != null ? firstName : "") + " " +
@@ -90,7 +102,7 @@ public class User {
         this.roles.add(role);
     }
 
-    // ===== GETTERS & SETTERS =====
+    // ================= GETTERS & SETTERS =================
 
     public Long getId() { return id; }
 
@@ -119,6 +131,10 @@ public class User {
     public Boolean getIsActive() { return isActive; }
 
     public void setIsActive(Boolean isActive) { this.isActive = isActive; }
+
+    public Boolean getEmailVerified() { return emailVerified; }
+
+    public void setEmailVerified(Boolean emailVerified) { this.emailVerified = emailVerified; }
 
     public LocalDateTime getEmailVerifiedAt() { return emailVerifiedAt; }
 

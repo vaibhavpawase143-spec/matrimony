@@ -10,54 +10,37 @@ import java.util.Optional;
 
 public interface UserService {
 
-    // =========================
-    // ✅ REGISTER
-    // =========================
+    // AUTH
     User register(UserRegisterRequestDTO request);
 
-    // =========================
-    // 🔐 LOGIN
-    // =========================
     User login(String email, String password);
 
-    // =========================
-    // 🔥 JWT LOGIN
-    // =========================
     String loginAndGenerateToken(String email, String password);
 
-    // =========================
-    // 🔍 GET BY ID (DTO)
-    // =========================
+    // EMAIL
+    void verifyEmail(String token);
+
+    void resendVerification(String email);
+
+    // PASSWORD
+    void forgotPassword(String email);
+
+    void resetPassword(String token, String newPassword);
+
+    // USER
     Optional<UserResponseDTO> getById(Long id);
 
-    // =========================
-    // 🔍 GET ALL (DTO)
-    // =========================
     List<UserResponseDTO> getAll();
 
-    // =========================
-    // 🔍 ACTIVE USERS (DTO)
-    // =========================
     List<UserResponseDTO> getActiveUsers();
 
-    // =========================
-    // 🔍 SEARCH (ENTITY → Controller maps)
-    // =========================
     List<User> search(String keyword);
 
-    // =========================
-    // ✅ UPDATE
-    // =========================
     User update(Long id, User user);
 
-    // =========================
-    // ❌ DEACTIVATE
-    // =========================
     void deactivate(Long id);
 
-    // =========================
-    // 🔥 PAGINATION (DTO)
-    // =========================
+    // PAGINATION
     PageResponse<UserResponseDTO> getAllUsers(int page, int size);
 
     PageResponse<UserResponseDTO> getAllUsers(int page, int size, String sortBy, String direction);
