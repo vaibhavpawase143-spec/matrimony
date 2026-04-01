@@ -9,16 +9,18 @@ public class PageResponse<T> {
     private int size;
     private long totalElements;
     private int totalPages;
+    private boolean last; // 🔥 ADD THIS
 
     public PageResponse() {}
 
     public PageResponse(List<T> content, int page, int size,
-                        long totalElements, int totalPages) {
+                        long totalElements, int totalPages, boolean last) {
         this.content = content;
         this.page = page;
         this.size = size;
         this.totalElements = totalElements;
         this.totalPages = totalPages;
+        this.last = last;
     }
 
     // Getters & Setters
@@ -37,4 +39,7 @@ public class PageResponse<T> {
 
     public int getTotalPages() { return totalPages; }
     public void setTotalPages(int totalPages) { this.totalPages = totalPages; }
+
+    public boolean isLast() { return last; }
+    public void setLast(boolean last) { this.last = last; }
 }
