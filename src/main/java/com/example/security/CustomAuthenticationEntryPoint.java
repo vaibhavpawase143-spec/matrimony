@@ -21,7 +21,7 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
 
     public CustomAuthenticationEntryPoint() {
         this.objectMapper = new ObjectMapper();
-        this.objectMapper.registerModule(new JavaTimeModule()); // 🔥 IMPORTANT FIX
+        this.objectMapper.registerModule(new JavaTimeModule()); // ✅ handle LocalDateTime
     }
 
     @Override
@@ -29,12 +29,13 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
                          HttpServletResponse response,
                          AuthenticationException ex) throws IOException {
 
-        ErrorResponse error = new ErrorResponse(
-                LocalDateTime.now(),
-                401,
-                "Unauthorized",
-                "Invalid or missing token"
-        );
+        ErrorResponse error = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(401)
+                .error("UNAUTHORIZED")
+                .message("Invalid or missing token")
+                .errorCode("ERR_401_AUTH") // 🔥 NEW FIELD
+                .build();
 
         response.setContentType("application/json");
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);

@@ -1,13 +1,15 @@
 package com.example.controller.user;
 
+import com.example.dto.request.LoginRequest;
+import com.example.dto.request.UserFilterDTO;
 import com.example.dto.request.UserRegisterRequestDTO;
 import com.example.dto.response.*;
 import com.example.model.User;
 import com.example.service.UserService;
-import com.example.service.CustomUserDetailsService;
 
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,15 +19,42 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "http://localhost:3000")
 public class UserController {
 
     private final UserService service;
-    private final CustomUserDetailsService customUserDetailsService;
+
+    // ================= REGISTER (PUBLIC) =================
+    @PostMapping("/register")
+    public ApiResponse<UserResponseDTO> register(@RequestBody UserRegisterRequestDTO dto) {
+
+        User savedUser = service.register(dto);
+
+        UserResponseDTO response = service.getById(savedUser.getId())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        return ApiResponse.<UserResponseDTO>builder()
+                .success(true)
+                .message("User registered successfully")
+                .data(response)
+                .build();
+    }
+
+    // ================= LOGIN (PUBLIC 🔥 FIXED) =================
+    @PostMapping("/login")
+    public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request) {
+
+        String token = service.loginAndGenerateToken(
+                request.getEmail(),
+                request.getPassword()
+        );
+
+        return ResponseEntity.ok(new AuthResponse(token));
+    }
 
     // ================= CREATE =================
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     public ApiResponse<UserResponseDTO> create(@RequestBody UserRegisterRequestDTO dto) {
 
         User savedUser = service.register(dto);
@@ -42,7 +71,7 @@ public class UserController {
 
     // ================= GET BY ID =================
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('USER','ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN') or @userSecurity.isOwner(#id, authentication.name)")
     public ApiResponse<UserResponseDTO> getById(@PathVariable Long id) {
 
         UserResponseDTO user = service.getById(id)
@@ -57,7 +86,7 @@ public class UserController {
 
     // ================= GET ALL =================
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     public ApiResponse<List<UserResponseDTO>> getAll() {
 
         return ApiResponse.<List<UserResponseDTO>>builder()
@@ -67,26 +96,9 @@ public class UserController {
                 .build();
     }
 
-    // ================= PAGINATION =================
-    @GetMapping("/paginated")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ApiResponse<PageResponse<UserResponseDTO>> getPaginatedUsers(
-            @RequestParam int page,
-            @RequestParam int size,
-            @RequestParam String sortBy,
-            @RequestParam String direction
-    ) {
-
-        return ApiResponse.<PageResponse<UserResponseDTO>>builder()
-                .success(true)
-                .message("Users fetched successfully")
-                .data(service.getAllUsers(page, size, sortBy, direction))
-                .build();
-    }
-
     // ================= UPDATE =================
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('USER','ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN') or @userSecurity.isOwner(#id, authentication.name)")
     public ApiResponse<UserResponseDTO> update(@PathVariable Long id,
                                                @RequestBody User user) {
 
@@ -104,6 +116,7 @@ public class UserController {
 
     // ================= VERIFY EMAIL =================
     @PutMapping("/{id}/verify-email")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN') or @userSecurity.isOwner(#id, authentication.name)")
     public ApiResponse<String> verifyEmail(@PathVariable Long id) {
 
         User user = service.update(id, new User());
@@ -119,14 +132,42 @@ public class UserController {
 
     // ================= DELETE =================
     @DeleteMapping("/{id}")
-    public ApiResponse<String> deactivate(@PathVariable Long id) {
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN') or @userSecurity.isOwner(#id, authentication.name)")
+    public ApiResponse<String> delete(@PathVariable Long id) {
 
-        service.deactivate(id);
+        service.deleteUser(id);
 
         return ApiResponse.<String>builder()
                 .success(true)
-                .message("User deactivated successfully")
+                .message("User deleted successfully")
                 .data(null)
+                .build();
+    }
+
+    // ================= PAGINATION =================
+    @GetMapping("/paged")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    public ApiResponse<PageResponse<UserResponseDTO>> getUsers(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "asc") String direction,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Boolean isActive,
+            @RequestParam(required = false) Boolean isDeleted,
+            @RequestParam(required = false) String role
+    ) {
+
+        UserFilterDTO filter = new UserFilterDTO();
+        filter.setSearch(search);
+        filter.setIsActive(isActive);
+        filter.setIsDeleted(isDeleted);
+        filter.setRole(role);
+
+        return ApiResponse.<PageResponse<UserResponseDTO>>builder()
+                .success(true)
+                .message("Users fetched successfully")
+                .data(service.getAllUsers(page, size, sortBy, direction, filter))
                 .build();
     }
 }

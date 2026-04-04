@@ -51,7 +51,13 @@ public class Admin {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+// ================= AUDIT =================
 
+    @Column(name = "deleted_by")
+    private Long deletedBy;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
     // ✅ Default constructor
     public Admin() {}
 
@@ -157,4 +163,9 @@ public class Admin {
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
     }
+    public Long getDeletedBy() { return deletedBy; }
+    public void setDeletedBy(Long deletedBy) { this.deletedBy = deletedBy; }
+
+    public LocalDateTime getDeletedAt() { return deletedAt; }
+    public void setDeletedAt(LocalDateTime deletedAt) { this.deletedAt = deletedAt; }
 }

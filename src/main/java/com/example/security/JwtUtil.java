@@ -9,7 +9,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.security.Key;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -37,31 +36,18 @@ public class JwtUtil {
                 .compact();
     }
 
-    // 🔍 USERNAME
+    // 🔍 EXTRACT USERNAME
     public String extractUsername(String token) {
         return getClaims(token).getSubject();
     }
 
-    // 🔍 ROLES
-    public List<String> extractRoles(String token) {
-        try {
-            Object roles = getClaims(token).get("roles");
-            if (roles instanceof List<?>) {
-                return ((List<?>) roles).stream()
-                        .map(Object::toString)
-                        .toList();
-            }
-        } catch (Exception ignored) {}
-        return Collections.emptyList();
-    }
-
-    // ✅ VALIDATION
+    // 🔍 VALIDATE TOKEN (🔥 FIXED)
     public boolean isValid(String token, String username) {
         return extractUsername(token).equals(username)
                 && !isExpired(token);
     }
 
-    // 🔍 CLAIMS
+    // 🔍 GET CLAIMS
     private Claims getClaims(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(getKey())

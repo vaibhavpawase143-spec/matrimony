@@ -18,13 +18,39 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "http://localhost:3000") // 🔐 safer than "*"
 public class AuthController {
 
     private final UserService userService;
     private final RefreshTokenService refreshTokenService;
 
-    // ================= REGISTER =================
+    // ================= STEP 1: SEND VERIFICATION =================
+    @PostMapping("/send-verification")
+    public ApiResponse<String> sendVerification(@RequestParam String email) {
+
+        userService.sendVerification(email);
+
+        return ApiResponse.<String>builder()
+                .success(true)
+                .message("Verification email sent successfully")
+                .data(null)
+                .build();
+    }
+
+    // ================= STEP 2: VERIFY EMAIL =================
+    @GetMapping("/verify")
+    public ApiResponse<String> verifyEmail(@RequestParam String token) {
+
+        userService.verifyEmail(token);
+
+        return ApiResponse.<String>builder()
+                .success(true)
+                .message("Email verified successfully")
+                .data(null)
+                .build();
+    }
+
+    // ================= STEP 3: REGISTER =================
     @PostMapping("/register")
     public ApiResponse<String> register(@Valid @RequestBody UserRegisterRequestDTO request) {
 
@@ -32,7 +58,7 @@ public class AuthController {
 
         return ApiResponse.<String>builder()
                 .success(true)
-                .message("User registered successfully. Please verify your email.")
+                .message("User registered successfully")
                 .data(null)
                 .build();
     }
@@ -58,19 +84,6 @@ public class AuthController {
                 .build();
     }
 
-    // ================= VERIFY EMAIL =================
-    @GetMapping("/verify")
-    public ApiResponse<String> verifyEmail(@RequestParam String token) {
-
-        userService.verifyEmail(token);
-
-        return ApiResponse.<String>builder()
-                .success(true)
-                .message("Email verified successfully")
-                .data(null)
-                .build();
-    }
-
     // ================= RESEND VERIFICATION =================
     @PostMapping("/resend-verification")
     public ApiResponse<String> resendVerification(
@@ -81,7 +94,7 @@ public class AuthController {
 
         return ApiResponse.<String>builder()
                 .success(true)
-                .message("Verification email sent successfully")
+                .message("Verification email resent successfully")
                 .data(null)
                 .build();
     }

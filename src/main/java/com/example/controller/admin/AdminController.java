@@ -3,26 +3,27 @@ package com.example.controller.admin;
 import com.example.dto.other.AdminLoginDTO;
 import com.example.dto.request.AdminRequestDTO;
 import com.example.dto.response.AdminResponseDTO;
+import com.example.dto.response.ApiResponse;
 import com.example.model.Admin;
 import com.example.model.RefreshToken;
+import com.example.security.JwtUtil;
 import com.example.service.AdminService;
 import com.example.service.RefreshTokenService;
-import com.example.security.JwtUtil;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/admins")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "http://localhost:3000")
 public class AdminController {
 
     private final AdminService adminService;
@@ -31,7 +32,8 @@ public class AdminController {
 
     // ================= CREATE ADMIN =================
     @PostMapping
-    public AdminResponseDTO create(@Valid @RequestBody AdminRequestDTO dto) {
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public ApiResponse<AdminResponseDTO> create(@Valid @RequestBody AdminRequestDTO dto) {
 
         Admin admin = new Admin();
 
@@ -40,64 +42,124 @@ public class AdminController {
         admin.setEmail(dto.getEmail());
         admin.setPhone(dto.getPhone());
         admin.setPassword(dto.getPassword());
-        admin.setIsActive(true);
 
         Admin saved = adminService.create(admin);
 
-        return mapToResponse(saved);
+        return new ApiResponse<>(
+                true,
+                "Admin created successfully",
+                com.example.mapper.AdminMapper.toDTO(saved) // ✅ FIX
+        );
     }
 
     // ================= LOGIN =================
     @PostMapping("/login")
-    public Map<String, Object> login(@Valid @RequestBody AdminLoginDTO dto) {
+    public ApiResponse<Object> login(@Valid @RequestBody AdminLoginDTO dto) {
 
-        Admin admin = adminService.login(dto.getUsername(), dto.getPassword());
+        Admin admin = adminService.login(dto.getEmail(), dto.getPassword());
 
         String accessToken = jwtUtil.generateToken(
                 admin.getEmail(),
-                List.of("ROLE_ADMIN")
+                List.of(admin.getRole().getName())
         );
 
         RefreshToken refreshToken = refreshTokenService.createToken(admin.getEmail());
 
-        return Map.of(
-                "accessToken", accessToken,
-                "refreshToken", refreshToken.getToken(),
-                "admin", mapToResponse(admin)
+        return new ApiResponse<>(
+                true,
+                "Login successful",
+                java.util.Map.of(
+                        "accessToken", accessToken,
+                        "refreshToken", refreshToken.getToken(),
+                        "admin", com.example.mapper.AdminMapper.toDTO(admin) // ✅ FIX
+                )
         );
     }
 
     // ================= GET ALL ADMINS =================
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
-    public List<AdminResponseDTO> getAll() {
-        return adminService.getAll()
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    public ApiResponse<List<AdminResponseDTO>> getAllAdmins() {
+
+        return ApiResponse.<List<AdminResponseDTO>>builder()
+                .success(true)
+                .message("Admins fetched")
+                .data(adminService.getAll()) // ✅ already DTO
+                .build();
     }
 
     // ================= GET ADMIN BY ID =================
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public AdminResponseDTO getById(@PathVariable Long id) {
-        return mapToResponse(adminService.getById(id));
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    public ApiResponse<AdminResponseDTO> getById(@PathVariable Long id) {
+
+        AdminResponseDTO admin = adminService.getById(id); // ✅ FIX
+
+        String loggedInEmail = getLoggedInEmail();
+
+        if (!admin.getEmail().equalsIgnoreCase(loggedInEmail)) {
+            throw new AccessDeniedException("You can only access your own data");
+        }
+
+        return new ApiResponse<>(
+                true,
+                "Admin fetched",
+                admin
+        );
+    }
+
+    // ================= UPDATE ADMIN =================
+    @PutMapping("/{id}")
+    public ApiResponse<AdminResponseDTO> update(@PathVariable Long id,
+                                                @RequestBody AdminRequestDTO dto) {
+
+        AdminResponseDTO existing = adminService.getById(id); // ✅ FIX
+
+        String loggedInEmail = getLoggedInEmail();
+
+        if (!existing.getEmail().equalsIgnoreCase(loggedInEmail)) {
+            throw new AccessDeniedException("You can only update your own data");
+        }
+
+        Admin updated = new Admin();
+        updated.setName(dto.getName());
+        updated.setEmail(dto.getEmail());
+        updated.setUsername(dto.getUsername());
+        updated.setPhone(dto.getPhone());
+        updated.setPassword(dto.getPassword());
+
+        Admin saved = adminService.update(id, updated);
+
+        return new ApiResponse<>(
+                true,
+                "Admin updated successfully",
+                com.example.mapper.AdminMapper.toDTO(saved) // ✅ FIX
+        );
+    }
+
+    // ================= DELETE ADMIN =================
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public ApiResponse<String> delete(@PathVariable Long id) {
+
+        adminService.delete(id);
+
+        return new ApiResponse<>(true, "Admin deleted successfully", null);
     }
 
     // ================= LOGOUT =================
     @PostMapping("/logout")
-    public String logout(@RequestBody Map<String, String> request) {
+    public ApiResponse<String> logout(@RequestBody java.util.Map<String, String> request) {
 
         String email = request.get("email");
-
         refreshTokenService.deleteByEmail(email);
 
-        return "Logged out successfully";
+        return new ApiResponse<>(true, "Logged out successfully", null);
     }
 
     // ================= REFRESH TOKEN =================
     @PostMapping("/refresh")
-    public Map<String, String> refresh(@RequestBody Map<String, String> request) {
+    public ApiResponse<String> refresh(@RequestBody java.util.Map<String, String> request) {
 
         String token = request.get("refreshToken");
 
@@ -108,25 +170,14 @@ public class AdminController {
                 List.of("ROLE_ADMIN")
         );
 
-        return Map.of(
-                "accessToken", newAccessToken
-        );
+        return new ApiResponse<>(true, "Token refreshed", newAccessToken);
     }
 
-    // ================= MAPPERS =================
-
-    private AdminResponseDTO mapToResponse(Admin admin) {
-        AdminResponseDTO dto = new AdminResponseDTO();
-
-        dto.setId(admin.getId());
-        dto.setName(admin.getName());
-        dto.setUsername(admin.getUsername());
-        dto.setEmail(admin.getEmail());
-        dto.setPhone(admin.getPhone());
-        dto.setIsActive(admin.getIsActive());
-        dto.setLastLogin(admin.getLastLogin());
-        dto.setCreatedAt(admin.getCreatedAt());
-
-        return dto;
+    // ================= HELPER =================
+    private String getLoggedInEmail() {
+        return SecurityContextHolder
+                .getContext()
+                .getAuthentication()
+                .getName();
     }
 }

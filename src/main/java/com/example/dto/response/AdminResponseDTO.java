@@ -10,72 +10,50 @@ public class AdminResponseDTO {
     private String email;
     private String phone;
     private Boolean isActive;
+
+    // 🔥 NEW FIELD
+    private String role;
+
     private LocalDateTime lastLogin;
     private LocalDateTime createdAt;
 
-    // ================= GETTERS & SETTERS =================
+    // ================= GETTERS =================
 
-    public Long getId() {
-        return id;
-    }
+    public Long getId() { return id; }
 
-    public String getName() {
-        return name;
-    }
+    public String getName() { return name; }
 
-    public String getUsername() {
-        return username;
-    }
+    public String getUsername() { return username; }
 
-    public String getEmail() {
-        return email;
-    }
+    public String getEmail() { return email; }
 
-    public String getPhone() {
-        return phone;
-    }
+    public String getPhone() { return phone; }
 
-    public Boolean getIsActive() {
-        return isActive;
-    }
+    public Boolean getIsActive() { return isActive; }
 
-    public LocalDateTime getLastLogin() {
-        return lastLogin;
-    }
+    public String getRole() { return role; } // 🔥 NEW
 
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
+    public LocalDateTime getLastLogin() { return lastLogin; }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+    public LocalDateTime getCreatedAt() { return createdAt; }
 
-    public void setName(String name) {
-        this.name = name;
-    }
+    // ================= SETTERS =================
 
-    public void setUsername(String username) {
-        this.username = username;
-    }
+    public void setId(Long id) { this.id = id; }
 
-    public void setEmail(String email) {
-        this.email = email;
-    }
+    public void setName(String name) { this.name = name; }
 
-    public void setPhone(String phone) {
-        this.phone = phone;
-    }
+    public void setUsername(String username) { this.username = username; }
 
-    public void setIsActive(Boolean isActive) {
-        this.isActive = isActive;
-    }
+    public void setEmail(String email) { this.email = email; }
 
-    public void setLastLogin(LocalDateTime lastLogin) {
-        this.lastLogin = lastLogin;
-    }
+    public void setPhone(String phone) { this.phone = phone; }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
+    public void setIsActive(Boolean isActive) { this.isActive = isActive; }
+
+    public void setRole(String role) { this.role = role; } // 🔥 NEW
+
+    public void setLastLogin(LocalDateTime lastLogin) { this.lastLogin = lastLogin; }
+
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 }
