@@ -1,7 +1,10 @@
 package com.example.model;
 
 import jakarta.persistence.*;
+
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 @Table(
@@ -20,9 +23,10 @@ public class Profile {
     private Long id;
 
     // 🔥 One profile per user
-    @OneToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
+
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "religion_id")
@@ -31,7 +35,8 @@ public class Profile {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "caste_id")
     private Caste caste;
-
+    @Column(name = "date_of_birth")
+    private LocalDate dateOfBirth;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "education_level_id")
     private EducationLevel educationLevel;
@@ -126,5 +131,22 @@ public class Profile {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+    public LocalDate getDateOfBirth() {
+        return dateOfBirth;
+    }
+
+    public void setDateOfBirth(LocalDate dateOfBirth) {
+        this.dateOfBirth = dateOfBirth;
+    }
+    @Column(name = "image_url")
+    private String imageUrl;
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
     }
 }

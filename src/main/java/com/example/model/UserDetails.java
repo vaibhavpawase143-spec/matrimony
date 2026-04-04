@@ -177,4 +177,8 @@ public class UserDetails {
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    private String password;
+    public String getPassword() {
+        return password;
+    }
 }

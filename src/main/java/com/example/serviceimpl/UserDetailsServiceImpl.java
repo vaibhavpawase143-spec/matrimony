@@ -32,7 +32,8 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        Profile profile = profileRepo.findByUser(user);
+        Profile profile = profileRepo.findByUserId(user.getId())
+                .orElseThrow(() -> new RuntimeException("Profile not found"));
         FamilyDetails family = profile != null ? familyRepo.findByProfile(profile) : null;
         PartnerPreference pref = prefRepo.findByUser(user);
         UserSubscription sub = subRepo.findByUser(user);

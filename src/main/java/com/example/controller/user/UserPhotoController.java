@@ -1,142 +1,63 @@
 package com.example.controller.user;
 
-import com.example.dto.request.UserPhotoRequestDTO;
-import com.example.dto.response.UserPhotoResponseDTO;
 import com.example.model.PhotoType;
-import com.example.model.User;
 import com.example.model.UserPhoto;
 import com.example.service.UserPhotoService;
 
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/user-photos")
+@RequestMapping("/api/photos")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class UserPhotoController {
 
     private final UserPhotoService service;
 
     // =========================
-    // ✅ SAVE / UPLOAD PHOTO
+    // 📸 UPLOAD
     // =========================
-    @PostMapping
-    public UserPhotoResponseDTO save(@Valid @RequestBody UserPhotoRequestDTO dto) {
-
-        UserPhoto saved = service.save(mapToEntity(dto));
-
-        return mapToResponse(saved);
+    @PostMapping("/upload")
+    public String upload(
+            @RequestParam MultipartFile file,
+            @RequestParam PhotoType type
+    ) {
+        return service.upload(file, type);
     }
 
     // =========================
-    // 🔍 GET ALL BY USER
+    // 📸 MULTIPLE
     // =========================
-    @GetMapping("/user/{userId}")
-    public List<UserPhotoResponseDTO> getByUser(@PathVariable Long userId) {
-
-        return service.getByUser(userId)
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+    @PostMapping("/upload-multiple")
+    public List<String> uploadMultiple(
+            @RequestParam List<MultipartFile> files
+    ) {
+        return service.uploadMultiple(files);
     }
 
     // =========================
-    // 🔍 GET BY TYPE
+    // ❌ DELETE
     // =========================
-    @GetMapping("/user/{userId}/type/{type}")
-    public List<UserPhotoResponseDTO> getByType(
-            @PathVariable Long userId,
-            @PathVariable PhotoType type) {
-
-        return service.getByUserAndType(userId, type)
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
-    }
-
-    // =========================
-    // 🔍 GET SINGLE PHOTO
-    // =========================
-    @GetMapping("/user/{userId}/single/{type}")
-    public UserPhotoResponseDTO getSingle(
-            @PathVariable Long userId,
-            @PathVariable PhotoType type) {
-
-        UserPhoto photo = service.getSingleByUserAndType(userId, type)
-                .orElseThrow(() -> new RuntimeException("Photo not found"));
-
-        return mapToResponse(photo);
-    }
-
-    // =========================
-    // 🔍 EXISTS CHECK
-    // =========================
-    @GetMapping("/exists")
-    public Boolean exists(
-            @RequestParam Long userId,
-            @RequestParam PhotoType type) {
-
-        return service.exists(userId, type);
-    }
-
-    // =========================
-    // ❌ DELETE PHOTO
-    // =========================
-    @DeleteMapping
-    public String delete(
-            @RequestParam Long userId,
-            @RequestParam PhotoType type) {
-
-        service.deleteByUserAndType(userId, type);
+    @DeleteMapping("/delete")
+    public String delete(@RequestParam PhotoType type) {
+        service.delete(type);
         return "Photo deleted successfully";
     }
 
     // =========================
-    // 🔍 GET ALL (ADMIN)
+    // 🔍 GET MY PHOTOS
     // =========================
-    @GetMapping
-    public List<UserPhotoResponseDTO> getAll() {
-
-        return service.getAll()
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+    @GetMapping("/me")
+    public List<UserPhoto> myPhotos() {
+        return service.getMyPhotos();
     }
 
-    // =========================
-    // 🔥 MAPPERS
-    // =========================
-
-    private UserPhoto mapToEntity(UserPhotoRequestDTO dto) {
-
-        UserPhoto photo = new UserPhoto();
-
-        User user = new User();
-        user.setId(dto.getUserId());
-
-        photo.setUser(user);
-        photo.setPhotoType(dto.getPhotoType());
-        photo.setPhotoUrl(dto.getPhotoUrl());
-
-        return photo;
-    }
-
-    private UserPhotoResponseDTO mapToResponse(UserPhoto photo) {
-
-        return UserPhotoResponseDTO.builder()
-                .id(photo.getId())
-                .userId(photo.getUser() != null ? photo.getUser().getId() : null)
-                .userName(photo.getUser() != null ? photo.getUser().getFullName() : null)
-                .photoType(photo.getPhotoType())
-                .photoUrl(photo.getPhotoUrl())
-                .createdAt(photo.getCreatedAt())
-                .updatedAt(photo.getUpdatedAt())
-                .build();
+    @GetMapping("/me/profile")
+    public String myProfilePhoto() {
+        return service.getMyProfilePhoto();
     }
 }

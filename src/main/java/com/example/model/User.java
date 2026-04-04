@@ -6,7 +6,7 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
-
+import com.fasterxml.jackson.annotation.JsonIgnore;
 @Entity
 @Table(
         name = "users",
@@ -40,21 +40,50 @@ public class User {
     @Column(name = "is_active")
     private Boolean isActive = true;
 
-    // 🔥 EMAIL VERIFICATION (NEW)
     @Column(name = "email_verified")
     private Boolean emailVerified = false;
 
     private LocalDateTime emailVerifiedAt;
     private LocalDateTime phoneVerifiedAt;
 
-    // 🔐 ROLES
-    @ManyToMany(fetch = FetchType.EAGER)
+    // ================= AUDIT =================
+
+    @Column(name = "is_deleted")
+    private Boolean isDeleted = false;
+
+    @Column(name = "deleted_by")
+    private Long deletedBy;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
+    @Column(name = "updated_by")
+    private Long updatedBy;
+
+    // ================= LOGIN =================
+
+    private LocalDateTime lastLogin;
+
+    // ================= ROLE =================
+
+    @ManyToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinTable(
             name = "user_roles",
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "role_id")
     )
     private Set<Role> roles = new HashSet<>();
+    // ================= MATRIMONY RELATIONS =================
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore
+    private Profile profile;
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore
+    private PartnerPreference partnerPreference;
+
+    // ================= TIMESTAMP =================
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -68,38 +97,14 @@ public class User {
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
 
-        if (this.isActive == null) {
-            this.isActive = true;
-        }
-
-        if (this.emailVerified == null) {
-            this.emailVerified = false;
-        }
+        if (this.isActive == null) this.isActive = true;
+        if (this.emailVerified == null) this.emailVerified = false;
+        if (this.isDeleted == null) this.isDeleted = false;
     }
 
     @PreUpdate
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
-    }
-
-    // ================= HELPERS =================
-
-    public String getFullName() {
-        return (firstName != null ? firstName : "") + " " +
-                (lastName != null ? lastName : "");
-    }
-
-    public void addRole(Role role) {
-        this.roles.add(role);
-    }
-
-    public void removeRole(Role role) {
-        this.roles.remove(role);
-    }
-
-    public void setRole(Role role) {
-        this.roles.clear();
-        this.roles.add(role);
     }
 
     // ================= GETTERS & SETTERS =================
@@ -151,4 +156,45 @@ public class User {
     public LocalDateTime getCreatedAt() { return createdAt; }
 
     public LocalDateTime getUpdatedAt() { return updatedAt; }
+
+    public Boolean getIsDeleted() { return isDeleted; }
+
+    public void setIsDeleted(Boolean isDeleted) { this.isDeleted = isDeleted; }
+
+    public Long getDeletedBy() { return deletedBy; }
+
+    public void setDeletedBy(Long deletedBy) { this.deletedBy = deletedBy; }
+
+    public LocalDateTime getDeletedAt() { return deletedAt; }
+
+    public void setDeletedAt(LocalDateTime deletedAt) { this.deletedAt = deletedAt; }
+
+    public Long getUpdatedBy() { return updatedBy; }
+
+    public void setUpdatedBy(Long updatedBy) { this.updatedBy = updatedBy; }
+
+    public LocalDateTime getLastLogin() { return lastLogin; }
+
+    public void setLastLogin(LocalDateTime lastLogin) { this.lastLogin = lastLogin; }
+
+    public String getFullName() {
+        return (firstName != null ? firstName : "") + " " +
+                (lastName != null ? lastName : "");
+
+    }
+    public Profile getProfile() {
+        return profile;
+    }
+
+    public void setProfile(Profile profile) {
+        this.profile = profile;
+    }
+
+    public PartnerPreference getPartnerPreference() {
+        return partnerPreference;
+    }
+
+    public void setPartnerPreference(PartnerPreference partnerPreference) {
+        this.partnerPreference = partnerPreference;
+    }
 }

@@ -14,6 +14,10 @@ public class VerificationToken {
     @Column(nullable = false, unique = true)
     private String token;
 
+    // 🔥 ADD THIS FIELD (IMPORTANT)
+    @Column(nullable = false)
+    private String email;
+
     @OneToOne
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
@@ -48,5 +52,14 @@ public class VerificationToken {
 
     public void setExpiryDate(LocalDateTime expiryDate) {
         this.expiryDate = expiryDate;
+    }
+
+    // 🔥 NEW METHODS
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 }

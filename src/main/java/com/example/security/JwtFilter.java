@@ -7,8 +7,6 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import lombok.RequiredArgsConstructor;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -23,18 +21,20 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class JwtFilter extends OncePerRequestFilter {
 
-    private static final Logger logger = LoggerFactory.getLogger(JwtFilter.class);
-
     private final JwtUtil jwtUtil;
+
+    // 🔥 IMPORTANT: this will now receive SecurityUserDetailsService (Admin + User)
     private final UserDetailsService userDetailsService;
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        String path = request.getRequestURI();
 
-        return path.startsWith("/api/auth")
-                || path.startsWith("/api/admins/login")
-                || path.startsWith("/api/auth/refresh")
+        String path = request.getServletPath();
+
+        return path.startsWith("/api/auth/")
+                || path.startsWith("/api/admins/")
+                || path.startsWith("/api/users/login")   // ✅ FIX
+                || path.startsWith("/api/users/register")// ✅ FIX
                 || path.startsWith("/v3/api-docs")
                 || path.startsWith("/swagger-ui");
     }
@@ -47,25 +47,28 @@ public class JwtFilter extends OncePerRequestFilter {
 
         String authHeader = request.getHeader("Authorization");
 
-        // 🔹 No token → let Spring handle (401)
+        // ❌ No token → skip
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
 
         try {
+            // 🔥 Extract token
             String token = authHeader.substring(7);
 
+            // 🔥 Extract username (email)
             String username = jwtUtil.extractUsername(token);
 
-            // 🔹 If already authenticated → skip
             if (username != null &&
                     SecurityContextHolder.getContext().getAuthentication() == null) {
 
-                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+                // 🔥 Load from SecurityUserDetailsService (Admin + User)
+                UserDetails userDetails =
+                        userDetailsService.loadUserByUsername(username);
 
-                // 🔹 Validate token
-                if (jwtUtil.isValid(token, userDetails.getUsername())) {
+                // 🔥 Validate token
+                if (jwtUtil.isValid(token, username)) {
 
                     UsernamePasswordAuthenticationToken authToken =
                             new UsernamePasswordAuthenticationToken(
@@ -74,22 +77,23 @@ public class JwtFilter extends OncePerRequestFilter {
                                     userDetails.getAuthorities()
                             );
 
-                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    authToken.setDetails(
+                            new WebAuthenticationDetailsSource().buildDetails(request)
+                    );
 
                     SecurityContextHolder.getContext().setAuthentication(authToken);
+
+                } else {
+                    response.sendError(401, "Invalid token");
+                    return;
                 }
             }
 
         } catch (Exception e) {
-            // 🔥 VERY IMPORTANT FIX
-            // ❌ DO NOT send response here
-            // ❌ DO NOT return
-            // ✔ Just log and continue
-
-            logger.error("JWT ERROR: {}", e.getMessage());
+            response.sendError(401, "Invalid or expired token");
+            return;
         }
 
-        // 🔥 ALWAYS continue filter chain
         filterChain.doFilter(request, response);
     }
 }

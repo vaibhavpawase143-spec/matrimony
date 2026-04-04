@@ -1,255 +1,250 @@
 package com.example.serviceimpl;
 
+import com.example.dto.request.UserFilterDTO;
 import com.example.dto.request.UserRegisterRequestDTO;
 import com.example.dto.response.PageResponse;
 import com.example.dto.response.UserResponseDTO;
-import com.example.model.*;
-
-import com.example.repository.*;
-import com.example.service.*;
+import com.example.mapper.UserMapper;
+import com.example.model.Admin;
+import com.example.model.Role;
+import com.example.model.User;
+import com.example.repository.AdminRepository;
+import com.example.repository.RoleRepository;
+import com.example.repository.UserRepository;
+import com.example.security.JwtUtil;
+import com.example.service.UserService;
+import com.example.specification.UserSpecification;
 
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.data.domain.*;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
-    private final VerificationTokenRepository verificationTokenRepository;
-    private final PasswordResetTokenRepository passwordResetTokenRepository;
-    private final EmailService emailService;
+    private final AdminRepository adminRepository;
+    private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtUtil jwtUtil;
 
     // ================= REGISTER =================
     @Override
-    public User register(UserRegisterRequestDTO dto) {
+    public User register(UserRegisterRequestDTO request) {
+
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new RuntimeException("Email already exists");
+        }
 
         User user = new User();
-        user.setFirstName(dto.getFirstName());
-        user.setLastName(dto.getLastName());
-        user.setEmail(dto.getEmail());
-        user.setPhone(dto.getPhone());
-        user.setPassword(passwordEncoder.encode(dto.getPassword()));
-        user.setEmailVerified(false);
+        user.setFirstName(request.getFirstName());
+        user.setLastName(request.getLastName());
+        user.setEmail(request.getEmail());
+        user.setPhone(request.getPhone());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
 
-        User savedUser = userRepository.save(user);
+        Role role = roleRepository.findByName("ROLE_USER")
+                .orElseThrow(() -> new RuntimeException("Role not found"));
 
-        String token = UUID.randomUUID().toString();
+        user.getRoles().add(role);
 
-        VerificationToken vt = new VerificationToken();
-        vt.setToken(token);
-        vt.setUser(savedUser);
-        vt.setExpiryDate(LocalDateTime.now().plusMinutes(15));
-
-        verificationTokenRepository.save(vt);
-
-        // ✅ FIXED LINK
-        String link = "http://localhost:9090/api/auth/verify?token=" + token;
-
-        emailService.sendEmail(
-                savedUser.getEmail(),
-                "Verify Your Email",
-                "Click here to verify your email: " + link
-        );
-
-        return savedUser;
+        return userRepository.save(user);
     }
 
     // ================= LOGIN =================
     @Override
     public User login(String email, String password) {
 
-        User user = userRepository.findByEmailIgnoreCase(email)
+        User user = userRepository.findByEmailWithRoles(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        if (!user.getEmailVerified()) {
-            throw new RuntimeException("Please verify your email first");
+        if (Boolean.TRUE.equals(user.getIsDeleted())) {
+            throw new RuntimeException("Account is deleted");
+        }
+
+        if (!Boolean.TRUE.equals(user.getIsActive())) {
+            throw new RuntimeException("Account is inactive");
         }
 
         if (!passwordEncoder.matches(password, user.getPassword())) {
             throw new RuntimeException("Invalid password");
         }
 
+        user.setLastLogin(LocalDateTime.now());
+        userRepository.save(user);
+
         return user;
     }
 
+    // ================= LOGIN + TOKEN =================
     @Override
     public String loginAndGenerateToken(String email, String password) {
-        login(email, password);
-        return "JWT_TOKEN"; // Replace with actual JWT logic
-    }
 
-    // ================= EMAIL =================
-    @Override
-    public void verifyEmail(String token) {
+        Optional<Admin> adminOpt = adminRepository.findByEmailWithRole(email);
 
-        VerificationToken vt = verificationTokenRepository.findByToken(token)
-                .orElseThrow(() -> new RuntimeException("Invalid token"));
+        if (adminOpt.isPresent()) {
+            Admin admin = adminOpt.get();
 
-        if (vt.getExpiryDate().isBefore(LocalDateTime.now())) {
-            throw new RuntimeException("Token expired");
+            if (!Boolean.TRUE.equals(admin.getIsActive())) {
+                throw new RuntimeException("Admin is inactive");
+            }
+
+            if (!passwordEncoder.matches(password, admin.getPassword())) {
+                throw new RuntimeException("Invalid password");
+            }
+
+            admin.setLastLogin(LocalDateTime.now());
+            adminRepository.save(admin);
+
+            return jwtUtil.generateToken(
+                    admin.getEmail(),
+                    List.of(admin.getRole().getName())
+            );
         }
 
-        User user = vt.getUser();
-        user.setEmailVerified(true);
-        user.setEmailVerifiedAt(LocalDateTime.now());
+        User user = login(email, password);
 
-        userRepository.save(user);
-    }
-
-    @Override
-    public void resendVerification(String email) {
-        // You can improve this later
-        throw new RuntimeException("Resend verification not implemented yet");
-    }
-
-    // ================= PASSWORD =================
-    @Override
-    public void forgotPassword(String email) {
-
-        User user = userRepository.findByEmailIgnoreCase(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        Optional<PasswordResetToken> existing =
-                passwordResetTokenRepository.findByUser(user);
-
-        String token = UUID.randomUUID().toString();
-
-        if (existing.isPresent()) {
-            PasswordResetToken t = existing.get();
-            t.setToken(token);
-            t.setExpiryDate(LocalDateTime.now().plusMinutes(15));
-            passwordResetTokenRepository.save(t);
-        } else {
-            PasswordResetToken t = new PasswordResetToken();
-            t.setToken(token);
-            t.setUser(user);
-            t.setExpiryDate(LocalDateTime.now().plusMinutes(15));
-            passwordResetTokenRepository.save(t);
-        }
-
-        // ✅ IMPORTANT FIX (TOKEN ADDED)
-        String link = "http://localhost:9090/api/auth/reset-password?token=" + token;
-
-        emailService.sendEmail(
+        return jwtUtil.generateToken(
                 user.getEmail(),
-                "Reset Your Password",
-                "Click here to reset your password: " + link
+                user.getRoles().stream()
+                        .map(Role::getName)
+                        .collect(Collectors.toList())
         );
     }
 
-    @Override
-    public void resetPassword(String token, String newPassword) {
-
-        PasswordResetToken t = passwordResetTokenRepository.findByToken(token)
-                .orElseThrow(() -> new RuntimeException("Invalid token"));
-
-        if (t.getExpiryDate().isBefore(LocalDateTime.now())) {
-            throw new RuntimeException("Token expired");
-        }
-
-        User user = t.getUser();
-        user.setPassword(passwordEncoder.encode(newPassword));
-
-        userRepository.save(user);
-        passwordResetTokenRepository.delete(t);
-    }
-
-    // ================= USER =================
-    @Override
-    public Optional<UserResponseDTO> getById(Long id) {
-        return userRepository.findById(id).map(this::mapToDTO);
-    }
-
+    // ================= GET ALL =================
     @Override
     public List<UserResponseDTO> getAll() {
-        return userRepository.findAll().stream().map(this::mapToDTO).toList();
+
+        return userRepository.findAllWithRoles()
+                .stream()
+                .map(UserMapper::toDTO)
+                .toList();
     }
 
+    // ================= GET BY ID =================
+    @Override
+    public Optional<UserResponseDTO> getById(Long id) {
+
+        return userRepository.findByIdWithRoles(id)
+                .map(UserMapper::toDTO);
+    }
+
+    // ================= ACTIVE USERS =================
     @Override
     public List<UserResponseDTO> getActiveUsers() {
-        return userRepository.findByIsActiveTrue().stream().map(this::mapToDTO).toList();
+
+        return userRepository.findActiveUsersWithRoles()
+                .stream()
+                .map(UserMapper::toDTO)
+                .toList();
     }
 
+    // ================= SEARCH =================
     @Override
     public List<User> search(String keyword) {
         return userRepository.findByEmailContainingIgnoreCase(keyword);
     }
 
+    // ================= UPDATE =================
     @Override
-    public User update(Long id, User updated) {
+    public User update(Long id, User updatedUser) {
 
-        User user = userRepository.findById(id)
+        User existing = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        user.setFirstName(updated.getFirstName());
-        user.setLastName(updated.getLastName());
-        user.setPhone(updated.getPhone());
+        Long adminId = getCurrentAdminId();
 
-        return userRepository.save(user);
+        existing.setFirstName(updatedUser.getFirstName());
+        existing.setLastName(updatedUser.getLastName());
+        existing.setPhone(updatedUser.getPhone());
+        existing.setUpdatedBy(adminId);
+
+        return userRepository.save(existing);
     }
 
+    // ================= DELETE =================
     @Override
-    public void deactivate(Long id) {
+    public void deleteUser(Long id) {
 
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        Admin admin = adminRepository.findByEmailIgnoreCase(email)
+                .orElseThrow(() -> new RuntimeException("Only admin can delete users"));
+
+        user.setIsDeleted(true);
         user.setIsActive(false);
+        user.setDeletedBy(admin.getId());
+        user.setDeletedAt(LocalDateTime.now());
+
         userRepository.save(user);
+    }
+
+    private Long getCurrentAdminId() {
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+
+        Admin admin = adminRepository.findByEmailIgnoreCase(email)
+                .orElseThrow(() -> new RuntimeException("Admin not found"));
+
+        return admin.getId();
     }
 
     // ================= PAGINATION =================
     @Override
-    public PageResponse<UserResponseDTO> getAllUsers(int page, int size) {
-
-        Page<User> userPage = userRepository.findAll(PageRequest.of(page, size));
-        return buildPageResponse(userPage);
-    }
-
-    @Override
-    public PageResponse<UserResponseDTO> getAllUsers(int page, int size, String sortBy, String direction) {
+    public PageResponse<UserResponseDTO> getAllUsers(
+            int page,
+            int size,
+            String sortBy,
+            String direction,
+            UserFilterDTO filter
+    ) {
 
         Sort sort = direction.equalsIgnoreCase("desc")
                 ? Sort.by(sortBy).descending()
                 : Sort.by(sortBy).ascending();
 
-        Page<User> userPage = userRepository.findAll(PageRequest.of(page, size, sort));
-        return buildPageResponse(userPage);
-    }
+        Pageable pageable = PageRequest.of(page, size, sort);
 
-    // ================= HELPER =================
-    private PageResponse<UserResponseDTO> buildPageResponse(Page<User> page) {
+        Specification<User> spec = UserSpecification.getUsers(filter);
 
-        List<UserResponseDTO> content = page.getContent()
+        Page<User> userPage = userRepository.findAll(spec, pageable);
+
+        List<UserResponseDTO> content = userPage.getContent()
                 .stream()
-                .map(this::mapToDTO)
-                .collect(Collectors.toList());
+                .map(UserMapper::toDTO)
+                .toList();
 
         return new PageResponse<>(
                 content,
-                page.getNumber(),
-                page.getSize(),
-                page.getTotalElements(),
-                page.getTotalPages(),
-                page.isLast()
+                userPage.getNumber(),
+                userPage.getSize(),
+                userPage.getTotalElements(),
+                userPage.getTotalPages(),
+                userPage.isLast()
         );
     }
 
-    private UserResponseDTO mapToDTO(User user) {
-        return UserResponseDTO.builder()
-                .id(user.getId())
-                .email(user.getEmail())
-                .build();
-    }
+    // ================= OPTIONAL =================
+    @Override public void deactivate(Long id) {}
+    @Override public void verifyEmail(String token) {}
+    @Override public void resendVerification(String email) {}
+    @Override public void forgotPassword(String email) {}
+    @Override public void resetPassword(String token, String newPassword) {}
+    @Override public void sendVerification(String email) {}
 }

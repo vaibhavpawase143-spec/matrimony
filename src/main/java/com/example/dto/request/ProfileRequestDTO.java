@@ -1,14 +1,10 @@
 package com.example.dto.request;
 
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 @Data
 public class ProfileRequestDTO {
-
-    @NotNull(message = "User ID is required")
-    private Long userId;
 
     private Long religionId;
     private Long casteId;
