@@ -16,7 +16,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
         },
         indexes = {
                 @Index(name = "idx_user_email", columnList = "email"),
-                @Index(name = "idx_user_phone", columnList = "phone")
+                @Index(name = "idx_user_phone", columnList = "phone"),
+                @Index(name = "idx_user_active", columnList = "is_active")
         }
 )
 public class User {
@@ -59,7 +60,11 @@ public class User {
 
     @Column(name = "updated_by")
     private Long updatedBy;
+    @Column(name = "is_online")
+    private Boolean isOnline = false;
 
+    @Column(name = "last_seen")
+    private LocalDateTime lastSeen;
     // ================= LOGIN =================
 
     private LocalDateTime lastLogin;
@@ -87,6 +92,59 @@ public class User {
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    @Column(name = "is_blocked")
+    private boolean isBlocked = false;
+
+    @Column(name = "report_count")
+    private int reportCount = 0;
+
+    public Boolean getActive() {
+        return isActive;
+    }
+
+    public void setActive(Boolean active) {
+        isActive = active;
+    }
+
+    public Boolean getDeleted() {
+        return isDeleted;
+    }
+
+    public void setDeleted(Boolean deleted) {
+        isDeleted = deleted;
+    }
+
+    public Boolean getOnline() {
+        return isOnline;
+    }
+
+    public void setOnline(Boolean online) {
+        isOnline = online;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
+    public boolean isBlocked() {
+        return isBlocked;
+    }
+
+    public void setBlocked(boolean blocked) {
+        isBlocked = blocked;
+    }
+
+    public int getReportCount() {
+        return reportCount;
+    }
+
+    public void setReportCount(int reportCount) {
+        this.reportCount = reportCount;
+    }
 
     public User() {}
 
@@ -196,5 +254,20 @@ public class User {
 
     public void setPartnerPreference(PartnerPreference partnerPreference) {
         this.partnerPreference = partnerPreference;
+    }
+    public Boolean getIsOnline() {
+        return isOnline;
+    }
+
+    public void setIsOnline(Boolean isOnline) {
+        this.isOnline = isOnline;
+    }
+
+    public LocalDateTime getLastSeen() {
+        return lastSeen;
+    }
+
+    public void setLastSeen(LocalDateTime lastSeen) {
+        this.lastSeen = lastSeen;
     }
 }

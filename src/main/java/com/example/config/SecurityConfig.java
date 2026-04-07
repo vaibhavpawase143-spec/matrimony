@@ -52,10 +52,13 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
 
-                        // 🔓 PUBLIC APIs (VERY IMPORTANT)
+                        // 🔥 WEBSOCKET (IMPORTANT)
+                        .requestMatchers("/ws/**").permitAll()
+
+                        // 🔓 PUBLIC APIs
                         .requestMatchers(
-                                "/api/users/login",      // ✅ FIX
-                                "/api/users/register",   // ✅ FIX
+                                "/api/users/login",
+                                "/api/users/register",
                                 "/api/auth/**",
                                 "/api/admins/login",
                                 "/api/admins/refresh",
@@ -67,7 +70,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/**")
                         .hasAnyRole("ADMIN", "SUPER_ADMIN")
 
-                        // 👤 USER APIs (EXCLUDING LOGIN)
+                        // 👤 USER APIs
                         .requestMatchers("/api/users/**")
                         .hasAnyRole("USER", "ADMIN", "SUPER_ADMIN")
 
@@ -88,6 +91,7 @@ public class SecurityConfig {
 
         return http.build();
     }
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();

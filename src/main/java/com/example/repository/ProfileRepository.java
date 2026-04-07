@@ -6,7 +6,6 @@ import com.example.model.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.*;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
@@ -17,7 +16,6 @@ import java.util.Optional;
 public interface ProfileRepository extends JpaRepository<Profile, Long>, JpaSpecificationExecutor<Profile> {
 
     // ================= BASIC =================
-
     Optional<Profile> findByUserId(Long userId);
 
     boolean existsByUserId(Long userId);
@@ -25,11 +23,9 @@ public interface ProfileRepository extends JpaRepository<Profile, Long>, JpaSpec
     Optional<Profile> findByUser(User user);
 
     // ================= ACTIVE =================
-
     List<Profile> findByIsActiveTrue();
 
     // ================= PAGINATION =================
-
     @Query("""
         SELECT p FROM Profile p
         JOIN p.user u
@@ -37,46 +33,56 @@ public interface ProfileRepository extends JpaRepository<Profile, Long>, JpaSpec
         AND u.isActive = true
         AND u.id != :userId
     """)
-    Page<Profile> findActiveProfilesExcludingUser(
-            @Param("userId") Long userId,
+    Page<Profile> findActiveProfilesExcludingUser(Long userId, Pageable pageable);
+
+    // ================= 🔥 MATCHING =================
+    @Query(
+            value = """
+        SELECT p,
+
+        (
+            CASE WHEN (:religionId IS NOT NULL AND p.religion.id = :religionId) THEN 20 ELSE 0 END +
+            CASE WHEN (:casteId IS NOT NULL AND p.caste.id = :casteId) THEN 15 ELSE 0 END +
+            CASE WHEN (:cityId IS NOT NULL AND p.city.id = :cityId) THEN 15 ELSE 0 END +
+            CASE 
+                WHEN (:minDob IS NOT NULL AND :maxDob IS NOT NULL 
+                      AND p.dateOfBirth BETWEEN :minDob AND :maxDob)
+                THEN 20 ELSE 0 
+            END
+        ) as score
+
+        FROM Profile p
+        JOIN FETCH p.user u
+        LEFT JOIN FETCH p.city
+        LEFT JOIN FETCH p.religion
+        LEFT JOIN FETCH p.caste
+
+        WHERE p.isActive = true
+        AND u.isActive = true
+        AND u.id <> :userId
+
+        ORDER BY score DESC
+        """,
+            countQuery = """
+        SELECT COUNT(p)
+        FROM Profile p
+        JOIN p.user u
+        WHERE p.isActive = true
+        AND u.isActive = true
+        AND u.id <> :userId
+        """
+    )
+    Page<Object[]> findMatchesWithScorePage(
+            Long userId,
+            Long religionId,
+            Long casteId,
+            Long cityId,
+            LocalDate minDob,
+            LocalDate maxDob,
             Pageable pageable
     );
 
-    // ================= 🔥 DB MATCHING =================
-
-    @Query("""
-    SELECT p,
-
-    (
-        CASE WHEN (:religionId IS NOT NULL AND p.religion.id = :religionId) THEN 20 ELSE 0 END +
-        CASE WHEN (:casteId IS NOT NULL AND p.caste.id = :casteId) THEN 15 ELSE 0 END +
-        CASE WHEN (:cityId IS NOT NULL AND p.city.id = :cityId) THEN 15 ELSE 0 END +
-        CASE 
-            WHEN (:minDob IS NOT NULL AND :maxDob IS NOT NULL 
-                  AND p.dateOfBirth BETWEEN :minDob AND :maxDob)
-            THEN 20 ELSE 0 
-        END
-    ) as score
-
-    FROM Profile p
-    JOIN p.user u
-
-    WHERE p.isActive = true
-    AND u.isActive = true
-    AND u.id <> :userId
-
-    ORDER BY score DESC
-    """)
-    List<Object[]> findMatchesWithScore(
-            @Param("userId") Long userId,
-            @Param("religionId") Long religionId,
-            @Param("casteId") Long casteId,
-            @Param("cityId") Long cityId,
-            @Param("minDob") LocalDate minDob,
-            @Param("maxDob") LocalDate maxDob
-    );
-
-    // ================= FILTER METHODS (🔥 REQUIRED) =================
+    // ================= 🔥 REQUIRED FILTER METHODS =================
 
     List<Profile> findByReligionId(Long id);
 
@@ -95,5 +101,4 @@ public interface ProfileRepository extends JpaRepository<Profile, Long>, JpaSpec
     List<Profile> findByOccupationIdAndCityId(Long occupationId, Long cityId);
 
     List<Profile> findByReligionIdAndCityIdAndIsActiveTrue(Long religionId, Long cityId);
-
 }

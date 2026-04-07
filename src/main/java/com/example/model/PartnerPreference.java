@@ -8,7 +8,10 @@ import java.time.LocalDateTime;
         name = "partner_preferences",
         uniqueConstraints = @UniqueConstraint(columnNames = {"user_id"}),
         indexes = {
-                @Index(name = "idx_pref_user", columnList = "user_id")
+                @Index(name = "idx_pref_user", columnList = "user_id"),
+                @Index(name = "idx_pref_religion", columnList = "religion_id"),
+                @Index(name = "idx_pref_caste", columnList = "caste_id"),
+                @Index(name = "idx_pref_city", columnList = "city_id")
         }
 )
 public class PartnerPreference {

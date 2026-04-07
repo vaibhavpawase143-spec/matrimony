@@ -170,4 +170,24 @@ public class UserController {
                 .data(service.getAllUsers(page, size, sortBy, direction, filter))
                 .build();
     }
+
+    @GetMapping("/status/{email}")
+    public ApiResponse<UserResponseDTO> getUserStatus(@PathVariable String email) {
+
+        User user = service.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        UserResponseDTO dto = UserResponseDTO.builder()
+                .id(user.getId())
+                .email(user.getEmail())
+                .isOnline(user.getIsOnline())
+                .lastSeen(user.getLastSeen())
+                .build();
+
+        return ApiResponse.<UserResponseDTO>builder()
+                .success(true)
+                .message("User status fetched")
+                .data(dto)
+                .build();
+    }
 }

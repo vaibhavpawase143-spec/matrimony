@@ -2,7 +2,11 @@ package com.example.serviceimpl;
 
 import com.example.model.PartnerPreference;
 import com.example.repository.PartnerPreferenceRepository;
+import com.example.service.CacheService;
 import com.example.service.PartnerPreferenceService;
+import com.example.service.MatchAsyncService;
+
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -12,12 +16,20 @@ import java.util.Optional;
 public class PartnerPreferenceServiceImpl implements PartnerPreferenceService {
 
     private final PartnerPreferenceRepository repository;
+    private final MatchAsyncService asyncService;
+    private final CacheService cacheService;
 
-    public PartnerPreferenceServiceImpl(PartnerPreferenceRepository repository) {
+    public PartnerPreferenceServiceImpl(
+            PartnerPreferenceRepository repository,
+            MatchAsyncService asyncService, CacheService cacheService
+    ) {
         this.repository = repository;
+        this.asyncService = asyncService;
+        this.cacheService = cacheService;
     }
 
-    // ✅ Save preference (with duplicate check)
+    // ✅ Save preference (with cache eviction + async preload)
+
     @Override
     public PartnerPreference savePreference(PartnerPreference preference) {
 
@@ -27,34 +39,37 @@ public class PartnerPreferenceServiceImpl implements PartnerPreferenceService {
             throw new RuntimeException("Preference already exists for this user!");
         }
 
-        return repository.save(preference);
-    }
+        PartnerPreference saved = repository.save(preference);
 
-    // ✅ Get by ID
+        // 🔥 CLEAR ONLY THIS USER CACHE
+        cacheService.evictUserMatches(userId);
+
+        // 🔥 ASYNC PRELOAD
+        asyncService.preloadMatches(userId);
+
+        return saved;
+    }
+    // ================= NORMAL METHODS =================
+
     @Override
     public Optional<PartnerPreference> getById(Long id) {
         return repository.findById(id);
     }
 
-    // ✅ Get by userId
     @Override
     public Optional<PartnerPreference> getByUserId(Long userId) {
         return repository.findByUserId(userId);
     }
 
-    // ✅ Get all
     @Override
     public List<PartnerPreference> getAll() {
         return repository.findAll();
     }
 
-    // ✅ Delete
     @Override
     public void delete(Long id) {
         repository.deleteById(id);
     }
-
-    // 🔍 Filters
 
     @Override
     public List<PartnerPreference> getByReligion(Long religionId) {
@@ -70,8 +85,6 @@ public class PartnerPreferenceServiceImpl implements PartnerPreferenceService {
     public List<PartnerPreference> getByCity(Long cityId) {
         return repository.findByCityId(cityId);
     }
-
-    // 🔥 Advanced filters
 
     @Override
     public List<PartnerPreference> getByReligionAndCaste(Long religionId, Long casteId) {
