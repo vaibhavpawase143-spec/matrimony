@@ -1,10 +1,13 @@
 package com.example.serviceimpl;
-
+import com.example.service.CacheService;
+import org.springframework.cache.annotation.CacheEvict;
+import com.example.service.MatchAsyncService;
 import com.example.dto.request.ProfileRequestDTO;
 import com.example.dto.request.UpdateProfileRequestDTO;
 import com.example.dto.response.ProfileResponseDTO;
 import com.example.model.*;
 import com.example.repository.*;
+import com.example.service.MatchAsyncService;
 import com.example.service.ProfileService;
 
 import com.example.specification.ProfileSpecification;
@@ -24,7 +27,7 @@ public class ProfileServiceImpl implements ProfileService {
 
     private final ProfileRepository repository;
     private final UserRepository userRepository;
-
+    private final MatchAsyncService asyncService;
     private final ReligionRepository religionRepository;
     private final CasteRepository casteRepository;
     private final EducationLevelRepository educationRepository;
@@ -32,7 +35,7 @@ public class ProfileServiceImpl implements ProfileService {
     private final HeightRepository heightRepository;
     private final WeightRepository weightRepository;
     private final CityRepository cityRepository;
-
+    private final CacheService cacheService;
     // ================= CURRENT USER =================
     private User getCurrentUser() {
         String email = SecurityContextHolder.getContext()
@@ -57,9 +60,14 @@ public class ProfileServiceImpl implements ProfileService {
 
         mapDtoToEntity(dto, profile);
 
-        return mapToDTO(repository.save(profile));
-    }
+        Profile saved = repository.save(profile);
 
+        cacheService.evictUserMatches(currentUser.getId());
+
+        asyncService.preloadMatches(currentUser.getId());
+
+        return mapToDTO(saved);
+    }
     // ================= UPDATE PROFILE =================
     public ProfileResponseDTO updateMyProfile(UpdateProfileRequestDTO dto) {
 
@@ -70,7 +78,15 @@ public class ProfileServiceImpl implements ProfileService {
 
         mapUpdateDto(dto, profile);
 
-        return mapToDTO(repository.save(profile));
+        Profile saved = repository.save(profile);
+
+        // 🔥 CLEAR ONLY THIS USER CACHE
+        cacheService.evictUserMatches(currentUser.getId());
+
+        // 🔥 ASYNC PRELOAD
+        asyncService.preloadMatches(currentUser.getId());
+
+        return mapToDTO(saved);
     }
 
     // ================= GET MY PROFILE =================

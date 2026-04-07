@@ -1,214 +1,183 @@
 package com.example.serviceimpl;
 
+import com.example.dto.response.MatchExplanationResponseDTO;
 import com.example.dto.response.MatchResponseDTO;
 import com.example.dto.response.PageResponse;
 import com.example.model.*;
-import com.example.repository.*;
+import com.example.repository.MatchRepository;
+import com.example.repository.SwipeRepository;
+import com.example.repository.UserRepository;
 import com.example.service.MatchService;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Pageable;
+
+import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
-import java.time.Period;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class MatchServiceImpl implements MatchService {
 
-    private final UserRepository userRepo;
-    private final ProfileRepository profileRepo;
-    private final PartnerPreferenceRepository prefRepo;
+    private final MatchRepository matchRepository;
+    private final SwipeRepository swipeRepository;
+    private final UserRepository userRepository;
+
+    // ================= SWIPE =================
+
+    @Override
+    public void swipe(Long fromUserId, Long toUserId, SwipeType type) {
+
+        if (fromUserId.equals(toUserId)) {
+            throw new RuntimeException("You cannot swipe yourself");
+        }
+
+        User fromUser = userRepository.findById(fromUserId)
+                .orElseThrow(() -> new RuntimeException("From user not found"));
+
+        User toUser = userRepository.findById(toUserId)
+                .orElseThrow(() -> new RuntimeException("To user not found"));
+
+        Swipe swipe = swipeRepository
+                .findByFromUserAndToUser(fromUser, toUser)
+                .orElse(new Swipe());
+
+        swipe.setFromUser(fromUser);
+        swipe.setToUser(toUser);
+        swipe.setType(type);
+
+        swipeRepository.save(swipe);
+
+        if (type == SwipeType.LIKE) {
+
+            Optional<Swipe> reverseSwipe =
+                    swipeRepository.findByFromUserAndToUser(toUser, fromUser);
+
+            if (reverseSwipe.isPresent() &&
+                    reverseSwipe.get().getType() == SwipeType.LIKE) {
+
+                createMatchIfNotExists(fromUser, toUser);
+            }
+        }
+    }
+
+    // ================= MATCH CREATION =================
+
+    private void createMatchIfNotExists(User u1, User u2) {
+
+        User smaller = u1.getId() < u2.getId() ? u1 : u2;
+        User larger = u1.getId() < u2.getId() ? u2 : u1;
+
+        boolean exists = matchRepository.existsByUser1AndUser2(smaller, larger);
+
+        if (!exists) {
+            Match match = new Match();
+            match.setUsers(smaller, larger); // IMPORTANT
+            matchRepository.save(match);
+        }
+    }
+
+    // ================= GET MATCHES =================
 
     @Override
     public PageResponse<MatchResponseDTO> getMatches(Long userId, int page, int size) {
 
-        // ✅ Validate user
-        User currentUser = userRepo.findById(userId)
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // ✅ Get preference
-        PartnerPreference pref = prefRepo.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Partner preference not set"));
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
 
-        Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size);
+        Page<Match> matchPage = matchRepository.findByUser1OrUser2(user, user, pageable);
 
-        // 🔥 DB FILTERING
-        var spec = com.example.specification.ProfileSpecification.matchPreferences(pref);
-
-        var profilePage = profileRepo.findAll(spec, pageable);
-
-        List<MatchResponseDTO> content = profilePage.getContent().stream()
-                .filter(p -> p.getUser() != null && !p.getUser().getId().equals(userId))
-                .map(profile -> {
-
-                    int score = calculateScore(profile, pref);
-
-                    return MatchResponseDTO.builder()
-                            .userId(profile.getUser().getId())
-                            .name(profile.getUser().getFullName())
-                            .city(profile.getCity() != null ? profile.getCity().getName() : null)
-                            .religion(profile.getReligion() != null ? profile.getReligion().getName() : null)
-                            .caste(profile.getCaste() != null ? profile.getCaste().getName() : null)
-                            .matchScore(score)
-                            .matchPercentage(score + "%")
-                            .build();
-                })
-                .sorted(Comparator.comparingInt(MatchResponseDTO::getMatchScore).reversed())
-                .toList();
+        List<MatchResponseDTO> content = matchPage.getContent()
+                .stream()
+                .map(match -> mapToDTO(match, user))
+                .collect(Collectors.toList());
 
         return new PageResponse<>(
                 content,
-                profilePage.getNumber(),
-                profilePage.getSize(),
-                profilePage.getTotalElements(),
-                profilePage.getTotalPages(),
-                profilePage.isLast()
+                matchPage.getNumber(),
+                matchPage.getSize(),
+                matchPage.getTotalElements(),
+                matchPage.getTotalPages(),
+                matchPage.isLast()
         );
     }
+
+    // ================= TOP MATCHES =================
+
     @Override
     public List<MatchResponseDTO> getTopMatches(Long userId, int limit) {
 
-        User currentUser = userRepo.findById(userId)
+        List<User> users = userRepository.findTopMatches(userId, PageRequest.of(0, limit));
+
+        return users.stream()
+                .map(this::mapUserToDTO)
+                .collect(Collectors.toList());
+    }
+
+    // ================= EXPLANATION =================
+
+    @Override
+    public MatchExplanationResponseDTO getMatchExplanation(Long userId, Long profileId) {
+
+        return MatchExplanationResponseDTO.builder()
+                .reason("You both have high compatibility")
+                .totalScore(85)
+                .build();
+    }
+
+    // ================= MY MATCHES =================
+
+    @Override
+    public List<User> getMyMatches(Long userId) {
+
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        PartnerPreference pref = prefRepo.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Partner preference not set"));
-
-        // 🎯 DOB calculation
-        LocalDate today = LocalDate.now();
-        LocalDate minDob = null;
-        LocalDate maxDob = null;
-
-        if (pref.getMinAge() != null && pref.getMaxAge() != null) {
-            maxDob = today.minusYears(pref.getMinAge());
-            minDob = today.minusYears(pref.getMaxAge());
-        }
-
-        // 🚀 DB CALL
-        List<Object[]> results = profileRepo.findMatchesWithScore(
-                userId,
-                pref.getReligion() != null ? pref.getReligion().getId() : null,
-                pref.getCaste() != null ? pref.getCaste().getId() : null,
-                pref.getCity() != null ? pref.getCity().getId() : null,
-                minDob,
-                maxDob
-        );
-
-        return results.stream()
-                .limit(limit)
-                .map(obj -> {
-
-                    Profile profile = (Profile) obj[0];
-                    int score = ((Number) obj[1]).intValue();
-
-                    return MatchResponseDTO.builder()
-                            .userId(profile.getUser().getId())
-                            .name(profile.getUser().getFullName())
-                            .city(profile.getCity() != null ? profile.getCity().getName() : null)
-                            .religion(profile.getReligion() != null ? profile.getReligion().getName() : null)
-                            .caste(profile.getCaste() != null ? profile.getCaste().getName() : null)
-                            .matchScore(score)
-                            .matchPercentage(score + "%")
-                            .build();
-                })
-                .toList();
+        List<Match> matches = matchRepository.findByUser1OrUser2(user, user);
+        return matches.stream()
+                .map(match -> match.getUser1().equals(user)
+                        ? match.getUser2()
+                        : match.getUser1())
+                .collect(Collectors.toList());
     }
 
-    // 🔥 MATCH LOGIC
-    private int calculateScore(Profile profile, PartnerPreference pref) {
+    // ================= MAPPER =================
 
-        double totalScore = 0;
+    private MatchResponseDTO mapToDTO(Match match, User currentUser) {
 
-        totalScore += religionScore(profile, pref) * 20;
-        totalScore += casteScore(profile, pref) * 15;
-        totalScore += cityScore(profile, pref) * 15;
-        totalScore += ageScore(profile, pref) * 20;
-        totalScore += heightScore(profile, pref) * 10;
-        totalScore += educationScore(profile, pref) * 10;
+        User other = match.getUser1().equals(currentUser)
+                ? match.getUser2()
+                : match.getUser1();
 
-        totalScore += bonusScore(profile) * 10;
-
-        return (int) totalScore;
+        return mapUserToDTO(other);
     }
-    private int calculateAge(LocalDate dob) {
-        return Period.between(dob, LocalDate.now()).getYears();
-    }
-    private double religionScore(Profile p, PartnerPreference pref) {
-        if (pref.getReligion() == null) return 0.5;
-        if (p.getReligion() == null) return 0;
 
-        return pref.getReligion().getId().equals(p.getReligion().getId()) ? 1 : 0;
-    }
-    private double casteScore(Profile p, PartnerPreference pref) {
-        if (pref.getCaste() == null) return 0.5;
-        if (p.getCaste() == null) return 0;
+    private MatchResponseDTO mapUserToDTO(User user) {
 
-        return pref.getCaste().getId().equals(p.getCaste().getId()) ? 1 : 0;
-    }
-    private double cityScore(Profile p, PartnerPreference pref) {
-        if (pref.getCity() == null) return 0.5;
-        if (p.getCity() == null) return 0;
+        Profile profile = user.getProfile();
 
-        return pref.getCity().getId().equals(p.getCity().getId()) ? 1 : 0;
-    }
-    private double ageScore(Profile p, PartnerPreference pref) {
+        return MatchResponseDTO.builder()
+                .userId(user.getId())
+                .name(user.getFullName())
 
-        if (p.getDateOfBirth() == null ||
-                pref.getMinAge() == null ||
-                pref.getMaxAge() == null) return 0;
+                .city(profile != null && profile.getCity() != null
+                        ? profile.getCity().getName()
+                        : null)
 
-        int age = calculateAge(p.getDateOfBirth());
+                .religion(profile != null && profile.getReligion() != null
+                        ? profile.getReligion().getName()
+                        : null)
 
-        if (age >= pref.getMinAge() && age <= pref.getMaxAge()) {
-            return 1;
-        }
+                .caste(profile != null && profile.getCaste() != null
+                        ? profile.getCaste().getName()
+                        : null)
 
-        int mid = (pref.getMinAge() + pref.getMaxAge()) / 2;
-        int diff = Math.abs(age - mid);
-
-        if (diff <= 2) return 0.8;
-        if (diff <= 5) return 0.5;
-
-        return 0;
-    }
-    private double heightScore(Profile p, PartnerPreference pref) {
-
-        if (p.getHeight() == null ||
-                pref.getMinHeight() == null ||
-                pref.getMaxHeight() == null) return 0;
-
-        try {
-            double height = Double.parseDouble(p.getHeight().getHeight());
-
-            if (height >= pref.getMinHeight() && height <= pref.getMaxHeight()) {
-                return 1;
-            }
-
-            return 0.3;
-
-        } catch (Exception e) {
-            return 0; // invalid format safety
-        }
-    }
-    private double educationScore(Profile p, PartnerPreference pref) {
-
-        if (p.getEducationLevel() == null) return 0;
-
-        return 0.5;
-    }
-    private double bonusScore(Profile p) {
-
-        int score = 0;
-
-        if (p.getAbout() != null) score++;
-        if (p.getImageUrl() != null) score++;
-        if (p.getEducationLevel() != null) score++;
-        if (p.getCity() != null) score++;
-
-        return score / 4.0;
+                .matchScore(80)
+                .matchPercentage("80%")
+                .build();
     }
 }

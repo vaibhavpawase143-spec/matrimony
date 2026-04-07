@@ -126,7 +126,6 @@ public class UserServiceImpl implements UserService {
     // ================= GET ALL =================
     @Override
     public List<UserResponseDTO> getAll() {
-
         return userRepository.findAllWithRoles()
                 .stream()
                 .map(UserMapper::toDTO)
@@ -136,7 +135,6 @@ public class UserServiceImpl implements UserService {
     // ================= GET BY ID =================
     @Override
     public Optional<UserResponseDTO> getById(Long id) {
-
         return userRepository.findByIdWithRoles(id)
                 .map(UserMapper::toDTO);
     }
@@ -144,7 +142,6 @@ public class UserServiceImpl implements UserService {
     // ================= ACTIVE USERS =================
     @Override
     public List<UserResponseDTO> getActiveUsers() {
-
         return userRepository.findActiveUsersWithRoles()
                 .stream()
                 .map(UserMapper::toDTO)
@@ -247,4 +244,10 @@ public class UserServiceImpl implements UserService {
     @Override public void forgotPassword(String email) {}
     @Override public void resetPassword(String token, String newPassword) {}
     @Override public void sendVerification(String email) {}
+
+    // ================= 🔥 FIXED METHOD =================
+    @Override
+    public Optional<User> findByEmail(String email) {
+        return userRepository.findByEmail(email);
+    }
 }

@@ -53,4 +53,7 @@ public interface UserService {
     void resetPassword(String token, String newPassword);
 
     void sendVerification(String email);
+
+    // ================= 🔥 REQUIRED FOR CHAT =================
+    Optional<User> findByEmail(String email);
 }

@@ -1,10 +1,8 @@
 package com.example.model;
 
 import jakarta.persistence.*;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 @Table(
@@ -13,7 +11,10 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
         indexes = {
                 @Index(name = "idx_profile_user", columnList = "user_id"),
                 @Index(name = "idx_profile_city", columnList = "city_id"),
-                @Index(name = "idx_profile_caste", columnList = "caste_id")
+                @Index(name = "idx_profile_caste", columnList = "caste_id"),
+                @Index(name = "idx_profile_religion", columnList = "religion_id"),
+                @Index(name = "idx_profile_dob", columnList = "date_of_birth"),
+                @Index(name = "idx_profile_active", columnList = "is_active")
         }
 )
 public class Profile {
@@ -22,11 +23,9 @@ public class Profile {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // 🔥 One profile per user
     @OneToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
-
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "religion_id")
@@ -35,8 +34,14 @@ public class Profile {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "caste_id")
     private Caste caste;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "city_id")
+    private City city;
+
     @Column(name = "date_of_birth")
     private LocalDate dateOfBirth;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "education_level_id")
     private EducationLevel educationLevel;
@@ -53,14 +58,12 @@ public class Profile {
     @JoinColumn(name = "weight_id")
     private Weight weight;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "city_id")
-    private City city;
-
     @Column(length = 1000)
     private String about;
 
-    // 🔥 Audit fields
+    @Column(name = "image_url")
+    private String imageUrl;
+
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 
@@ -71,16 +74,17 @@ public class Profile {
     private LocalDateTime updatedAt;
 
     public Profile() {}
+    // 🔥 PREMIUM / BOOST SYSTEM
+    @Column(name = "is_premium")
+    private Boolean isPremium = false;
 
-    // 🔥 Lifecycle hooks
+    @Column(name = "boost_score")
+    private Integer boostScore = 0;
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
-
-        if (this.isActive == null) {
-            this.isActive = true;
-        }
+        if (this.isActive == null) this.isActive = true;
     }
 
     @PreUpdate
@@ -88,50 +92,55 @@ public class Profile {
         this.updatedAt = LocalDateTime.now();
     }
 
-    // ===== Getters =====
+    // ✅ FIXED GETTER
+    public Boolean getIsActive() {
+        return isActive;
+    }
 
-    public Long getId() { return id; }
-    public User getUser() { return user; }
-    public Religion getReligion() { return religion; }
-    public Caste getCaste() { return caste; }
-    public EducationLevel getEducationLevel() { return educationLevel; }
-    public Occupation getOccupation() { return occupation; }
-    public Height getHeight() { return height; }
-    public Weight getWeight() { return weight; }
-    public City getCity() { return city; }
-    public String getAbout() { return about; }
-    public Boolean getIsActive() { return isActive; }
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setIsActive(Boolean isActive) {
+        this.isActive = isActive;
+    }
 
-    // ===== Setters =====
-
-    public void setUser(User user) { this.user = user; }
-    public void setReligion(Religion religion) { this.religion = religion; }
-    public void setCaste(Caste caste) { this.caste = caste; }
-    public void setEducationLevel(EducationLevel educationLevel) { this.educationLevel = educationLevel; }
-    public void setOccupation(Occupation occupation) { this.occupation = occupation; }
-    public void setHeight(Height height) { this.height = height; }
-    public void setWeight(Weight weight) { this.weight = weight; }
-    public void setCity(City city) { this.city = city; }
-    public void setAbout(String about) { this.about = about; }
-    public void setIsActive(Boolean isActive) { this.isActive = isActive; }
+    public Long getId() {
+        return id;
+    }
 
     public void setId(Long id) {
         this.id = id;
     }
 
-    public void setActive(Boolean active) {
-        isActive = active;
+    public User getUser() {
+        return user;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
+    public void setUser(User user) {
+        this.user = user;
     }
 
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
+    public Religion getReligion() {
+        return religion;
     }
+
+    public void setReligion(Religion religion) {
+        this.religion = religion;
+    }
+
+    public Caste getCaste() {
+        return caste;
+    }
+
+    public void setCaste(Caste caste) {
+        this.caste = caste;
+    }
+
+    public City getCity() {
+        return city;
+    }
+
+    public void setCity(City city) {
+        this.city = city;
+    }
+
     public LocalDate getDateOfBirth() {
         return dateOfBirth;
     }
@@ -139,8 +148,46 @@ public class Profile {
     public void setDateOfBirth(LocalDate dateOfBirth) {
         this.dateOfBirth = dateOfBirth;
     }
-    @Column(name = "image_url")
-    private String imageUrl;
+
+    public EducationLevel getEducationLevel() {
+        return educationLevel;
+    }
+
+    public void setEducationLevel(EducationLevel educationLevel) {
+        this.educationLevel = educationLevel;
+    }
+
+    public Occupation getOccupation() {
+        return occupation;
+    }
+
+    public void setOccupation(Occupation occupation) {
+        this.occupation = occupation;
+    }
+
+    public Height getHeight() {
+        return height;
+    }
+
+    public void setHeight(Height height) {
+        this.height = height;
+    }
+
+    public Weight getWeight() {
+        return weight;
+    }
+
+    public void setWeight(Weight weight) {
+        this.weight = weight;
+    }
+
+    public String getAbout() {
+        return about;
+    }
+
+    public void setAbout(String about) {
+        this.about = about;
+    }
 
     public String getImageUrl() {
         return imageUrl;
@@ -149,4 +196,45 @@ public class Profile {
     public void setImageUrl(String imageUrl) {
         this.imageUrl = imageUrl;
     }
+
+    public Boolean getActive() {
+        return isActive;
+    }
+
+    public void setActive(Boolean active) {
+        isActive = active;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
+    public Boolean getIsPremium() {
+        return isPremium;
+    }
+
+    public void setIsPremium(Boolean isPremium) {
+        this.isPremium = isPremium;
+    }
+
+    public Integer getBoostScore() {
+        return boostScore;
+    }
+
+    public void setBoostScore(Integer boostScore) {
+        this.boostScore = boostScore;
+    }
+// other getters/setters same as yours...
 }
