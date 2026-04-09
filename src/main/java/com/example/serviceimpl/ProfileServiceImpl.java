@@ -1,27 +1,29 @@
 package com.example.serviceimpl;
-import com.example.service.CacheService;
-import org.springframework.cache.annotation.CacheEvict;
-import com.example.service.MatchAsyncService;
+
 import com.example.dto.request.ProfileRequestDTO;
 import com.example.dto.request.UpdateProfileRequestDTO;
 import com.example.dto.response.ProfileResponseDTO;
 import com.example.model.*;
 import com.example.repository.*;
+import com.example.service.CacheService;
 import com.example.service.MatchAsyncService;
 import com.example.service.ProfileService;
-
 import com.example.specification.ProfileSpecification;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class ProfileServiceImpl implements ProfileService {
 
@@ -36,67 +38,64 @@ public class ProfileServiceImpl implements ProfileService {
     private final WeightRepository weightRepository;
     private final CityRepository cityRepository;
     private final CacheService cacheService;
+
     // ================= CURRENT USER =================
     private User getCurrentUser() {
-        String email = SecurityContextHolder.getContext()
-                .getAuthentication()
-                .getName();
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
 
         return userRepository.findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
     }
 
-    // ================= CREATE PROFILE =================
+    // ================= CREATE =================
     public ProfileResponseDTO createProfile(ProfileRequestDTO dto) {
 
-        User currentUser = getCurrentUser();
+        User user = userRepository.findById(dto.getUserId())
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
-        if (repository.existsByUserId(currentUser.getId())) {
+        if (repository.existsByUserId(user.getId())) {
             throw new RuntimeException("Profile already exists!");
         }
 
         Profile profile = new Profile();
-        profile.setUser(currentUser);
+        profile.setUser(user);
 
         mapDtoToEntity(dto, profile);
 
         Profile saved = repository.save(profile);
 
-        cacheService.evictUserMatches(currentUser.getId());
-
-        asyncService.preloadMatches(currentUser.getId());
+        safeRedis(user.getId());
 
         return mapToDTO(saved);
     }
-    // ================= UPDATE PROFILE =================
+
+    // ================= UPDATE =================
     public ProfileResponseDTO updateMyProfile(UpdateProfileRequestDTO dto) {
 
-        User currentUser = getCurrentUser();
+        User user = userRepository.findById(dto.getUserId())
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
-        Profile profile = repository.findByUserId(currentUser.getId())
+        Profile profile = repository.findByUserId(user.getId())
                 .orElseThrow(() -> new RuntimeException("Profile not found"));
 
         mapUpdateDto(dto, profile);
 
         Profile saved = repository.save(profile);
 
-        // 🔥 CLEAR ONLY THIS USER CACHE
-        cacheService.evictUserMatches(currentUser.getId());
-
-        // 🔥 ASYNC PRELOAD
-        asyncService.preloadMatches(currentUser.getId());
+        safeRedis(user.getId());
 
         return mapToDTO(saved);
     }
 
-    // ================= GET MY PROFILE =================
+    // ================= GET =================
     public ProfileResponseDTO getMyProfile() {
-        User currentUser = getCurrentUser();
+        return mapToDTO(repository.findByUserId(getCurrentUser().getId())
+                .orElseThrow(() -> new RuntimeException("Profile not found")));
+    }
 
-        Profile profile = repository.findByUserId(currentUser.getId())
-                .orElseThrow(() -> new RuntimeException("Profile not found"));
-
-        return mapToDTO(profile);
+    public ProfileResponseDTO getProfileById(Long id) {
+        return mapToDTO(repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Profile not found")));
     }
 
     // ================= DELETE =================
@@ -105,77 +104,43 @@ public class ProfileServiceImpl implements ProfileService {
         Profile profile = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Profile not found"));
 
-        User currentUser = getCurrentUser();
-
-        if (!profile.getUser().getId().equals(currentUser.getId())) {
+        if (!profile.getUser().getId().equals(getCurrentUser().getId())) {
             throw new RuntimeException("Access Denied");
         }
 
         repository.delete(profile);
     }
 
-    // ================= SAVE (CREATE OR UPDATE) =================
+    // ================= SAVE =================
     @Override
     public Profile saveProfile(Profile profile) {
 
-        User currentUser = getCurrentUser();
+        User user = getCurrentUser();
 
-        Optional<Profile> existingOpt = repository.findByUserId(currentUser.getId());
+        Optional<Profile> existing = repository.findByUserId(user.getId());
 
-        if (existingOpt.isPresent()) {
+        if (existing.isPresent()) {
+            Profile p = existing.get();
 
-            Profile existing = existingOpt.get();
+            if (profile.getImageUrl() != null) p.setImageUrl(profile.getImageUrl());
+            if (profile.getAbout() != null) p.setAbout(profile.getAbout());
 
-            if (!existing.getUser().getId().equals(currentUser.getId())) {
-                throw new RuntimeException("Access Denied");
-            }
-
-            // 🔁 Update fields (NULL SAFE)
-            if (profile.getReligion() != null)
-                existing.setReligion(profile.getReligion());
-
-            if (profile.getCaste() != null)
-                existing.setCaste(profile.getCaste());
-
-            if (profile.getEducationLevel() != null)
-                existing.setEducationLevel(profile.getEducationLevel());
-
-            if (profile.getOccupation() != null)
-                existing.setOccupation(profile.getOccupation());
-
-            if (profile.getHeight() != null)
-                existing.setHeight(profile.getHeight());
-
-            if (profile.getWeight() != null)
-                existing.setWeight(profile.getWeight());
-
-            if (profile.getCity() != null)
-                existing.setCity(profile.getCity());
-
-            if (profile.getAbout() != null)
-                existing.setAbout(profile.getAbout());
-
-            if (profile.getIsActive() != null)
-                existing.setIsActive(profile.getIsActive());
-
-            return repository.save(existing);
-
-        } else {
-
-            profile.setUser(currentUser);
-
-            if (profile.getIsActive() == null) {
-                profile.setIsActive(true);
-            }
-
-            return repository.save(profile);
+            return repository.save(p);
         }
+
+        profile.setUser(user);
+        profile.setIsActive(true);
+
+        return repository.save(profile);
     }
 
     // ================= READ =================
     @Override public Optional<Profile> getById(Long id) { return repository.findById(id); }
     @Override public Optional<Profile> getByUserId(Long userId) { return repository.findByUserId(userId); }
-    @Override public List<Profile> getAll() { return repository.findAll(); }
+    @Override
+    public List<Profile> getAll() {
+        return repository.findAllWithUser();
+    }
     @Override public List<Profile> getActiveProfiles() { return repository.findByIsActiveTrue(); }
 
     // ================= FILTER =================
@@ -191,64 +156,58 @@ public class ProfileServiceImpl implements ProfileService {
     @Override public List<Profile> getActiveByReligionAndCity(Long r, Long c) { return repository.findByReligionIdAndCityIdAndIsActiveTrue(r, c); }
 
     // ================= MAPPERS =================
-    private void mapDtoToEntity(ProfileRequestDTO dto, Profile profile) {
-        profile.setReligion(religionRepository.findById(dto.getReligionId()).orElse(null));
-        profile.setCaste(casteRepository.findById(dto.getCasteId()).orElse(null));
-        profile.setEducationLevel(educationRepository.findById(dto.getEducationLevelId()).orElse(null));
-        profile.setOccupation(occupationRepository.findById(dto.getOccupationId()).orElse(null));
-        profile.setHeight(heightRepository.findById(dto.getHeightId()).orElse(null));
-        profile.setWeight(weightRepository.findById(dto.getWeightId()).orElse(null));
-        profile.setCity(cityRepository.findById(dto.getCityId()).orElse(null));
-        profile.setAbout(dto.getAbout());
+    private void mapDtoToEntity(ProfileRequestDTO dto, Profile p) {
+        p.setReligion(religionRepository.findById(dto.getReligionId()).orElse(null));
+        p.setCaste(casteRepository.findById(dto.getCasteId()).orElse(null));
+        p.setEducationLevel(educationRepository.findById(dto.getEducationLevelId()).orElse(null));
+        p.setOccupation(occupationRepository.findById(dto.getOccupationId()).orElse(null));
+        p.setHeight(heightRepository.findById(dto.getHeightId()).orElse(null));
+        p.setWeight(weightRepository.findById(dto.getWeightId()).orElse(null));
+        p.setCity(cityRepository.findById(dto.getCityId()).orElse(null));
+        p.setAbout(dto.getAbout());
+        p.setImageUrl(dto.getImageUrl());
     }
 
-    private void mapUpdateDto(UpdateProfileRequestDTO dto, Profile profile) {
-        if (dto.getReligionId() != null)
-            profile.setReligion(religionRepository.findById(dto.getReligionId()).orElse(null));
-
-        if (dto.getCasteId() != null)
-            profile.setCaste(casteRepository.findById(dto.getCasteId()).orElse(null));
-
-        if (dto.getCityId() != null)
-            profile.setCity(cityRepository.findById(dto.getCityId()).orElse(null));
-
-        if (dto.getAbout() != null)
-            profile.setAbout(dto.getAbout());
+    private void mapUpdateDto(UpdateProfileRequestDTO dto, Profile p) {
+        if (dto.getCityId() != null) p.setCity(cityRepository.findById(dto.getCityId()).orElse(null));
+        if (dto.getAbout() != null) p.setAbout(dto.getAbout());
+        if (dto.getImageUrl() != null) p.setImageUrl(dto.getImageUrl());
     }
 
-    private ProfileResponseDTO mapToDTO(Profile p) {
+    public ProfileResponseDTO mapToDTO(Profile p) {
         ProfileResponseDTO dto = new ProfileResponseDTO();
 
         dto.setId(p.getId());
         dto.setUserId(p.getUser().getId());
         dto.setUserName(p.getUser().getFullName());
-
-        if (p.getReligion() != null) {
-            dto.setReligionId(p.getReligion().getId());
-            dto.setReligionName(p.getReligion().getName());
-        }
+        dto.setImageUrl(p.getImageUrl());
+        dto.setAbout(p.getAbout());
+        dto.setIsActive(p.getIsActive());
+        dto.setCreatedAt(p.getCreatedAt());
+        dto.setUpdatedAt(p.getUpdatedAt());
 
         if (p.getCity() != null) {
             dto.setCityId(p.getCity().getId());
             dto.setCityName(p.getCity().getName());
         }
 
-        dto.setAbout(p.getAbout());
-        dto.setIsActive(p.getIsActive());
-        dto.setCreatedAt(p.getCreatedAt());
-        dto.setUpdatedAt(p.getUpdatedAt());
-
         return dto;
     }
-    public Page<ProfileResponseDTO> searchProfiles(
-            PartnerPreference pref,
-            Pageable pageable
-    ) {
 
+    // ================= SEARCH =================
+    public Page<ProfileResponseDTO> searchProfiles(PartnerPreference pref, Pageable pageable) {
         Specification<Profile> spec = ProfileSpecification.matchPreferences(pref);
+        return repository.findAll(spec, pageable).map(this::mapToDTO);
+    }
 
-        Page<Profile> page = repository.findAll(spec, pageable);
+    // ================= REDIS SAFE =================
+    private void safeRedis(Long userId) {
+        try {
+            cacheService.evictUserMatches(userId);
+        } catch (Exception e) {
+            System.out.println("Redis skipped");
+        }
 
-        return page.map(this::mapToDTO);
+        asyncService.preloadMatches(userId);
     }
 }

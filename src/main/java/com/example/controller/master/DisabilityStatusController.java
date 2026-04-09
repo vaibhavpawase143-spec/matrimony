@@ -141,9 +141,7 @@ public class DisabilityStatusController {
         dto.setCreatedAt(entity.getCreatedAt());
         dto.setUpdatedAt(entity.getUpdatedAt());
 
-        if (entity.getAdmin() != null) {
-            dto.setAdminId(entity.getAdmin().getId());
-        }
+        dto.setAdminId(entity.getAdminId());
 
         return dto;
     }

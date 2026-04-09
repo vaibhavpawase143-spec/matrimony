@@ -3,12 +3,15 @@ package com.example.serviceimpl;
 import com.example.model.Shortlist;
 import com.example.repository.ShortlistRepository;
 import com.example.service.ShortlistService;
+
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
 
 @Service
+@Transactional // 🔥 VERY IMPORTANT (fixes lazy + delete issues)
 public class ShortlistServiceImpl implements ShortlistService {
 
     private final ShortlistRepository repository;
@@ -55,10 +58,14 @@ public class ShortlistServiceImpl implements ShortlistService {
         return repository.findByProfile_Id(profileId);
     }
 
-    // ❌ Remove from shortlist
+    // ❌ Remove from shortlist (FIXED)
     @Override
     public void removeFromShortlist(Long userId, Long profileId) {
-        repository.deleteByUser_IdAndProfile_Id(userId, profileId);
+
+        Optional<Shortlist> optional =
+                repository.findByUser_IdAndProfile_Id(userId, profileId);
+
+        optional.ifPresent(repository::delete); // ✅ safe delete inside transaction
     }
 
     // 🔍 Get all

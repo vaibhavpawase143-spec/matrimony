@@ -16,6 +16,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/profiles")
 @RequiredArgsConstructor
@@ -38,12 +40,29 @@ public class ProfileController {
         return ResponseEntity.ok(service.getMyProfile());
     }
 
-    // ================= UPDATE =================
+    // ================= UPDATE MY PROFILE =================
     @PutMapping("/me")
-    public ResponseEntity<ProfileResponseDTO> update(
+    public ResponseEntity<ProfileResponseDTO> updateMyProfile(
             @RequestBody UpdateProfileRequestDTO dto
     ) {
         return ResponseEntity.ok(service.updateMyProfile(dto));
+    }
+
+    // ================= GET BY ID (FIXED 🔥) =================
+    @GetMapping("/{id}")
+    public ResponseEntity<ProfileResponseDTO> getById(@PathVariable Long id) {
+        return ResponseEntity.ok(service.getProfileById(id));
+    }
+
+    // ================= GET ALL =================
+    @GetMapping
+    public ResponseEntity<List<ProfileResponseDTO>> getAllProfiles() {
+        List<ProfileResponseDTO> list = service.getAll()
+                .stream()
+                .map(service::mapToDTO)
+                .toList();
+
+        return ResponseEntity.ok(list);
     }
 
     // ================= DELETE =================
@@ -53,16 +72,47 @@ public class ProfileController {
         return ResponseEntity.noContent().build();
     }
 
-    // ================= 🔥 SEARCH (MATRIMONIAL CORE) =================
+    // ================= SEARCH =================
     @PostMapping("/search")
     public ResponseEntity<Page<ProfileResponseDTO>> searchProfiles(
             @RequestBody PartnerPreference pref,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
-
         Pageable pageable = PageRequest.of(page, size);
-
         return ResponseEntity.ok(service.searchProfiles(pref, pageable));
+    }
+
+    // ================= FILTER: CITY =================
+    @GetMapping("/city/{cityId}")
+    public ResponseEntity<List<ProfileResponseDTO>> getByCity(@PathVariable Long cityId) {
+        List<ProfileResponseDTO> list = service.getByCity(cityId)
+                .stream()
+                .map(service::mapToDTO)
+                .toList();
+
+        return ResponseEntity.ok(list);
+    }
+
+    // ================= FILTER: RELIGION =================
+    @GetMapping("/religion/{religionId}")
+    public ResponseEntity<List<ProfileResponseDTO>> getByReligion(@PathVariable Long religionId) {
+        List<ProfileResponseDTO> list = service.getByReligion(religionId)
+                .stream()
+                .map(service::mapToDTO)
+                .toList();
+
+        return ResponseEntity.ok(list);
+    }
+
+    // ================= FILTER: ACTIVE =================
+    @GetMapping("/active")
+    public ResponseEntity<List<ProfileResponseDTO>> getActiveProfiles() {
+        List<ProfileResponseDTO> list = service.getActiveProfiles()
+                .stream()
+                .map(service::mapToDTO)
+                .toList();
+
+        return ResponseEntity.ok(list);
     }
 }

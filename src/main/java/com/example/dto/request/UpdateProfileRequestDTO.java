@@ -6,6 +6,8 @@ import lombok.Data;
 @Data
 public class UpdateProfileRequestDTO {
 
+    private Long userId; // 🔥 IMPORTANT (ADD THIS)
+
     private Long religionId;
     private Long casteId;
     private Long educationLevelId;
@@ -16,4 +18,6 @@ public class UpdateProfileRequestDTO {
 
     @Size(max = 1000, message = "About cannot exceed 1000 characters")
     private String about;
+
+    private String imageUrl;
 }

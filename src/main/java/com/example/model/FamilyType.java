@@ -1,8 +1,12 @@
 package com.example.model;
 
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
+import lombok.Getter;
+import lombok.Setter;
 
+import java.time.LocalDateTime;
+@Getter
+@Setter
 @Entity
 @Table(
         name = "family_types",
@@ -86,4 +90,5 @@ public class FamilyType {
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
     }
+
 }

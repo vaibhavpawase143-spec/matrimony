@@ -46,7 +46,9 @@ public class JwtUtil {
         return extractUsername(token).equals(username)
                 && !isExpired(token);
     }
-
+    public List<String> extractRoles(String token) {
+        return getClaims(token).get("roles", List.class);
+    }
     // 🔍 GET CLAIMS
     private Claims getClaims(String token) {
         return Jwts.parserBuilder()

@@ -19,7 +19,14 @@ public interface ProfileRepository extends JpaRepository<Profile, Long>, JpaSpec
     Optional<Profile> findByUserId(Long userId);
 
     boolean existsByUserId(Long userId);
-
+    @Query("""
+    SELECT p FROM Profile p
+    JOIN FETCH p.user
+    LEFT JOIN FETCH p.city
+    LEFT JOIN FETCH p.religion
+    LEFT JOIN FETCH p.caste
+""")
+    List<Profile> findAllWithUser();
     Optional<Profile> findByUser(User user);
 
     // ================= ACTIVE =================

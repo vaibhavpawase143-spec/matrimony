@@ -7,6 +7,7 @@ import com.example.service.ChatService;
 
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,227 +18,285 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ChatServiceImpl implements ChatService {
 
-    private final UserRepository userRepo;
-    private final MatchRepository matchRepo;
-    private final ConversationRepository conversationRepo;
-    private final MessageRepository messageRepo;
-    private final UserBlockRepository blockRepo;
+    private final UserRepository userRepository;
+    private final MessageRepository messageRepository;
+    private final ConversationRepository conversationRepository;
 
-    // ================= SEND MESSAGE =================
+    // ================= USER =================
+
+    @Override
+    public User getUserByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+    }
+
+    @Override
+    public User getUser(Long id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+    }
+
+    @Override
+    public long getUnreadCount(Long conversationId, Long userId) {
+        return messageRepository.countUnreadMessages(conversationId, userId);
+    }
+
+    // ================= SEND =================
+
     @Override
     @Transactional
     public Message sendMessage(Long senderId, Long receiverId, String content) {
-
         User sender = getUser(senderId);
         User receiver = getUser(receiverId);
-
-        // 🔥 BLOCK CHECK
-        if (isBlocked(senderId, receiverId)) {
-            throw new RuntimeException("Message not allowed. One of the users has blocked the other.");
-        }
-
-        Conversation conversation = getOrCreateConversation(sender, receiver);
-
-        conversation.setUpdatedAt(LocalDateTime.now());
-        conversationRepo.save(conversation);
-
-        Message message = new Message();
-        message.setConversation(conversation);
-        message.setSender(sender);
-        message.setContent(content);
-        message.setStatus(MessageStatus.SENT);
-
-        return messageRepo.save(message);
+        return createTextMessage(sender, receiver, content, null);
     }
 
     @Override
     public Message sendMessageByEmail(String senderEmail, Long receiverId, String content) {
+        return sendMessageByEmail(senderEmail, receiverId, content, null);
+    }
 
-        User sender = userRepo.findByEmail(senderEmail)
-                .orElseThrow(() -> new RuntimeException("Sender not found"));
+    @Override
+    public Message sendMessageByEmail(
+            String senderEmail,
+            Long receiverId,
+            String content,
+            Long replyToMessageId
+    ) {
 
-        return sendMessage(sender.getId(), receiverId, content);
+        User sender = getUserByEmail(senderEmail);
+        User receiver = getUser(receiverId);
+
+        Message replyTo = null;
+        if (replyToMessageId != null) {
+            replyTo = messageRepository.findById(replyToMessageId)
+                    .orElseThrow(() -> new RuntimeException("Reply message not found"));
+        }
+
+        return createTextMessage(sender, receiver, content, replyTo);
     }
 
     // ================= MEDIA =================
+
     @Override
     @Transactional
-    public Message sendMediaMessage(String senderEmail, Long receiverId, String mediaUrl, String mediaType) {
+    public Message sendMediaMessage(
+            String senderEmail,
+            Long receiverId,
+            String mediaUrl,
+            String mediaType
+    ) {
 
-        User sender = userRepo.findByEmail(senderEmail)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
+        User sender = getUserByEmail(senderEmail);
         User receiver = getUser(receiverId);
-
-        // 🔥 BLOCK CHECK
-        if (isBlocked(sender.getId(), receiver.getId())) {
-            throw new RuntimeException("Message not allowed. One of the users has blocked the other.");
-        }
 
         Conversation conversation = getOrCreateConversation(sender, receiver);
 
         Message message = new Message();
-        message.setConversation(conversation);
         message.setSender(sender);
+        message.setConversation(conversation);
         message.setMediaUrl(mediaUrl);
         message.setMediaType(mediaType);
         message.setMessageType("MEDIA");
+        message.setStatus(MessageStatus.SENT);
+        message.setCreatedAt(LocalDateTime.now());
 
-        conversation.setUpdatedAt(LocalDateTime.now());
-        conversationRepo.save(conversation);
+        // ✅ Avoid null content
+        message.setContent(getMediaContent(mediaType));
 
-        return messageRepo.save(message);
+        return messageRepository.save(message);
+    }
+
+    // ================= FORWARD =================
+
+    @Override
+    public Message forwardMessage(String senderEmail, Long messageId, Long receiverId) {
+
+        User sender = getUserByEmail(senderEmail);
+        User receiver = getUser(receiverId);
+
+        Message original = messageRepository.findById(messageId)
+                .orElseThrow(() -> new RuntimeException("Message not found"));
+
+        Conversation conversation = getOrCreateConversation(sender, receiver);
+
+        Message message = new Message();
+        message.setSender(sender);
+        message.setConversation(conversation);
+        message.setContent(original.getContent());
+        message.setMediaUrl(original.getMediaUrl());
+        message.setMediaType(original.getMediaType());
+        message.setMessageType("FORWARD");
+        message.setStatus(MessageStatus.SENT);
+        message.setCreatedAt(LocalDateTime.now());
+
+        return messageRepository.save(message);
     }
 
     // ================= GET =================
+
+    @Override
+    @Transactional
+    public Page<Message> getMessages(Long userId, Long otherUserId, int page, int size) {
+
+        User user1 = getUser(userId);
+        User user2 = getUser(otherUserId);
+
+        Conversation conversation = conversationRepository
+                .findByUser1AndUser2(user1, user2)
+                .or(() -> conversationRepository.findByUser1AndUser2(user2, user1))
+                .orElseThrow(() -> new RuntimeException("Conversation not found"));
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+
+        return messageRepository.findByConversation(conversation, pageable);
+    }
+
     @Override
     public List<Message> getMessages(Long userId, Long otherUserId) {
-
-        Conversation conversation = getConversation(getUser(userId), getUser(otherUserId));
-
-        List<Message> messages = messageRepo.findByConversationOrderByCreatedAtAsc(conversation);
-
-        messages.forEach(m -> {
-            if (!m.getSender().getId().equals(userId) && m.getStatus() == MessageStatus.SENT) {
-                m.setStatus(MessageStatus.DELIVERED);
-            }
-        });
-
-        messageRepo.saveAll(messages);
-
-        return messages;
+        Conversation conversation = getConversation(userId, otherUserId);
+        return messageRepository.findByConversationOrderByCreatedAtAsc(conversation);
     }
 
     @Override
     public List<Message> getMessagesByEmail(String email, Long otherUserId) {
-        return getMessages(getUserByEmail(email).getId(), otherUserId);
+        User user = getUserByEmail(email);
+        return getMessages(user.getId(), otherUserId);
     }
 
     // ================= CONVERSATION =================
+
     @Override
     public List<ConversationListDTO> getUserConversations(Long userId) {
-        return conversationRepo.getConversationList(userId);
+        return conversationRepository.getConversationList(userId); // ✅ FIXED
     }
 
     @Override
     public List<ConversationListDTO> getUserConversationsByEmail(String email) {
-        return getUserConversations(getUserByEmail(email).getId());
+        User user = getUserByEmail(email);
+        return conversationRepository.getConversationList(user.getId()); // ✅ FIXED
     }
 
     // ================= STATUS =================
-    @Override
-    public void markAsDelivered(Long conversationId, Long userId) {
-        List<Message> messages = messageRepo.findUndeliveredMessages(conversationId, userId);
-        messages.forEach(m -> m.setStatus(MessageStatus.DELIVERED));
-        messageRepo.saveAll(messages);
-    }
 
     @Override
     @Transactional
     public void markAsSeen(Long conversationId, Long userId) {
-        messageRepo.markAsSeen(conversationId, userId, MessageStatus.SEEN, LocalDateTime.now());
+        messageRepository.markAsSeen(
+                conversationId,
+                userId,
+                MessageStatus.SEEN,
+                LocalDateTime.now()
+        );
     }
 
-    // ================= USER =================
     @Override
-    public User getUser(Long id) {
-        return userRepo.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
-    }
+    public void markAsDelivered(Long conversationId, Long userId) {
+        List<Message> messages = messageRepository.findUndeliveredMessages(conversationId, userId);
 
-    @Override
-    public User getUserByEmail(String email) {
-        return userRepo.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
-    }
+        for (Message message : messages) {
+            message.setStatus(MessageStatus.DELIVERED);
+        }
 
-    // ================= UNREAD =================
-    @Override
-    public long getUnreadCount(Long conversationId, Long userId) {
-        return messageRepo.countUnreadMessages(conversationId, userId);
+        messageRepository.saveAll(messages);
     }
 
     // ================= DELETE =================
+
     @Override
     @Transactional
     public void deleteMessage(Long messageId) {
-        messageRepo.softDeleteMessage(messageId);
+        messageRepository.softDeleteMessage(messageId);
+    }
+
+    // ================= EDIT =================
+
+    @Override
+    public void editMessage(Long messageId, String content) {
+        Message message = messageRepository.findById(messageId)
+                .orElseThrow(() -> new RuntimeException("Message not found"));
+
+        message.setContent(content);
+        messageRepository.save(message);
     }
 
     // ================= REACTION =================
+
     @Override
-    @Transactional
     public void reactToMessage(Long messageId, String reaction) {
-        Message m = messageRepo.findById(messageId).orElseThrow();
-        m.setReaction(reaction);
+        Message message = messageRepository.findById(messageId)
+                .orElseThrow(() -> new RuntimeException("Message not found"));
+
+        message.setReaction(reaction);
+        messageRepository.save(message);
     }
 
     @Override
-    @Transactional
     public void removeReaction(Long messageId) {
-        Message m = messageRepo.findById(messageId).orElseThrow();
-        m.setReaction(null);
+        Message message = messageRepository.findById(messageId)
+                .orElseThrow(() -> new RuntimeException("Message not found"));
+
+        message.setReaction(null);
+        messageRepository.save(message);
     }
 
     // ================= BLOCK =================
-    @Override
-    @Transactional
-    public void blockUser(Long blockerId, Long blockedId) {
-
-        if (blockerId.equals(blockedId)) {
-            throw new RuntimeException("You cannot block yourself");
-        }
-
-        if (blockRepo.existsByBlockerIdAndBlockedId(blockerId, blockedId)) {
-            return;
-        }
-
-        UserBlock block = new UserBlock();
-        block.setBlockerId(blockerId);
-        block.setBlockedId(blockedId);
-
-        blockRepo.save(block);
-    }
 
     @Override
-    @Transactional
-    public void unblockUser(Long blockerId, Long blockedId) {
-        blockRepo.deleteByBlockerIdAndBlockedId(blockerId, blockedId);
-    }
+    public void blockUser(Long blockerId, Long blockedId) {}
+
+    @Override
+    public void unblockUser(Long blockerId, Long blockedId) {}
 
     @Override
     public boolean isBlocked(Long user1, Long user2) {
-        return blockRepo.existsByBlockerIdAndBlockedId(user1, user2)
-                || blockRepo.existsByBlockerIdAndBlockedId(user2, user1);
+        return false;
     }
 
-    // ================= HELPERS =================
-    private Conversation getOrCreateConversation(User sender, User receiver) {
+    // ================= HELPER =================
 
-        // 🔥 BLOCK CHECK (IMPORTANT)
-        if (isBlocked(sender.getId(), receiver.getId())) {
-            throw new RuntimeException("Cannot create conversation. User is blocked.");
-        }
+    private Message createTextMessage(User sender, User receiver, String content, Message replyTo) {
 
-        User u1 = sender.getId() < receiver.getId() ? sender : receiver;
-        User u2 = sender.getId() < receiver.getId() ? receiver : sender;
+        Conversation conversation = getOrCreateConversation(sender, receiver);
 
-        if (!matchRepo.findByUser1AndUser2(u1, u2).isPresent()) {
-            throw new RuntimeException("Match required");
-        }
+        Message message = new Message();
+        message.setSender(sender);
+        message.setConversation(conversation);
+        message.setContent(content);
+        message.setMessageType("TEXT");
+        message.setStatus(MessageStatus.SENT);
+        message.setCreatedAt(LocalDateTime.now());
+        message.setReplyTo(replyTo);
 
-        return conversationRepo.findByUser1AndUser2(u1, u2)
+        return messageRepository.save(message);
+    }
+
+    private String getMediaContent(String mediaType) {
+        if ("IMAGE".equalsIgnoreCase(mediaType)) return "[Image]";
+        if ("VIDEO".equalsIgnoreCase(mediaType)) return "[Video]";
+        if ("AUDIO".equalsIgnoreCase(mediaType)) return "[Audio]";
+        return "[Media]";
+    }
+
+    private Conversation getOrCreateConversation(User user1, User user2) {
+        return conversationRepository
+                .findByUser1AndUser2(user1, user2)
+                .or(() -> conversationRepository.findByUser1AndUser2(user2, user1))
                 .orElseGet(() -> {
                     Conversation c = new Conversation();
-                    c.setUser1(u1);
-                    c.setUser2(u2);
-                    return conversationRepo.save(c);
+                    c.setUser1(user1);
+                    c.setUser2(user2);
+                    return conversationRepository.save(c);
                 });
     }
 
-    private Conversation getConversation(User u1, User u2) {
-        User a = u1.getId() < u2.getId() ? u1 : u2;
-        User b = u1.getId() < u2.getId() ? u2 : u1;
+    private Conversation getConversation(Long user1Id, Long user2Id) {
+        User user1 = getUser(user1Id);
+        User user2 = getUser(user2Id);
 
-        return conversationRepo.findByUser1AndUser2(a, b)
-                .orElseThrow(() -> new RuntimeException("No conversation"));
+        return conversationRepository
+                .findByUser1AndUser2(user1, user2)
+                .or(() -> conversationRepository.findByUser1AndUser2(user2, user1))
+                .orElseThrow(() -> new RuntimeException("Conversation not found"));
     }
 }

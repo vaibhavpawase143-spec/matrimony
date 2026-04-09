@@ -1,8 +1,12 @@
 package com.example.model;
 
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
+import lombok.Getter;
+import lombok.Setter;
 
+import java.time.LocalDateTime;
+@Getter
+@Setter
 @Entity
 @Table(
         name = "family",
@@ -26,7 +30,8 @@ public class Family {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "admin_id")
     private Admin admin;
-
+    @Column(name = "admin_id", insertable = false, updatable = false)
+    private Long adminId;
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 
