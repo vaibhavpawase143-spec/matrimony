@@ -26,7 +26,6 @@ public class QualificationController {
     public QualificationResponseDTO create(@Valid @RequestBody QualificationRequestDTO dto) {
 
         Qualification entity = mapToEntity(dto);
-
         Qualification saved = service.save(entity);
 
         return mapToResponse(saved);
@@ -151,8 +150,6 @@ public class QualificationController {
 
     private void updateEntity(Qualification q, QualificationRequestDTO dto) {
 
-        // 🔥 Do NOT change admin (important)
-
         if (dto.getName() != null) {
             q.setName(dto.getName());
         }
@@ -167,7 +164,7 @@ public class QualificationController {
         return QualificationResponseDTO.builder()
                 .id(q.getId())
                 .adminId(q.getAdmin() != null ? q.getAdmin().getId() : null)
-                .adminName(q.getAdmin() != null ? q.getAdmin().getName() : null) // adjust field
+                .adminName(null) // ✅ FIXED (removed lazy call)
                 .name(q.getName())
                 .isActive(q.getIsActive())
                 .createdAt(q.getCreatedAt())

@@ -7,9 +7,9 @@ import com.example.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,8 +24,8 @@ public class SecurityUserDetailsService implements UserDetailsService {
     private final UserRepository userRepository;
 
     @Override
-    @Transactional
-    public org.springframework.security.core.userdetails.UserDetails loadUserByUsername(String email)
+    @Transactional(readOnly = true)
+    public UserDetails loadUserByUsername(String email)
             throws UsernameNotFoundException {
 
         // ================= 🔥 ADMIN LOGIN =================
@@ -33,13 +33,26 @@ public class SecurityUserDetailsService implements UserDetailsService {
 
         if (admin != null) {
 
-            // 🔥 FORCE LOAD ROLE
-            admin.getRole().getName();
+            if (admin.getRole() == null) {
+                throw new UsernameNotFoundException("Admin role not assigned");
+            }
+
+            String roleName = admin.getRole().getName();
+
+            List<GrantedAuthority> authorities =
+                    List.of(new SimpleGrantedAuthority(roleName));
 
             return new org.springframework.security.core.userdetails.User(
                     admin.getEmail(),
                     admin.getPassword(),
-                    List.of(new SimpleGrantedAuthority(admin.getRole().getName()))
+
+                    // ✅ USE YOUR FIELD (NO HARDCODE)
+                    Boolean.TRUE.equals(admin.getIsActive()),
+
+                    true,
+                    true,
+                    true,
+                    authorities
             );
         }
 
@@ -48,15 +61,27 @@ public class SecurityUserDetailsService implements UserDetailsService {
 
         if (user != null) {
 
-            // 🔥 FORCE LOAD ROLES
-            user.getRoles().forEach(role -> role.getName());
+            if (user.getRoles() == null || user.getRoles().isEmpty()) {
+                throw new UsernameNotFoundException("User has no roles assigned");
+            }
+
+            List<GrantedAuthority> authorities = user.getRoles().stream()
+                    .map(role -> new SimpleGrantedAuthority(role.getName()))
+                    .collect(Collectors.toList());
 
             return new org.springframework.security.core.userdetails.User(
                     user.getEmail(),
                     user.getPassword(),
-                    user.getRoles().stream()
-                            .map(role -> new SimpleGrantedAuthority(role.getName()))
-                            .collect(Collectors.toList())
+
+                    // ✅ MULTI SECURITY CHECK (BEST PRACTICE)
+                    Boolean.TRUE.equals(user.getIsActive())
+                            && !Boolean.TRUE.equals(user.getIsDeleted())
+                            && !Boolean.TRUE.equals(user.getIsBlocked()),
+
+                    true,
+                    true,
+                    true,
+                    authorities
             );
         }
 

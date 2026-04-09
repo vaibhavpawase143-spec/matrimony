@@ -21,24 +21,21 @@ public class UserReportService {
     @Transactional
     public String reportUser(Long reporterId, Long reportedUserId, String reason) {
 
-        // ❌ Cannot report yourself
         if (reporterId.equals(reportedUserId)) {
             throw new RuntimeException("You cannot report yourself");
         }
 
-        // ✅ Fetch users
         User reporter = userRepository.findById(reporterId)
                 .orElseThrow(() -> new RuntimeException("Reporter not found"));
 
         User reportedUser = userRepository.findById(reportedUserId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // ❌ Already blocked
-        if (reportedUser.isBlocked()) {
+        // ✅ FIXED
+        if (Boolean.TRUE.equals(reportedUser.getIsBlocked())) {
             return "User already blocked";
         }
 
-        // ❌ Prevent duplicate report
         boolean alreadyReported = userReportRepository
                 .existsByReporterAndReportedUser(reporter, reportedUser);
 
@@ -46,7 +43,6 @@ public class UserReportService {
             return "You already reported this user";
         }
 
-        // ✅ Save report
         UserReport report = UserReport.builder()
                 .reporter(reporter)
                 .reportedUser(reportedUser)
@@ -56,14 +52,13 @@ public class UserReportService {
 
         userReportRepository.save(report);
 
-        // ✅ Count total reports
         long reportCount = userReportRepository.countByReportedUser(reportedUser);
 
         reportedUser.setReportCount((int) reportCount);
 
-        // 🚨 Auto Block Logic
+        // 🚨 AUTO BLOCK
         if (reportCount >= 5) {
-            reportedUser.setBlocked(true);
+            reportedUser.setIsBlocked(true); // ✅ FIXED
         }
 
         userRepository.save(reportedUser);

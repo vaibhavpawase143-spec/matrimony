@@ -9,13 +9,13 @@ import lombok.RequiredArgsConstructor;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.List;
 
 @Component
 @RequiredArgsConstructor
@@ -23,18 +23,14 @@ public class JwtFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
 
-    // 🔥 IMPORTANT: this will now receive SecurityUserDetailsService (Admin + User)
-    private final UserDetailsService userDetailsService;
-
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
 
         String path = request.getServletPath();
 
         return path.startsWith("/api/auth/")
-                || path.startsWith("/api/admins/")
-                || path.startsWith("/api/users/login")   // ✅ FIX
-                || path.startsWith("/api/users/register")// ✅ FIX
+                || path.startsWith("/api/users/login")
+                || path.startsWith("/api/users/register")
                 || path.startsWith("/v3/api-docs")
                 || path.startsWith("/swagger-ui");
     }
@@ -47,34 +43,32 @@ public class JwtFilter extends OncePerRequestFilter {
 
         String authHeader = request.getHeader("Authorization");
 
-        // ❌ No token → skip
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
 
         try {
-            // 🔥 Extract token
             String token = authHeader.substring(7);
-
-            // 🔥 Extract username (email)
             String username = jwtUtil.extractUsername(token);
 
             if (username != null &&
                     SecurityContextHolder.getContext().getAuthentication() == null) {
 
-                // 🔥 Load from SecurityUserDetailsService (Admin + User)
-                UserDetails userDetails =
-                        userDetailsService.loadUserByUsername(username);
-
-                // 🔥 Validate token
                 if (jwtUtil.isValid(token, username)) {
+
+                    // 🔥 GET ROLES FROM JWT
+                    List<String> roles = jwtUtil.extractRoles(token);
+
+                    List<SimpleGrantedAuthority> authorities = roles.stream()
+                            .map(SimpleGrantedAuthority::new)
+                            .toList();
 
                     UsernamePasswordAuthenticationToken authToken =
                             new UsernamePasswordAuthenticationToken(
-                                    userDetails,
+                                    username,
                                     null,
-                                    userDetails.getAuthorities()
+                                    authorities
                             );
 
                     authToken.setDetails(
@@ -82,10 +76,6 @@ public class JwtFilter extends OncePerRequestFilter {
                     );
 
                     SecurityContextHolder.getContext().setAuthentication(authToken);
-
-                } else {
-                    response.sendError(401, "Invalid token");
-                    return;
                 }
             }
 

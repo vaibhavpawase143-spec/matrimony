@@ -19,7 +19,13 @@ import java.util.stream.Collectors;
 public class MotherTongueController {
 
     private final MotherTongueService motherTongueService;
-
+    @GetMapping
+    public List<MotherTongueResponseDTO> getAll() {
+        return motherTongueService.getAll()
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
     // ✅ Create
     @PostMapping
     public MotherTongueResponseDTO create(@Valid @RequestBody MotherTongueRequestDTO dto) {

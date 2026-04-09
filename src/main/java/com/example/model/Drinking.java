@@ -37,7 +37,8 @@ public class Drinking {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "admin_id")
     private Admin admin;
-
+    @Column(name = "admin_id", insertable = false, updatable = false)
+    private Long adminId;
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 

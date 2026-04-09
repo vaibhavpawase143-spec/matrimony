@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 public class ProfileResponseDTO {
 
     private Long id;
-
+    private String imageUrl;
     private Long userId;
     private String userName;
 

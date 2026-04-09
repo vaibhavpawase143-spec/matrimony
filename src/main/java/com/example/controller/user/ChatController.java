@@ -2,18 +2,18 @@ package com.example.controller.user;
 
 import com.example.dto.request.ChatMessageDTO;
 import com.example.dto.response.ApiResponse;
-import com.example.dto.response.ConversationListDTO;
 import com.example.model.Message;
 import com.example.model.User;
 import com.example.service.ChatService;
 
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.data.domain.Page;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
-import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/chat")
@@ -23,95 +23,72 @@ public class ChatController {
     private final ChatService chatService;
     private final SimpMessagingTemplate messagingTemplate;
 
-    // ================= SEND MESSAGE =================
+    // ================= 💬 SEND MESSAGE =================
     @PostMapping("/send")
-    public ApiResponse<Message> sendMessage(
-            @RequestParam Long receiverId,
-            @RequestParam String content,
+    public ApiResponse<ChatMessageDTO> sendMessage(
+            @RequestBody Map<String, Object> request,
             Principal principal
     ) {
 
         String senderEmail = principal.getName();
+
+        Long receiverId = Long.valueOf(request.get("receiverId").toString());
+        String content = request.get("content").toString();
+        Long replyToMessageId = request.get("replyToMessageId") != null
+                ? Long.valueOf(request.get("replyToMessageId").toString())
+                : null;
 
         Message message = chatService.sendMessageByEmail(
                 senderEmail,
                 receiverId,
-                content
+                content,
+                replyToMessageId
         );
 
-        String receiverEmail = message.getReceiver().getEmail();
+        ChatMessageDTO dto = mapToDTO(message);
 
-        ChatMessageDTO dto = ChatMessageDTO.builder()
-                .sender(senderEmail)
-                .receiver(receiverEmail)
-                .content(content)
-                .type("CHAT")
-                .conversationId(message.getConversation().getId())
-                .messageId(message.getId())
-                .status("SENT")
-                .build();
-
-        messagingTemplate.convertAndSendToUser(receiverEmail, "/queue/messages", dto);
-        messagingTemplate.convertAndSendToUser(senderEmail, "/queue/messages", dto);
-
-        // DELIVERED
-        ChatMessageDTO deliveredDto = ChatMessageDTO.builder()
-                .sender(receiverEmail)
-                .receiver(senderEmail)
-                .type("DELIVERED")
-                .conversationId(message.getConversation().getId())
-                .messageId(message.getId())
-                .status("DELIVERED")
-                .build();
-
-        messagingTemplate.convertAndSendToUser(senderEmail, "/queue/messages", deliveredDto);
-
-        // UNREAD
-        ChatMessageDTO unreadDto = ChatMessageDTO.builder()
-                .type("UNREAD")
-                .conversationId(message.getConversation().getId())
-                .build();
-
-        messagingTemplate.convertAndSendToUser(receiverEmail, "/queue/messages", unreadDto);
-
-        // PUSH
-        ChatMessageDTO notification = ChatMessageDTO.builder()
-                .type("NOTIFICATION")
-                .sender(senderEmail)
-                .receiver(receiverEmail)
-                .content(content)
-                .build();
-
-        messagingTemplate.convertAndSendToUser(receiverEmail, "/queue/notification", notification);
-
-        // UPDATE LIST
-        messagingTemplate.convertAndSend(
-                "/topic/conversations/" + senderEmail,
-                chatService.getUserConversationsByEmail(senderEmail)
-        );
-
-        messagingTemplate.convertAndSend(
-                "/topic/conversations/" + receiverEmail,
-                chatService.getUserConversationsByEmail(receiverEmail)
-        );
-
-        return ApiResponse.<Message>builder()
+        return ApiResponse.<ChatMessageDTO>builder()
                 .success(true)
-                .message("Message sent")
-                .data(message)
+                .message("Message sent successfully")
+                .data(dto)
                 .build();
     }
 
-    // ================= 📸 SEND MEDIA =================
-    @PostMapping("/send-media")
-    public void sendMedia(
-            @RequestParam Long receiverId,
-            @RequestParam String mediaUrl,
-            @RequestParam String mediaType,
+    // ================= 📤 FORWARD =================
+    @PostMapping("/forward")
+    public ApiResponse<ChatMessageDTO> forwardMessage(
+            @RequestBody Map<String, Object> request,
             Principal principal
     ) {
 
         String senderEmail = principal.getName();
+
+        Long messageId = Long.valueOf(request.get("messageId").toString());
+        Long receiverId = Long.valueOf(request.get("receiverId").toString());
+
+        Message message = chatService.forwardMessage(senderEmail, messageId, receiverId);
+
+        ChatMessageDTO dto = mapToDTO(message);
+
+        return ApiResponse.<ChatMessageDTO>builder()
+                .success(true)
+                .message("Message forwarded")
+                .data(dto)
+                .build();
+    }
+
+    // ================= 📸 MEDIA =================
+    @PostMapping("/send-media")
+    public ApiResponse<ChatMessageDTO> sendMedia(
+            @RequestBody Map<String, Object> request,
+            Principal principal
+    ) {
+
+        String senderEmail = principal.getName();
+
+        Long receiverId = Long.valueOf(request.get("receiverId").toString());
+        String mediaUrl = request.get("mediaUrl").toString();
+        String mediaType = request.get("mediaType").toString();
 
         Message message = chatService.sendMediaMessage(
                 senderEmail,
@@ -120,158 +97,142 @@ public class ChatController {
                 mediaType
         );
 
-        String receiverEmail = message.getReceiver().getEmail();
+        ChatMessageDTO dto = mapToDTO(message);
 
-        ChatMessageDTO dto = ChatMessageDTO.builder()
-                .type("MEDIA")
-                .sender(senderEmail)
-                .receiver(receiverEmail)
-                .conversationId(message.getConversation().getId())
-                .messageId(message.getId())
+        return ApiResponse.<ChatMessageDTO>builder()
+                .success(true)
+                .message("Media sent")
+                .data(dto)
                 .build();
-
-        messagingTemplate.convertAndSendToUser(receiverEmail, "/queue/messages", dto);
     }
 
     // ================= ❤️ REACTION =================
     @PutMapping("/reaction")
-    public void react(
-            @RequestParam Long messageId,
-            @RequestParam String reaction
-    ) {
+    public ApiResponse<String> react(@RequestBody Map<String, Object> request) {
+
+        Long messageId = Long.valueOf(request.get("messageId").toString());
+        String reaction = request.get("reaction").toString();
 
         chatService.reactToMessage(messageId, reaction);
 
-        ChatMessageDTO dto = ChatMessageDTO.builder()
-                .type("REACTION")
-                .messageId(messageId)
-                .status(reaction)
+        return ApiResponse.<String>builder()
+                .success(true)
+                .message("Reaction added")
+                .data(null)
                 .build();
-
-        messagingTemplate.convertAndSend("/topic/reaction", dto);
     }
 
-    // ================= ❌ REMOVE REACTION =================
-    @DeleteMapping("/reaction/{messageId}")
-    public void removeReaction(@PathVariable Long messageId) {
-
-        chatService.removeReaction(messageId);
-
-        ChatMessageDTO dto = ChatMessageDTO.builder()
-                .type("REMOVE_REACTION")
-                .messageId(messageId)
-                .build();
-
-        messagingTemplate.convertAndSend("/topic/reaction", dto);
-    }
-
-    // ================= 🗑 DELETE MESSAGE =================
+    // ================= 🗑 DELETE =================
     @DeleteMapping("/message/{messageId}")
-    public void deleteMessage(@PathVariable Long messageId) {
+    public ApiResponse<String> deleteMessage(@PathVariable Long messageId) {
 
         chatService.deleteMessage(messageId);
 
-        ChatMessageDTO dto = ChatMessageDTO.builder()
-                .type("DELETE")
-                .messageId(messageId)
-                .build();
-
-        messagingTemplate.convertAndSend("/topic/delete", dto);
-    }
-
-    // ================= ✍️ TYPING =================
-    @PostMapping("/typing")
-    public void typing(
-            @RequestParam Long receiverId,
-            @RequestParam String type,
-            Principal principal
-    ) {
-
-        String senderEmail = principal.getName();
-
-        User receiver = chatService.getUser(receiverId);
-
-        ChatMessageDTO dto = ChatMessageDTO.builder()
-                .sender(senderEmail)
-                .receiver(receiver.getEmail())
-                .type(type)
-                .build();
-
-        messagingTemplate.convertAndSendToUser(receiver.getEmail(), "/queue/messages", dto);
-    }
-
-    // ================= 🟢 ONLINE =================
-    @PostMapping("/online")
-    public void broadcastOnline(Principal principal) {
-
-        String email = principal.getName();
-
-        ChatMessageDTO dto = ChatMessageDTO.builder()
-                .sender(email)
-                .type("ONLINE")
-                .build();
-
-        messagingTemplate.convertAndSend("/topic/status", dto);
-    }
-
-    // ================= 📩 GET MESSAGES =================
-    @GetMapping("/messages")
-    public ApiResponse<List<Message>> getMessages(
-            @RequestParam Long otherUserId,
-            Principal principal
-    ) {
-
-        String email = principal.getName();
-
-        return ApiResponse.<List<Message>>builder()
+        return ApiResponse.<String>builder()
                 .success(true)
-                .message("Messages fetched")
-                .data(chatService.getMessagesByEmail(email, otherUserId))
-                .build();
-    }
-
-    // ================= 💬 GET CONVERSATIONS =================
-    @GetMapping("/conversations")
-    public ApiResponse<List<ConversationListDTO>> getConversations(
-            Principal principal
-    ) {
-
-        String email = principal.getName();
-
-        return ApiResponse.<List<ConversationListDTO>>builder()
-                .success(true)
-                .message("Conversations fetched")
-                .data(chatService.getUserConversationsByEmail(email))
+                .message("Message deleted")
+                .data(null)
                 .build();
     }
 
     // ================= ✔✔ SEEN =================
     @PutMapping("/seen/{conversationId}")
-    public void markAsSeen(
+    public ApiResponse<String> markAsSeen(
             @PathVariable Long conversationId,
             Principal principal
     ) {
 
         String email = principal.getName();
-
         User user = chatService.getUserByEmail(email);
 
         chatService.markAsSeen(conversationId, user.getId());
 
-        ChatMessageDTO dto = ChatMessageDTO.builder()
-                .type("SEEN")
-                .sender(email)
-                .conversationId(conversationId)
-                .status("SEEN")
+        return ApiResponse.<String>builder()
+                .success(true)
+                .message("Messages marked as seen")
+                .data(null)
                 .build();
-
-        messagingTemplate.convertAndSend("/topic/seen/" + conversationId, dto);
     }
-    @PostMapping("/block/{userId}")
-    public void blockUser(@PathVariable Long userId, Principal principal) {
 
-        User me = chatService.getUserByEmail(principal.getName());
+    // ================= 📄 PAGINATION =================
+    @GetMapping("/messages")
+    public ApiResponse<Page<ChatMessageDTO>> getMessages(
+            @RequestParam Long otherUserId,
+            @RequestParam int page,
+            @RequestParam int size,
+            Principal principal
+    ) {
 
-        chatService.blockUser(me.getId(), userId);
+        String email = principal.getName();
+
+        Page<Message> messages = chatService.getMessages(
+                chatService.getUserByEmail(email).getId(),
+                otherUserId,
+                page,
+                size
+        );
+
+        // 🔥 FIXED: dynamic mapping
+        Page<ChatMessageDTO> dtoPage = messages.map(this::mapToDTO);
+
+        return ApiResponse.<Page<ChatMessageDTO>>builder()
+                .success(true)
+                .message("Messages fetched")
+                .data(dtoPage)
+                .build();
+    }
+
+    // ================= ✏️ EDIT =================
+    @PutMapping("/edit")
+    public ApiResponse<String> editMessage(@RequestBody Map<String, Object> request) {
+
+        Long messageId = Long.valueOf(request.get("messageId").toString());
+        String content = request.get("content").toString();
+
+        chatService.editMessage(messageId, content);
+
+        return ApiResponse.<String>builder()
+                .success(true)
+                .message("Message updated")
+                .data(null)
+                .build();
+    }
+
+    // ================= 🔁 FINAL MAPPER =================
+    private ChatMessageDTO mapToDTO(Message message) {
+        return ChatMessageDTO.builder()
+                .sender(message.getSender().getEmail())
+                .receiver(message.getReceiver().getEmail())
+
+                // ✅ FIX 1: no null content
+                .content(
+                        message.getContent() != null
+                                ? message.getContent()
+                                : "[Media]"
+                )
+
+                // ✅ FIX 2: correct type
+                .type(message.getMessageType())
+
+                .conversationId(message.getConversation().getId())
+                .messageId(message.getId())
+                .status(message.getStatus().name())
+
+                .timestamp(
+                        message.getCreatedAt() != null
+                                ? message.getCreatedAt().toString()
+                                : null
+                )
+
+                .replyToMessageId(
+                        message.getReplyTo() != null ? message.getReplyTo().getId() : null
+                )
+                .replyToContent(
+                        message.getReplyTo() != null ? message.getReplyTo().getContent() : null
+                )
+
+                .mediaUrl(message.getMediaUrl())
+                .mediaType(message.getMediaType())
+                .build();
     }
 }

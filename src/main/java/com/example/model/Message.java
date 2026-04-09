@@ -40,7 +40,9 @@ public class Message {
 
     // 🔥 NEW: REACTION
     private String reaction;
-
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "reply_to_id")
+    private Message replyTo;
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
@@ -94,4 +96,13 @@ public class Message {
             return conversation.getUser1();
         }
     }
+    public Message getReplyTo() {
+        return replyTo;
+    }
+
+    public void setReplyTo(Message replyTo) {
+        this.replyTo = replyTo;
+    }
+
+
 }

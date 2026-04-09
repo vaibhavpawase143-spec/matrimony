@@ -1,5 +1,6 @@
 package com.example.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
@@ -17,12 +18,13 @@ public class Smoking {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Example: Non-Smoker, Occasional, Regular
     @Column(nullable = false, length = 50)
     private String value;
 
+    // ✅ SAFE LAZY
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "admin_id")
+    @JoinColumn(name = "admin_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Admin admin;
 
     @Column(name = "is_active", nullable = false)
@@ -36,7 +38,7 @@ public class Smoking {
 
     public Smoking() {}
 
-    // 🔥 Lifecycle hooks (fixed)
+    // 🔥 Lifecycle
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();

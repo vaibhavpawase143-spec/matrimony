@@ -147,9 +147,7 @@ public class DietController {
         dto.setCreatedAt(diet.getCreatedAt());
         dto.setUpdatedAt(diet.getUpdatedAt());
 
-        if (diet.getAdmin() != null) {
-            dto.setAdminId(diet.getAdmin().getId());
-        }
+        dto.setAdminId(diet.getAdminId());
 
         return dto;
     }

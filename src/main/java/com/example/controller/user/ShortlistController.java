@@ -1,15 +1,18 @@
 package com.example.controller.user;
 
+import com.example.dto.response.ShortlistResponseDTO;
 import com.example.model.Shortlist;
 import com.example.model.User;
 import com.example.model.Profile;
 import com.example.repository.UserRepository;
 import com.example.repository.ProfileRepository;
 import com.example.service.ShortlistService;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/shortlists")
@@ -27,28 +30,38 @@ public class ShortlistController {
         this.profileRepository = profileRepository;
     }
 
+    // 🔥 COMMON MAPPER METHOD
+    private ShortlistResponseDTO mapToDTO(Shortlist s) {
+        return ShortlistResponseDTO.builder()
+                .id(s.getId())
+                .userId(s.getUser().getId())
+                .userName(s.getUser().getEmail()) // adjust if field name differs
+                .profileId(s.getProfile().getId())
+                .isActive(s.getIsActive())
+                .createdAt(s.getCreatedAt())
+                .updatedAt(s.getUpdatedAt())
+                .build();
+    }
+
     // ✅ Add to shortlist
     @PostMapping("/user/{userId}/profile/{profileId}")
-    public ResponseEntity<Shortlist> addToShortlist(
+    public ResponseEntity<ShortlistResponseDTO> addToShortlist(
             @PathVariable Long userId,
             @PathVariable Long profileId) {
 
-        // 🔥 Fetch User
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // 🔥 Fetch Profile
         Profile profile = profileRepository.findById(profileId)
                 .orElseThrow(() -> new RuntimeException("Profile not found"));
 
-        // 🔥 Create Shortlist object
         Shortlist shortlist = new Shortlist();
         shortlist.setUser(user);
         shortlist.setProfile(profile);
 
         Shortlist saved = shortlistService.addToShortlist(shortlist);
 
-        return ResponseEntity.ok(saved);
+        return ResponseEntity.ok(mapToDTO(saved));
     }
 
     // ✅ Remove from shortlist
@@ -63,10 +76,15 @@ public class ShortlistController {
 
     // ✅ Get user's shortlist
     @GetMapping("/user/{userId}")
-    public ResponseEntity<List<Shortlist>> getUserShortlist(
+    public ResponseEntity<List<ShortlistResponseDTO>> getUserShortlist(
             @PathVariable Long userId) {
 
-        return ResponseEntity.ok(shortlistService.getByUser(userId));
+        List<ShortlistResponseDTO> list = shortlistService.getByUser(userId)
+                .stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(list);
     }
 
     // ✅ Check if shortlisted
@@ -82,17 +100,28 @@ public class ShortlistController {
         return ResponseEntity.ok(exists);
     }
 
-    // ✅ Get who shortlisted a profile (optional but useful)
+    // ✅ Get who shortlisted a profile
     @GetMapping("/profile/{profileId}")
-    public ResponseEntity<List<Shortlist>> getByProfile(
+    public ResponseEntity<List<ShortlistResponseDTO>> getByProfile(
             @PathVariable Long profileId) {
 
-        return ResponseEntity.ok(shortlistService.getByProfile(profileId));
+        List<ShortlistResponseDTO> list = shortlistService.getByProfile(profileId)
+                .stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(list);
     }
 
-    // ✅ Get all (admin/debug)
+    // ✅ Get all
     @GetMapping
-    public ResponseEntity<List<Shortlist>> getAll() {
-        return ResponseEntity.ok(shortlistService.getAll());
+    public ResponseEntity<List<ShortlistResponseDTO>> getAll() {
+
+        List<ShortlistResponseDTO> list = shortlistService.getAll()
+                .stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(list);
     }
 }

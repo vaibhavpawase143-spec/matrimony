@@ -4,7 +4,6 @@ import com.example.dto.response.UserResponseDTO;
 import com.example.model.User;
 
 import java.util.Collections;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 public class UserMapper {
@@ -24,11 +23,9 @@ public class UserMapper {
                 .phone(user.getPhone())
                 .isActive(user.getIsActive())
 
-                // ✅ FIXED
                 .emailVerified(user.getEmailVerifiedAt() != null)
                 .phoneVerified(user.getPhoneVerifiedAt() != null)
 
-                // ✅ FIXED
                 .roles(
                         user.getRoles() == null
                                 ? Collections.emptySet()
@@ -38,7 +35,6 @@ public class UserMapper {
                                 .collect(Collectors.toSet())
                 )
 
-                // ✅ FIXED
                 .createdAt(user.getCreatedAt())
                 .updatedAt(user.getUpdatedAt())
 

@@ -1,5 +1,6 @@
 package com.example.model;
-import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
@@ -20,9 +21,10 @@ public class PartnerPreference {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // 🔥 One preference per user
+    // 🔥 FIX HERE (IMPORTANT)
     @OneToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private User user;
 
     private Integer minAge;
@@ -33,17 +35,20 @@ public class PartnerPreference {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "religion_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Religion religion;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "caste_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Caste caste;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "city_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private City city;
 
-    // 🔥 Audit fields (IMPORTANT)
+    // 🔥 Audit fields
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 
@@ -73,89 +78,47 @@ public class PartnerPreference {
 
     // ===== Getters =====
 
-    public Long getId() {
-        return id;
-    }
+    public Long getId() { return id; }
 
-    public User getUser() {
-        return user;
-    }
+    public User getUser() { return user; }
 
-    public Integer getMinAge() {
-        return minAge;
-    }
+    public Integer getMinAge() { return minAge; }
 
-    public Integer getMaxAge() {
-        return maxAge;
-    }
+    public Integer getMaxAge() { return maxAge; }
 
-    public Double getMinHeight() {
-        return minHeight;
-    }
+    public Double getMinHeight() { return minHeight; }
 
-    public Double getMaxHeight() {
-        return maxHeight;
-    }
+    public Double getMaxHeight() { return maxHeight; }
 
-    public Religion getReligion() {
-        return religion;
-    }
+    public Religion getReligion() { return religion; }
 
-    public Caste getCaste() {
-        return caste;
-    }
+    public Caste getCaste() { return caste; }
 
-    public City getCity() {
-        return city;
-    }
+    public City getCity() { return city; }
 
-    public Boolean getIsActive() {
-        return isActive;
-    }
+    public Boolean getIsActive() { return isActive; }
 
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
+    public LocalDateTime getCreatedAt() { return createdAt; }
 
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
 
     // ===== Setters =====
 
-    public void setUser(User user) {
-        this.user = user;
-    }
+    public void setUser(User user) { this.user = user; }
 
-    public void setMinAge(Integer minAge) {
-        this.minAge = minAge;
-    }
+    public void setMinAge(Integer minAge) { this.minAge = minAge; }
 
-    public void setMaxAge(Integer maxAge) {
-        this.maxAge = maxAge;
-    }
+    public void setMaxAge(Integer maxAge) { this.maxAge = maxAge; }
 
-    public void setMinHeight(Double minHeight) {
-        this.minHeight = minHeight;
-    }
+    public void setMinHeight(Double minHeight) { this.minHeight = minHeight; }
 
-    public void setMaxHeight(Double maxHeight) {
-        this.maxHeight = maxHeight;
-    }
+    public void setMaxHeight(Double maxHeight) { this.maxHeight = maxHeight; }
 
-    public void setReligion(Religion religion) {
-        this.religion = religion;
-    }
+    public void setReligion(Religion religion) { this.religion = religion; }
 
-    public void setCaste(Caste caste) {
-        this.caste = caste;
-    }
+    public void setCaste(Caste caste) { this.caste = caste; }
 
-    public void setCity(City city) {
-        this.city = city;
-    }
+    public void setCity(City city) { this.city = city; }
 
-    public void setIsActive(Boolean isActive) {
-        this.isActive = isActive;
-    }
+    public void setIsActive(Boolean isActive) { this.isActive = isActive; }
 }

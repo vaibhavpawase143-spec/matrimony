@@ -30,6 +30,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
+
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
@@ -155,6 +156,7 @@ public class UserServiceImpl implements UserService {
     }
 
     // ================= UPDATE =================
+
     @Override
     public User update(Long id, User updatedUser) {
 
@@ -163,14 +165,19 @@ public class UserServiceImpl implements UserService {
 
         Long adminId = getCurrentAdminId();
 
-        existing.setFirstName(updatedUser.getFirstName());
-        existing.setLastName(updatedUser.getLastName());
-        existing.setPhone(updatedUser.getPhone());
+        if (updatedUser.getFirstName() != null)
+            existing.setFirstName(updatedUser.getFirstName());
+
+        if (updatedUser.getLastName() != null)
+            existing.setLastName(updatedUser.getLastName());
+
+        if (updatedUser.getPhone() != null)
+            existing.setPhone(updatedUser.getPhone());
+
         existing.setUpdatedBy(adminId);
 
         return userRepository.save(existing);
     }
-
     // ================= DELETE =================
     @Override
     public void deleteUser(Long id) {

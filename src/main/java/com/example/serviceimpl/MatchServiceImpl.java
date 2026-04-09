@@ -13,12 +13,14 @@ import lombok.RequiredArgsConstructor;
 
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional // 🔥 VERY IMPORTANT (fixes Lazy error)
 public class MatchServiceImpl implements MatchService {
 
     private final MatchRepository matchRepository;
@@ -74,7 +76,7 @@ public class MatchServiceImpl implements MatchService {
 
         if (!exists) {
             Match match = new Match();
-            match.setUsers(smaller, larger); // IMPORTANT
+            match.setUsers(smaller, larger);
             matchRepository.save(match);
         }
     }
@@ -138,6 +140,7 @@ public class MatchServiceImpl implements MatchService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         List<Match> matches = matchRepository.findByUser1OrUser2(user, user);
+
         return matches.stream()
                 .map(match -> match.getUser1().equals(user)
                         ? match.getUser2()
@@ -158,7 +161,7 @@ public class MatchServiceImpl implements MatchService {
 
     private MatchResponseDTO mapUserToDTO(User user) {
 
-        Profile profile = user.getProfile();
+        Profile profile = user.getProfile(); // safe because of @Transactional
 
         return MatchResponseDTO.builder()
                 .userId(user.getId())
