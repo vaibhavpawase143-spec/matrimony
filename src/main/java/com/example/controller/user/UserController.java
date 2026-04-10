@@ -24,7 +24,7 @@ public class UserController {
 
     private final UserService service;
 
-    // ================= REGISTER (PUBLIC) =================
+    // ================= REGISTER =================
     @PostMapping("/register")
     public ApiResponse<UserResponseDTO> register(@RequestBody UserRegisterRequestDTO dto) {
 
@@ -40,7 +40,7 @@ public class UserController {
                 .build();
     }
 
-    // ================= LOGIN (PUBLIC 🔥 FIXED) =================
+    // ================= LOGIN =================
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request) {
 
@@ -66,6 +66,19 @@ public class UserController {
                 .success(true)
                 .message("User created successfully")
                 .data(response)
+                .build();
+    }
+
+    // ================= SEARCH (🔥 FIXED POSITION) =================
+    @GetMapping("/search")
+    public ApiResponse<List<UserResponseDTO>> search(@RequestParam String keyword) {
+
+        List<UserResponseDTO> users = service.search(keyword);
+
+        return ApiResponse.<List<UserResponseDTO>>builder()
+                .success(true)
+                .message("Search result")
+                .data(users)
                 .build();
     }
 
@@ -114,22 +127,6 @@ public class UserController {
                 .build();
     }
 
-    // ================= VERIFY EMAIL =================
-    @PutMapping("/{id}/verify-email")
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN') or @userSecurity.isOwner(#id, authentication.name)")
-    public ApiResponse<String> verifyEmail(@PathVariable Long id) {
-
-        User user = service.update(id, new User());
-        user.setEmailVerifiedAt(LocalDateTime.now());
-        service.update(id, user);
-
-        return ApiResponse.<String>builder()
-                .success(true)
-                .message("Email verified successfully")
-                .data(null)
-                .build();
-    }
-
     // ================= DELETE =================
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN') or @userSecurity.isOwner(#id, authentication.name)")
@@ -171,6 +168,7 @@ public class UserController {
                 .build();
     }
 
+    // ================= USER STATUS =================
     @GetMapping("/status/{email}")
     public ApiResponse<UserResponseDTO> getUserStatus(@PathVariable String email) {
 
