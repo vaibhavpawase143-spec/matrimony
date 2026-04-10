@@ -5,21 +5,23 @@ import com.example.repository.UserBlockRepository;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Transactional   // 🔥 REQUIRED for delete() to work
 public class UserBlockService {
 
     private final UserBlockRepository userBlockRepository;
 
-    // ✅ BLOCK
+    // ✅ BLOCK USER
     public void blockUser(Long blockerId, Long blockedId) {
 
         if (blockerId.equals(blockedId)) {
             throw new RuntimeException("You cannot block yourself");
         }
 
-        // Already blocked
+        // Already blocked → ignore
         if (userBlockRepository.existsByBlockerIdAndBlockedId(blockerId, blockedId)) {
             return;
         }
@@ -31,13 +33,20 @@ public class UserBlockService {
         userBlockRepository.save(block);
     }
 
-    // ✅ UNBLOCK
+    // ✅ UNBLOCK USER (FIXED 🔥)
     public void unblockUser(Long blockerId, Long blockedId) {
+
+        boolean exists = userBlockRepository
+                .existsByBlockerIdAndBlockedId(blockerId, blockedId);
+
+        if (!exists) {
+            throw new RuntimeException("Block record not found");
+        }
 
         userBlockRepository.deleteByBlockerIdAndBlockedId(blockerId, blockedId);
     }
 
-    // 🔥 MOST IMPORTANT
+    // ✅ CHECK BLOCK (BOTH SIDES)
     public boolean isBlocked(Long user1, Long user2) {
 
         return userBlockRepository.existsByBlockerIdAndBlockedId(user1, user2)

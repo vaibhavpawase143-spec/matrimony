@@ -32,7 +32,7 @@ public interface UserService {
     void deactivate(Long id);
 
     // ================= SEARCH =================
-    List<User> search(String keyword);
+    List<UserResponseDTO> search(String keyword);
 
     // ================= PAGINATION =================
     PageResponse<UserResponseDTO> getAllUsers(

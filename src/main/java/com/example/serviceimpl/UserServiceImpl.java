@@ -12,6 +12,7 @@ import com.example.repository.AdminRepository;
 import com.example.repository.RoleRepository;
 import com.example.repository.UserRepository;
 import com.example.security.JwtUtil;
+import com.example.service.UserBlockService;
 import com.example.service.UserService;
 import com.example.specification.UserSpecification;
 
@@ -23,6 +24,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -33,7 +35,7 @@ import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
-
+    private final UserBlockService userBlockService;
     private final UserRepository userRepository;
     private final AdminRepository adminRepository;
     private final RoleRepository roleRepository;
@@ -151,11 +153,22 @@ public class UserServiceImpl implements UserService {
 
     // ================= SEARCH =================
     @Override
-    public List<User> search(String keyword) {
-        return userRepository.findByEmailContainingIgnoreCase(keyword);
-    }
+    @Transactional
+    public List<UserResponseDTO> search(String keyword) {
 
-    // ================= UPDATE =================
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        User currentUser = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        List<User> users = userRepository.findByEmailContainingIgnoreCase(keyword);
+
+        // 🔥 FILTER + MAP INSIDE TRANSACTION
+        return users.stream()
+                .filter(u -> !userBlockService.isBlocked(currentUser.getId(), u.getId()))
+                .map(UserMapper::toDTO)   // ✅ MOVE HERE
+                .toList();
+    }// ================= UPDATE =================
 
     @Override
     public User update(Long id, User updatedUser) {
