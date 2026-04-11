@@ -4,6 +4,7 @@ import com.example.service.EmailService;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -44,6 +45,7 @@ public class TestController {
 
         return "Email sent successfully ✅";
     }
+
 
     // ================= 🔥 WEBSOCKET TEST =================
     @GetMapping("/api/public/ws-test")

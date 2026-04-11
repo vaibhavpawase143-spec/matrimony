@@ -83,6 +83,7 @@ public class SecurityConfig {
                         // 👤 USER FEATURES (LOGIN REQUIRED)
                         .requestMatchers("/api/chat/**").authenticated()
                         .requestMatchers("/api/user/**").authenticated()
+                        .requestMatchers("/test", "/static/uploads/**", "/css/**", "/js/**").permitAll()
 
                         // 🔐 EVERYTHING ELSE
                         .anyRequest().authenticated()

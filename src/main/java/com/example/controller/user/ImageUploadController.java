@@ -15,7 +15,7 @@ import java.nio.file.Files;
 @RequestMapping("/api/image")
 public class ImageUploadController {
 
-    private static final String UPLOAD_DIR = System.getProperty("user.dir") + "/uploads/";
+    private static final String UPLOAD_DIR = System.getProperty("user.dir") + "/static/uploads/";
     private static final long MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
     // ===================== UPLOAD =====================
