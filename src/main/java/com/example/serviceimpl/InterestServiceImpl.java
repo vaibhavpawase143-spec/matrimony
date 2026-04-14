@@ -4,11 +4,13 @@ import com.example.dto.request.InterestRequestDTO;
 import com.example.dto.response.InterestResponseDTO;
 import com.example.model.Interest;
 import com.example.model.Match;
+import com.example.model.NotificationType;
 import com.example.model.User;
 import com.example.repository.InterestRepository;
 import com.example.repository.MatchRepository;
 import com.example.repository.UserRepository;
 import com.example.service.InterestService;
+import com.example.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +25,7 @@ public class InterestServiceImpl implements InterestService {
     private final InterestRepository interestRepository;
     private final UserRepository userRepository;
     private final MatchRepository matchRepository;
+    private final NotificationService notificationService;
 
     // ✅ Send Interest
     @Override
@@ -67,7 +70,17 @@ public class InterestServiceImpl implements InterestService {
             if (existing.getStatus().equalsIgnoreCase("REJECTED")) {
                 existing.setStatus("PENDING");
                 existing.setIsActive(true);
-                return mapToDTO(existing);
+
+                Interest updated = interestRepository.save(existing);
+
+                // 🔥 NOTIFICATION (REQUEST AGAIN)
+                notificationService.create(
+                        senderId,
+                        receiverId,
+                        NotificationType.REQUEST
+                );
+
+                return mapToDTO(updated);
             }
         }
 
@@ -77,7 +90,16 @@ public class InterestServiceImpl implements InterestService {
         interest.setStatus("PENDING");
         interest.setIsActive(true);
 
-        return mapToDTO(interestRepository.save(interest));
+        Interest saved = interestRepository.save(interest);
+
+        // 🔥 NOTIFICATION (REQUEST)
+        notificationService.create(
+                senderId,
+                receiverId,
+                NotificationType.REQUEST
+        );
+
+        return mapToDTO(saved);
     }
 
     // 🔄 Accept / Reject + Match
@@ -91,7 +113,30 @@ public class InterestServiceImpl implements InterestService {
         existing.setStatus(status);
         existing.setIsActive(false);
 
+        Interest updated = interestRepository.save(existing);
+
+        // ✅ ACCEPT LOGIC ONLY
         if (status.equalsIgnoreCase("ACCEPTED")) {
+
+            // 🔥 NOTIFICATION (ACCEPT)
+            notificationService.create(
+                    existing.getReceiver().getId(),
+                    existing.getSender().getId(),
+                    NotificationType.ACCEPT
+            );
+
+            // 🔥 MATCH NOTIFICATION (BOTH USERS)
+            notificationService.create(
+                    existing.getSender().getId(),
+                    existing.getReceiver().getId(),
+                    NotificationType.MATCH
+            );
+
+            notificationService.create(
+                    existing.getReceiver().getId(),
+                    existing.getSender().getId(),
+                    NotificationType.MATCH
+            );
 
             User sender = existing.getSender();
             User receiver = existing.getReceiver();
@@ -110,7 +155,7 @@ public class InterestServiceImpl implements InterestService {
             }
         }
 
-        return mapToDTO(existing);
+        return mapToDTO(updated);
     }
 
     // ❌ Delete

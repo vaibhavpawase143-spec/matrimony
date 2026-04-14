@@ -1,13 +1,12 @@
 package com.example.config;
 
-import com.example.service.OnlineUserService;
 import com.example.repository.UserRepository;
-
+import com.example.service.OnlineUserService;
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
-import org.springframework.messaging.simp.stomp.*;
+import org.springframework.messaging.simp.stomp.StompCommand;
+import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.messaging.support.MessageHeaderAccessor;
 import org.springframework.stereotype.Component;
@@ -34,59 +33,27 @@ public class WebSocketUserInterceptor implements ChannelInterceptor {
 
         if (command == null) return message;
 
-        // ================= CONNECT =================
+        Principal user = accessor.getUser();
+        if (user == null) return message;
+
+        String email = user.getName();
+
         if (StompCommand.CONNECT.equals(command)) {
 
-            String username = getUsernameFromSession(accessor);
+            onlineUserService.userOnline(email);
+            userRepository.updateUserStatus(email, true, null);
 
-            if (username != null) {
-
-                // Set Principal for further use
-                accessor.setUser(new StompPrincipal(username));
-
-                // Mark online
-                onlineUserService.userOnline(username);
-
-                // Update DB
-                userRepository.updateUserStatus(username, true, null);
-
-                System.out.println("🟢 USER CONNECTED: " + username);
-            }
+            System.out.println("🟢 CONNECTED: " + email);
         }
 
-        // ================= DISCONNECT =================
         if (StompCommand.DISCONNECT.equals(command)) {
 
-            Principal user = accessor.getUser();
+            onlineUserService.userOffline(email);
+            userRepository.updateUserStatus(email, false, LocalDateTime.now());
 
-            if (user != null) {
-
-                String username = user.getName();
-
-                // Mark offline
-                onlineUserService.userOffline(username);
-
-                // Update DB with last seen
-                userRepository.updateUserStatus(
-                        username,
-                        false,
-                        LocalDateTime.now()
-                );
-
-                System.out.println("🔴 USER DISCONNECTED: " + username);
-            }
+            System.out.println("🔴 DISCONNECTED: " + email);
         }
 
         return message;
-    }
-
-    // ================= HELPER =================
-    private String getUsernameFromSession(StompHeaderAccessor accessor) {
-
-        Object usernameObj = accessor.getSessionAttributes() != null
-                ? accessor.getSessionAttributes().get("username")
-                : null;
-
-        return usernameObj != null ? usernameObj.toString() : null;
     }
 }

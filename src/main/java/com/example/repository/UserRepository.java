@@ -53,21 +53,50 @@ public interface UserRepository
 
     List<User> findByEmailContainingIgnoreCase(String keyword);
 
-    // ================= ROLE FETCH =================
+    // ================= 🔥 ROLE FETCH (VERY IMPORTANT) =================
 
-    @Query("SELECT u FROM User u LEFT JOIN FETCH u.roles WHERE LOWER(u.email) = LOWER(:email)")
+    // ✅ FIXED: ensures roles always load for JWT
+    @Query("""
+        SELECT u FROM User u
+        LEFT JOIN FETCH u.roles
+        WHERE LOWER(u.email) = LOWER(:email)
+    """)
     Optional<User> findByEmailWithRoles(@Param("email") String email);
 
-    @Query("SELECT DISTINCT u FROM User u LEFT JOIN FETCH u.roles")
+    // ✅ FIXED: prevents duplicate users
+    @Query("""
+        SELECT DISTINCT u FROM User u
+        LEFT JOIN FETCH u.roles
+    """)
     List<User> findAllWithRoles();
 
-    @Query("SELECT u FROM User u LEFT JOIN FETCH u.roles WHERE u.id = :id")
+    // ✅ FIXED: fetch roles with user
+    @Query("""
+        SELECT u FROM User u
+        LEFT JOIN FETCH u.roles
+        WHERE u.id = :id
+    """)
     Optional<User> findByIdWithRoles(@Param("id") Long id);
 
-    @Query("SELECT DISTINCT u FROM User u LEFT JOIN FETCH u.roles WHERE u.isActive = true")
+    // ✅ FIXED: active users with roles
+    @Query("""
+        SELECT DISTINCT u FROM User u
+        LEFT JOIN FETCH u.roles
+        WHERE u.isActive = true
+    """)
     List<User> findActiveUsersWithRoles();
 
-    // ================= ONLINE STATUS (🔥 IMPORTANT) =================
+    // ✅ BEST PRACTICE: search WITH roles (use this in service 🔥)
+    @Query("""
+        SELECT DISTINCT u FROM User u
+        LEFT JOIN FETCH u.roles
+        WHERE LOWER(u.firstName) LIKE LOWER(CONCAT('%', :keyword, '%'))
+           OR LOWER(u.lastName) LIKE LOWER(CONCAT('%', :keyword, '%'))
+           OR LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%'))
+    """)
+    List<User> searchWithRoles(@Param("keyword") String keyword);
+
+    // ================= ONLINE STATUS =================
 
     @Transactional
     @Modifying(clearAutomatically = true)
@@ -83,7 +112,7 @@ public interface UserRepository
             @Param("lastSeen") LocalDateTime lastSeen
     );
 
-    // ================= MATCH / RECOMMENDATION =================
+    // ================= MATCH =================
 
     @Query("""
         SELECT u FROM User u
@@ -95,4 +124,13 @@ public interface UserRepository
             @Param("userId") Long userId,
             Pageable pageable
     );
+    @Query("""
+    SELECT u FROM User u
+    LEFT JOIN FETCH u.profile p
+    LEFT JOIN FETCH p.city
+    LEFT JOIN FETCH p.religion
+    LEFT JOIN FETCH p.caste
+    WHERE u.id = :id
+""")
+    Optional<User> findByIdWithProfile(@Param("id") Long id);
 }

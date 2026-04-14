@@ -7,12 +7,15 @@ import java.util.List;
 
 public interface AdminService {
 
-    // ================= REGISTER =================
     Admin register(Admin admin);
+
+    String blockUser(Long userId);
+
+    // ✅ FIXED
+    String unblockUser(Long userId);
 
     Admin create(Admin admin);
 
-    // 🔥 RETURN DTO
     AdminResponseDTO getById(Long id);
 
     List<AdminResponseDTO> getAll();
