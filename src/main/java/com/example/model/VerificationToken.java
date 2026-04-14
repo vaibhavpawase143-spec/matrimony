@@ -14,15 +14,18 @@ public class VerificationToken {
     @Column(nullable = false, unique = true)
     private String token;
 
-    // 🔥 ADD THIS FIELD (IMPORTANT)
     @Column(nullable = false)
     private String email;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    private Boolean verified = false;
+
     private LocalDateTime expiryDate;
+
+    private LocalDateTime createdAt = LocalDateTime.now();
 
     // ================= GETTERS & SETTERS =================
 
@@ -54,12 +57,23 @@ public class VerificationToken {
         this.expiryDate = expiryDate;
     }
 
-    // 🔥 NEW METHODS
     public String getEmail() {
         return email;
     }
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public Boolean getVerified() {
+        return verified;
+    }
+
+    public void setVerified(Boolean verified) {
+        this.verified = verified;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
     }
 }

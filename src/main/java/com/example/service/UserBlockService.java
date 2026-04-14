@@ -7,25 +7,39 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
+
 @Service
 @RequiredArgsConstructor
-@Transactional   // 🔥 REQUIRED for delete() to work
+@Transactional
 public class UserBlockService {
 
     private final UserBlockRepository userBlockRepository;
 
-    // ✅ BLOCK USER
+    // ✅ BLOCK USER (soft + reactivation)
     public void blockUser(Long blockerId, Long blockedId) {
 
         if (blockerId.equals(blockedId)) {
             throw new RuntimeException("You cannot block yourself");
         }
 
-        // Already blocked → ignore
-        if (userBlockRepository.existsByBlockerIdAndBlockedId(blockerId, blockedId)) {
+        Optional<UserBlock> existing =
+                userBlockRepository.findByBlockerIdAndBlockedId(blockerId, blockedId);
+
+        if (existing.isPresent()) {
+            UserBlock block = existing.get();
+
+            if (Boolean.TRUE.equals(block.getIsActive())) {
+                throw new RuntimeException("User already blocked");
+            }
+
+            // 🔥 Reactivate
+            block.setIsActive(true);
+            userBlockRepository.save(block);
             return;
         }
 
+        // ✅ New block
         UserBlock block = new UserBlock();
         block.setBlockerId(blockerId);
         block.setBlockedId(blockedId);
@@ -33,23 +47,23 @@ public class UserBlockService {
         userBlockRepository.save(block);
     }
 
-    // ✅ UNBLOCK USER (FIXED 🔥)
+    // ✅ UNBLOCK USER (soft delete)
     public void unblockUser(Long blockerId, Long blockedId) {
 
-        boolean exists = userBlockRepository
-                .existsByBlockerIdAndBlockedId(blockerId, blockedId);
+        UserBlock block = userBlockRepository
+                .findByBlockerIdAndBlockedId(blockerId, blockedId)
+                .orElseThrow(() -> new RuntimeException("Block record not found"));
 
-        if (!exists) {
-            throw new RuntimeException("Block record not found");
-        }
-
-        userBlockRepository.deleteByBlockerIdAndBlockedId(blockerId, blockedId);
+        block.setIsActive(false);
+        userBlockRepository.save(block);
     }
 
     // ✅ CHECK BLOCK (BOTH SIDES)
     public boolean isBlocked(Long user1, Long user2) {
 
-        return userBlockRepository.existsByBlockerIdAndBlockedId(user1, user2)
-                || userBlockRepository.existsByBlockerIdAndBlockedId(user2, user1);
+        return userBlockRepository
+                .existsByBlockerIdAndBlockedIdAndIsActiveTrue(user1, user2)
+                || userBlockRepository
+                .existsByBlockerIdAndBlockedIdAndIsActiveTrue(user2, user1);
     }
 }

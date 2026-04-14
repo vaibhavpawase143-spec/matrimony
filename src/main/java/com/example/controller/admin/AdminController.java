@@ -9,10 +9,9 @@ import com.example.model.RefreshToken;
 import com.example.security.JwtUtil;
 import com.example.service.AdminService;
 import com.example.service.RefreshTokenService;
-
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -179,5 +178,16 @@ public class AdminController {
                 .getContext()
                 .getAuthentication()
                 .getName();
+    }
+    @PutMapping("/block/{userId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<String> blockUser(@PathVariable Long userId) {
+        return ResponseEntity.ok(adminService.blockUser(userId));
+    }
+
+    @PutMapping("/unblock/{userId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<String> unblockUser(@PathVariable Long userId) {
+        return ResponseEntity.ok(adminService.unblockUser(userId));
     }
 }

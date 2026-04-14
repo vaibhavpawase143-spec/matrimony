@@ -8,6 +8,7 @@ import com.example.repository.MatchRepository;
 import com.example.repository.SwipeRepository;
 import com.example.repository.UserRepository;
 import com.example.service.MatchService;
+import com.example.service.NotificationService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -15,17 +16,19 @@ import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Transactional // 🔥 VERY IMPORTANT (fixes Lazy error)
+@Transactional
 public class MatchServiceImpl implements MatchService {
 
     private final MatchRepository matchRepository;
     private final SwipeRepository swipeRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     // ================= SWIPE =================
 
@@ -48,36 +51,68 @@ public class MatchServiceImpl implements MatchService {
 
         swipe.setFromUser(fromUser);
         swipe.setToUser(toUser);
-        swipe.setType(type);
 
+        if (type == SwipeType.PASS) {
+            swipe.setType(SwipeType.PASS);
+            swipeRepository.save(swipe);
+            return;
+        }
+
+        swipe.setType(SwipeType.LIKE);
         swipeRepository.save(swipe);
 
-        if (type == SwipeType.LIKE) {
+        notificationService.create(fromUserId, toUserId, NotificationType.REQUEST);
 
-            Optional<Swipe> reverseSwipe =
-                    swipeRepository.findByFromUserAndToUser(toUser, fromUser);
+        Optional<Swipe> reverseSwipe =
+                swipeRepository.findByFromUserAndToUser(toUser, fromUser);
 
-            if (reverseSwipe.isPresent() &&
-                    reverseSwipe.get().getType() == SwipeType.LIKE) {
+        if (reverseSwipe.isPresent() &&
+                reverseSwipe.get().getType() == SwipeType.LIKE) {
 
-                createMatchIfNotExists(fromUser, toUser);
-            }
+            createMatchIfNotExists(fromUser, toUser);
+
+            notificationService.create(fromUserId, toUserId, NotificationType.MATCH);
+            notificationService.create(toUserId, fromUserId, NotificationType.MATCH);
         }
+    }
+
+    @Override
+    public List<User> getMyMatches(Long userId) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        List<Match> matches = matchRepository.findByUser1OrUser2(user, user);
+
+        return matches.stream()
+                .map(match -> {
+                    if (match.getUser1().getId().equals(userId)) {
+                        return match.getUser2();
+                    } else {
+                        return match.getUser1();
+                    }
+                })
+                .collect(Collectors.toList());
     }
 
     // ================= MATCH CREATION =================
 
     private void createMatchIfNotExists(User u1, User u2) {
 
-        User smaller = u1.getId() < u2.getId() ? u1 : u2;
-        User larger = u1.getId() < u2.getId() ? u2 : u1;
+        Long smaller = Math.min(u1.getId(), u2.getId());
+        Long larger = Math.max(u1.getId(), u2.getId());
 
-        boolean exists = matchRepository.existsByUser1AndUser2(smaller, larger);
+        boolean exists = matchRepository.existsByUser1_IdAndUser2_Id(smaller, larger);
 
         if (!exists) {
             Match match = new Match();
-            match.setUsers(smaller, larger);
-            matchRepository.save(match);
+            match.setUsers(u1, u2);
+
+            try {
+                matchRepository.save(match);
+            } catch (Exception e) {
+                System.out.println("Duplicate match avoided");
+            }
         }
     }
 
@@ -86,16 +121,16 @@ public class MatchServiceImpl implements MatchService {
     @Override
     public PageResponse<MatchResponseDTO> getMatches(Long userId, int page, int size) {
 
-        User user = userRepository.findById(userId)
+        User currentUser = userRepository.findByIdWithProfile(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
 
-        Page<Match> matchPage = matchRepository.findByUser1OrUser2(user, user, pageable);
+        Page<Match> matchPage = matchRepository.findByUser1OrUser2(currentUser, currentUser, pageable);
 
         List<MatchResponseDTO> content = matchPage.getContent()
                 .stream()
-                .map(match -> mapToDTO(match, user))
+                .map(match -> mapToDTO(match, currentUser))
                 .collect(Collectors.toList());
 
         return new PageResponse<>(
@@ -113,10 +148,18 @@ public class MatchServiceImpl implements MatchService {
     @Override
     public List<MatchResponseDTO> getTopMatches(Long userId, int limit) {
 
+        User currentUser = userRepository.findByIdWithProfile(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
         List<User> users = userRepository.findTopMatches(userId, PageRequest.of(0, limit));
 
         return users.stream()
-                .map(this::mapUserToDTO)
+                .map(u -> userRepository.findByIdWithProfile(u.getId()).orElse(u)) // 🔥 FIX
+                .sorted((u1, u2) ->
+                        calculateMatchScore(currentUser, u2) -
+                                calculateMatchScore(currentUser, u1)
+                )
+                .map(user -> mapUserToDTO(user, currentUser))
                 .collect(Collectors.toList());
     }
 
@@ -125,27 +168,78 @@ public class MatchServiceImpl implements MatchService {
     @Override
     public MatchExplanationResponseDTO getMatchExplanation(Long userId, Long profileId) {
 
+        User u1 = userRepository.findByIdWithProfile(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        User u2 = userRepository.findByIdWithProfile(profileId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        int score = calculateMatchScore(u1, u2);
+
         return MatchExplanationResponseDTO.builder()
-                .reason("You both have high compatibility")
-                .totalScore(85)
+                .profileId(profileId)
+                .totalScore(score)
+                .matchPercentage(score + "%")
+                .reason("Compatibility based on profile & partner preferences")
+                .cityMatch(false)
+                .religionMatch(false)
+                .casteMatch(false)
+                .ageMatch(false)
                 .build();
     }
 
-    // ================= MY MATCHES =================
+    // ================= DYNAMIC SCORE =================
 
-    @Override
-    public List<User> getMyMatches(Long userId) {
+    private int calculateMatchScore(User u1, User u2) {
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        int score = 0;
 
-        List<Match> matches = matchRepository.findByUser1OrUser2(user, user);
+        Profile p1 = u1.getProfile();
+        Profile p2 = u2.getProfile();
 
-        return matches.stream()
-                .map(match -> match.getUser1().equals(user)
-                        ? match.getUser2()
-                        : match.getUser1())
-                .collect(Collectors.toList());
+        if (p1 == null || p2 == null) return score;
+
+        // BASIC MATCH
+        if (p1.getCity() != null && p2.getCity() != null &&
+                p1.getCity().getId().equals(p2.getCity().getId())) score += 20;
+
+        if (p1.getReligion() != null && p2.getReligion() != null &&
+                p1.getReligion().getId().equals(p2.getReligion().getId())) score += 20;
+
+        if (p1.getCaste() != null && p2.getCaste() != null &&
+                p1.getCaste().getId().equals(p2.getCaste().getId())) score += 20;
+
+        // AGE MATCH
+        if (p1.getDateOfBirth() != null && p2.getDateOfBirth() != null) {
+            int age1 = LocalDate.now().getYear() - p1.getDateOfBirth().getYear();
+            int age2 = LocalDate.now().getYear() - p2.getDateOfBirth().getYear();
+            if (Math.abs(age1 - age2) <= 3) score += 20;
+        }
+
+        // PARTNER PREFERENCE
+        PartnerPreference pref = u1.getPartnerPreference();
+
+        if (pref != null) {
+
+            if (pref.getCity() != null && p2.getCity() != null &&
+                    pref.getCity().getId().equals(p2.getCity().getId())) score += 10;
+
+            if (pref.getReligion() != null && p2.getReligion() != null &&
+                    pref.getReligion().getId().equals(p2.getReligion().getId())) score += 10;
+
+            if (pref.getCaste() != null && p2.getCaste() != null &&
+                    pref.getCaste().getId().equals(p2.getCaste().getId())) score += 10;
+
+            if (pref.getMinAge() != null && pref.getMaxAge() != null &&
+                    p2.getDateOfBirth() != null) {
+
+                int age2 = LocalDate.now().getYear() - p2.getDateOfBirth().getYear();
+
+                if (age2 >= pref.getMinAge() && age2 <= pref.getMaxAge()) score += 10;
+            }
+        }
+
+        return Math.min(score, 100);
     }
 
     // ================= MAPPER =================
@@ -156,31 +250,36 @@ public class MatchServiceImpl implements MatchService {
                 ? match.getUser2()
                 : match.getUser1();
 
-        return mapUserToDTO(other);
+        User fullUser = userRepository.findByIdWithProfile(other.getId())
+                .orElse(other);
+
+        return mapUserToDTO(fullUser, currentUser);
     }
 
-    private MatchResponseDTO mapUserToDTO(User user) {
+    private MatchResponseDTO mapUserToDTO(User user, User currentUser) {
 
-        Profile profile = user.getProfile(); // safe because of @Transactional
+        Profile profile = user.getProfile();
+
+        String city = null;
+        String religion = null;
+        String caste = null;
+
+        if (profile != null) {
+            if (profile.getCity() != null) city = profile.getCity().getName();
+            if (profile.getReligion() != null) religion = profile.getReligion().getName();
+            if (profile.getCaste() != null) caste = profile.getCaste().getName();
+        }
+
+        int score = calculateMatchScore(currentUser, user);
 
         return MatchResponseDTO.builder()
                 .userId(user.getId())
                 .name(user.getFullName())
-
-                .city(profile != null && profile.getCity() != null
-                        ? profile.getCity().getName()
-                        : null)
-
-                .religion(profile != null && profile.getReligion() != null
-                        ? profile.getReligion().getName()
-                        : null)
-
-                .caste(profile != null && profile.getCaste() != null
-                        ? profile.getCaste().getName()
-                        : null)
-
-                .matchScore(80)
-                .matchPercentage("80%")
+                .city(city)
+                .religion(religion)
+                .caste(caste)
+                .matchScore(score)
+                .matchPercentage(score + "%")
                 .build();
     }
 }

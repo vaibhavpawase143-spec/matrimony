@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Chat Test</title>
+</head>
+<body>
+
+<h2>💬 Chat Test</h2>
+
+<input id="receiverId" placeholder="Receiver ID" />
+<input id="message" placeholder="Message" />
+<button onclick="sendMessage()">Send</button>
+
+<br><br>
+
+<button onclick="sendTyping()">Typing</button>
+<button onclick="stopTyping()">Stop Typing</button>
+
+<h3>📩 Messages:</h3>
+<div id="messages"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/stompjs/lib/stomp.min.js"></script>
+
+<script>
+    let stompClient = null;
+
+    function connect() {
+        const socket = new SockJS("http://localhost:9090/ws");
+        stompClient = Stomp.over(socket);
+
+        stompClient.connect({}, function (frame) {
+            console.log("Connected: " + frame);
+
+            // 🔥 Subscribe messages
+            stompClient.subscribe("/user/queue/messages", function (msg) {
+                showMessage(JSON.parse(msg.body));
+            });
+
+            // 🔥 Typing
+            stompClient.subscribe("/user/queue/typing", function (msg) {
+                showMessage(JSON.parse(msg.body));
+            });
+
+            // 🔥 Seen
+            stompClient.subscribe("/user/queue/seen", function (msg) {
+                showMessage(JSON.parse(msg.body));
+            });
+
+            // 🔥 Online status
+            stompClient.subscribe("/topic/status", function (msg) {
+                showMessage(JSON.parse(msg.body));
+            });
+        });
+    }
+
+    function sendMessage() {
+        const receiverId = document.getElementById("receiverId").value;
+        const content = document.getElementById("message").value;
+
+        stompClient.send("/app/chat", {}, JSON.stringify({
+            receiverId: receiverId,
+            content: content,
+            type: "TEXT"
+        }));
+    }
+
+    function sendTyping() {
+        const receiverId = document.getElementById("receiverId").value;
+
+        stompClient.send("/app/typing", {}, JSON.stringify({
+            receiverId: receiverId
+        }));
+    }
+
+    function stopTyping() {
+        const receiverId = document.getElementById("receiverId").value;
+
+        stompClient.send("/app/stop-typing", {}, JSON.stringify({
+            receiverId: receiverId
+        }));
+    }
+
+    function showMessage(message) {
+        const div = document.getElementById("messages");
+        div.innerHTML += "<p>" + JSON.stringify(message) + "</p>";
+    }
+
+    connect();
+</script>
+
+</body>
+</html>

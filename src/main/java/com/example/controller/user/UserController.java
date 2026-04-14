@@ -3,7 +3,10 @@ package com.example.controller.user;
 import com.example.dto.request.LoginRequest;
 import com.example.dto.request.UserFilterDTO;
 import com.example.dto.request.UserRegisterRequestDTO;
-import com.example.dto.response.*;
+import com.example.dto.response.ApiResponse;
+import com.example.dto.response.AuthResponse;
+import com.example.dto.response.PageResponse;
+import com.example.dto.response.UserResponseDTO;
 import com.example.model.User;
 import com.example.service.UserService;
 
@@ -13,7 +16,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -52,9 +54,9 @@ public class UserController {
         return ResponseEntity.ok(new AuthResponse(token));
     }
 
-    // ================= CREATE =================
+    // ================= CREATE (ADMIN ONLY) =================
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ApiResponse<UserResponseDTO> create(@RequestBody UserRegisterRequestDTO dto) {
 
         User savedUser = service.register(dto);
@@ -69,8 +71,9 @@ public class UserController {
                 .build();
     }
 
-    // ================= SEARCH (🔥 FIXED POSITION) =================
+    // ================= SEARCH =================
     @GetMapping("/search")
+    @PreAuthorize("hasAnyRole('USER','ADMIN')")
     public ApiResponse<List<UserResponseDTO>> search(@RequestParam String keyword) {
 
         List<UserResponseDTO> users = service.search(keyword);
@@ -84,7 +87,7 @@ public class UserController {
 
     // ================= GET BY ID =================
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN') or @userSecurity.isOwner(#id, authentication.name)")
+    @PreAuthorize("hasRole('ADMIN') or @userSecurity.isOwner(#id, authentication.name)")
     public ApiResponse<UserResponseDTO> getById(@PathVariable Long id) {
 
         UserResponseDTO user = service.getById(id)
@@ -99,7 +102,7 @@ public class UserController {
 
     // ================= GET ALL =================
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ApiResponse<List<UserResponseDTO>> getAll() {
 
         return ApiResponse.<List<UserResponseDTO>>builder()
@@ -111,7 +114,7 @@ public class UserController {
 
     // ================= UPDATE =================
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN') or @userSecurity.isOwner(#id, authentication.name)")
+    @PreAuthorize("hasRole('ADMIN') or @userSecurity.isOwner(#id, authentication.name)")
     public ApiResponse<UserResponseDTO> update(@PathVariable Long id,
                                                @RequestBody User user) {
 
@@ -129,7 +132,7 @@ public class UserController {
 
     // ================= DELETE =================
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN') or @userSecurity.isOwner(#id, authentication.name)")
+    @PreAuthorize("hasRole('ADMIN')")
     public ApiResponse<String> delete(@PathVariable Long id) {
 
         service.deleteUser(id);
@@ -143,7 +146,7 @@ public class UserController {
 
     // ================= PAGINATION =================
     @GetMapping("/paged")
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ApiResponse<PageResponse<UserResponseDTO>> getUsers(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -170,6 +173,7 @@ public class UserController {
 
     // ================= USER STATUS =================
     @GetMapping("/status/{email}")
+    @PreAuthorize("hasAnyRole('USER','ADMIN')")
     public ApiResponse<UserResponseDTO> getUserStatus(@PathVariable String email) {
 
         User user = service.findByEmail(email)
@@ -186,6 +190,32 @@ public class UserController {
                 .success(true)
                 .message("User status fetched")
                 .data(dto)
+                .build();
+    }
+
+    // ================= VERIFY EMAIL =================
+    @GetMapping("/verify")
+    public ApiResponse<String> verifyEmail(@RequestParam String token) {
+
+        service.verifyEmail(token);
+
+        return ApiResponse.<String>builder()
+                .success(true)
+                .message("Email verified successfully")
+                .data(null)
+                .build();
+    }
+
+    // ================= RESEND =================
+    @PostMapping("/resend-verification")
+    public ApiResponse<String> resendVerification(@RequestParam String email) {
+
+        service.resendVerification(email);
+
+        return ApiResponse.<String>builder()
+                .success(true)
+                .message("Verification email sent")
+                .data(null)
                 .build();
     }
 }

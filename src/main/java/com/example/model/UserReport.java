@@ -27,8 +27,12 @@ public class UserReport {
     @JoinColumn(name = "reported_user_id", nullable = false)
     private User reportedUser;
 
-    // Reason (optional text)
+    // Reason
     private String reason;
 
     private LocalDateTime createdAt;
+
+    // ✅ NEW (for admin handling)
+    @Enumerated(EnumType.STRING)
+    private ReportStatus status;
 }

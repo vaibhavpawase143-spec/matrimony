@@ -20,47 +20,41 @@ public class UserBlock {
     @Column(nullable = false)
     private Long blockedId;
 
+    @Column(nullable = false)
+    private Boolean isActive = true; // 🔥 soft delete
+
     private LocalDateTime createdAt;
+
+    private LocalDateTime updatedAt;
 
     // ================= AUTO =================
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+        if (this.isActive == null) {
+            this.isActive = true;
+        }
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
     }
 
     // ================= GETTERS =================
 
-    public Long getId() {
-        return id;
-    }
-
-    public Long getBlockerId() {
-        return blockerId;
-    }
-
-    public Long getBlockedId() {
-        return blockedId;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
+    public Long getId() { return id; }
+    public Long getBlockerId() { return blockerId; }
+    public Long getBlockedId() { return blockedId; }
+    public Boolean getIsActive() { return isActive; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
 
     // ================= SETTERS =================
 
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public void setBlockerId(Long blockerId) {
-        this.blockerId = blockerId;
-    }
-
-    public void setBlockedId(Long blockedId) {
-        this.blockedId = blockedId;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
+    public void setId(Long id) { this.id = id; }
+    public void setBlockerId(Long blockerId) { this.blockerId = blockerId; }
+    public void setBlockedId(Long blockedId) { this.blockedId = blockedId; }
+    public void setIsActive(Boolean isActive) { this.isActive = isActive; }
 }

@@ -4,12 +4,12 @@ import com.example.dto.response.AdminResponseDTO;
 import com.example.mapper.AdminMapper;
 import com.example.model.Admin;
 import com.example.model.Role;
+import com.example.model.User;
 import com.example.repository.AdminRepository;
 import com.example.repository.RoleRepository;
+import com.example.repository.UserRepository;
 import com.example.service.AdminService;
-
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -25,6 +25,7 @@ public class AdminServiceImpl implements AdminService {
     private final AdminRepository adminRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
+    private final UserRepository userRepository;
 
     // ================= CURRENT ADMIN =================
     private Admin getCurrentAdmin() {
@@ -156,4 +157,43 @@ public class AdminServiceImpl implements AdminService {
         return adminRepository.findByEmailWithRole(email)
                 .orElseThrow(() -> new RuntimeException("Admin not found"));
     }
+
+    @Override
+    @Transactional
+    public String blockUser(Long userId) {
+
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (Boolean.TRUE.equals(user.getIsBlocked())) {
+            return "User already blocked";
+        }
+
+        user.setIsBlocked(true);
+        userRepository.save(user);
+
+        return "User blocked successfully";
+    }
+
+    @Override
+    @Transactional
+    public String unblockUser(Long userId) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (!Boolean.TRUE.equals(user.getIsBlocked())) {
+            return "User is not blocked";
+        }
+
+        user.setIsBlocked(false);
+        user.setReportCount(0);
+
+        userRepository.save(user);
+
+        return "User unblocked successfully";
+    }
+
+
 }

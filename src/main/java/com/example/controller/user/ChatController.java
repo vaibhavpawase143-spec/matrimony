@@ -172,7 +172,6 @@ public class ChatController {
                 size
         );
 
-        // 🔥 FIXED: dynamic mapping
         Page<ChatMessageDTO> dtoPage = messages.map(this::mapToDTO);
 
         return ApiResponse.<Page<ChatMessageDTO>>builder()
@@ -198,22 +197,26 @@ public class ChatController {
                 .build();
     }
 
-    // ================= 🔁 FINAL MAPPER =================
+    // ================= 🔥 FINAL MAPPER =================
     private ChatMessageDTO mapToDTO(Message message) {
         return ChatMessageDTO.builder()
                 .sender(message.getSender().getEmail())
                 .receiver(message.getReceiver().getEmail())
 
-                // ✅ FIX 1: no null content
+                // ✅ FIXED
+                .receiverId(
+                        message.getReceiver() != null
+                                ? message.getReceiver().getId()
+                                : null
+                )
+
                 .content(
                         message.getContent() != null
                                 ? message.getContent()
                                 : "[Media]"
                 )
 
-                // ✅ FIX 2: correct type
                 .type(message.getMessageType())
-
                 .conversationId(message.getConversation().getId())
                 .messageId(message.getId())
                 .status(message.getStatus().name())
@@ -233,6 +236,18 @@ public class ChatController {
 
                 .mediaUrl(message.getMediaUrl())
                 .mediaType(message.getMediaType())
+                .build();
+    }
+    // ================= 📋 CONVERSATIONS =================
+    @GetMapping("/conversations")
+    public ApiResponse<?> getConversations(Principal principal) {
+
+        String email = principal.getName();
+
+        return ApiResponse.builder()
+                .success(true)
+                .message("Conversations fetched")
+                .data(chatService.getUserConversationsByEmail(email))
                 .build();
     }
 }
