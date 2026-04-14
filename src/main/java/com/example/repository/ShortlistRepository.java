@@ -12,24 +12,38 @@ import java.util.Optional;
 @Repository
 public interface ShortlistRepository extends JpaRepository<Shortlist, Long> {
 
-    // 🔍 Prevent duplicate shortlist
+    // 🔍 Prevent duplicate shortlist (used in service)
     boolean existsByUser_IdAndProfile_Id(Long userId, Long profileId);
 
     // 🔍 Get specific shortlist
     Optional<Shortlist> findByUser_IdAndProfile_Id(Long userId, Long profileId);
 
-    // 🔥 FIX: Fetch user eagerly (prevents lazy error)
-    @Query("SELECT s FROM Shortlist s JOIN FETCH s.user WHERE s.user.id = :userId")
-    List<Shortlist> findByUser_Id(@Param("userId") Long userId);
+    // ✅ Get only ACTIVE shortlist by user (with user + profile to avoid lazy error)
+    @Query("""
+        SELECT s FROM Shortlist s
+        JOIN FETCH s.user
+        JOIN FETCH s.profile
+        WHERE s.user.id = :userId
+        AND s.isActive = true
+    """)
+    List<Shortlist> findByUser_IdAndIsActiveTrue(@Param("userId") Long userId);
 
-    // 🔥 FIX: Fetch user eagerly
-    @Query("SELECT s FROM Shortlist s JOIN FETCH s.user WHERE s.profile.id = :profileId")
-    List<Shortlist> findByProfile_Id(@Param("profileId") Long profileId);
+    // ✅ Get who shortlisted a profile (ACTIVE only)
+    @Query("""
+        SELECT s FROM Shortlist s
+        JOIN FETCH s.user
+        JOIN FETCH s.profile
+        WHERE s.profile.id = :profileId
+        AND s.isActive = true
+    """)
+    List<Shortlist> findByProfile_IdAndIsActiveTrue(@Param("profileId") Long profileId);
 
-    // 🔥 FIX: Also fetch user for getAll()
-    @Query("SELECT s FROM Shortlist s JOIN FETCH s.user")
-    List<Shortlist> findAll();
-
-    // 🔥 Remove from shortlist
-    void deleteByUser_IdAndProfile_Id(Long userId, Long profileId);
+    // ✅ Get all ACTIVE (with relations)
+    @Query("""
+        SELECT s FROM Shortlist s
+        JOIN FETCH s.user
+        JOIN FETCH s.profile
+        WHERE s.isActive = true
+    """)
+    List<Shortlist> findByIsActiveTrue();
 }

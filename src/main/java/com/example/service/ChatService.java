@@ -1,7 +1,7 @@
 package com.example.service;
 
-import com.example.model.Message;
 import com.example.dto.response.ConversationListDTO;
+import com.example.model.Message;
 import com.example.model.User;
 
 import org.springframework.data.domain.Page;
@@ -12,16 +12,17 @@ public interface ChatService {
 
     // ================= SEND =================
 
+    // ✅ Send message by IDs
     Message sendMessage(Long senderId, Long receiverId, String content);
 
-    // ✅ NORMAL MESSAGE
+    // ✅ Send message by email
     Message sendMessageByEmail(
             String senderEmail,
             Long receiverId,
             String content
     );
 
-    // ✅ REPLY MESSAGE
+    // ✅ Reply message
     Message sendMessageByEmail(
             String senderEmail,
             Long receiverId,
@@ -29,9 +30,9 @@ public interface ChatService {
             Long replyToMessageId
     );
 
-    // 🔥 MEDIA MESSAGE
+    // ✅ Media message (image, video, audio)
     Message sendMediaMessage(
-            String email,
+            String senderEmail,
             Long receiverId,
             String mediaUrl,
             String mediaType
@@ -39,12 +40,12 @@ public interface ChatService {
 
     // ================= GET MESSAGES =================
 
-    // ✅ OLD (without pagination)
+    // ✅ Without pagination
     List<Message> getMessages(Long userId, Long otherUserId);
 
     List<Message> getMessagesByEmail(String email, Long otherUserId);
 
-    // 🔥 NEW (PAGINATION)
+    // ✅ With pagination
     Page<Message> getMessages(Long userId, Long otherUserId, int page, int size);
 
     // ================= CONVERSATION =================
@@ -61,7 +62,7 @@ public interface ChatService {
 
     // ================= USER =================
 
-    User getUser(Long receiverId);
+    User getUser(Long userId);
 
     User getUserByEmail(String email);
 

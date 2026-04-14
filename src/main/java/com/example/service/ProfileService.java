@@ -17,6 +17,7 @@ public interface ProfileService {
 
     List<Profile> getAll();
 
+    // 🔥 FIXED (will use JOIN FETCH method)
     List<Profile> getActiveProfiles();
 
     // ================= FILTERS =================

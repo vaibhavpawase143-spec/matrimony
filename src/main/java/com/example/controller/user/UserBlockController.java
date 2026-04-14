@@ -11,19 +11,32 @@ public class UserBlockController {
 
     private final UserBlockService userBlockService;
 
+    // ✅ BLOCK USER
     @PostMapping
-    public String block(@RequestParam Long blockerId,
-                        @RequestParam Long blockedId) {
-
+    public String blockUser(
+            @RequestParam Long blockerId,
+            @RequestParam Long blockedId
+    ) {
         userBlockService.blockUser(blockerId, blockedId);
-        return "User blocked";
+        return "User blocked successfully";
     }
 
+    // ✅ UNBLOCK USER
     @DeleteMapping
-    public String unblock(@RequestParam Long blockerId,
-                          @RequestParam Long blockedId) {
-
+    public String unblockUser(
+            @RequestParam Long blockerId,
+            @RequestParam Long blockedId
+    ) {
         userBlockService.unblockUser(blockerId, blockedId);
-        return "User unblocked";
+        return "User unblocked successfully";
+    }
+
+    // ✅ CHECK BLOCK
+    @GetMapping("/check")
+    public boolean isBlocked(
+            @RequestParam Long user1,
+            @RequestParam Long user2
+    ) {
+        return userBlockService.isBlocked(user1, user2);
     }
 }

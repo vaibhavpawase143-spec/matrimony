@@ -3,46 +3,62 @@
 #             https://www.jetbrains.com/help/qodana/qodana-yaml.html            #
 #-------------------------------------------------------------------------------#
 
-#################################################################################
-#              WARNING: Do not store sensitive information in this file,        #
-#               as its contents will be included in the Qodana report.          #
-#################################################################################
 version: "1.0"
 
-#Specify inspection profile for code analysis
+# 🔥 Use proper JVM linter
+linter: jetbrains/qodana-jvm:2025.2
+
+# 🔥 Project JDK
+projectJDK: "21"
+
+# 🔥 Inspection Profile
 profile:
-  name: qodana.starter
+  name: qodana.recommended
 
-#Enable inspections
-#include:
-#  - name: <SomeEnabledInspectionId>
+# 🔥 Include additional inspections (optional)
+include:
+  - name: SpringBootApplicationProperties
+  - name: SpringJavaAutowiredFieldsWarningInspection
 
-#Disable inspections
-#exclude:
-#  - name: <SomeDisabledInspectionId>
-#    paths:
-#      - <path/where/not/run/inspection>
+# 🔥 Exclude unnecessary folders (IMPORTANT)
+exclude:
+  - name: All
+    paths:
+      - target
+      - build
+      - logs
+      - node_modules
+      - .git
 
-projectJDK: "21" #(Applied in CI/CD pipeline)
+# 🔥 Bootstrap (optional script before run)
+# bootstrap: sh ./prepare-qodana.sh
 
-#Execute shell command before Qodana execution (Applied in CI/CD pipeline)
-#bootstrap: sh ./prepare-qodana.sh
+# 🔥 Plugins (optional)
+# plugins:
+#   - id: org.jetbrains.plugins.spring
 
-#Install IDE plugins before Qodana execution (Applied in CI/CD pipeline)
-#plugins:
-#  - id: <plugin.id> #(plugin id can be found at https://plugins.jetbrains.com)
+# 🔥 Quality Gate (VERY IMPORTANT FOR CI/CD)
+failureConditions:
+  severityThresholds:
+    any: 50          # total issues allowed
+    critical: 5      # critical issues limit
+    high: 10         # high severity limit
+    moderate: 20     # medium issues
+    low: 30
 
-# Quality gate. Will fail the CI/CD pipeline if any condition is not met
-# severityThresholds - configures maximum thresholds for different problem severities
-# testCoverageThresholds - configures minimum code coverage on a whole project and newly added code
-# Code Coverage is available in Ultimate and Ultimate Plus plans
+# 🔥 Code Coverage (if using tests)
+# (Works with Ultimate plans)
 #failureConditions:
-#  severityThresholds:
-#    any: 15
-#    critical: 5
 #  testCoverageThresholds:
 #    fresh: 70
 #    total: 50
 
-#Specify Qodana linter for analysis (Applied in CI/CD pipeline)
-linter: jetbrains/qodana-jvm:2025.2
+# 🔥 Cache directory (improves performance)
+cacheDir: .qodana/cache
+
+# 🔥 Save report
+resultsDir: .qodana/results
+
+# 🔥 Run in CI mode
+run:
+  timeout: 900   # seconds (15 min)

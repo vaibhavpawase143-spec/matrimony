@@ -33,19 +33,16 @@ public class SecurityConfig {
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
 
-    // ================= AUTH MANAGER =================
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
 
-    // ================= JWT FILTER =================
     @Bean
     public JwtFilter jwtFilter() {
         return new JwtFilter(jwtUtil);
     }
 
-    // ================= SECURITY CONFIG =================
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
@@ -55,36 +52,28 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
 
-                        // 🔥 WEBSOCKET
-                        .requestMatchers("/ws/**").permitAll()
-
-                        // 🔥 IMAGE APIs (IMPORTANT FIX ✅)
-                        .requestMatchers("/api/image/**").permitAll()
-
-                        // 🔓 PUBLIC APIs
+                        // PUBLIC
                         .requestMatchers(
                                 "/api/auth/**",
                                 "/api/users/login",
                                 "/api/users/register",
-                                "/api/admins/login",
-                                "/api/admins/refresh",
+                                "/api/users/verify",
+                                "/api/users/resend-verification",
                                 "/swagger-ui/**",
-                                "/v3/api-docs/**"
+                                "/v3/api-docs/**",
+                                "/api/image/**"
+
                         ).permitAll()
 
-                        // 👑 ADMIN ONLY
+                        // ADMIN
                         .requestMatchers("/api/admin/**")
-                        .hasAnyRole("ADMIN", "SUPER_ADMIN")
+                        .hasRole("ADMIN")
 
-                        // 🔥 MASTER TABLE (ADMIN ONLY)
-                        .requestMatchers("/api/master/**")
-                        .hasAnyRole("ADMIN", "SUPER_ADMIN")
+                        // USER + ADMIN
+                        .requestMatchers("/api/users/**")
+                        .hasAnyRole("USER", "ADMIN")
 
-                        // 👤 USER FEATURES (LOGIN REQUIRED)
-                        .requestMatchers("/api/chat/**").authenticated()
-                        .requestMatchers("/api/user/**").authenticated()
-
-                        // 🔐 EVERYTHING ELSE
+                        // EVERYTHING ELSE
                         .anyRequest().authenticated()
                 )
 
@@ -97,13 +86,11 @@ public class SecurityConfig {
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
 
-                // 🔥 JWT FILTER
                 .addFilterBefore(jwtFilter(), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
-    // ================= PASSWORD ENCODER =================
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();

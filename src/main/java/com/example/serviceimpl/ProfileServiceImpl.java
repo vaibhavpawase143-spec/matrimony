@@ -50,8 +50,7 @@ public class ProfileServiceImpl implements ProfileService {
     // ================= CREATE =================
     public ProfileResponseDTO createProfile(ProfileRequestDTO dto) {
 
-        User user = userRepository.findById(dto.getUserId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        User user = getCurrentUser(); // ✅ FIXED
 
         if (repository.existsByUserId(user.getId())) {
             throw new RuntimeException("Profile already exists!");
@@ -72,8 +71,7 @@ public class ProfileServiceImpl implements ProfileService {
     // ================= UPDATE =================
     public ProfileResponseDTO updateMyProfile(UpdateProfileRequestDTO dto) {
 
-        User user = userRepository.findById(dto.getUserId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        User user = getCurrentUser(); // ✅ FIXED
 
         Profile profile = repository.findByUserId(user.getId())
                 .orElseThrow(() -> new RuntimeException("Profile not found"));
@@ -137,11 +135,8 @@ public class ProfileServiceImpl implements ProfileService {
     // ================= READ =================
     @Override public Optional<Profile> getById(Long id) { return repository.findById(id); }
     @Override public Optional<Profile> getByUserId(Long userId) { return repository.findByUserId(userId); }
-    @Override
-    public List<Profile> getAll() {
-        return repository.findAllWithUser();
-    }
-    @Override public List<Profile> getActiveProfiles() { return repository.findByIsActiveTrue(); }
+    @Override public List<Profile> getAll() { return repository.findAllWithUser(); }
+    @Override public List<Profile> getActiveProfiles() { return repository.findActiveProfilesWithUser(); }
 
     // ================= FILTER =================
     @Override public List<Profile> getByReligion(Long id) { return repository.findByReligionId(id); }
@@ -155,23 +150,44 @@ public class ProfileServiceImpl implements ProfileService {
     @Override public List<Profile> getByOccupationAndCity(Long o, Long c) { return repository.findByOccupationIdAndCityId(o, c); }
     @Override public List<Profile> getActiveByReligionAndCity(Long r, Long c) { return repository.findByReligionIdAndCityIdAndIsActiveTrue(r, c); }
 
-    // ================= MAPPERS =================
+    // ================= FIXED MAPPER =================
     private void mapDtoToEntity(ProfileRequestDTO dto, Profile p) {
-        p.setReligion(religionRepository.findById(dto.getReligionId()).orElse(null));
-        p.setCaste(casteRepository.findById(dto.getCasteId()).orElse(null));
-        p.setEducationLevel(educationRepository.findById(dto.getEducationLevelId()).orElse(null));
-        p.setOccupation(occupationRepository.findById(dto.getOccupationId()).orElse(null));
-        p.setHeight(heightRepository.findById(dto.getHeightId()).orElse(null));
-        p.setWeight(weightRepository.findById(dto.getWeightId()).orElse(null));
-        p.setCity(cityRepository.findById(dto.getCityId()).orElse(null));
+
+        if (dto.getReligionId() != null)
+            p.setReligion(religionRepository.findById(dto.getReligionId()).orElse(null));
+
+        if (dto.getCasteId() != null)
+            p.setCaste(casteRepository.findById(dto.getCasteId()).orElse(null));
+
+        if (dto.getEducationLevelId() != null)
+            p.setEducationLevel(educationRepository.findById(dto.getEducationLevelId()).orElse(null));
+
+        if (dto.getOccupationId() != null)
+            p.setOccupation(occupationRepository.findById(dto.getOccupationId()).orElse(null));
+
+        if (dto.getHeightId() != null)
+            p.setHeight(heightRepository.findById(dto.getHeightId()).orElse(null));
+
+        if (dto.getWeightId() != null)
+            p.setWeight(weightRepository.findById(dto.getWeightId()).orElse(null));
+
+        if (dto.getCityId() != null)
+            p.setCity(cityRepository.findById(dto.getCityId()).orElse(null));
+
         p.setAbout(dto.getAbout());
         p.setImageUrl(dto.getImageUrl());
     }
 
     private void mapUpdateDto(UpdateProfileRequestDTO dto, Profile p) {
-        if (dto.getCityId() != null) p.setCity(cityRepository.findById(dto.getCityId()).orElse(null));
-        if (dto.getAbout() != null) p.setAbout(dto.getAbout());
-        if (dto.getImageUrl() != null) p.setImageUrl(dto.getImageUrl());
+
+        if (dto.getCityId() != null)
+            p.setCity(cityRepository.findById(dto.getCityId()).orElse(null));
+
+        if (dto.getAbout() != null)
+            p.setAbout(dto.getAbout());
+
+        if (dto.getImageUrl() != null)
+            p.setImageUrl(dto.getImageUrl());
     }
 
     public ProfileResponseDTO mapToDTO(Profile p) {

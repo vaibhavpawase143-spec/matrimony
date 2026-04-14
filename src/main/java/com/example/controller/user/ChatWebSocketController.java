@@ -27,7 +27,6 @@ public class ChatWebSocketController {
 
         Message message;
 
-        // 🔥 MEDIA MESSAGE
         if ("MEDIA".equalsIgnoreCase(dto.getType())) {
             message = chatService.sendMediaMessage(
                     senderEmail,
@@ -35,9 +34,7 @@ public class ChatWebSocketController {
                     dto.getMediaUrl(),
                     dto.getMediaType()
             );
-        }
-        // 🔥 TEXT / REPLY MESSAGE
-        else {
+        } else {
             message = chatService.sendMessageByEmail(
                     senderEmail,
                     dto.getReceiverId(),
@@ -46,12 +43,18 @@ public class ChatWebSocketController {
             );
         }
 
-        // ✅ Convert to DTO response
         ChatMessageDTO response = mapToDTO(message);
 
-        // 📤 Send to receiver
+        // ✅ SEND TO RECEIVER (EMAIL BASED)
         messagingTemplate.convertAndSendToUser(
-                response.getReceiver(),
+                message.getReceiver().getEmail(),
+                "/queue/messages",
+                response
+        );
+
+        // ✅ SEND BACK TO SENDER (for sync)
+        messagingTemplate.convertAndSendToUser(
+                senderEmail,
                 "/queue/messages",
                 response
         );
@@ -61,18 +64,16 @@ public class ChatWebSocketController {
     @MessageMapping("/typing")
     public void typing(ChatMessageDTO dto, Principal principal) {
 
-        String sender = principal.getName();
-
-        ChatMessageDTO response = ChatMessageDTO.builder()
-                .sender(sender)
-                .receiver(dto.getReceiver())
-                .action("TYPING")
-                .build();
+        String senderEmail = principal.getName();
 
         messagingTemplate.convertAndSendToUser(
-                dto.getReceiver(),
+                dto.getReceiver(), // must be email
                 "/queue/typing",
-                response
+                ChatMessageDTO.builder()
+                        .sender(senderEmail)
+                        .receiver(dto.getReceiver())
+                        .action("TYPING")
+                        .build()
         );
     }
 
@@ -80,18 +81,34 @@ public class ChatWebSocketController {
     @MessageMapping("/stop-typing")
     public void stopTyping(ChatMessageDTO dto, Principal principal) {
 
-        String sender = principal.getName();
-
-        ChatMessageDTO response = ChatMessageDTO.builder()
-                .sender(sender)
-                .receiver(dto.getReceiver())
-                .action("STOP_TYPING")
-                .build();
+        String senderEmail = principal.getName();
 
         messagingTemplate.convertAndSendToUser(
                 dto.getReceiver(),
                 "/queue/typing",
-                response
+                ChatMessageDTO.builder()
+                        .sender(senderEmail)
+                        .receiver(dto.getReceiver())
+                        .action("STOP_TYPING")
+                        .build()
+        );
+    }
+
+    // ================= 👁 SEEN =================
+    @MessageMapping("/seen")
+    public void markSeen(ChatMessageDTO dto, Principal principal) {
+
+        String email = principal.getName();
+
+        Long userId = chatService.getUserByEmail(email).getId();
+
+        chatService.markAsSeen(dto.getConversationId(), userId);
+
+        // 🔥 notify sender (EMAIL BASED)
+        messagingTemplate.convertAndSendToUser(
+                dto.getReceiver(), // sender email
+                "/queue/seen",
+                dto
         );
     }
 
@@ -100,30 +117,20 @@ public class ChatWebSocketController {
         return ChatMessageDTO.builder()
                 .sender(message.getSender().getEmail())
                 .receiver(message.getReceiver().getEmail())
-
-                // ✅ Safe content
-                .content(
-                        message.getContent() != null
-                                ? message.getContent()
-                                : "[Media]"
-                )
-
+                .content(message.getContent() != null ? message.getContent() : "[Media]")
                 .type(message.getMessageType())
                 .conversationId(message.getConversation().getId())
                 .timestamp(message.getCreatedAt().toString())
                 .status(message.getStatus().name())
                 .messageId(message.getId())
-
                 .replyToMessageId(
                         message.getReplyTo() != null ? message.getReplyTo().getId() : null
                 )
                 .replyToContent(
                         message.getReplyTo() != null ? message.getReplyTo().getContent() : null
                 )
-
                 .mediaUrl(message.getMediaUrl())
                 .mediaType(message.getMediaType())
-
                 .build();
     }
 }
