@@ -1,22 +1,24 @@
 package com.example.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
+@Getter
+@Setter
 @Entity
 @Table(
         name = "users",
         uniqueConstraints = {
                 @UniqueConstraint(columnNames = "email"),
                 @UniqueConstraint(columnNames = "phone")
-        },
-        indexes = {
-                @Index(name = "idx_user_email", columnList = "email"),
-                @Index(name = "idx_user_phone", columnList = "phone")
         }
 )
 public class User {
@@ -37,102 +39,68 @@ public class User {
     @Column(nullable = false)
     private String password;
 
-    @Column(name = "is_active")
     private Boolean isActive = true;
+    private Boolean emailVerified = false;
 
     private LocalDateTime emailVerifiedAt;
     private LocalDateTime phoneVerifiedAt;
 
-    // 🔥 FINAL FIX HERE
-    @ManyToMany(fetch = FetchType.EAGER)   // ✅ IMPORTANT
+    // ================= AUDIT =================
+    private Boolean isDeleted = false;
+    private Long deletedBy;
+    private LocalDateTime deletedAt;
+    private Long updatedBy;
+
+    private Boolean isOnline = false;
+    private LocalDateTime lastSeen;
+    private LocalDateTime lastLogin;
+
+    // ================= ROLE =================
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
-            name = "user_roles",
-            joinColumns = @JoinColumn(name = "user_id"),
-            inverseJoinColumns = @JoinColumn(name = "role_id")
+            name = "users_roles",
+            joinColumns = @JoinColumn(name = "users_id"),
+            inverseJoinColumns = @JoinColumn(name = "roles_id")
     )
     private Set<Role> roles = new HashSet<>();
 
+    // ================= RELATIONS =================
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore
+    private Profile profile;
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore
+    private PartnerPreference partnerPreference;
+
+    // ================= TIMESTAMP =================
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    private Boolean isBlocked = false;
+    private Integer reportCount = 0;
+
     public User() {}
 
+    // ================= LIFECYCLE =================
     @PrePersist
     protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
-
-        if (this.isActive == null) {
-            this.isActive = true;
-        }
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
     }
 
     @PreUpdate
     protected void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
     }
 
+    // ================= CUSTOM METHODS =================
     public String getFullName() {
         return (firstName != null ? firstName : "") + " " +
                 (lastName != null ? lastName : "");
     }
 
-    public void addRole(Role role) {
-        this.roles.add(role);
+    public void setId(@NotNull(message = "User ID is required") Long userId) {
+        this.id = userId;
     }
-
-    public void removeRole(Role role) {
-        this.roles.remove(role);
-    }
-
-    public void setRole(Role role) {
-        this.roles.clear();
-        this.roles.add(role);
-    }
-
-    // ===== GETTERS & SETTERS =====
-
-    public Long getId() { return id; }
-
-    public void setId(Long id) { this.id = id; }
-
-    public String getFirstName() { return firstName; }
-
-    public void setFirstName(String firstName) { this.firstName = firstName; }
-
-    public String getLastName() { return lastName; }
-
-    public void setLastName(String lastName) { this.lastName = lastName; }
-
-    public String getEmail() { return email; }
-
-    public void setEmail(String email) { this.email = email; }
-
-    public String getPhone() { return phone; }
-
-    public void setPhone(String phone) { this.phone = phone; }
-
-    public String getPassword() { return password; }
-
-    public void setPassword(String password) { this.password = password; }
-
-    public Boolean getIsActive() { return isActive; }
-
-    public void setIsActive(Boolean isActive) { this.isActive = isActive; }
-
-    public LocalDateTime getEmailVerifiedAt() { return emailVerifiedAt; }
-
-    public void setEmailVerifiedAt(LocalDateTime emailVerifiedAt) { this.emailVerifiedAt = emailVerifiedAt; }
-
-    public LocalDateTime getPhoneVerifiedAt() { return phoneVerifiedAt; }
-
-    public void setPhoneVerifiedAt(LocalDateTime phoneVerifiedAt) { this.phoneVerifiedAt = phoneVerifiedAt; }
-
-    public Set<Role> getRoles() { return roles; }
-
-    public void setRoles(Set<Role> roles) { this.roles = roles; }
-
-    public LocalDateTime getCreatedAt() { return createdAt; }
-
-    public LocalDateTime getUpdatedAt() { return updatedAt; }
 }

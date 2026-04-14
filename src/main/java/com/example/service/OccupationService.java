@@ -7,7 +7,6 @@ import java.util.Optional;
 
 public interface OccupationService {
 
-    // 🔍 Basic CRUD
     Occupation create(Occupation occupation);
 
     Occupation update(Long id, Occupation occupation);
@@ -16,19 +15,17 @@ public interface OccupationService {
 
     Optional<Occupation> getById(Long id);
 
-    // 🔍 Admin-based
+    List<Occupation> getAll();   // ✅ important
+
     List<Occupation> getByAdmin(Long adminId);
 
     List<Occupation> getActiveByAdmin(Long adminId);
 
     List<Occupation> getInactiveByAdmin(Long adminId);
 
-    // 🔍 Find by name (admin-specific)
     Optional<Occupation> getByNameAndAdmin(String name, Long adminId);
 
-    // ✅ Duplicate check
     boolean existsByNameAndAdmin(String name, Long adminId);
 
-    // 🔍 Search
     List<Occupation> searchByAdmin(Long adminId, String keyword);
 }

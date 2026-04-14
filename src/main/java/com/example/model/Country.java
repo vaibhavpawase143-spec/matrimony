@@ -24,7 +24,8 @@ public class Country {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "admin_id")
     private Admin admin;
-
+    @Column(name = "admin_id", insertable = false, updatable = false)
+    private Long adminId;
     @Column(nullable = false, length = 120)
     private String name;
 
@@ -80,5 +81,29 @@ public class Country {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public Long getAdminId() {
+        return adminId;
+    }
+
+    public void setAdminId(Long adminId) {
+        this.adminId = adminId;
+    }
+
+    public Boolean getActive() {
+        return isActive;
+    }
+
+    public void setActive(Boolean active) {
+        isActive = active;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
     }
 }

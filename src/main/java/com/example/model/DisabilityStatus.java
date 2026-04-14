@@ -1,7 +1,13 @@
 package com.example.model;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+import org.springframework.web.bind.annotation.GetMapping;
+
 import java.time.LocalDateTime;
+@Getter
+@Setter
 
 @Entity
 @Table(
@@ -23,7 +29,8 @@ public class DisabilityStatus {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "admin_id")
     private Admin admin;
-
+    @Column(name = "admin_id", insertable = false, updatable = false)
+    private Long adminId;
     @Column(nullable = false, length = 100)
     private String value;
 

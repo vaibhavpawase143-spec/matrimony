@@ -1,16 +1,21 @@
 package com.example.serviceimpl;
 
+import com.example.dto.response.AdminResponseDTO;
+import com.example.mapper.AdminMapper;
 import com.example.model.Admin;
 import com.example.model.Role;
+import com.example.model.User;
 import com.example.repository.AdminRepository;
 import com.example.repository.RoleRepository;
+import com.example.repository.UserRepository;
 import com.example.service.AdminService;
-
 import lombok.RequiredArgsConstructor;
-
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -19,7 +24,19 @@ public class AdminServiceImpl implements AdminService {
 
     private final AdminRepository adminRepository;
     private final RoleRepository roleRepository;
-    private final PasswordEncoder passwordEncoder; // 🔥 IMPORTANT
+    private final PasswordEncoder passwordEncoder;
+    private final UserRepository userRepository;
+
+    // ================= CURRENT ADMIN =================
+    private Admin getCurrentAdmin() {
+
+        String email = SecurityContextHolder.getContext()
+                .getAuthentication()
+                .getName();
+
+        return adminRepository.findByEmailWithRole(email)
+                .orElseThrow(() -> new RuntimeException("Logged-in admin not found"));
+    }
 
     // ================= REGISTER =================
     @Override
@@ -29,15 +46,9 @@ public class AdminServiceImpl implements AdminService {
             throw new RuntimeException("Email already exists");
         }
 
-        if (adminRepository.existsByUsername(admin.getUsername())) {
-            throw new RuntimeException("Username already exists");
-        }
-
-        // 🔐 Encode password
         admin.setPassword(passwordEncoder.encode(admin.getPassword()));
 
-        // 👑 Assign ADMIN role
-        Role role = roleRepository.findByName("ADMIN")
+        Role role = roleRepository.findByName("ROLE_ADMIN")
                 .orElseThrow(() -> new RuntimeException("Role not found"));
 
         admin.setRole(role);
@@ -46,48 +57,48 @@ public class AdminServiceImpl implements AdminService {
         return adminRepository.save(admin);
     }
 
-    // ================= CREATE =================
     @Override
     public Admin create(Admin admin) {
-
-        if (adminRepository.existsByEmail(admin.getEmail())) {
-            throw new RuntimeException("Email already exists");
-        }
-
-        if (adminRepository.existsByUsername(admin.getUsername())) {
-            throw new RuntimeException("Username already exists");
-        }
-
-        // 🔐 Encode password here also
-        admin.setPassword(passwordEncoder.encode(admin.getPassword()));
-
-        return adminRepository.save(admin);
+        return register(admin);
     }
 
-    // ================= GET =================
+    // ================= GET BY ID (DTO) =================
     @Override
-    public Admin getById(Long id) {
-        return adminRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Admin not found with id: " + id));
+    public AdminResponseDTO getById(Long id) {
+
+        Admin admin = adminRepository.findByIdWithRole(id)
+                .orElseThrow(() -> new RuntimeException("Admin not found"));
+
+        return AdminMapper.toDTO(admin);
     }
 
+    // ================= GET ALL (DTO) =================
     @Override
-    public List<Admin> getAll() {
-        return adminRepository.findAll();
+    public List<AdminResponseDTO> getAll() {
+
+        return adminRepository.findAllWithRole()
+                .stream()
+                .map(AdminMapper::toDTO)
+                .toList();
     }
 
     // ================= UPDATE =================
     @Override
     public Admin update(Long id, Admin updatedAdmin) {
 
-        Admin existing = getById(id);
+        Admin existing = adminRepository.findByIdWithRole(id)
+                .orElseThrow(() -> new RuntimeException("Admin not found"));
+
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        if (!existing.getEmail().equalsIgnoreCase(email)) {
+            throw new RuntimeException("You can only update your own account");
+        }
 
         existing.setName(updatedAdmin.getName());
-        existing.setEmail(updatedAdmin.getEmail());
-        existing.setUsername(updatedAdmin.getUsername());
+        existing.setPhone(updatedAdmin.getPhone());
 
-        // 🔐 Encode password if changed
-        if (updatedAdmin.getPassword() != null) {
+        if (updatedAdmin.getPassword() != null && !updatedAdmin.getPassword().isEmpty()) {
             existing.setPassword(passwordEncoder.encode(updatedAdmin.getPassword()));
         }
 
@@ -97,22 +108,92 @@ public class AdminServiceImpl implements AdminService {
     // ================= DELETE =================
     @Override
     public void delete(Long id) {
-        Admin admin = getById(id);
-        adminRepository.delete(admin);
+
+        Admin currentAdmin = getCurrentAdmin();
+        Admin targetAdmin = adminRepository.findByIdWithRole(id)
+                .orElseThrow(() -> new RuntimeException("Admin not found"));
+
+        if (!currentAdmin.getRole().getName().equals("ROLE_SUPER_ADMIN")) {
+            throw new RuntimeException("Only SUPER ADMIN can delete admin");
+        }
+
+        if (currentAdmin.getId().equals(id)) {
+            throw new RuntimeException("You cannot delete yourself");
+        }
+
+        targetAdmin.setIsActive(false);
+        targetAdmin.setDeletedBy(currentAdmin.getId());
+        targetAdmin.setDeletedAt(LocalDateTime.now());
+
+        adminRepository.save(targetAdmin);
     }
 
     // ================= LOGIN =================
     @Override
-    public Admin login(String username, String password) {
+    @Transactional
+    public Admin login(String email, String password) {
 
-        Admin admin = adminRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("Invalid username"));
+        Admin admin = adminRepository.findByEmailWithRole(email)
+                .orElseThrow(() -> new RuntimeException("Invalid email"));
 
-        // 🔥 CORRECT PASSWORD CHECK
+        if (!admin.getIsActive()) {
+            throw new RuntimeException("Admin is inactive");
+        }
+
         if (!passwordEncoder.matches(password, admin.getPassword())) {
             throw new RuntimeException("Invalid password");
         }
 
-        return admin;
+        // 🔥 ensure role loaded
+        admin.getRole().getName();
+
+        admin.setLastLogin(LocalDateTime.now());
+
+        return adminRepository.save(admin);
     }
+
+    @Override
+    public Admin findByEmail(String email) {
+        return adminRepository.findByEmailWithRole(email)
+                .orElseThrow(() -> new RuntimeException("Admin not found"));
+    }
+
+    @Override
+    @Transactional
+    public String blockUser(Long userId) {
+
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (Boolean.TRUE.equals(user.getIsBlocked())) {
+            return "User already blocked";
+        }
+
+        user.setIsBlocked(true);
+        userRepository.save(user);
+
+        return "User blocked successfully";
+    }
+
+    @Override
+    @Transactional
+    public String unblockUser(Long userId) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (!Boolean.TRUE.equals(user.getIsBlocked())) {
+            return "User is not blocked";
+        }
+
+        user.setIsBlocked(false);
+        user.setReportCount(0);
+
+        userRepository.save(user);
+
+        return "User unblocked successfully";
+    }
+
+
 }

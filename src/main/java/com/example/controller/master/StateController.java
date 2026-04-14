@@ -193,10 +193,14 @@ public class StateController {
 
         return StateResponseDTO.builder()
                 .id(s.getId())
+
+                // ✅ SAFE (ONLY ID)
                 .adminId(s.getAdmin() != null ? s.getAdmin().getId() : null)
-                .adminName(s.getAdmin() != null ? s.getAdmin().getName() : null)
+                .adminName(null)
+
                 .countryId(s.getCountry() != null ? s.getCountry().getId() : null)
-                .countryName(s.getCountry() != null ? s.getCountry().getName() : null)
+                .countryName(null)
+
                 .name(s.getName())
                 .isActive(s.getIsActive())
                 .createdAt(s.getCreatedAt())

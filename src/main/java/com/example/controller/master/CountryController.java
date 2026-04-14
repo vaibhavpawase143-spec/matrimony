@@ -120,9 +120,7 @@ public class CountryController {
         dto.setIsActive(country.getIsActive());
         dto.setCreatedAt(country.getCreatedAt());
 
-        if (country.getAdmin() != null) {
-            dto.setAdminId(country.getAdmin().getId());
-        }
+        dto.setAdminId(country.getAdminId());
 
         return dto;
     }

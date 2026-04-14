@@ -19,8 +19,8 @@ public interface PartnerPreferenceService {
     // ✅ Get all
     List<PartnerPreference> getAll();
 
-    // ✅ Delete
-    void delete(Long id);
+    // ✅ Delete by userId (IMPORTANT: you are using userId, not id)
+    void delete(Long userId);
 
     // 🔍 Filters
     List<PartnerPreference> getByReligion(Long religionId);

@@ -1,29 +1,29 @@
 package com.example.service;
 
-import com.example.model.Interest;
+import com.example.dto.request.InterestRequestDTO;
+import com.example.dto.response.InterestResponseDTO;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface InterestService {
 
-    Interest sendInterest(Interest interest);
+    InterestResponseDTO sendInterest(InterestRequestDTO request);
 
-    Interest updateStatus(Long id, String status);
+    InterestResponseDTO updateStatus(Long id, String status);
 
     void delete(Long id);
 
-    Optional<Interest> getById(Long id);
+    InterestResponseDTO getById(Long id);
 
-    List<Interest> getBySender(Long senderId);
+    List<InterestResponseDTO> getBySender(Long senderId);
 
-    List<Interest> getBySenderAndStatus(Long senderId, String status);
+    List<InterestResponseDTO> getBySenderAndStatus(Long senderId, String status);
 
-    List<Interest> getByReceiver(Long receiverId);
+    List<InterestResponseDTO> getByReceiver(Long receiverId);
 
-    List<Interest> getByReceiverAndStatus(Long receiverId, String status);
+    List<InterestResponseDTO> getByReceiverAndStatus(Long receiverId, String status);
 
-    Optional<Interest> getBySenderAndReceiver(Long senderId, Long receiverId);
+    InterestResponseDTO getBySenderAndReceiver(Long senderId, Long receiverId);
 
-    List<Interest> getByStatus(String status);
+    List<InterestResponseDTO> getByStatus(String status);
 }

@@ -26,7 +26,6 @@ public class ReligionController {
     public ReligionResponseDTO create(@Valid @RequestBody ReligionRequestDTO dto) {
 
         Religion entity = mapToEntity(dto);
-
         Religion saved = service.save(entity);
 
         return mapToResponse(saved);
@@ -129,7 +128,7 @@ public class ReligionController {
     }
 
     // =========================
-    // 🔥 MAPPING
+    // 🔁 MAPPING
     // =========================
 
     private Religion mapToEntity(ReligionRequestDTO dto) {
@@ -151,8 +150,6 @@ public class ReligionController {
 
     private void updateEntity(Religion r, ReligionRequestDTO dto) {
 
-        // 🚫 DO NOT update admin
-
         if (dto.getName() != null) {
             r.setName(dto.getName());
         }
@@ -167,7 +164,10 @@ public class ReligionController {
         return ReligionResponseDTO.builder()
                 .id(r.getId())
                 .adminId(r.getAdmin() != null ? r.getAdmin().getId() : null)
-                .adminName(r.getAdmin() != null ? r.getAdmin().getName() : null) // adjust if needed
+
+                // ✅ FIXED (no lazy load)
+                .adminName(null)
+
                 .name(r.getName())
                 .isActive(r.getIsActive())
                 .createdAt(r.getCreatedAt())

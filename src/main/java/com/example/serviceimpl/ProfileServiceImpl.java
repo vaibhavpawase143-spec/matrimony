@@ -1,111 +1,229 @@
 package com.example.serviceimpl;
 
-import com.example.model.Profile;
-import com.example.repository.ProfileRepository;
+import com.example.dto.request.ProfileRequestDTO;
+import com.example.dto.request.UpdateProfileRequestDTO;
+import com.example.dto.response.ProfileResponseDTO;
+import com.example.model.*;
+import com.example.repository.*;
+import com.example.service.CacheService;
+import com.example.service.MatchAsyncService;
 import com.example.service.ProfileService;
+import com.example.specification.ProfileSpecification;
+
+import lombok.RequiredArgsConstructor;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
 
 @Service
+@Transactional
+@RequiredArgsConstructor
 public class ProfileServiceImpl implements ProfileService {
 
     private final ProfileRepository repository;
+    private final UserRepository userRepository;
+    private final MatchAsyncService asyncService;
+    private final ReligionRepository religionRepository;
+    private final CasteRepository casteRepository;
+    private final EducationLevelRepository educationRepository;
+    private final OccupationRepository occupationRepository;
+    private final HeightRepository heightRepository;
+    private final WeightRepository weightRepository;
+    private final CityRepository cityRepository;
+    private final CacheService cacheService;
 
-    public ProfileServiceImpl(ProfileRepository repository) {
-        this.repository = repository;
+    // ================= CURRENT USER =================
+    private User getCurrentUser() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        return userRepository.findByEmailIgnoreCase(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
     }
 
-    // ✅ Save profile (One profile per user)
+    // ================= CREATE =================
+    public ProfileResponseDTO createProfile(ProfileRequestDTO dto) {
+
+        User user = getCurrentUser(); // ✅ FIXED
+
+        if (repository.existsByUserId(user.getId())) {
+            throw new RuntimeException("Profile already exists!");
+        }
+
+        Profile profile = new Profile();
+        profile.setUser(user);
+
+        mapDtoToEntity(dto, profile);
+
+        Profile saved = repository.save(profile);
+
+        safeRedis(user.getId());
+
+        return mapToDTO(saved);
+    }
+
+    // ================= UPDATE =================
+    public ProfileResponseDTO updateMyProfile(UpdateProfileRequestDTO dto) {
+
+        User user = getCurrentUser(); // ✅ FIXED
+
+        Profile profile = repository.findByUserId(user.getId())
+                .orElseThrow(() -> new RuntimeException("Profile not found"));
+
+        mapUpdateDto(dto, profile);
+
+        Profile saved = repository.save(profile);
+
+        safeRedis(user.getId());
+
+        return mapToDTO(saved);
+    }
+
+    // ================= GET =================
+    public ProfileResponseDTO getMyProfile() {
+        return mapToDTO(repository.findByUserId(getCurrentUser().getId())
+                .orElseThrow(() -> new RuntimeException("Profile not found")));
+    }
+
+    public ProfileResponseDTO getProfileById(Long id) {
+        return mapToDTO(repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Profile not found")));
+    }
+
+    // ================= DELETE =================
+    @Override
+    public void delete(Long id) {
+        Profile profile = repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Profile not found"));
+
+        if (!profile.getUser().getId().equals(getCurrentUser().getId())) {
+            throw new RuntimeException("Access Denied");
+        }
+
+        repository.delete(profile);
+    }
+
+    // ================= SAVE =================
     @Override
     public Profile saveProfile(Profile profile) {
 
-        Long userId = profile.getUser().getId();
+        User user = getCurrentUser();
 
-        if (repository.existsByUserId(userId)) {
-            throw new RuntimeException("Profile already exists for this user!");
+        Optional<Profile> existing = repository.findByUserId(user.getId());
+
+        if (existing.isPresent()) {
+            Profile p = existing.get();
+
+            if (profile.getImageUrl() != null) p.setImageUrl(profile.getImageUrl());
+            if (profile.getAbout() != null) p.setAbout(profile.getAbout());
+
+            return repository.save(p);
         }
+
+        profile.setUser(user);
+        profile.setIsActive(true);
 
         return repository.save(profile);
     }
 
-    // ✅ Get by ID
-    @Override
-    public Optional<Profile> getById(Long id) {
-        return repository.findById(id);
+    // ================= READ =================
+    @Override public Optional<Profile> getById(Long id) { return repository.findById(id); }
+    @Override public Optional<Profile> getByUserId(Long userId) { return repository.findByUserId(userId); }
+    @Override public List<Profile> getAll() { return repository.findAllWithUser(); }
+    @Override public List<Profile> getActiveProfiles() { return repository.findActiveProfilesWithUser(); }
+
+    // ================= FILTER =================
+    @Override public List<Profile> getByReligion(Long id) { return repository.findByReligionId(id); }
+    @Override public List<Profile> getByCaste(Long id) { return repository.findByCasteId(id); }
+    @Override public List<Profile> getByCity(Long id) { return repository.findByCityId(id); }
+    @Override public List<Profile> getByEducation(Long id) { return repository.findByEducationLevelId(id); }
+    @Override public List<Profile> getByOccupation(Long id) { return repository.findByOccupationId(id); }
+
+    @Override public List<Profile> getByReligionAndCaste(Long r, Long c) { return repository.findByReligionIdAndCasteId(r, c); }
+    @Override public List<Profile> getByCityAndEducation(Long c, Long e) { return repository.findByCityIdAndEducationLevelId(c, e); }
+    @Override public List<Profile> getByOccupationAndCity(Long o, Long c) { return repository.findByOccupationIdAndCityId(o, c); }
+    @Override public List<Profile> getActiveByReligionAndCity(Long r, Long c) { return repository.findByReligionIdAndCityIdAndIsActiveTrue(r, c); }
+
+    // ================= FIXED MAPPER =================
+    private void mapDtoToEntity(ProfileRequestDTO dto, Profile p) {
+
+        if (dto.getReligionId() != null)
+            p.setReligion(religionRepository.findById(dto.getReligionId()).orElse(null));
+
+        if (dto.getCasteId() != null)
+            p.setCaste(casteRepository.findById(dto.getCasteId()).orElse(null));
+
+        if (dto.getEducationLevelId() != null)
+            p.setEducationLevel(educationRepository.findById(dto.getEducationLevelId()).orElse(null));
+
+        if (dto.getOccupationId() != null)
+            p.setOccupation(occupationRepository.findById(dto.getOccupationId()).orElse(null));
+
+        if (dto.getHeightId() != null)
+            p.setHeight(heightRepository.findById(dto.getHeightId()).orElse(null));
+
+        if (dto.getWeightId() != null)
+            p.setWeight(weightRepository.findById(dto.getWeightId()).orElse(null));
+
+        if (dto.getCityId() != null)
+            p.setCity(cityRepository.findById(dto.getCityId()).orElse(null));
+
+        p.setAbout(dto.getAbout());
+        p.setImageUrl(dto.getImageUrl());
     }
 
-    // 🔍 Get by userId
-    @Override
-    public Optional<Profile> getByUserId(Long userId) {
-        return repository.findByUserId(userId);
+    private void mapUpdateDto(UpdateProfileRequestDTO dto, Profile p) {
+
+        if (dto.getCityId() != null)
+            p.setCity(cityRepository.findById(dto.getCityId()).orElse(null));
+
+        if (dto.getAbout() != null)
+            p.setAbout(dto.getAbout());
+
+        if (dto.getImageUrl() != null)
+            p.setImageUrl(dto.getImageUrl());
     }
 
-    // 🔍 Get all
-    @Override
-    public List<Profile> getAll() {
-        return repository.findAll();
+    public ProfileResponseDTO mapToDTO(Profile p) {
+        ProfileResponseDTO dto = new ProfileResponseDTO();
+
+        dto.setId(p.getId());
+        dto.setUserId(p.getUser().getId());
+        dto.setUserName(p.getUser().getFullName());
+        dto.setImageUrl(p.getImageUrl());
+        dto.setAbout(p.getAbout());
+        dto.setIsActive(p.getIsActive());
+        dto.setCreatedAt(p.getCreatedAt());
+        dto.setUpdatedAt(p.getUpdatedAt());
+
+        if (p.getCity() != null) {
+            dto.setCityId(p.getCity().getId());
+            dto.setCityName(p.getCity().getName());
+        }
+
+        return dto;
     }
 
-    // 🔥 Active profiles
-    @Override
-    public List<Profile> getActiveProfiles() {
-        return repository.findByIsActiveTrue();
+    // ================= SEARCH =================
+    public Page<ProfileResponseDTO> searchProfiles(PartnerPreference pref, Pageable pageable) {
+        Specification<Profile> spec = ProfileSpecification.matchPreferences(pref);
+        return repository.findAll(spec, pageable).map(this::mapToDTO);
     }
 
-    // 🔍 Filters
+    // ================= REDIS SAFE =================
+    private void safeRedis(Long userId) {
+        try {
+            cacheService.evictUserMatches(userId);
+        } catch (Exception e) {
+            System.out.println("Redis skipped");
+        }
 
-    @Override
-    public List<Profile> getByReligion(Long religionId) {
-        return repository.findByReligionId(religionId);
-    }
-
-    @Override
-    public List<Profile> getByCaste(Long casteId) {
-        return repository.findByCasteId(casteId);
-    }
-
-    @Override
-    public List<Profile> getByCity(Long cityId) {
-        return repository.findByCityId(cityId);
-    }
-
-    @Override
-    public List<Profile> getByEducation(Long educationLevelId) {
-        return repository.findByEducationLevelId(educationLevelId);
-    }
-
-    @Override
-    public List<Profile> getByOccupation(Long occupationId) {
-        return repository.findByOccupationId(occupationId);
-    }
-
-    // 🔥 Advanced filters
-
-    @Override
-    public List<Profile> getByReligionAndCaste(Long religionId, Long casteId) {
-        return repository.findByReligionIdAndCasteId(religionId, casteId);
-    }
-
-    @Override
-    public List<Profile> getByCityAndEducation(Long cityId, Long educationLevelId) {
-        return repository.findByCityIdAndEducationLevelId(cityId, educationLevelId);
-    }
-
-    @Override
-    public List<Profile> getByOccupationAndCity(Long occupationId, Long cityId) {
-        return repository.findByOccupationIdAndCityId(occupationId, cityId);
-    }
-
-    @Override
-    public List<Profile> getActiveByReligionAndCity(Long religionId, Long cityId) {
-        return repository.findByReligionIdAndCityIdAndIsActiveTrue(religionId, cityId);
-    }
-
-    // ✅ Delete
-    @Override
-    public void delete(Long id) {
-        repository.deleteById(id);
+        asyncService.preloadMatches(userId);
     }
 }
