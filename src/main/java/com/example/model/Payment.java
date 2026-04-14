@@ -19,7 +19,7 @@ public class Payment {
     private Long id;
 
     // 🔥 Who made payment
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 

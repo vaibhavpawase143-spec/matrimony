@@ -15,14 +15,17 @@ import java.nio.file.Files;
 @RequestMapping("/api/image")
 public class ImageUploadController {
 
-    private static final String UPLOAD_DIR = System.getProperty("user.dir") + "/static/uploads/";
+    private static final String UPLOAD_DIR = System.getProperty("user.dir") + "/uploads/";
     private static final long MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
     // ===================== UPLOAD =====================
-    @PostMapping("/upload")
+    @PostMapping(value = "/upload", consumes = "multipart/form-data")
     public ResponseEntity<?> uploadImage(@RequestParam("file") MultipartFile file) {
 
         try {
+            // 🔥 DEBUG
+            System.out.println("UPLOAD DIR: " + UPLOAD_DIR);
+
             // ✅ Empty check
             if (file == null || file.isEmpty()) {
                 return ResponseEntity.badRequest().body("File is empty");
@@ -47,10 +50,10 @@ public class ImageUploadController {
                 directory.mkdirs();
             }
 
-            // 🧠 Clean + FIX filename (🔥 IMPORTANT FIX)
+            // 🧠 Clean filename
             String originalFileName = StringUtils.cleanPath(file.getOriginalFilename())
-                    .replaceAll("\\s+", "_")     // remove spaces
-                    .replaceAll("[()]", "");     // remove brackets
+                    .replaceAll("\\s+", "_")
+                    .replaceAll("[()]", "");
 
             if (originalFileName.contains("..")) {
                 return ResponseEntity.badRequest().body("Invalid file name");
@@ -63,12 +66,13 @@ public class ImageUploadController {
             File dest = new File(directory, fileName);
             file.transferTo(dest);
 
-            // 🌐 Return API URL
+            // 🌐 Return URL
             String fileUrl = "/api/image/view/" + fileName;
 
             return ResponseEntity.ok(fileUrl);
 
         } catch (Exception e) {
+            e.printStackTrace(); // 🔥 VERY IMPORTANT
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Upload failed: " + e.getMessage());
         }
@@ -128,7 +132,7 @@ public class ImageUploadController {
     }
 
     // ===================== UPDATE =====================
-    @PutMapping("/update/{oldFileName}")
+    @PutMapping(value = "/update/{oldFileName}", consumes = "multipart/form-data")
     public ResponseEntity<?> updateImage(
             @PathVariable String oldFileName,
             @RequestParam("file") MultipartFile newFile) {
@@ -156,7 +160,7 @@ public class ImageUploadController {
                 oldFile.delete();
             }
 
-            // 🧠 Clean filename (same fix)
+            // 🧠 Clean filename
             String originalFileName = StringUtils.cleanPath(newFile.getOriginalFilename())
                     .replaceAll("\\s+", "_")
                     .replaceAll("[()]", "");
@@ -172,6 +176,7 @@ public class ImageUploadController {
             return ResponseEntity.ok(fileUrl);
 
         } catch (Exception e) {
+            e.printStackTrace(); // 🔥 IMPORTANT
             return ResponseEntity.internalServerError()
                     .body("Update failed: " + e.getMessage());
         }
