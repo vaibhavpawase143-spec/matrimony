@@ -41,6 +41,7 @@ public class User {
 
     private Boolean isActive = true;
     private Boolean emailVerified = false;
+    private Boolean phoneVerified = false;
 
     private LocalDateTime emailVerifiedAt;
     private LocalDateTime phoneVerifiedAt;
@@ -79,6 +80,9 @@ public class User {
 
     private Boolean isBlocked = false;
     private Integer reportCount = 0;
+
+    // Stripe customer ID for payment processing
+    private String stripeCustomerId;
 
     public User() {}
 
