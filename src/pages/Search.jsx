@@ -7,10 +7,6 @@ import { useToast } from "@/components/Toast";
 import { searchAPI, masterDataAPI } from "@/services/api";
 import { useMatrimonyOptions } from "@/hooks/useMatrimonyOptions";
 import { useLanguage } from "@/context/LanguageContext.jsx";
-import profile1 from "@/assets/profile1.jpg";
-import profile2 from "@/assets/profile2.jpg";
-import profile3 from "@/assets/profile3.jpg";
-import profile4 from "@/assets/profile4.jpg";
 
 const SelectField = ({ label, options, value, onChange, placeholder = "Select" }) => (
   <div>
@@ -122,20 +118,15 @@ const SearchPage = () => {
   const performSearch = async () => {
     setLoading(true);
     try {
+      // TODO: call backend API
       const response = await searchAPI.searchProfiles(filters);
       setSearchResults(response.data || []);
       setTotalResults(response.total || response.data?.length || 0);
     } catch (err) {
       console.error('Search failed:', err);
       error('Search failed. Please try again.');
-      // Fallback to mock data for demo
-      setSearchResults([
-        { id: 1, name: "Priya Sharma", age: 25, city: "Pune", religion: "Hindu", education: "MBA", profession: "Software Engineer", image: profile1 },
-        { id: 2, name: "Sneha Patel", age: 24, city: "Mumbai", religion: "Hindu", education: "B.Tech", profession: "Designer", image: profile2 },
-        { id: 3, name: "Aarushi Gupta", age: 26, city: "Delhi", religion: "Hindu", education: "M.Tech", profession: "Doctor", image: profile3 },
-        { id: 4, name: "Neha Verma", age: 23, city: "Bangalore", religion: "Hindu", education: "BCA", profession: "Teacher", image: profile4 },
-      ]);
-      setTotalResults(4);
+      setSearchResults([]);
+      setTotalResults(0);
     } finally {
       setLoading(false);
     }
@@ -149,6 +140,7 @@ const SearchPage = () => {
   };
 
   const handleSearch = () => {
+    // TODO: call backend API
     performSearch();
   };
 
@@ -331,7 +323,7 @@ const SearchPage = () => {
                           alt={profile.name} 
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                           onError={(e) => {
-                            e.target.src = profile1; // Fallback to default image
+                            // TODO: add fallback image
                           }}
                         />
                       ) : (

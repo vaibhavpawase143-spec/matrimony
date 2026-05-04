@@ -94,6 +94,7 @@ const Register = () => {
       startLoading(t.register.messages.creatingAccount);
       
       try {
+        // TODO: connect backend API
         const registrationData = {
           firstName: firstName.trim(),
           lastName: lastName.trim(),
@@ -108,7 +109,7 @@ const Register = () => {
         const response = await authAPI.register(registrationData);
 
         if (response.token) {
-          localStorage.setItem('authToken', response.token);
+          localStorage.setItem('token', response.token);
         }
         
         const userName = response.user?.first_name || `${firstName} ${lastName}`.trim() || firstName;
@@ -117,8 +118,8 @@ const Register = () => {
         success(t.register.messages.registerSuccess);
         stopLoading();
 
-        const redirectPath = response.user?.profile_completed ? "/home" : "/profile/edit";
-        navigate(redirectPath);
+        // Fixed redirect to valid route
+        navigate("/home");
         
       } catch (err) {
         stopLoading();

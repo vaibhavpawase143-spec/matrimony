@@ -6,16 +6,20 @@ import { useLanguage } from "@/context/LanguageContext";
 
 const AuthenticatedLayout = ({ children }) => {
   const { t } = useLanguage();
-  const { isLoggedIn } = useAuth();
+  const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!isLoggedIn) {
+    console.log("AuthenticatedLayout: Checking authentication");
+    console.log("AuthenticatedLayout: isAuthenticated():", isAuthenticated());
+    if (!isAuthenticated()) {
+      console.log("AuthenticatedLayout: Not authenticated, redirecting to login");
       navigate("/login", { replace: true });
     }
-  }, [isLoggedIn, navigate]);
+  }, [isAuthenticated, navigate]);
 
-  if (!isLoggedIn) {
+  if (!isAuthenticated()) {
+    console.log("AuthenticatedLayout: Not authenticated, showing redirect message");
     return (
       <div className="min-h-screen flex items-center justify-center bg-muted/30">
         <p className="text-muted-foreground">{t.auth.redirecting}</p>

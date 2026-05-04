@@ -1,7 +1,5 @@
 import { useState, useEffect } from 'react';
 
-const PROFILE_STORAGE_KEY = 'gathbandhan_profile_data';
-
 /**
  * @typedef {Object} ProfileData
  */
@@ -64,29 +62,17 @@ export const useProfileData = () => {
   const [profileData, setProfileData] = useState(defaultProfileData);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load profile data from localStorage on mount
+  // Load profile data on mount
   useEffect(() => {
-    try {
-      const savedData = localStorage.getItem(PROFILE_STORAGE_KEY);
-      if (savedData) {
-        const parsedData = JSON.parse(savedData);
-        // Convert dateOfBirth back to string format if needed
-        setProfileData({ ...defaultProfileData, ...parsedData });
-      }
-    } catch (error) {
-      console.error('Error loading profile data:', error);
-    } finally {
-      setIsLoading(false);
-    }
+    // TODO: fetch profile from backend
+    setIsLoading(false);
   }, []);
 
-  // Save profile data to localStorage
+  // Save profile data
   const saveProfileData = async (data) => {
     try {
       const updatedData = { ...profileData, ...data };
-      // Remove the File object from storage (can't serialize File objects)
-      const { profilePhoto, ...dataToStore } = updatedData;
-      localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(dataToStore));
+      // TODO: save profile to backend
       setProfileData(updatedData);
       return true;
     } catch (error) {
@@ -102,7 +88,7 @@ export const useProfileData = () => {
 
   // Clear all profile data
   const clearProfileData = () => {
-    localStorage.removeItem(PROFILE_STORAGE_KEY);
+    // TODO: clear profile from backend
     setProfileData(defaultProfileData);
   };
 

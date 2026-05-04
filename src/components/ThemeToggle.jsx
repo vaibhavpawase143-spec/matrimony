@@ -1,12 +1,12 @@
 import { Moon, Sun } from 'lucide-react';
-import { useDarkMode } from '@/hooks/useDarkMode';
+import { useTheme } from '@/context/ThemeContext';
 
 const ThemeToggle = ({ showLabel = false }) => {
-  const { isDarkMode, toggleDarkMode } = useDarkMode();
+  const { isDarkMode, toggleTheme } = useTheme();
 
   return (
     <button
-      onClick={toggleDarkMode}
+      onClick={toggleTheme}
       className="p-2 rounded-lg hover:bg-muted dark:hover:bg-muted/50 transition-colors"
       title={isDarkMode ? 'Light mode' : 'Dark mode'}
       aria-label="Toggle dark mode"

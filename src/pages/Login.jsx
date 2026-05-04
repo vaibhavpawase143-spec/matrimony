@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/components/Toast";
 import { useLoading } from "@/hooks/useLoading";
-import { authAPI } from "@/services/api";
 import { useLanguage } from "@/context/LanguageContext.jsx";
 
 const Login = () => {
@@ -19,70 +18,92 @@ const Login = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [errors, setErrors] = useState({});
 
-  const handleLogin = async () => {
+  const handleLogin = (e) => {
+    e.preventDefault();
+
     const errs = {};
 
     if (!email.trim()) {
-      errs.email = t.login.errors.emailRequired;
+      errs.email = t?.login?.errors?.emailRequired || "Email is required";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      errs.email = t.login.errors.emailInvalid;
+      errs.email = t?.login?.errors?.emailInvalid || "Enter a valid email";
     }
 
     if (!password.trim()) {
-      errs.password = t.login.errors.passwordRequired;
+      errs.password = t?.login?.errors?.passwordRequired || "Password is required";
     } else if (password.length < 6) {
-      errs.password = t.login.errors.passwordMin;
+      errs.password =
+        t?.login?.errors?.passwordMin || "Password must be at least 6 characters";
     }
 
     setErrors(errs);
 
-    if (Object.keys(errs).length === 0) {
-      startLoading(t.login.messages.loggingIn);
+    if (Object.keys(errs).length > 0) {
+      error(t?.login?.messages?.fixErrorsFirst || "Please fix the errors first");
+      return;
+    }
 
-      try {
-        if (
-          email === "admin@gathbandhan.com" &&
-          password === "admin123"
-        ) {
-          localStorage.setItem("role", "ADMIN");
-          login("admin");
-          success(t.login.messages.adminLoginSuccess);
-          stopLoading();
-          navigate("/admin");
-          return;
-        }
+    startLoading(t?.login?.messages?.loggingIn || "Logging in...");
 
-        const response = await authAPI.login({
-          email: email.trim(),
-          password,
-          rememberMe,
-        });
+    try {
+      // Simple local login
+      const adminEmail = "admin@gmail.com";
+      const adminPassword = "admin123";
 
-        const user = response.user;
+      const userEmail = "user@gmail.com";
+      const userPassword = "user123";
 
-        login(user?.first_name || user?.email || email.split("@")[0]);
+      let user = null;
 
-        const role = user?.role || "USER";
-        localStorage.setItem("role", role);
+      if (email.trim() === adminEmail && password === adminPassword) {
+        user = {
+          first_name: "Admin",
+          email: adminEmail,
+          role: "ADMIN",
+        };
+      } else if (email.trim() === userEmail && password === userPassword) {
+        user = {
+          first_name: "User",
+          email: userEmail,
+          role: "USER",
+        };
+      } else {
+        throw new Error("Invalid email or password");
+      }
 
-        success(t.login.messages.loginSuccess);
-        stopLoading();
+      console.log("Login: Attempting login with user:", user);
+      console.log("Login: User role:", user.role);
 
-        if (role === "ADMIN") {
+      // Store user data in localStorage first
+      localStorage.setItem("user", JSON.stringify(user));
+      localStorage.setItem("role", user.role);
+
+      // Call login with full user object
+      login(user);
+
+      console.log("Login: Auth state updated, navigating to:", user.role === "ADMIN" ? "/admin" : "/home");
+
+      if (rememberMe) {
+        localStorage.setItem("rememberedEmail", email.trim());
+      } else {
+        localStorage.removeItem("rememberedEmail");
+      }
+
+      success(t?.login?.messages?.loginSuccess || "Login successful");
+      stopLoading();
+
+      // Add small delay to ensure auth state is updated before navigation
+      setTimeout(() => {
+        console.log("Login: Navigating to:", user.role === "ADMIN" ? "/admin" : "/home");
+        if (user.role === "ADMIN") {
           navigate("/admin");
         } else {
           navigate("/home");
         }
-      } catch (err) {
-        stopLoading();
-        error(err.message || t.login.messages.loginFailed);
-
-        if (err.field) {
-          setErrors({ [err.field]: err.message });
-        }
-      }
-    } else {
-      error(t.login.messages.fixErrorsFirst);
+      }, 100);
+    } catch (err) {
+      stopLoading();
+      error(err.message || t?.login?.messages?.loginFailed || "Login failed");
     }
   };
 
@@ -105,35 +126,51 @@ const Login = () => {
               Gathbandhan
             </span>
           </div>
-          <p className="text-muted-foreground text-sm">{t.login.subtitle}</p>
+          <p className="text-muted-foreground text-sm">
+            {t?.login?.subtitle || "Welcome back"}
+          </p>
         </div>
 
-        <div className="space-y-4">
+        <form className="space-y-4" onSubmit={handleLogin}>
           <div>
-            <label className="text-xs font-medium mb-1 block">{t.login.emailLabel}</label>
+            <label className="text-xs font-medium mb-1 block">
+              {t?.login?.emailLabel || "Email"}
+            </label>
             <input
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                if (errors.email) {
+                  setErrors((prev) => ({ ...prev, email: "" }));
+                }
+              }}
               className="w-full border rounded-lg px-4 py-2.5 text-sm"
-              placeholder={t.login.emailPlaceholder}
+              placeholder={t?.login?.emailPlaceholder || "Enter your email"}
             />
             {errors.email && (
-              <p className="text-xs text-red-500">{errors.email}</p>
+              <p className="text-xs text-red-500 mt-1">{errors.email}</p>
             )}
           </div>
 
           <div>
-            <label className="text-xs font-medium mb-1 block">{t.login.passwordLabel}</label>
+            <label className="text-xs font-medium mb-1 block">
+              {t?.login?.passwordLabel || "Password"}
+            </label>
             <input
               type="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                if (errors.password) {
+                  setErrors((prev) => ({ ...prev, password: "" }));
+                }
+              }}
               className="w-full border rounded-lg px-4 py-2.5 text-sm"
-              placeholder={t.login.passwordPlaceholder}
+              placeholder={t?.login?.passwordPlaceholder || "Enter your password"}
             />
             {errors.password && (
-              <p className="text-xs text-red-500">{errors.password}</p>
+              <p className="text-xs text-red-500 mt-1">{errors.password}</p>
             )}
           </div>
 
@@ -143,23 +180,25 @@ const Login = () => {
               checked={rememberMe}
               onChange={(e) => setRememberMe(e.target.checked)}
             />
-            <span className="text-xs">{t.login.rememberMe}</span>
+            <span className="text-xs">
+              {t?.login?.rememberMe || "Remember me"}
+            </span>
           </div>
 
           <button
-            onClick={handleLogin}
-            className="w-full bg-primary text-white py-2.5 rounded-lg"
+            type="submit"
+            className="w-full bg-primary text-white py-2.5 rounded-lg hover:opacity-90 transition"
           >
-            {t.login.button}
+            {t?.login?.button || "Login"}
           </button>
 
           <p className="text-center text-xs">
-            {t.login.noAccount}{" "}
+            {t?.login?.noAccount || "Don't have an account?"}{" "}
             <Link to="/register" className="text-primary font-semibold">
-              {t.login.registerLink}
+              {t?.login?.registerLink || "Register"}
             </Link>
           </p>
-        </div>
+        </form>
       </div>
     </div>
   );

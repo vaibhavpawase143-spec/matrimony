@@ -5,9 +5,10 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/useAuth";
 import { LoadingProvider } from "@/hooks/useLoading";
-import { DarkModeProvider } from "@/hooks/useDarkMode";
 import { ToastProvider } from "@/components/Toast";
 import { LanguageProvider } from "@/context/LanguageContext";
+import { ThemeProvider } from "@/context/ThemeContext";
+import AdminRoute from "@/routes/AdminRoute";
 import LoadingSpinner from "./components/LoadingSpinner";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import AuthenticatedLayout from "@/components/AuthenticatedLayout";
@@ -46,7 +47,7 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <LanguageProvider>
-      <DarkModeProvider>
+      <ThemeProvider>
         <LoadingProvider>
           <ToastProvider>
             <TooltipProvider>
@@ -145,10 +146,38 @@ const App = () => (
                     />
 
                     {/* ADMIN ROUTES */}
-                    <Route path="/admin" element={<AdminDashboard />} />
-                    <Route path="/admin/users" element={<UsersPage />} />
-                    <Route path="/admin/payments" element={<PaymentsPage />} />
-                    <Route path="/admin/verification" element={<VerificationPage />} />
+                    <Route
+                      path="/admin"
+                      element={
+                        <AdminRoute>
+                          <AdminDashboard />
+                        </AdminRoute>
+                      }
+                    />
+                    <Route
+                      path="/admin/users"
+                      element={
+                        <AdminRoute>
+                          <UsersPage />
+                        </AdminRoute>
+                      }
+                    />
+                    <Route
+                      path="/admin/payments"
+                      element={
+                        <AdminRoute>
+                          <PaymentsPage />
+                        </AdminRoute>
+                      }
+                    />
+                    <Route
+                      path="/admin/verification"
+                      element={
+                        <AdminRoute>
+                          <VerificationPage />
+                        </AdminRoute>
+                      }
+                    />
 
                     {/* NOT FOUND */}
                     <Route path="*" element={<NotFound />} />
@@ -158,7 +187,7 @@ const App = () => (
             </TooltipProvider>
           </ToastProvider>
         </LoadingProvider>
-      </DarkModeProvider>
+      </ThemeProvider>
     </LanguageProvider>
   </QueryClientProvider>
 );
