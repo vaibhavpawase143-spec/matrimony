@@ -1,0 +1,200 @@
+{
+  "info": {
+    "_postman_id": "mobile-otp-vaibhav",
+    "name": "Mobile OTP Verification - Your Phone Number",
+    "description": "Testing with phone: +917666084107",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "🔥 STEP 1: Register with Your Phone",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"firstName\": \"Vaibhav\",\n  \"lastName\": \"Pawase\",\n  \"email\": \"vaibhav@example.com\",\n  \"phone\": \"+917666084107\",\n  \"password\": \"password123\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:9090/api/users/register",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "9090",
+          "path": [
+            "api",
+            "users",
+            "register"
+          ]
+        },
+        "description": "✅ STEP 1: Register user with your phone number +917666084107\n\nWhat happens:\n1. User created\n2. Email verification link sent\n3. OTP sent to your phone (check console!)\n\nCheck console for OTP!"
+      }
+    },
+    {
+      "name": "📱 CHECK CONSOLE FOR OTP HERE ⬇️",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "http://localhost:9090/api/users",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "9090",
+          "path": [
+            "api",
+            "users"
+          ]
+        },
+        "description": "⏸️ PAUSE HERE!\n\n👉 Switch to IDE console\n👉 Look for: \"Your OTP: XXXXXX\"\n👉 Copy the 6-digit number\n👉 Come back and use it in STEP 2"
+      }
+    },
+    {
+      "name": "✅ STEP 2: Verify OTP (Replace OTP below)",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "http://localhost:9090/api/users/verify-otp?phone=%2B917666084107&otp=123456",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "9090",
+          "path": [
+            "api",
+            "users",
+            "verify-otp"
+          ],
+          "query": [
+            {
+              "key": "phone",
+              "value": "+917666084107"
+            },
+            {
+              "key": "otp",
+              "value": "123456",
+              "description": "⚠️ REPLACE 123456 WITH YOUR OTP FROM CONSOLE"
+            }
+          ]
+        },
+        "description": "✅ STEP 2: Verify OTP\n\n⚠️ IMPORTANT:\n1. Check IDE console from STEP 1\n2. Find: \"Your OTP: 123456\"\n3. Edit this request below\n4. Change otp=123456 to otp=ACTUAL_OTP\n5. Click Send\n\nExample: otp=456789"
+      }
+    },
+    {
+      "name": "📧 STEP 3: Verify Email (Click Email Link)",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "http://localhost:9090/api/users/verify?token=YOUR_EMAIL_TOKEN_HERE",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "9090",
+          "path": [
+            "api",
+            "users",
+            "verify"
+          ],
+          "query": [
+            {
+              "key": "token",
+              "value": "YOUR_EMAIL_TOKEN_HERE",
+              "description": "Get token from email or console"
+            }
+          ]
+        },
+        "description": "✅ STEP 3: Verify Email\n\nOPTION A (Recommended):\n1. Check your email: vaibhav@example.com\n2. Look for subject: \"Verify your account\"\n3. Click the link in email\n4. Done! Email verified.\n\nOPTION B (If you didn't get email):\n1. Get token from IDE console\n2. Replace YOUR_EMAIL_TOKEN_HERE\n3. Click Send"
+      }
+    },
+    {
+      "name": "🔐 STEP 4: Login (Get JWT Token)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"vaibhav@example.com\",\n  \"password\": \"password123\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:9090/api/users/login",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "9090",
+          "path": [
+            "api",
+            "users",
+            "login"
+          ]
+        },
+        "description": "✅ STEP 4: Login\n\n✅ After both email & phone verified:\n1. Click Send\n2. You get JWT token in response\n3. Copy the token\n4. Use in authorization header\n\n🎉 SUCCESS!"
+      }
+    },
+    {
+      "name": "OPTIONAL: Send New OTP",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "http://localhost:9090/api/users/send-otp?phone=%2B917666084107",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "9090",
+          "path": [
+            "api",
+            "users",
+            "send-otp"
+          ],
+          "query": [
+            {
+              "key": "phone",
+              "value": "+917666084107"
+            }
+          ]
+        },
+        "description": "Send fresh OTP to +917666084107\n\nUse if:\n- OTP expired (10 min limit)\n- You need to re-verify\n- Testing multiple times"
+      }
+    },
+    {
+      "name": "OPTIONAL: Resend OTP",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "http://localhost:9090/api/users/resend-otp?phone=%2B917666084107",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "9090",
+          "path": [
+            "api",
+            "users",
+            "resend-otp"
+          ],
+          "query": [
+            {
+              "key": "phone",
+              "value": "+917666084107"
+            }
+          ]
+        },
+        "description": "Resend OTP if:\n- Too many attempts (5+)\n- Need new code\n- First one expired"
+      }
+    }
+  ]
+}
+

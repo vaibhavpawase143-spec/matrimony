@@ -5,14 +5,23 @@ import com.example.dto.request.UserRegisterRequestDTO;
 import com.example.dto.response.PageResponse;
 import com.example.dto.response.UserResponseDTO;
 import com.example.mapper.UserMapper;
-import com.example.model.*;
-import com.example.repository.*;
+import com.example.model.EmailVerification;
+import com.example.model.PhoneVerificationOTP;
+import com.example.model.Role;
+import com.example.model.User;
+import com.example.repository.EmailVerificationRepository;
+import com.example.repository.PhoneVerificationOTPRepository;
+import com.example.repository.RoleRepository;
+import com.example.repository.UserRepository;
 import com.example.security.JwtUtil;
-import com.example.service.*;
-
+import com.example.service.EmailService;
+import com.example.service.SMSService;
+import com.example.service.UserService;
 import lombok.RequiredArgsConstructor;
-
-import org.springframework.data.domain.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +39,8 @@ public class UserServiceImpl implements UserService {
     private final JwtUtil jwtUtil;
     private final EmailService emailService;
     private final EmailVerificationRepository verificationRepository;
+    private final PhoneVerificationOTPRepository otpRepository;
+    private final SMSService smsService;
 
     // ================= REGISTER =================
     @Override
@@ -73,6 +84,10 @@ public class UserServiceImpl implements UserService {
             throw new RuntimeException("Please verify your email first");
         }
 
+        if (!Boolean.TRUE.equals(user.getPhoneVerified())) {
+            throw new RuntimeException("Please verify your phone number first");
+        }
+
         if (!passwordEncoder.matches(password, user.getPassword())) {
             throw new RuntimeException("Invalid password");
         }
@@ -91,6 +106,10 @@ public class UserServiceImpl implements UserService {
 
         if (!Boolean.TRUE.equals(user.getEmailVerified())) {
             throw new RuntimeException("Please verify your email first");
+        }
+
+        if (!Boolean.TRUE.equals(user.getPhoneVerified())) {
+            throw new RuntimeException("Please verify your phone number first");
         }
 
         if (!passwordEncoder.matches(password, user.getPassword())) {
@@ -120,9 +139,8 @@ public class UserServiceImpl implements UserService {
 
         verificationRepository.save(ev);
 
-        String link = "http://localhost:9090/api/users/verify?token=" + token;
-
-        emailService.sendEmail(email, "Verify your account", "Click: " + link);
+        // ✅ Use enhanced verification email
+        emailService.sendVerificationEmail(email, token);
     }
 
     // ================= FORGOT PASSWORD =================
@@ -189,6 +207,14 @@ public class UserServiceImpl implements UserService {
 
         ev.setVerified(true);
         verificationRepository.save(ev);
+
+        // 🎉 Send welcome email after successful verification
+        try {
+            emailService.sendWelcomeEmail(user.getEmail(), user.getFirstName());
+        } catch (Exception e) {
+            // Don't fail verification if welcome email fails
+            System.err.println("⚠️ Welcome email failed to send: " + e.getMessage());
+        }
     }
 
     @Override
@@ -319,4 +345,93 @@ public class UserServiceImpl implements UserService {
     public Optional<User> findByEmail(String email) {
         return userRepository.findByEmail(email);
     }
+
+    @Override
+    public void saveVerificationToken(Long userId, String token) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        EmailVerification ev = new EmailVerification();
+        ev.setEmail(user.getEmail());
+        ev.setToken(token);
+        ev.setVerified(false);
+        ev.setExpiryDate(LocalDateTime.now().plusHours(24));
+
+        verificationRepository.save(ev);
+    }
+
+    // ================= PHONE VERIFICATION =================
+
+    @Override
+    public String sendOTPToPhone(String phone) {
+
+        // ✅ Generate OTP
+        String otp = generateOTP();
+
+        // ✅ Delete old OTP
+        otpRepository.findByPhone(phone).ifPresent(otpRepository::delete);
+
+        // ✅ Save new OTP
+        PhoneVerificationOTP phoneOTP = new PhoneVerificationOTP(phone, otp);
+        phoneOTP.setExpiryDate(LocalDateTime.now().plusMinutes(10));
+        phoneOTP.setAttemptCount(0);
+
+        otpRepository.save(phoneOTP);
+
+        // ❌ SMS disabled (free testing)
+        // smsService.sendOTP(phone, otp);
+
+        System.out.println("✅ OTP generated: " + otp);
+
+        return otp;
+    }
+
+    @Override
+    public void verifyPhoneOTP(String phone, String otp) {
+
+        PhoneVerificationOTP phoneOTP = otpRepository.findByPhone(phone)
+                .orElseThrow(() -> new RuntimeException("OTP not found. Please request a new one."));
+
+        if (phoneOTP.getExpiryDate().isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("OTP expired. Please request a new one.");
+        }
+
+        if (phoneOTP.getAttemptCount() >= 3) {
+            throw new RuntimeException("Too many failed attempts. Please request a new OTP.");
+        }
+
+        if (!phoneOTP.getOtp().equals(otp)) {
+            phoneOTP.setAttemptCount(phoneOTP.getAttemptCount() + 1);
+            otpRepository.save(phoneOTP);
+            throw new RuntimeException("Invalid OTP. Attempts remaining: " + (3 - phoneOTP.getAttemptCount()));
+        }
+
+        // ✅ OTP verified successfully
+        User user = userRepository.findByPhone(phone)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        user.setPhoneVerified(true);
+        user.setPhoneVerifiedAt(LocalDateTime.now());
+        userRepository.save(user);
+
+        // ✅ Clean up used OTP
+        otpRepository.delete(phoneOTP);
+
+        System.out.println("✅ PHONE VERIFIED: " + phone);
+    }
+
+    @Override
+    public void resendPhoneOTP(String phone) {
+        sendOTPToPhone(phone);
+    }
+
+    // ================= UTILITY METHODS =================
+
+    /**
+     * Generate 6-digit OTP
+     */
+    private String generateOTP() {
+        return String.format("%06d", new java.util.Random().nextInt(1000000));
+    }
 }
+

@@ -33,6 +33,11 @@ public class Payment {
     @Column(name = "transaction_id", nullable = false, unique = true)
     private String transactionId;
 
+    // Plan ID for subscription payments
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "plan_id")
+    private SubscriptionPlan subscriptionPlan;
+
     // 🔥 Correct field: STATUS (not isActive)
     @Column(nullable = false, length = 20)
     private String status = "PENDING"; // PENDING, SUCCESS, FAILED
@@ -116,5 +121,13 @@ public class Payment {
 
     public void setStatus(String status) {   // ✅ FIXED
         this.status = status;
+    }
+
+    public SubscriptionPlan getSubscriptionPlan() {
+        return subscriptionPlan;
+    }
+
+    public void setSubscriptionPlan(SubscriptionPlan subscriptionPlan) {
+        this.subscriptionPlan = subscriptionPlan;
     }
 }

@@ -12,7 +12,7 @@ INSERT INTO user_subscriptions (
 ) VALUES
 (
     (SELECT id FROM users WHERE email='john.doe@example.com'),
-    (SELECT id FROM subscription_plans WHERE name='Basic Plan'),
+    (SELECT id FROM subscription_plans WHERE name='Basic'),
     CURRENT_TIMESTAMP,
     CURRENT_TIMESTAMP + INTERVAL '30 days',
     TRUE,
@@ -22,9 +22,9 @@ INSERT INTO user_subscriptions (
 ),
 (
     (SELECT id FROM users WHERE email='jane.smith@example.com'),
-    (SELECT id FROM subscription_plans WHERE name='Premium Plan'),
+    (SELECT id FROM subscription_plans WHERE name='Premium'),
     CURRENT_TIMESTAMP,
-    CURRENT_TIMESTAMP + INTERVAL '90 days',
+    CURRENT_TIMESTAMP + INTERVAL '180 days',
     TRUE,
     'ACTIVE',
     CURRENT_TIMESTAMP,
