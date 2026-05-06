@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/components/Toast";
 import { useLoading } from "@/hooks/useLoading";
 import { useLanguage } from "@/context/LanguageContext.jsx";
+import { authAPI } from "@/services/api";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -16,6 +17,7 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [errors, setErrors] = useState({});
 
   const handleLogin = (e) => {
@@ -45,66 +47,75 @@ const Login = () => {
 
     startLoading(t?.login?.messages?.loggingIn || "Logging in...");
 
-    try {
-      // Simple local login
-      const adminEmail = "admin@gmail.com";
-      const adminPassword = "admin123";
+    // Call backend API (admin or user login)
+    authAPI.login({ email: email.trim(), password }, isAdmin)
+      .then((response) => {
+        console.log("Login successful:", response);
 
-      const userEmail = "user@gmail.com";
-      const userPassword = "user123";
-
-      let user = null;
-
-      if (email.trim() === adminEmail && password === adminPassword) {
-        user = {
-          first_name: "Admin",
-          email: adminEmail,
-          role: "ADMIN",
-        };
-      } else if (email.trim() === userEmail && password === userPassword) {
-        user = {
-          first_name: "User",
-          email: userEmail,
-          role: "USER",
-        };
-      } else {
-        throw new Error("Invalid email or password");
-      }
-
-      console.log("Login: Attempting login with user:", user);
-      console.log("Login: User role:", user.role);
-
-      // Store user data in localStorage first
-      localStorage.setItem("user", JSON.stringify(user));
-      localStorage.setItem("role", user.role);
-
-      // Call login with full user object
-      login(user);
-
-      console.log("Login: Auth state updated, navigating to:", user.role === "ADMIN" ? "/admin" : "/home");
-
-      if (rememberMe) {
-        localStorage.setItem("rememberedEmail", email.trim());
-      } else {
-        localStorage.removeItem("rememberedEmail");
-      }
-
-      success(t?.login?.messages?.loginSuccess || "Login successful");
-      stopLoading();
-
-      // Add small delay to ensure auth state is updated before navigation
-      setTimeout(() => {
-        console.log("Login: Navigating to:", user.role === "ADMIN" ? "/admin" : "/home");
-        if (user.role === "ADMIN") {
-          navigate("/admin");
+        // Check if response contains token
+        if (response.success && response.data && response.data.accessToken) {
+          // Store token
+          localStorage.setItem('token', response.data.accessToken);
+          
+          // Try to get user profile after login
+          return authAPI.getCurrentUser().catch((profileErr) => {
+            console.log("Profile not found, user may need to create profile:", profileErr);
+            // Return basic user data for profile creation
+            return {
+              success: true,
+              data: {
+                email: email.trim(),
+                role: "USER",
+                needsProfile: true
+              }
+            };
+          });
         } else {
-          navigate("/home");
+          throw new Error(response.message || 'Login failed');
         }
-      }, 100);
-    } catch (err) {
-      stopLoading();
-      error(err.message || t?.login?.messages?.loginFailed || "Login failed");
-    }
+      })
+      .then((userData) => {
+        console.log("User data:", userData);
+
+        // Update auth context
+        const userRole = userData.data?.role || "USER";
+        login(userData.data, localStorage.getItem('token'), userRole);
+
+        if (rememberMe) {
+          localStorage.setItem("rememberedEmail", email.trim());
+        } else {
+          localStorage.removeItem("rememberedEmail");
+        }
+
+        success(t?.login?.messages?.loginSuccess || "Login successful");
+        stopLoading();
+
+        // Navigate based on login type and profile status
+        setTimeout(() => {
+          if (isAdmin) {
+            navigate("/admin");
+          } else if (userData.data?.needsProfile) {
+            navigate("/profile/create"); // Redirect to profile creation
+          } else {
+            navigate("/home");
+          }
+        }, 100);
+      })
+      .catch((err) => {
+        stopLoading();
+        console.error("Login error:", err);
+        const errorMessage = err.message || t?.login?.messages?.loginFailed || "Login failed";
+        
+        // Check if error is related to email/phone verification
+        if (errorMessage.includes("verify your email") || errorMessage.includes("verify your phone")) {
+          error("Please verify your email and phone number first");
+          setTimeout(() => {
+            navigate("/request-verification");
+          }, 2000);
+        } else {
+          error(errorMessage);
+        }
+      });
   };
 
   return (
@@ -119,6 +130,20 @@ const Login = () => {
       <Heart className="absolute top-24 right-[20%] h-4 w-4 text-pink-soft fill-pink-soft opacity-30 animate-float-heart [animation-delay:1s]" />
 
       <div className="bg-card rounded-2xl shadow-2xl p-8 w-full max-w-md mx-4 relative z-10">
+        {/* Admin/User Toggle */}
+        <div className="flex justify-center mb-4">
+          <button
+            type="button"
+            onClick={() => setIsAdmin(!isAdmin)}
+            className={`px-4 py-2 text-sm rounded-lg transition-colors ${
+              isAdmin 
+                ? "bg-primary text-white" 
+                : "bg-secondary text-secondary-foreground"
+            }`}
+          >
+            {isAdmin ? "User Login" : "Admin Login"}
+          </button>
+        </div>
         <div className="text-center mb-6">
           <div className="flex items-center justify-center gap-2 mb-2">
             <Heart className="h-7 w-7 text-primary fill-primary" />

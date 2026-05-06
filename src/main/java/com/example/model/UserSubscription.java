@@ -2,6 +2,7 @@ package com.example.model;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.math.BigDecimal;
 
 @Entity
 @Table(
@@ -37,7 +38,24 @@ public class UserSubscription {
 
     // ✅ Status field
     @Column(nullable = false, length = 20)
-    private String status; // ACTIVE, EXPIRED, CANCELLED
+    private String status; // ACTIVE, EXPIRED, CANCELLED, REFUNDED
+
+    // ✅ Refund fields
+    @Column(name = "refund_amount", precision = 10, scale = 2)
+    private BigDecimal refundAmount;
+
+    @Column(name = "refund_date")
+    private LocalDateTime refundDate;
+
+    @Column(name = "refund_reason", columnDefinition = "TEXT")
+    private String refundReason;
+
+    // ✅ Cancellation fields
+    @Column(name = "cancellation_reason", columnDefinition = "TEXT")
+    private String cancellationReason;
+
+    @Column(name = "cancelled_at")
+    private LocalDateTime cancelledAt;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -105,6 +123,10 @@ public class UserSubscription {
         return updatedAt;
     }
 
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
     // ===== Setters =====
 
     public void setUser(User user) {
@@ -129,5 +151,49 @@ public class UserSubscription {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public BigDecimal getRefundAmount() {
+        return refundAmount;
+    }
+
+    public void setRefundAmount(BigDecimal refundAmount) {
+        this.refundAmount = refundAmount;
+    }
+
+    public LocalDateTime getRefundDate() {
+        return refundDate;
+    }
+
+    public void setRefundDate(LocalDateTime refundDate) {
+        this.refundDate = refundDate;
+    }
+
+    public String getRefundReason() {
+        return refundReason;
+    }
+
+    public void setRefundReason(String refundReason) {
+        this.refundReason = refundReason;
+    }
+
+    public String getCancellationReason() {
+        return cancellationReason;
+    }
+
+    public void setCancellationReason(String cancellationReason) {
+        this.cancellationReason = cancellationReason;
+    }
+
+    public LocalDateTime getCancelledAt() {
+        return cancelledAt;
+    }
+
+    public void setCancelledAt(LocalDateTime cancelledAt) {
+        this.cancelledAt = cancelledAt;
+    }
+
+    public SubscriptionPlan getPlan() {
+        return subscriptionPlan;
     }
 }

@@ -42,6 +42,9 @@ public class Profile {
     @Column(name = "date_of_birth")
     private LocalDate dateOfBirth;
 
+    @Column(length = 10)
+    private String gender;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "education_level_id")
     private EducationLevel educationLevel;
@@ -147,6 +150,14 @@ public class Profile {
 
     public void setDateOfBirth(LocalDate dateOfBirth) {
         this.dateOfBirth = dateOfBirth;
+    }
+
+    public String getGender() {
+        return gender;
+    }
+
+    public void setGender(String gender) {
+        this.gender = gender;
     }
 
     public EducationLevel getEducationLevel() {

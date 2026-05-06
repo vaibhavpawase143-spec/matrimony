@@ -1,21 +1,62 @@
 // API service for frontend development
-// TODO: connect backend API
+const API_BASE_URL = '/api'; // Will be proxied to backend
 
 export const authAPI = {
-  login: async (data) => {
-    // TODO: connect backend API
+  login: async (data, isAdmin = false) => {
+    const endpoint = isAdmin ? `${API_BASE_URL}/admin/auth/login` : `${API_BASE_URL}/auth/login`;
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+      throw new Error('Login failed');
+    }
+    const result = await response.json();
+    // Store token in localStorage
+    const token = isAdmin ? result.accessToken : (result.data && result.data.accessToken);
+    if (token) {
+      localStorage.setItem('token', token);
+      localStorage.setItem('isAdmin', isAdmin);
+    }
+    return result;
   },
 
   register: async (data) => {
-    // TODO: connect backend API
+    const response = await fetch(`${API_BASE_URL}/auth/register`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+      throw new Error('Registration failed');
+    }
+    return response.json();
   },
 
   logout: async () => {
-    // TODO: connect backend API
+    // TODO: implement logout endpoint if needed
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
   },
 
   getCurrentUser: async () => {
-    // TODO: connect backend API
+    const token = localStorage.getItem('token');
+    if (!token) return null;
+
+    const response = await fetch(`${API_BASE_URL}/profiles/me`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    if (!response.ok) {
+      throw new Error('Failed to get user profile');
+    }
+    return response.json();
   }
 };
 
@@ -37,23 +78,43 @@ export const searchAPI = {
 
 export const masterDataAPI = {
   getReligions: async () => {
-    // TODO: connect backend API
+    const response = await fetch(`${API_BASE_URL}/religions`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch religions');
+    }
+    return response.json();
   },
 
   getCities: async () => {
-    // TODO: connect backend API
+    const response = await fetch(`${API_BASE_URL}/cities`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch cities');
+    }
+    return response.json();
   },
 
   getEducationLevels: async () => {
-    // TODO: connect backend API
+    const response = await fetch(`${API_BASE_URL}/education-levels`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch education levels');
+    }
+    return response.json();
   },
 
   getOccupations: async () => {
-    // TODO: connect backend API
+    const response = await fetch(`${API_BASE_URL}/occupations`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch occupations');
+    }
+    return response.json();
   },
 
   getMaritalStatuses: async () => {
-    // TODO: connect backend API
+    const response = await fetch(`${API_BASE_URL}/marital-statuses`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch marital statuses');
+    }
+    return response.json();
   }
 };
 

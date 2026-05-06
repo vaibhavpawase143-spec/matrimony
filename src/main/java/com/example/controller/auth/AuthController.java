@@ -50,6 +50,19 @@ public class AuthController {
                 .build();
     }
 
+    // ================= DEV: BYPASS EMAIL VERIFICATION =================
+    @PostMapping("/bypass-verification")
+    public ApiResponse<String> bypassVerification(@RequestParam String email) {
+        
+        userService.bypassEmailVerification(email);
+
+        return ApiResponse.<String>builder()
+                .success(true)
+                .message("Email verification bypassed for development")
+                .data(null)
+                .build();
+    }
+
     // ================= STEP 3: REGISTER =================
     @PostMapping("/register")
     public ApiResponse<String> register(@Valid @RequestBody UserRegisterRequestDTO request) {
@@ -95,6 +108,43 @@ public class AuthController {
         return ApiResponse.<String>builder()
                 .success(true)
                 .message("Verification email resent successfully")
+                .data(null)
+                .build();
+    }
+
+    // ================= MOBILE OTP =================
+    @PostMapping("/send-otp")
+    public ApiResponse<String> sendOTP(@RequestParam String phone) {
+        
+        String otp = userService.sendOTPToPhone(phone);
+
+        return ApiResponse.<String>builder()
+                .success(true)
+                .message("OTP sent successfully")
+                .data("OTP: " + otp) // Show OTP in development
+                .build();
+    }
+
+    @PostMapping("/verify-otp")
+    public ApiResponse<String> verifyOTP(@RequestParam String phone, @RequestParam String otp) {
+        
+        userService.verifyPhoneOTP(phone, otp);
+
+        return ApiResponse.<String>builder()
+                .success(true)
+                .message("Phone verified successfully")
+                .data(null)
+                .build();
+    }
+
+    @PostMapping("/bypass-phone-verification")
+    public ApiResponse<String> bypassPhoneVerification(@RequestParam String phone) {
+        
+        userService.bypassPhoneVerification(phone);
+
+        return ApiResponse.<String>builder()
+                .success(true)
+                .message("Phone verification bypassed for development")
                 .data(null)
                 .build();
     }
