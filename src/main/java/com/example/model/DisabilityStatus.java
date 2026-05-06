@@ -14,10 +14,6 @@ import java.time.LocalDateTime;
         name = "disability_statuses",
         uniqueConstraints = {
                 @UniqueConstraint(columnNames = {"value", "admin_id"})
-        },
-        indexes = {
-                @Index(name = "idx_disability_admin", columnList = "admin_id"),
-                @Index(name = "idx_disability_active", columnList = "is_active")
         }
 )
 public class DisabilityStatus {

@@ -82,6 +82,10 @@ public class SubscriptionPlan {
         return duration;
     }
 
+    public Integer getDurationInDays() {
+        return duration;
+    }
+
     public String getDescription() {
         return description;
     }

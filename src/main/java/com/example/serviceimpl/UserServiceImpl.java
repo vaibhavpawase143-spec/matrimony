@@ -222,6 +222,28 @@ public class UserServiceImpl implements UserService {
         sendVerification(email);
     }
 
+    @Override
+    public void bypassEmailVerification(String email) {
+        User user = userRepository.findByEmailIgnoreCase(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        user.setEmailVerified(true);
+        userRepository.save(user);
+        
+        System.out.println("🔥 Development: Email verification bypassed for " + email);
+    }
+
+    @Override
+    public void bypassPhoneVerification(String phone) {
+        User user = userRepository.findByPhone(phone)
+                .orElseThrow(() -> new RuntimeException("User not found with phone: " + phone));
+        
+        user.setPhoneVerified(true);
+        userRepository.save(user);
+        
+        System.out.println("🔥 Development: Phone verification bypassed for " + phone);
+    }
+
     // ================= BASIC =================
     @Override
     @Transactional(readOnly = true)

@@ -31,3 +31,36 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# Backend (Java/Spring Boot)
+backend/target/
+backend/.mvn/
+backend/.idea/
+backend/*.iml
+backend/node_modules/
+backend/dist/
+
+# Frontend (React)
+frontend/node_modules/
+frontend/build/
+frontend/dist/
+frontend/.env.local
+frontend/.env.*.local
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+
+# IDE
+.vscode/
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+*.log*

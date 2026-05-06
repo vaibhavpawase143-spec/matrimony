@@ -28,6 +28,10 @@ public interface UserService {
 
     void sendVerification(String email);
 
+    void bypassEmailVerification(String email);
+
+    void bypassPhoneVerification(String phone);
+
 
     // ================= PASSWORD =================
 

@@ -13,11 +13,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-
-import java.util.Arrays;
 
 @Configuration
 @EnableMethodSecurity
@@ -28,6 +24,7 @@ public class SecurityConfig {
     private final SecurityUserDetailsService securityUserDetailsService;
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
+    private final CorsConfigurationSource corsConfigurationSource;
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
@@ -44,7 +41,7 @@ public class SecurityConfig {
 
         http
                 .csrf(csrf -> csrf.disable())
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .cors(cors -> cors.configurationSource(corsConfigurationSource))
 
                 .authorizeHttpRequests(auth -> auth
 
@@ -55,15 +52,39 @@ public class SecurityConfig {
                                 "/api/users/register",
                                 "/api/users/verify",
                                 "/api/users/resend-verification",
+                                "/api/users/send-otp",
+                                "/api/users/verify-otp",
+                                "/api/religions/**",
+                                "/api/cities/**",
+                                "/api/states/**",
+                                "/api/occupations/**",
+                                "/api/education-levels/**",
+                                "/api/marital-statuses/**",
+                                "/api/mother-tongues/**",
+                                "/api/heights/**",
+                                "/api/weights/**",
+                                "/api/family-values/**",
+                                "/api/family-types/**",
+                                "/api/family-statuses/**",
+                                "/api/employed/**",
+                                "/api/incomes/**",
+                                "/api/manglik-statuses/**",
+                                "/api/interests/**",
+                                "/api/fields-of-study/**",
+                                "/api/subscription-plans/**",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/api/image/**"
 
                         ).permitAll()
 
+                        // ADMIN LOGIN
+                        .requestMatchers("/api/admin/auth/login", "/api/admin/auth/refresh")
+                        .permitAll()
+
                         // ADMIN
-                        .requestMatchers("/api/admin/**")
-                        .hasRole("ADMIN")
+                        .requestMatchers("/api/admin/**", "/api/admins/**")
+                        .hasAnyRole("ADMIN", "SUPER_ADMIN")
 
                         // USER + ADMIN
                         .requestMatchers("/api/users/**")
@@ -91,39 +112,5 @@ public class SecurityConfig {
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
-
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-
-        // Allow specific origins (add your React app URLs)
-        configuration.setAllowedOriginPatterns(Arrays.asList(
-            "http://localhost:3000",    // React dev server
-            "http://localhost:3001",    // Alternative React port
-            "http://127.0.0.1:3000",   // Alternative localhost
-            "http://localhost:5173",    // Vite dev server
-            "http://localhost:8080",    // Alternative port
-            "https://yourdomain.com",   // Production domain (replace with your actual domain)
-            "https://www.yourdomain.com" // Production www domain
-        ));
-
-        // Allow all HTTP methods
-        configuration.setAllowedMethods(Arrays.asList(
-            "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"
-        ));
-
-        // Allow all headers
-        configuration.setAllowedHeaders(Arrays.asList("*"));
-
-        // Allow credentials (important for JWT authentication)
-        configuration.setAllowCredentials(true);
-
-        // How long the browser can cache preflight response
-        configuration.setMaxAge(3600L);
-
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
-
-        return source;
-    }
 }
+

@@ -32,4 +32,7 @@ public class UserResponseDTO {
 
     private Boolean isOnline;
     private LocalDateTime lastSeen;
+
+    private LocalDateTime emailVerifiedAt;
+    private LocalDateTime phoneVerifiedAt;
 }

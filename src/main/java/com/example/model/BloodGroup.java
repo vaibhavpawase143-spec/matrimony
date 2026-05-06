@@ -5,11 +5,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(
-        name = "blood_groups",
-        indexes = {
-                @Index(name = "idx_blood_group", columnList = "type"),
-                @Index(name = "idx_blood_group_active", columnList = "is_active")
-        }
+        name = "blood_groups"
 )
 public class BloodGroup {
 

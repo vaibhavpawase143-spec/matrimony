@@ -130,4 +130,8 @@ public class Payment {
     public void setSubscriptionPlan(SubscriptionPlan subscriptionPlan) {
         this.subscriptionPlan = subscriptionPlan;
     }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
 }
