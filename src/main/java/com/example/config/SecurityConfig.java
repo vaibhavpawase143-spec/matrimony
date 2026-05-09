@@ -69,7 +69,8 @@ public class SecurityConfig {
                                 "/api/admins/login",
                                 "/api/admins/refresh",
                                 "/swagger-ui/**",
-                                "/v3/api-docs/**"
+                                "/v3/api-docs/**",
+                                "/api/kundli/**"
                         ).permitAll()
 
                         // 👑 ADMIN ONLY

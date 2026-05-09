@@ -28,10 +28,12 @@ public class JwtFilter extends OncePerRequestFilter {
 
         String path = request.getServletPath();
 
+        // ✅ PUBLIC ENDPOINTS (NO JWT REQUIRED)
         return path.startsWith("/api/auth/")
                 || path.startsWith("/api/users/login")
                 || path.startsWith("/api/users/register")
                 || path.startsWith("/api/image/")
+                || path.startsWith("/api/kundli/")   // 🔥 IMPORTANT FIX
                 || path.startsWith("/v3/api-docs")
                 || path.startsWith("/swagger-ui");
     }
@@ -44,6 +46,7 @@ public class JwtFilter extends OncePerRequestFilter {
 
         String authHeader = request.getHeader("Authorization");
 
+        // ✅ No token → just continue (don't block)
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
@@ -58,7 +61,7 @@ public class JwtFilter extends OncePerRequestFilter {
 
                 if (jwtUtil.isValid(token, username)) {
 
-                    // 🔥 GET ROLES FROM JWT
+                    // 🔥 Extract roles
                     List<String> roles = jwtUtil.extractRoles(token);
 
                     List<SimpleGrantedAuthority> authorities = roles.stream()
