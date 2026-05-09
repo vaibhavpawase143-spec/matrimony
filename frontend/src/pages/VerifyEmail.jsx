@@ -45,7 +45,25 @@ const VerifyEmail = () => {
       })
       .catch((err) => {
         setStatus("error");
-        error(err.message || "Email verification failed");
+        const errorMessage = err.message || "Email verification failed";
+        
+        // Handle specific error cases
+        if (errorMessage.includes("Invalid token") || errorMessage.includes("expired")) {
+          error("This verification link has expired or is invalid. Please request a new verification email.");
+        } else if (errorMessage.includes("Token not found") || errorMessage.includes("not found")) {
+          error("Verification token not found. Please request a new verification email.");
+        } else if (errorMessage.includes("Email already verified") || errorMessage.includes("already verified")) {
+          error("This email is already verified. You can proceed to login.");
+          setTimeout(() => {
+            navigate("/login");
+          }, 2000);
+        } else if (errorMessage.includes("User not found") || errorMessage.includes("user not found")) {
+          error("User account not found. Please register for a new account.");
+        } else if (errorMessage.includes("Server error") || errorMessage.includes("Internal server error")) {
+          error("Server is experiencing issues. Please try again later.");
+        } else {
+          error(errorMessage);
+        }
         stopLoading();
       });
   }, [searchParams, navigate, success, error, startLoading, stopLoading]);

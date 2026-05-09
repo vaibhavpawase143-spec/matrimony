@@ -2,6 +2,7 @@ package com.example.service;
 
 import com.example.dto.request.UserFilterDTO;
 import com.example.dto.request.UserRegisterRequestDTO;
+import com.example.dto.response.LoginResponse;
 import com.example.dto.response.PageResponse;
 import com.example.dto.response.UserResponseDTO;
 import com.example.model.User;
@@ -19,6 +20,7 @@ public interface UserService {
 
     String loginAndGenerateToken(String email, String password);
 
+    LoginResponse loginWithProfile(String email, String password);
 
     // ================= EMAIL VERIFICATION =================
 

@@ -1,15 +1,16 @@
 export const useProfileCompletion = (profileData = {}) => {
   const requiredFields = [
-    'fullName',
+    'firstName',
+    'lastName', 
     'gender',
     'dateOfBirth',
-    'religion',
-    'maritalStatus',
-    'highestEducation',
-    'profession',
-    'city',
-    'profilePhotoUrl',
-    'aboutMe',
+    'religionId',
+    'maritalStatusId',
+    'educationLevelId',
+    'occupationId',
+    'cityId',
+    'imageUrl',
+    'about',
   ];
 
   const completedFields = requiredFields.filter(field => {

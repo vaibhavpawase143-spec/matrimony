@@ -45,7 +45,25 @@ const RequestVerification = () => {
         stopLoading();
       })
       .catch((err) => {
-        error(err.message || "Failed to send verification email");
+        const errorMessage = err.message || "Failed to send verification email";
+        
+        // Handle specific error cases
+        if (errorMessage.includes("User not found") || errorMessage.includes("user not found")) {
+          error("No account found with this email address. Please check your email or register for a new account.");
+        } else if (errorMessage.includes("Email already verified") || errorMessage.includes("already verified")) {
+          error("This email is already verified. You can proceed to login.");
+          setTimeout(() => {
+            navigate("/login");
+          }, 2000);
+        } else if (errorMessage.includes("Invalid email format") || errorMessage.includes("Invalid email")) {
+          error("Please enter a valid email address");
+        } else if (errorMessage.includes("Rate limit exceeded") || errorMessage.includes("too many requests")) {
+          error("Too many verification requests. Please wait a few minutes before trying again.");
+        } else if (errorMessage.includes("Server error") || errorMessage.includes("Internal server error")) {
+          error("Server is experiencing issues. Please try again later.");
+        } else {
+          error(errorMessage);
+        }
         stopLoading();
       });
   };
@@ -78,7 +96,23 @@ const RequestVerification = () => {
         }, 1000);
       })
       .catch((err) => {
-        error(err.message || "Failed to bypass verification");
+        const errorMessage = err.message || "Failed to bypass verification";
+        
+        // Handle specific error cases
+        if (errorMessage.includes("User not found") || errorMessage.includes("user not found")) {
+          error("No account found with this email address. Please check your email or register for a new account.");
+        } else if (errorMessage.includes("Email already verified") || errorMessage.includes("already verified")) {
+          error("This email is already verified. You can proceed to login.");
+          setTimeout(() => {
+            navigate("/login");
+          }, 2000);
+        } else if (errorMessage.includes("Bypass not allowed") || errorMessage.includes("not allowed in production")) {
+          error("Verification bypass is not available in production mode.");
+        } else if (errorMessage.includes("Invalid email format") || errorMessage.includes("Invalid email")) {
+          error("Please enter a valid email address");
+        } else {
+          error(errorMessage);
+        }
         stopLoading();
       });
   };

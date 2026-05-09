@@ -107,4 +107,32 @@ public class User {
     public void setId(@NotNull(message = "User ID is required") Long userId) {
         this.id = userId;
     }
+
+    public void setProfile(Profile profile) {
+        this.profile = profile;
+    }
+
+    public void setPartnerPreference(PartnerPreference partnerPreference) {
+        this.partnerPreference = partnerPreference;
+    }
+
+    public void setEmailVerifiedAt(LocalDateTime emailVerifiedAt) {
+        this.emailVerifiedAt = emailVerifiedAt;
+    }
+
+    public void setPhoneVerifiedAt(LocalDateTime phoneVerifiedAt) {
+        this.phoneVerifiedAt = phoneVerifiedAt;
+    }
+
+    public void setLastLogin(LocalDateTime lastLogin) {
+        this.lastLogin = lastLogin;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
+    public void setIsActive(Boolean isActive) {
+        this.isActive = isActive;
+    }
 }

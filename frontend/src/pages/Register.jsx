@@ -4,9 +4,7 @@ import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/components/Toast";
 import { useLoading } from "@/hooks/useLoading";
-import MatrimonySelect from "@/components/MatrimonySelect";
-import { useMatrimonyOptions } from "@/hooks/useMatrimonyOptions";
-import { authAPI, masterDataAPI } from "@/services/api";
+import { authAPI } from "@/services/api";
 import { useLanguage } from "@/context/LanguageContext.jsx";
 
 const Register = () => {
@@ -14,7 +12,6 @@ const Register = () => {
   const { login } = useAuth();
   const { success, error } = useToast();
   const { startLoading, stopLoading } = useLoading();
-  const { getOptions, addCustomOption } = useMatrimonyOptions();
   const { t } = useLanguage();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -24,8 +21,7 @@ const Register = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [gender, setGender] = useState("");
   const [dob, setDob] = useState("");
-  const [religion, setReligion] = useState("");
-  const [religionId, setReligionId] = useState("");
+  
   const [errors, setErrors] = useState({});
 
   const validateForm = () => {
@@ -79,9 +75,6 @@ const Register = () => {
       }
     }
     
-    if (!religion) {
-      errs.religion = t.register.errors.religionRequired;
-    }
     
     return errs;
   };
@@ -94,7 +87,7 @@ const Register = () => {
       startLoading(t.register.messages.creatingAccount);
       
       try {
-        // TODO: connect backend API
+        // Send only basic user registration data to backend
         const registrationData = {
           firstName: firstName.trim(),
           lastName: lastName.trim(),
@@ -102,32 +95,58 @@ const Register = () => {
           phone: phone.replace(/\D/g, ''),
           password: password,
           gender: gender,
-          dob: dob,
-          religion_id: religionId || null,
+          dateOfBirth: dob,
         };
+
+        console.log('🚀 Registration payload:', registrationData);
 
         const response = await authAPI.register(registrationData);
 
-        if (response.token) {
-          localStorage.setItem('token', response.token);
-        }
-        
-        const userName = response.user?.first_name || `${firstName} ${lastName}`.trim() || firstName;
-        login(userName);
-
-        success(t.register.messages.registerSuccess);
+        // Registration successful - redirect to login for authentication
+        success("Registration successful! Please login to continue.");
         stopLoading();
 
-        // Fixed redirect to valid route
-        navigate("/home");
+        // Redirect to login page as per business flow
+        navigate("/login");
         
       } catch (err) {
         stopLoading();
         const errorMessage = err.message || t.register.messages.registerFailed;
-        error(errorMessage);
+        
+        // Handle specific error cases
+        if (errorMessage.includes("Email already exists") || errorMessage.includes("email already exists")) {
+          error("An account with this email already exists. Please use a different email or try logging in.");
+          setErrors({ email: "Email already exists" });
+        } else if (errorMessage.includes("Phone already exists") || errorMessage.includes("phone already exists")) {
+          error("An account with this phone number already exists. Please use a different phone number.");
+          setErrors({ phone: "Phone number already exists" });
+        } else if (errorMessage.includes("Invalid email format") || errorMessage.includes("Invalid email")) {
+          error("Please enter a valid email address");
+          setErrors({ email: "Invalid email format" });
+        } else if (errorMessage.includes("Invalid phone format") || errorMessage.includes("Invalid phone")) {
+          error("Please enter a valid phone number");
+          setErrors({ phone: "Invalid phone format" });
+        } else if (errorMessage.includes("Password too short") || errorMessage.includes("Password must be")) {
+          error("Password must be at least 6 characters long");
+          setErrors({ password: "Password must be at least 6 characters" });
+        } else if (errorMessage.includes("First name is required") || errorMessage.includes("firstName")) {
+          error("First name is required");
+          setErrors({ firstName: "First name is required" });
+        } else if (errorMessage.includes("Last name is required") || errorMessage.includes("lastName")) {
+          error("Last name is required");
+          setErrors({ lastName: "Last name is required" });
+        } else if (errorMessage.includes("Gender is required") || errorMessage.includes("gender")) {
+          error("Please select your gender");
+          setErrors({ gender: "Gender is required" });
+        } else if (errorMessage.includes("Date of birth is required") || errorMessage.includes("dob")) {
+          error("Please enter your date of birth");
+          setErrors({ dob: "Date of birth is required" });
+        } else {
+          error(errorMessage);
+        }
         
         if (err.errors) {
-          setErrors(err.errors);
+          setErrors({ ...err.errors, ...errors });
         }
       }
     } else {
@@ -204,20 +223,6 @@ const Register = () => {
             </div>
           </div>
 
-          <div>
-            <label className="text-xs font-medium text-foreground mb-1 block">{t.register.religion}</label>
-            <MatrimonySelect
-              options={getOptions('religion')}
-              value={religion}
-              onChange={(value) => {
-                setReligion(value);
-              }}
-              placeholder={t.register.selectReligion}
-              fieldType="religion"
-              onAddCustom={addCustomOption}
-            />
-            {errors.religion && <p className="text-xs text-destructive mt-1">{errors.religion}</p>}
-          </div>
 
           <button onClick={handleRegister} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-2.5 rounded-lg text-sm transition-colors">
             {t.register.button}

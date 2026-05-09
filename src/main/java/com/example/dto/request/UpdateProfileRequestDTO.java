@@ -2,14 +2,21 @@ package com.example.dto.request;
 
 import jakarta.validation.constraints.Size;
 import lombok.Data;
+import java.time.LocalDate;
 
 @Data
 public class UpdateProfileRequestDTO {
 
     private Long userId; // 🔥 IMPORTANT (ADD THIS)
 
+    private String firstName;
+    private String lastName;
+    private String gender;
+    private LocalDate dateOfBirth;
     private Long religionId;
     private Long casteId;
+    private Long motherTongueId;
+    private Long maritalStatusId;
     private Long educationLevelId;
     private Long occupationId;
     private Long heightId;
