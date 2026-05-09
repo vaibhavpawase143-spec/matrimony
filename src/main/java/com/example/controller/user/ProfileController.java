@@ -31,13 +31,49 @@ public class ProfileController {
     public ResponseEntity<ProfileResponseDTO> create(
             @Valid @RequestBody ProfileRequestDTO dto
     ) {
-        return ResponseEntity.ok(service.createProfile(dto));
+        try {
+            return ResponseEntity.ok(service.createProfile(dto));
+        } catch (RuntimeException e) {
+            if (e.getMessage().contains("Profile already exists")) {
+                ProfileResponseDTO response = new ProfileResponseDTO();
+                response.setMessage("Profile already exists. You can update your existing profile instead.");
+                return ResponseEntity.badRequest().body(response);
+            }
+            throw e;
+        }
+    }
+
+    // ================= CHECK PROFILE STATUS =================
+    @GetMapping("/status")
+    public ResponseEntity<ProfileResponseDTO> checkProfileStatus() {
+        try {
+            ProfileResponseDTO profile = service.getMyProfile();
+            profile.setMessage("Profile exists and is active");
+            return ResponseEntity.ok(profile);
+        } catch (RuntimeException e) {
+            if (e.getMessage().contains("Profile not found")) {
+                ProfileResponseDTO response = new ProfileResponseDTO();
+                response.setMessage("Profile not found. Please create your profile to continue.");
+                return ResponseEntity.status(404).body(response);
+            }
+            throw e;
+        }
     }
 
     // ================= GET MY PROFILE =================
     @GetMapping("/me")
     public ResponseEntity<ProfileResponseDTO> getMyProfile() {
-        return ResponseEntity.ok(service.getMyProfile());
+        try {
+            return ResponseEntity.ok(service.getMyProfile());
+        } catch (RuntimeException e) {
+            if (e.getMessage().contains("Profile not found")) {
+                // Return a response indicating profile needs to be created
+                ProfileResponseDTO response = new ProfileResponseDTO();
+                response.setMessage("Profile not found. Please create your profile first.");
+                return ResponseEntity.status(404).body(response);
+            }
+            throw e;
+        }
     }
 
     // ================= UPDATE MY PROFILE =================

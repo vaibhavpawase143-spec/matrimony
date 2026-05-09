@@ -20,7 +20,7 @@ const Login = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [errors, setErrors] = useState({});
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
 
     const errs = {};
@@ -47,75 +47,76 @@ const Login = () => {
 
     startLoading(t?.login?.messages?.loggingIn || "Logging in...");
 
-    // Call backend API (admin or user login)
-    authAPI.login({ email: email.trim(), password }, isAdmin)
-      .then((response) => {
-        console.log("Login successful:", response);
+    try {
+      // Call backend API (admin or user login)
+      const response = await authAPI.login({ email: email.trim(), password }, isAdmin);
+      
+      if (!response.success) {
+        throw new Error(response.message || 'Login failed');
+      }
 
-        // Check if response contains token
-        if (response.success && response.data && response.data.accessToken) {
-          // Store token
-          localStorage.setItem('token', response.data.accessToken);
-          
-          // Try to get user profile after login
-          return authAPI.getCurrentUser().catch((profileErr) => {
-            console.log("Profile not found, user may need to create profile:", profileErr);
-            // Return basic user data for profile creation
-            return {
-              success: true,
-              data: {
-                email: email.trim(),
-                role: "USER",
-                needsProfile: true
-              }
-            };
-          });
-        } else {
-          throw new Error(response.message || 'Login failed');
+      // Try to get user profile after login
+      let userData = response.data;
+      try {
+        const profileData = await authAPI.getCurrentUser();
+        if (profileData) {
+          userData = { ...userData, ...profileData };
         }
-      })
-      .then((userData) => {
-        console.log("User data:", userData);
+      } catch (profileErr) {
+        // Profile not found, user may need to create profile
+        userData = {
+          ...userData,
+          needsProfile: true
+        };
+      }
 
-        // Update auth context
-        const userRole = userData.data?.role || "USER";
-        login(userData.data, localStorage.getItem('token'), userRole);
+      // Update auth context
+      const userRole = userData?.role || "USER";
+      const token = response.token;
+      login(userData, token, userRole);
 
-        if (rememberMe) {
-          localStorage.setItem("rememberedEmail", email.trim());
+      if (rememberMe) {
+        localStorage.setItem("rememberedEmail", email.trim());
+      } else {
+        localStorage.removeItem("rememberedEmail");
+      }
+
+      success(t?.login?.messages?.loginSuccess || "Login successful");
+      stopLoading();
+
+      // Navigate based on login type and profile status
+      setTimeout(() => {
+        if (isAdmin) {
+          navigate("/admin");
+        } else if (userData?.needsProfile) {
+          navigate("/profile/create"); // Redirect to profile creation
         } else {
-          localStorage.removeItem("rememberedEmail");
+          navigate("/home");
         }
+      }, 100);
 
-        success(t?.login?.messages?.loginSuccess || "Login successful");
-        stopLoading();
-
-        // Navigate based on login type and profile status
+    } catch (err) {
+      stopLoading();
+      const errorMessage = err.message || t?.login?.messages?.loginFailed || "Login failed";
+      
+      // Handle specific error cases
+      if (errorMessage.includes("verify your email") || errorMessage.includes("verify your phone")) {
+        error("Please verify your email and phone number first");
         setTimeout(() => {
-          if (isAdmin) {
-            navigate("/admin");
-          } else if (userData.data?.needsProfile) {
-            navigate("/profile/create"); // Redirect to profile creation
-          } else {
-            navigate("/home");
-          }
-        }, 100);
-      })
-      .catch((err) => {
-        stopLoading();
-        console.error("Login error:", err);
-        const errorMessage = err.message || t?.login?.messages?.loginFailed || "Login failed";
-        
-        // Check if error is related to email/phone verification
-        if (errorMessage.includes("verify your email") || errorMessage.includes("verify your phone")) {
-          error("Please verify your email and phone number first");
-          setTimeout(() => {
-            navigate("/request-verification");
-          }, 2000);
-        } else {
-          error(errorMessage);
-        }
-      });
+          navigate("/request-verification");
+        }, 2000);
+      } else if (errorMessage.includes("Invalid credentials") || errorMessage.includes("Bad credentials")) {
+        error("Invalid email or password");
+      } else if (errorMessage.includes("User not found") || errorMessage.includes("User does not exist")) {
+        error("No account found with this email");
+      } else if (errorMessage.includes("Account is blocked") || errorMessage.includes("is blocked")) {
+        error("Your account has been blocked. Please contact support");
+      } else if (errorMessage.includes("Account is not active") || errorMessage.includes("is not active")) {
+        error("Your account is not active. Please contact support");
+      } else {
+        error(errorMessage);
+      }
+    }
   };
 
   return (

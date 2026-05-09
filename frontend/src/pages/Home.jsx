@@ -11,6 +11,8 @@ import DashboardStats from "@/components/DashboardStats";
 import LikeBookmarkButtons from "@/components/LikeBookmarkButtons";
 import { useProfileCompletion } from "@/hooks/useProfileCompletion";
 import { useLanguage } from "@/context/LanguageContext.jsx";
+import { useProfileData } from "@/hooks/useProfileData";
+import { profileAPI } from "@/services/api";
 import profile1 from "@/assets/profile1.jpg";
 import success1 from "@/assets/success-couple1.jpg";
 import success2 from "@/assets/success-couple2.jpg";
@@ -28,6 +30,7 @@ const HomeFixed = () => {
   const { startLoading, stopLoading } = useLoading();
   const { isLiked, isBookmarked, toggleLike, toggleBookmark } = useLikeBookmark();
   const { t } = useLanguage();
+  const { profileData, isLoading: profileLoading } = useProfileData();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [profiles, setProfiles] = useState([]);
   const [loadingProfiles, setLoadingProfiles] = useState(true);
@@ -40,41 +43,18 @@ const HomeFixed = () => {
   const loadProfiles = async () => {
     try {
       setLoadingProfiles(true);
-      const response = await fetch('/api/profiles', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setProfiles(data.content || []);
-      } else {
-        setProfiles([]);
-      }
+      const data = await profileAPI.getProfiles();
+      setProfiles(data.content || []);
     } catch (error) {
-      console.error('Failed to load profiles:', error);
+      console.warn('Failed to load profiles:', error.message);
       setProfiles([]);
     } finally {
       setLoadingProfiles(false);
     }
   };
 
-  // Get user profile for completion tracking
-  const getUserProfile = () => {
-    const savedUser = localStorage.getItem('user');
-    if (savedUser) {
-      try {
-        return JSON.parse(savedUser);
-      } catch (e) {
-        return null;
-      }
-    }
-    return null;
-  };
-
-  const userProfile = getUserProfile();
-  const profileCompletion = useProfileCompletion(userProfile || {});
+  // Use real profile data for completion tracking
+  const profileCompletion = useProfileCompletion(profileData || {});
 
   const handleLogout = () => {
     logout();
@@ -146,7 +126,11 @@ const HomeFixed = () => {
             </button>
             <div>
               <p className="text-muted-foreground text-sm">{t?.home?.header?.welcome}</p>
-              <h1 className="text-xl font-display font-bold text-foreground capitalize">{userName || "User"}!</h1>
+              <h1 className="text-xl font-display font-bold text-foreground capitalize">
+                {profileData?.firstName && profileData?.lastName 
+                  ? `${profileData.firstName} ${profileData.lastName}`
+                  : profileData?.fullName || userName || "User"}!
+              </h1>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -160,7 +144,23 @@ const HomeFixed = () => {
               className="h-9 w-9 rounded-full bg-accent/20 hover:bg-accent/30 flex items-center justify-center text-accent font-bold text-sm cursor-pointer transition-colors"
               title="Account"
             >
-              {(userName || "U").charAt(0).toUpperCase()}
+              {profileData?.imageUrl || profileData?.profilePhotoUrl ? (
+                <img 
+                  src={profileData.imageUrl || profileData.profilePhotoUrl} 
+                  alt="Profile" 
+                  className="h-9 w-9 rounded-full object-cover"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    e.target.nextSibling.style.display = 'flex';
+                  }}
+                />
+              ) : null}
+              <span style={{ display: (profileData?.imageUrl || profileData?.profilePhotoUrl) ? 'none' : 'flex' }}>
+                {profileData?.firstName && profileData?.lastName 
+                  ? `${profileData.firstName.charAt(0)}${profileData.lastName.charAt(0)}`
+                  : (profileData?.fullName || userName || "User").charAt(0).toUpperCase()
+                }
+              </span>
             </button>
           </div>
         </header>
@@ -181,10 +181,19 @@ const HomeFixed = () => {
           {/* Left column */}
           <div className="lg:col-span-2 space-y-6">
             {/* Profile Completion */}
-            <ProfileCompletionBar
-              completionPercentage={profileCompletion.completionPercentage}
-              message={profileCompletion.message}
-            />
+            {profileLoading ? (
+              <div className="bg-card rounded-xl border border-border p-6">
+                <div className="animate-pulse">
+                  <div className="h-4 bg-muted rounded w-1/4 mb-2"></div>
+                  <div className="h-2 bg-muted rounded w-full"></div>
+                </div>
+              </div>
+            ) : (
+              <ProfileCompletionBar
+                completionPercentage={profileCompletion.completionPercentage}
+                message={profileCompletion.message}
+              />
+            )}
 
             {/* Dashboard Stats */}
             <div>
@@ -214,9 +223,12 @@ const HomeFixed = () => {
                     >
                       <div className="aspect-[3/4] overflow-hidden relative">
                         <img 
-                          src={profile.profilePhotoUrl || profile1} 
-                          alt={profile.fullName} 
+                          src={profile.profilePhotoUrl || profile.imageUrl || profile1} 
+                          alt={profile.fullName || profile.name} 
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+                          onError={(e) => {
+                            e.target.src = profile1;
+                          }}
                         />
                       </div>
                       <div className="p-3">

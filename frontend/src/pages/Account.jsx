@@ -31,6 +31,10 @@ const Account = () => {
   const { userName, logout } = useAuth();
   const { profileData, loading } = useProfileData();
 
+  // Debug logging
+  console.log('🔧 Account page - Profile data:', profileData);
+  console.log('🔧 Account page - User name from auth:', userName);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-muted/30">
@@ -41,19 +45,23 @@ const Account = () => {
 
   const userDetails = {
     name:
-      profileData?.fullName ||
-      (userName
-        ? `${userName.charAt(0).toUpperCase()}${userName.slice(1)}`
-        : "User"),
-    email: profileData?.email || `${userName || "user"}@email.com`,
-    phone: profileData?.phone || "+91 98765 43210",
-    memberId: profileData?.memberId || "GB10234",
-    profilePhoto: profileData?.profilePhoto || profile1,
-    accountType: profileData?.premium ? "Premium Member" : "Free Member",
-    phoneVerified: true,
-    emailVerified: true,
-    profileVerified: false,
+      profileData?.firstName && profileData?.lastName
+        ? `${profileData.firstName} ${profileData.lastName}`
+        : profileData?.fullName ||
+          (userName
+            ? `${userName.charAt(0).toUpperCase()}${userName.slice(1)}`
+            : "User"),
+    email: profileData?.email || "",
+    phone: profileData?.phone || "",
+    memberId: profileData?.id || "",
+    profilePhoto: profileData?.imageUrl || profileData?.profilePhotoUrl || "",
+    accountType: profileData?.isPremium ? "Premium Member" : "Free Member",
+    phoneVerified: profileData?.phoneVerified || false,
+    emailVerified: profileData?.emailVerified || false,
+    profileVerified: profileData?.profileCompleted || false,
   };
+
+  console.log('🔧 Account page - Mapped user details:', userDetails);
 
   const handleLogout = () => {
     logout();

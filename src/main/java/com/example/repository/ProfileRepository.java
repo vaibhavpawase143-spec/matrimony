@@ -23,6 +23,25 @@ public interface ProfileRepository extends JpaRepository<Profile, Long>, JpaSpec
 
     Optional<Profile> findByUser(User user);
 
+    boolean existsByUser(User user);
+
+    // ================= 🔥 FETCH JOIN FOR SINGLE PROFILE =================
+
+    @Query("""
+        SELECT p FROM Profile p
+        JOIN FETCH p.user
+        LEFT JOIN FETCH p.city
+        LEFT JOIN FETCH p.religion
+        LEFT JOIN FETCH p.caste
+        LEFT JOIN FETCH p.educationLevel
+        LEFT JOIN FETCH p.occupation
+        LEFT JOIN FETCH p.height
+        LEFT JOIN FETCH p.weight
+        WHERE p.user.id = :userId
+        AND p.isActive = true
+    """)
+    Optional<Profile> findByUserIdWithRelations(Long userId);
+
     // ================= 🔥 FETCH WITH USER =================
 
     @Query("""

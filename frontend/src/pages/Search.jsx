@@ -100,7 +100,7 @@ const SearchPage = () => {
         maritalStatuses: maritalStatusesRes.data || []
       });
     } catch (err) {
-      console.error('Failed to load master data:', err);
+      console.warn('Failed to load master data:', err.message);
       // Fallback to local options if API fails
       setMasterData({
         religions: getOptions('religion').map(r => ({ value: r, label: r })),
@@ -116,14 +116,16 @@ const SearchPage = () => {
   };
 
   const performSearch = async () => {
+    console.log('🔍 Performing search with filters:', filters);
     setLoading(true);
     try {
-      // TODO: call backend API
       const response = await searchAPI.searchProfiles(filters);
+      console.log('🔍 Search response:', response);
       setSearchResults(response.data || []);
       setTotalResults(response.total || response.data?.length || 0);
+      console.log('🔍 Search results count:', response.data?.length || 0);
     } catch (err) {
-      console.error('Search failed:', err);
+      console.error('🔍 Search failed:', err.message);
       error('Search failed. Please try again.');
       setSearchResults([]);
       setTotalResults(0);
@@ -140,7 +142,6 @@ const SearchPage = () => {
   };
 
   const handleSearch = () => {
-    // TODO: call backend API
     performSearch();
   };
 
@@ -317,13 +318,14 @@ const SearchPage = () => {
                 {searchResults.map((profile) => (
                   <Link to={`/profile/${profile.id}`} key={profile.id} className="bg-card rounded-xl overflow-hidden border border-border shadow-sm hover:shadow-md transition-shadow group">
                     <div className="aspect-[3/4] overflow-hidden bg-muted">
-                      {profile.photo_url ? (
+                      {profile.photo_url || profile.profilePhotoUrl ? (
                         <img 
-                          src={profile.photo_url} 
-                          alt={profile.name} 
+                          src={profile.photo_url || profile.profilePhotoUrl} 
+                          alt={profile.name || profile.fullName} 
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                           onError={(e) => {
-                            // TODO: add fallback image
+                            e.target.style.display = 'none';
+                            e.target.nextSibling.style.display = 'flex';
                           }}
                         />
                       ) : (

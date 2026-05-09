@@ -1,0 +1,136 @@
+-- Add more comprehensive occupations data
+
+INSERT INTO occupations (
+    admin_id,
+    name,
+    is_active,
+    created_at,
+    updated_at
+) VALUES
+-- Professional
+(NULL, 'Doctor', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Engineer', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Lawyer', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Architect', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Chartered Accountant', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Company Secretary', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Cost Accountant', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Dentist', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Veterinary Doctor', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Pharmacist', TRUE, CURRENT_TIMESTAMP, NULL),
+
+-- IT/Software
+(NULL, 'Software Engineer', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Software Developer', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'IT Professional', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Data Scientist', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Business Analyst', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Project Manager', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Product Manager', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'UX/UI Designer', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Web Developer', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Mobile App Developer', TRUE, CURRENT_TIMESTAMP, NULL),
+
+-- Management
+(NULL, 'Manager', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Senior Manager', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'General Manager', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'CEO', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Director', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Team Lead', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Business Owner', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Entrepreneur', TRUE, CURRENT_TIMESTAMP, NULL),
+
+-- Teaching/Education
+(NULL, 'Teacher', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Professor', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Lecturer', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Principal', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Education Professional', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Researcher', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Scientist', TRUE, CURRENT_TIMESTAMP, NULL),
+
+-- Banking/Finance
+(NULL, 'Banker', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Financial Analyst', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Investment Banker', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Insurance Agent', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Stock Broker', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Accountant', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Finance Manager', TRUE, CURRENT_TIMESTAMP, NULL),
+
+-- Government Services
+(NULL, 'Civil Servant', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Government Employee', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'IAS Officer', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'IPS Officer', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'IFS Officer', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Police Officer', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Defense Personnel', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Army Officer', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Navy Officer', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Air Force Officer', TRUE, CURRENT_TIMESTAMP, NULL),
+
+-- Healthcare
+(NULL, 'Nurse', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Medical Representative', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Hospital Administrator', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Lab Technician', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Physiotherapist', TRUE, CURRENT_TIMESTAMP, NULL),
+
+-- Business/Sales
+(NULL, 'Businessman', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Sales Executive', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Marketing Manager', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Sales Manager', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Marketing Professional', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Retail Business', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Wholesale Business', TRUE, CURRENT_TIMESTAMP, NULL),
+
+-- Creative/Media
+(NULL, 'Designer', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Artist', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Writer', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Journalist', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Photographer', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Videographer', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Content Creator', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Social Media Manager', TRUE, CURRENT_TIMESTAMP, NULL),
+
+-- Technical/Trades
+(NULL, 'Mechanic', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Electrician', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Plumber', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Carpenter', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Welder', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Technician', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Supervisor', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Foreman', TRUE, CURRENT_TIMESTAMP, NULL),
+
+-- Agriculture
+(NULL, 'Farmer', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Agriculturist', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Agricultural Officer', TRUE, CURRENT_TIMESTAMP, NULL),
+
+-- Hospitality
+(NULL, 'Hotel Manager', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Chef', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Travel Agent', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Tour Guide', TRUE, CURRENT_TIMESTAMP, NULL),
+
+-- Legal
+(NULL, 'Advocate', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Legal Advisor', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Notary', TRUE, CURRENT_TIMESTAMP, NULL),
+
+-- Other
+(NULL, 'Consultant', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Freelancer', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Self Employed', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Homemaker', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Student', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Retired', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Not Working', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Other', TRUE, CURRENT_TIMESTAMP, NULL),
+(NULL, 'Prefer Not to Say', TRUE, CURRENT_TIMESTAMP, NULL)
+ON CONFLICT (name) DO NOTHING;

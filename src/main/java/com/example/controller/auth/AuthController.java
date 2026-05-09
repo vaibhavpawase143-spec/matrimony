@@ -4,6 +4,7 @@ import com.example.dto.request.UserLoginRequestDTO;
 import com.example.dto.request.UserRegisterRequestDTO;
 import com.example.dto.request.ResendVerificationRequestDTO;
 import com.example.dto.response.ApiResponse;
+import com.example.dto.response.LoginResponse;
 import com.example.model.RefreshToken;
 import com.example.service.RefreshTokenService;
 import com.example.service.UserService;
@@ -78,22 +79,17 @@ public class AuthController {
 
     // ================= LOGIN =================
     @PostMapping("/login")
-    public ApiResponse<Object> login(@Valid @RequestBody UserLoginRequestDTO request) {
+    public ApiResponse<LoginResponse> login(@Valid @RequestBody UserLoginRequestDTO request) {
 
-        String accessToken = userService.loginAndGenerateToken(
+        LoginResponse loginResponse = userService.loginWithProfile(
                 request.getEmail(),
                 request.getPassword()
         );
 
-        RefreshToken refreshToken = refreshTokenService.createToken(request.getEmail());
-
-        return ApiResponse.builder()
+        return ApiResponse.<LoginResponse>builder()
                 .success(true)
                 .message("Login successful")
-                .data(Map.of(
-                        "accessToken", accessToken,
-                        "refreshToken", refreshToken.getToken()
-                ))
+                .data(loginResponse)
                 .build();
     }
 

@@ -33,10 +33,88 @@ const CreateProfile = () => {
     try {
       const response = await authAPI.getCurrentUser();
       if (response.success && response.data) {
-        setProfileData(response.data);
+        const userData = response.data;
+        
+        // Map user registration data to profile form fields
+        const mappedProfileData = {
+          // Personal Details - pre-populate from registration
+          fullName: userData.first_name && userData.last_name 
+            ? `${userData.first_name} ${userData.last_name}` 
+            : userData.first_name || "",
+          firstName: userData.first_name || "",
+          lastName: userData.last_name || "",
+          email: userData.email || "",
+          phone: userData.phone || "",
+          gender: userData.gender || "",
+          dateOfBirth: userData.dob || "",
+          religion: userData.religion || "",
+          
+          // Other fields will remain empty for user to fill
+          maritalStatus: "",
+          caste: "",
+          subCaste: "",
+          motherTongue: "",
+          height: "",
+          weight: "",
+          complexion: "",
+          bodyType: "",
+          highestEducation: "",
+          profession: "",
+          annualIncome: "",
+          companyName: "",
+          location: "",
+          city: "",
+          state: "",
+          country: "",
+          aboutYourself: "",
+          familyValues: "",
+          familyStatus: "",
+          familyType: "",
+          fatherOccupation: "",
+          motherOccupation: "",
+          siblings: "",
+          diet: "",
+          drinking: "",
+          smoking: "",
+          hobbies: "",
+          interests: "",
+          partnerPreferences: {
+            minAge: "",
+            maxAge: "",
+            minHeight: "",
+            maxHeight: "",
+            religion: "",
+            caste: "",
+            education: "",
+            profession: "",
+            location: "",
+            diet: "",
+            drinking: "",
+            smoking: ""
+          }
+        };
+        
+        setProfileData(mappedProfileData);
       }
     } catch (err) {
       console.log("No existing profile found, creating new one");
+      
+      // If no profile data exists, create basic profile from auth context
+      if (user) {
+        const basicProfileData = {
+          fullName: user.first_name && user.last_name 
+            ? `${user.first_name} ${user.last_name}` 
+            : user.first_name || "",
+          firstName: user.first_name || "",
+          lastName: user.last_name || "",
+          email: user.email || "",
+          phone: user.phone || "",
+          gender: user.gender || "",
+          dateOfBirth: user.dob || "",
+          religion: user.religion || "",
+        };
+        setProfileData(basicProfileData);
+      }
     }
   };
 

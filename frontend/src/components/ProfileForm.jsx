@@ -27,6 +27,10 @@ const ProfileForm = ({
   const [formData, setFormData] = useState({
     // Personal Details
     fullName: "",
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
     gender: "",
     dateOfBirth: "",
     age: "",
@@ -267,6 +271,49 @@ const ProfileForm = ({
       {/* Personal Details Section */}
       <div>
         <h3 className="text-sm font-semibold text-foreground mb-3 pb-2 border-b border-border">Personal Details</h3>
+        
+        {/* Pre-populated fields from registration (read-only) */}
+        {(formData.firstName || formData.lastName || formData.email || formData.phone) && (
+          <div className="mb-4 p-3 bg-muted/30 rounded-lg border border-border">
+            <p className="text-xs font-medium text-muted-foreground mb-2">Information provided during registration:</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {formData.email && (
+                <div>
+                  <label className="text-xs font-medium text-foreground mb-1 block">Email</label>
+                  <input 
+                    type="email" 
+                    value={formData.email}
+                    readOnly
+                    className="w-full bg-muted border border-border rounded-lg px-4 py-2 text-sm text-muted-foreground cursor-not-allowed" 
+                  />
+                </div>
+              )}
+              {formData.phone && (
+                <div>
+                  <label className="text-xs font-medium text-foreground mb-1 block">Phone</label>
+                  <input 
+                    type="tel" 
+                    value={formData.phone}
+                    readOnly
+                    className="w-full bg-muted border border-border rounded-lg px-4 py-2 text-sm text-muted-foreground cursor-not-allowed" 
+                  />
+                </div>
+              )}
+              {(formData.firstName || formData.lastName) && (
+                <div>
+                  <label className="text-xs font-medium text-foreground mb-1 block">Name</label>
+                  <input 
+                    type="text" 
+                    value={`${formData.firstName || ""} ${formData.lastName || ""}`.trim()}
+                    readOnly
+                    className="w-full bg-muted border border-border rounded-lg px-4 py-2 text-sm text-muted-foreground cursor-not-allowed" 
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+        
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {renderField({ label: "Full Name", placeholder: "Your full name", key: "fullName" })}
           {renderField({ label: "Gender", key: "gender", type: "select", options: ["Male", "Female", "Other"] })}

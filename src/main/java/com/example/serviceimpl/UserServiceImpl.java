@@ -2,21 +2,15 @@ package com.example.serviceimpl;
 
 import com.example.dto.request.UserFilterDTO;
 import com.example.dto.request.UserRegisterRequestDTO;
+import com.example.dto.response.LoginResponse;
 import com.example.dto.response.PageResponse;
+import com.example.dto.response.ProfileResponseDTO;
 import com.example.dto.response.UserResponseDTO;
 import com.example.mapper.UserMapper;
-import com.example.model.EmailVerification;
-import com.example.model.PhoneVerificationOTP;
-import com.example.model.Role;
-import com.example.model.User;
-import com.example.repository.EmailVerificationRepository;
-import com.example.repository.PhoneVerificationOTPRepository;
-import com.example.repository.RoleRepository;
-import com.example.repository.UserRepository;
+import com.example.model.*;
+import com.example.repository.*;
 import com.example.security.JwtUtil;
-import com.example.service.EmailService;
-import com.example.service.SMSService;
-import com.example.service.UserService;
+import com.example.service.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -35,18 +29,40 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+    private final ProfileRepository profileRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final EmailService emailService;
     private final EmailVerificationRepository verificationRepository;
     private final PhoneVerificationOTPRepository otpRepository;
     private final SMSService smsService;
+    private final ProfileService profileService;
+    private final RefreshTokenService refreshTokenService;
+    
+    // Profile-related repositories
+    private final ReligionRepository religionRepository;
+    private final CasteRepository casteRepository;
+    private final CityRepository cityRepository;
+    private final MotherTongueRepository motherTongueRepository;
+    private final MaritalStatusRepository maritalStatusRepository;
+    private final EducationLevelRepository educationLevelRepository;
+    private final OccupationRepository occupationRepository;
+    private final HeightRepository heightRepository;
+    private final WeightRepository weightRepository;
 
     // ================= REGISTER =================
     @Override
     public User register(UserRegisterRequestDTO request) {
+        System.out.println("🚀 Starting user registration for email: " + request.getEmail());
+        System.out.println("📋 Basic registration request data:");
+        System.out.println("   - First Name: " + request.getFirstName());
+        System.out.println("   - Last Name: " + request.getLastName());
+        System.out.println("   - Phone: " + request.getPhone());
+        System.out.println("   - Gender: " + request.getGender());
+        System.out.println("   - Date of Birth: " + request.getDateOfBirth());
 
         if (userRepository.existsByEmail(request.getEmail())) {
+            System.out.println("❌ Email already exists: " + request.getEmail());
             throw new RuntimeException("Email already exists");
         }
 
@@ -64,7 +80,52 @@ public class UserServiceImpl implements UserService {
 
         user.setRoles(new HashSet<>(Set.of(role)));
 
-        userRepository.save(user);
+        User savedUser = userRepository.save(user);
+        System.out.println("✅ User saved with ID: " + savedUser.getId());
+
+        // ✅ CREATE EMPTY PROFILE FOR USER
+        try {
+            if (savedUser != null && savedUser.getId() != null) {
+                if (!profileRepository.existsByUser(savedUser)) {
+                    Profile profile = new Profile();
+                    profile.setUser(savedUser);
+                    profile.setCurrentStep(1);
+                    profile.setProfileCompleted(false);
+                    profile.setIsActive(true);
+                    
+                    // Set basic fields from registration
+                    if (request.getGender() != null) {
+                        profile.setGender(request.getGender());
+                    }
+                    if (request.getDateOfBirth() != null) {
+                        profile.setDateOfBirth(request.getDateOfBirth());
+                    }
+                    
+                    Profile savedProfile = profileRepository.save(profile);
+                    System.out.println("✅ Empty profile created for user: " + savedUser.getEmail());
+                    System.out.println("   - Profile ID: " + savedProfile.getId());
+                    System.out.println("   - User ID: " + savedUser.getId());
+                    System.out.println("   - Basic info set: gender=" + request.getGender() + 
+                        ", dob=" + request.getDateOfBirth());
+                    
+                    // Verify the profile was saved correctly
+                    profileRepository.findById(savedProfile.getId()).ifPresentOrElse(
+                        p -> System.out.println("✅ Profile verification: User=" + p.getUser().getEmail() + 
+                            ", Profile ID=" + p.getId()),
+                        () -> System.err.println("⚠️ Profile verification failed")
+                    );
+                } else {
+                    System.out.println("ℹ️ Profile already exists for user: " + savedUser.getEmail());
+                }
+            } else {
+                System.err.println("⚠️ Cannot create profile: User is null or ID is missing");
+            }
+        } catch (Exception e) {
+            System.err.println("⚠️ Failed to create empty profile for user " + 
+                (savedUser != null ? savedUser.getEmail() : "unknown") + ": " + e.getMessage());
+            e.printStackTrace();
+            // Don't fail registration if profile creation fails
+        }
 
         // ✅ SEND EMAIL (correct)
         sendVerification(user.getEmail());
@@ -78,18 +139,34 @@ public class UserServiceImpl implements UserService {
     public User login(String email, String password) {
 
         User user = userRepository.findByEmailWithRoles(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            throw new RuntimeException("Invalid password. Please check your credentials and try again.");
+        }
 
         if (!Boolean.TRUE.equals(user.getEmailVerified())) {
-            throw new RuntimeException("Please verify your email first");
+            throw new RuntimeException("Email not verified. Please check your inbox and verify your email before logging in.");
         }
 
         if (!Boolean.TRUE.equals(user.getPhoneVerified())) {
-            throw new RuntimeException("Please verify your phone number first");
+            throw new RuntimeException("Phone number not verified. Please verify your phone number before logging in.");
         }
 
-        if (!passwordEncoder.matches(password, user.getPassword())) {
-            throw new RuntimeException("Invalid password");
+        // ✅ CHECK AND CREATE PROFILE IF MISSING
+        try {
+            if (!profileRepository.existsByUser(user)) {
+                Profile profile = new Profile();
+                profile.setUser(user);
+                profile.setCurrentStep(1);
+                profile.setProfileCompleted(false);
+                profile.setIsActive(true);
+                profileRepository.save(profile);
+                System.out.println("✅ Basic profile created during login for user: " + user.getEmail());
+            }
+        } catch (Exception e) {
+            System.err.println("⚠️ Failed to create profile during login: " + e.getMessage());
+            // Don't fail login if profile creation fails
         }
 
         user.setLastLogin(LocalDateTime.now());
@@ -102,19 +179,39 @@ public class UserServiceImpl implements UserService {
     public String loginAndGenerateToken(String email, String password) {
 
         User user = userRepository.findByEmailWithRoles(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            throw new RuntimeException("Invalid password. Please check your credentials and try again.");
+        }
 
         if (!Boolean.TRUE.equals(user.getEmailVerified())) {
-            throw new RuntimeException("Please verify your email first");
+            throw new RuntimeException("Email not verified. Please check your inbox and verify your email before logging in.");
         }
 
         if (!Boolean.TRUE.equals(user.getPhoneVerified())) {
-            throw new RuntimeException("Please verify your phone number first");
+            throw new RuntimeException("Phone number not verified. Please verify your phone number before logging in.");
         }
 
-        if (!passwordEncoder.matches(password, user.getPassword())) {
-            throw new RuntimeException("Invalid password");
+        // ✅ CHECK AND CREATE PROFILE IF MISSING
+        try {
+            if (!profileRepository.existsByUser(user)) {
+                Profile profile = new Profile();
+                profile.setUser(user);
+                profile.setCurrentStep(1);
+                profile.setProfileCompleted(false);
+                profile.setIsActive(true);
+                profileRepository.save(profile);
+                System.out.println("✅ Basic profile created during token generation for user: " + user.getEmail());
+            }
+        } catch (Exception e) {
+            System.err.println("⚠️ Failed to create profile during token generation: " + e.getMessage());
+            // Don't fail token generation if profile creation fails
         }
+
+        // Update last login
+        user.setLastLogin(LocalDateTime.now());
+        userRepository.save(user);
 
         List<String> roles = Optional.ofNullable(user.getRoles())
                 .orElse(Set.of())
@@ -123,6 +220,73 @@ public class UserServiceImpl implements UserService {
                 .toList();
 
         return jwtUtil.generateToken(user.getEmail(), roles);
+    }
+
+    // ================= LOGIN WITH PROFILE =================
+    @Override
+    @Transactional
+    public LoginResponse loginWithProfile(String email, String password) {
+        // Authenticate user
+        User user = userRepository.findByEmailWithRoles(email)
+                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            throw new RuntimeException("Invalid password. Please check your credentials and try again.");
+        }
+
+        if (!Boolean.TRUE.equals(user.getEmailVerified())) {
+            throw new RuntimeException("Email not verified. Please check your inbox and verify your email before logging in.");
+        }
+
+        if (!Boolean.TRUE.equals(user.getPhoneVerified())) {
+            throw new RuntimeException("Phone number not verified. Please verify your phone number before logging in.");
+        }
+
+        // Check and create profile if missing
+        try {
+            if (!profileRepository.existsByUser(user)) {
+                Profile profile = new Profile();
+                profile.setUser(user);
+                profile.setCurrentStep(1);
+                profile.setProfileCompleted(false);
+                profile.setIsActive(true);
+                profileRepository.save(profile);
+                System.out.println("✅ Basic profile created during login for user: " + user.getEmail());
+            }
+        } catch (Exception e) {
+            System.err.println("⚠️ Failed to create profile during login: " + e.getMessage());
+        }
+
+        // Update last login
+        user.setLastLogin(LocalDateTime.now());
+        userRepository.save(user);
+
+        // Generate tokens
+        List<String> roles = Optional.ofNullable(user.getRoles())
+                .orElse(Set.of())
+                .stream()
+                .map(Role::getName)
+                .toList();
+        String accessToken = jwtUtil.generateToken(user.getEmail(), roles);
+        RefreshToken refreshToken = refreshTokenService.createToken(user.getEmail());
+
+        // Get profile data
+        ProfileResponseDTO profileData = profileRepository.findByUserId(user.getId())
+                .map(profile -> {
+                    ProfileResponseDTO dto = new ProfileResponseDTO();
+                    dto.setId(profile.getId());
+                    dto.setUserId(profile.getUser().getId());
+                    dto.setUserName(profile.getUser().getFullName());
+                    dto.setCurrentStep(profile.getCurrentStep());
+                    dto.setProfileCompleted(profile.getProfileCompleted());
+                    dto.setIsActive(profile.getIsActive());
+                    dto.setCreatedAt(profile.getCreatedAt());
+                    dto.setUpdatedAt(profile.getUpdatedAt());
+                    return dto;
+                })
+                .orElse(null);
+
+        return new LoginResponse(accessToken, refreshToken.getToken(), profileData);
     }
 
     // ================= EMAIL =================

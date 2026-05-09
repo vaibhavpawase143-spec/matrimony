@@ -36,14 +36,16 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  const login = (userData, userToken = "demo-token", userRole = userData?.role) => {
+  const login = (userData, userToken, userRole = userData?.role) => {
+    if (!userToken) {
+      throw new Error('Token is required for login');
+    }
+    
     setToken(userToken);
     setUser(userData);
     setRole(userRole);
     
-    if (userToken) {
-      localStorage.setItem("token", userToken);
-    }
+    localStorage.setItem("token", userToken);
     if (userRole) {
       localStorage.setItem("role", userRole);
     }
