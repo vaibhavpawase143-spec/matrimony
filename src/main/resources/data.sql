@@ -178,3 +178,241 @@ WHERE NOT EXISTS (SELECT 1 FROM mother_tongues WHERE name = 'Punjabi');
 INSERT INTO mother_tongues (admin_id, name, is_active, created_at, updated_at)
 SELECT NULL, 'Other', TRUE, CURRENT_TIMESTAMP, NULL
 WHERE NOT EXISTS (SELECT 1 FROM mother_tongues WHERE name = 'Other');
+
+
+-- ==========================================
+-- RELIGIONS
+-- ==========================================
+
+INSERT INTO religions (admin_id, name, is_active, created_at, updated_at)
+SELECT NULL, 'Hindu', TRUE, CURRENT_TIMESTAMP, NULL
+WHERE NOT EXISTS (
+    SELECT 1 FROM religions WHERE name = 'Hindu'
+);
+
+INSERT INTO religions (admin_id, name, is_active, created_at, updated_at)
+SELECT NULL, 'Muslim', TRUE, CURRENT_TIMESTAMP, NULL
+WHERE NOT EXISTS (
+    SELECT 1 FROM religions WHERE name = 'Muslim'
+);
+
+INSERT INTO religions (admin_id, name, is_active, created_at, updated_at)
+SELECT NULL, 'Christian', TRUE, CURRENT_TIMESTAMP, NULL
+WHERE NOT EXISTS (
+    SELECT 1 FROM religions WHERE name = 'Christian'
+);
+
+INSERT INTO religions (admin_id, name, is_active, created_at, updated_at)
+SELECT NULL, 'Sikh', TRUE, CURRENT_TIMESTAMP, NULL
+WHERE NOT EXISTS (
+    SELECT 1 FROM religions WHERE name = 'Sikh'
+);
+
+INSERT INTO religions (admin_id, name, is_active, created_at, updated_at)
+SELECT NULL, 'Buddhist', TRUE, CURRENT_TIMESTAMP, NULL
+WHERE NOT EXISTS (
+    SELECT 1 FROM religions WHERE name = 'Buddhist'
+);
+
+INSERT INTO religions (admin_id, name, is_active, created_at, updated_at)
+SELECT NULL, 'Jain', TRUE, CURRENT_TIMESTAMP, NULL
+WHERE NOT EXISTS (
+    SELECT 1 FROM religions WHERE name = 'Jain'
+);
+
+INSERT INTO religions (admin_id, name, is_active, created_at, updated_at)
+SELECT NULL, 'Other', TRUE, CURRENT_TIMESTAMP, NULL
+WHERE NOT EXISTS (
+    SELECT 1 FROM religions WHERE name = 'Other'
+);
+
+-- ==========================================
+-- CASTES
+-- ==========================================
+
+INSERT INTO castes
+(admin_id, religion_id, name, is_active, created_at, updated_at)
+
+SELECT 1, 1, 'Brahmin', TRUE, CURRENT_TIMESTAMP, NULL
+WHERE NOT EXISTS (
+    SELECT 1 FROM castes WHERE name = 'Brahmin'
+);
+
+INSERT INTO castes
+(admin_id, religion_id, name, is_active, created_at, updated_at)
+
+SELECT 1, 1, 'Maratha', TRUE, CURRENT_TIMESTAMP, NULL
+WHERE NOT EXISTS (
+    SELECT 1 FROM castes WHERE name = 'Maratha'
+);
+
+INSERT INTO castes
+(admin_id, religion_id, name, is_active, created_at, updated_at)
+
+SELECT 1, 2, 'Sunni', TRUE, CURRENT_TIMESTAMP, NULL
+WHERE NOT EXISTS (
+    SELECT 1 FROM castes WHERE name = 'Sunni'
+);
+
+INSERT INTO castes
+(admin_id, religion_id, name, is_active, created_at, updated_at)
+
+SELECT 1, 2, 'Shia', TRUE, CURRENT_TIMESTAMP, NULL
+WHERE NOT EXISTS (
+    SELECT 1 FROM castes WHERE name = 'Shia'
+);
+
+INSERT INTO castes
+(admin_id, religion_id, name, is_active, created_at, updated_at)
+
+SELECT 1, 3, 'Roman Catholic', TRUE, CURRENT_TIMESTAMP, NULL
+WHERE NOT EXISTS (
+    SELECT 1 FROM castes WHERE name = 'Roman Catholic'
+);
+
+-- ==========================================
+-- SUB CASTES
+-- ==========================================
+
+INSERT INTO sub_castes
+(admin_id, caste_id, name, is_active, created_at, updated_at)
+
+SELECT
+1,
+(SELECT id FROM castes WHERE name = 'Brahmin'),
+'Deshastha Brahmin',
+TRUE,
+CURRENT_TIMESTAMP,
+NULL
+
+WHERE NOT EXISTS (
+SELECT 1 FROM sub_castes WHERE name = 'Deshastha Brahmin'
+);
+
+INSERT INTO sub_castes
+(admin_id, caste_id, name, is_active, created_at, updated_at)
+
+SELECT
+1,
+(SELECT id FROM castes WHERE name = 'Maratha'),
+'96 Kuli Maratha',
+TRUE,
+CURRENT_TIMESTAMP,
+NULL
+
+WHERE NOT EXISTS (
+SELECT 1 FROM sub_castes WHERE name = '96 Kuli Maratha'
+);
+
+INSERT INTO sub_castes
+(admin_id, caste_id, name, is_active, created_at, updated_at)
+
+SELECT
+1,
+(SELECT id FROM castes WHERE name = 'Sunni'),
+'Hanafi Sunni',
+TRUE,
+CURRENT_TIMESTAMP,
+NULL
+
+WHERE NOT EXISTS (
+SELECT 1 FROM sub_castes WHERE name = 'Hanafi Sunni'
+);
+
+INSERT INTO sub_castes
+(admin_id, caste_id, name, is_active, created_at, updated_at)
+
+SELECT
+1,
+(SELECT id FROM castes WHERE name = 'Shia'),
+'Twelver Shia',
+TRUE,
+CURRENT_TIMESTAMP,
+NULL
+
+WHERE NOT EXISTS (
+SELECT 1 FROM sub_castes WHERE name = 'Twelver Shia'
+);
+
+-- ==========================================
+-- HEIGHTS
+-- ==========================================
+-- ==========================================
+-- HEIGHTS
+-- ==========================================
+
+INSERT INTO heights
+(admin_id, height, is_active, created_at, updated_at)
+
+SELECT NULL, '4ft 5in', TRUE, CURRENT_TIMESTAMP, NULL
+WHERE NOT EXISTS (
+SELECT 1 FROM heights WHERE height='4ft 5in'
+);
+
+INSERT INTO heights
+(admin_id, height, is_active, created_at, updated_at)
+
+SELECT NULL, '5ft 0in', TRUE, CURRENT_TIMESTAMP, NULL
+WHERE NOT EXISTS (
+SELECT 1 FROM heights WHERE height='5ft 0in'
+);
+
+INSERT INTO heights
+(admin_id, height, is_active, created_at, updated_at)
+
+SELECT NULL, '5ft 5in', TRUE, CURRENT_TIMESTAMP, NULL
+WHERE NOT EXISTS (
+SELECT 1 FROM heights WHERE height='5ft 5in'
+);
+
+INSERT INTO heights
+(admin_id, height, is_active, created_at, updated_at)
+
+SELECT NULL, '6ft 0in', TRUE, CURRENT_TIMESTAMP, NULL
+WHERE NOT EXISTS (
+SELECT 1 FROM heights WHERE height='6ft 0in'
+);
+
+-- ==========================================
+-- WEIGHTS
+-- ==========================================
+
+INSERT INTO weights
+(admin_id, value, is_active, created_at, updated_at)
+
+SELECT NULL, '40 Kg', TRUE, CURRENT_TIMESTAMP, NULL
+WHERE NOT EXISTS (
+SELECT 1 FROM weights WHERE value='40 Kg'
+);
+
+INSERT INTO weights
+(admin_id, value, is_active, created_at, updated_at)
+
+SELECT NULL, '50 Kg', TRUE, CURRENT_TIMESTAMP, NULL
+WHERE NOT EXISTS (
+SELECT 1 FROM weights WHERE value='50 Kg'
+);
+
+INSERT INTO weights
+(admin_id, value, is_active, created_at, updated_at)
+
+SELECT NULL, '60 Kg', TRUE, CURRENT_TIMESTAMP, NULL
+WHERE NOT EXISTS (
+SELECT 1 FROM weights WHERE value='60 Kg'
+);
+
+INSERT INTO weights
+(admin_id, value, is_active, created_at, updated_at)
+
+SELECT NULL, '70 Kg', TRUE, CURRENT_TIMESTAMP, NULL
+WHERE NOT EXISTS (
+SELECT 1 FROM weights WHERE value='70 Kg'
+);
+
+INSERT INTO weights
+(admin_id, value, is_active, created_at, updated_at)
+
+SELECT NULL, '80 Kg', TRUE, CURRENT_TIMESTAMP, NULL
+WHERE NOT EXISTS (
+SELECT 1 FROM weights WHERE value='80 Kg'
+);

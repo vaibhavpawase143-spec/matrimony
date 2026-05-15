@@ -1,7 +1,7 @@
 package com.example.controller.master;
 
 import com.example.dto.request.HeightRequestDTO;
-import com.example.dto.responce.HeightResponseDTO;
+import com.example.dto.response.HeightResponseDTO;
 import com.example.model.Admin;
 import com.example.model.Height;
 import com.example.service.HeightService;
@@ -24,6 +24,7 @@ public class HeightController {
     public HeightResponseDTO create(@RequestBody HeightRequestDTO dto) {
 
         Height entity = mapToEntity(dto);
+
         Height saved = heightService.create(entity);
 
         return mapToResponse(saved);
@@ -35,7 +36,9 @@ public class HeightController {
             @PathVariable Long id,
             @RequestBody HeightRequestDTO dto
     ) {
+
         Height entity = mapToEntity(dto);
+
         Height updated = heightService.update(id, entity);
 
         return mapToResponse(updated);
@@ -44,13 +47,16 @@ public class HeightController {
     // ❌ Delete
     @DeleteMapping("/{id}")
     public String delete(@PathVariable Long id) {
+
         heightService.delete(id);
+
         return "Height deleted successfully";
     }
 
     // 🔍 Get by ID
     @GetMapping("/{id}")
     public HeightResponseDTO getById(@PathVariable Long id) {
+
         Height height = heightService.getById(id)
                 .orElseThrow(() -> new RuntimeException("Height not found"));
 
@@ -60,6 +66,7 @@ public class HeightController {
     // 🔍 Get all
     @GetMapping
     public List<HeightResponseDTO> getAll() {
+
         return heightService.getAll()
                 .stream()
                 .map(this::mapToResponse)
@@ -69,6 +76,7 @@ public class HeightController {
     // 🔍 Get active
     @GetMapping("/active")
     public List<HeightResponseDTO> getActive() {
+
         return heightService.getActive()
                 .stream()
                 .map(this::mapToResponse)
@@ -77,7 +85,10 @@ public class HeightController {
 
     // 🔍 Get by admin
     @GetMapping("/admin/{adminId}")
-    public List<HeightResponseDTO> getByAdmin(@PathVariable Long adminId) {
+    public List<HeightResponseDTO> getByAdmin(
+            @PathVariable Long adminId
+    ) {
+
         return heightService.getByAdmin(adminId)
                 .stream()
                 .map(this::mapToResponse)
@@ -86,7 +97,10 @@ public class HeightController {
 
     // 🔍 Search
     @GetMapping("/search")
-    public List<HeightResponseDTO> search(@RequestParam String keyword) {
+    public List<HeightResponseDTO> search(
+            @RequestParam String keyword
+    ) {
+
         return heightService.search(keyword)
                 .stream()
                 .map(this::mapToResponse)
@@ -102,11 +116,15 @@ public class HeightController {
         Height entity = new Height();
 
         entity.setHeight(dto.getHeight());
+
         entity.setIsActive(dto.getIsActive());
 
         if (dto.getAdminId() != null) {
+
             Admin admin = new Admin();
+
             admin.setId(dto.getAdminId());
+
             entity.setAdmin(admin);
         }
 
@@ -118,9 +136,16 @@ public class HeightController {
         HeightResponseDTO dto = new HeightResponseDTO();
 
         dto.setId(entity.getId());
+
+        // IMPORTANT FOR FRONTEND
+        dto.setName(entity.getHeight());
+
         dto.setHeight(entity.getHeight());
+
         dto.setIsActive(entity.getIsActive());
+
         dto.setCreatedAt(entity.getCreatedAt());
+
         dto.setUpdatedAt(entity.getUpdatedAt());
 
         if (entity.getAdmin() != null) {
