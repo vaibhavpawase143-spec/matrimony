@@ -163,6 +163,11 @@ public class Admin {
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
     }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
     public Long getDeletedBy() { return deletedBy; }
     public void setDeletedBy(Long deletedBy) { this.deletedBy = deletedBy; }
 

@@ -1,22 +1,19 @@
 package com.example.controller.user;
 
 import com.example.dto.request.LoginRequest;
-import com.example.dto.request.UserFilterDTO;
 import com.example.dto.request.UserRegisterRequestDTO;
 import com.example.dto.response.ApiResponse;
 import com.example.dto.response.AuthResponse;
-import com.example.dto.response.PageResponse;
 import com.example.dto.response.UserResponseDTO;
 import com.example.model.User;
+import com.example.service.EmailService;
 import com.example.service.UserService;
-
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/users")
@@ -25,6 +22,7 @@ import java.util.List;
 public class UserController {
 
     private final UserService service;
+    private final EmailService emailService;
 
     // ================= REGISTER =================
     @PostMapping("/register")
@@ -32,12 +30,20 @@ public class UserController {
 
         User savedUser = service.register(dto);
 
+        String token = UUID.randomUUID().toString();
+        service.saveVerificationToken(savedUser.getId(), token);
+
+        emailService.sendVerificationEmail(savedUser.getEmail(), token);
+
+        // send OTP
+        service.sendOTPToPhone(savedUser.getPhone());
+
         UserResponseDTO response = service.getById(savedUser.getId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         return ApiResponse.<UserResponseDTO>builder()
                 .success(true)
-                .message("User registered successfully")
+                .message("User registered successfully. Please verify your email and phone number.")
                 .data(response)
                 .build();
     }
@@ -54,168 +60,65 @@ public class UserController {
         return ResponseEntity.ok(new AuthResponse(token));
     }
 
-    // ================= CREATE (ADMIN ONLY) =================
-    @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
-    public ApiResponse<UserResponseDTO> create(@RequestBody UserRegisterRequestDTO dto) {
+    // ================= PHONE VERIFICATION - SEND OTP =================
+    // ================= PHONE VERIFICATION - SEND OTP =================
+    @PostMapping("/send-otp")
+    public ApiResponse<String> sendOTP(@RequestParam String phone) {
 
-        User savedUser = service.register(dto);
-
-        UserResponseDTO response = service.getById(savedUser.getId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        return ApiResponse.<UserResponseDTO>builder()
-                .success(true)
-                .message("User created successfully")
-                .data(response)
-                .build();
-    }
-
-    // ================= SEARCH =================
-    @GetMapping("/search")
-    @PreAuthorize("hasAnyRole('USER','ADMIN')")
-    public ApiResponse<List<UserResponseDTO>> search(@RequestParam String keyword) {
-
-        List<UserResponseDTO> users = service.search(keyword);
-
-        return ApiResponse.<List<UserResponseDTO>>builder()
-                .success(true)
-                .message("Search result")
-                .data(users)
-                .build();
-    }
-
-    // ================= GET BY ID =================
-    @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or @userSecurity.isOwner(#id, authentication.name)")
-    public ApiResponse<UserResponseDTO> getById(@PathVariable Long id) {
-
-        UserResponseDTO user = service.getById(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        return ApiResponse.<UserResponseDTO>builder()
-                .success(true)
-                .message("User fetched successfully")
-                .data(user)
-                .build();
-    }
-
-    // ================= GET ALL =================
-    @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
-    public ApiResponse<List<UserResponseDTO>> getAll() {
-
-        return ApiResponse.<List<UserResponseDTO>>builder()
-                .success(true)
-                .message("Users fetched successfully")
-                .data(service.getAll())
-                .build();
-    }
-
-    // ================= UPDATE =================
-    @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or @userSecurity.isOwner(#id, authentication.name)")
-    public ApiResponse<UserResponseDTO> update(@PathVariable Long id,
-                                               @RequestBody User user) {
-
-        service.update(id, user);
-
-        UserResponseDTO updated = service.getById(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        return ApiResponse.<UserResponseDTO>builder()
-                .success(true)
-                .message("User updated successfully")
-                .data(updated)
-                .build();
-    }
-
-    // ================= DELETE =================
-    @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ApiResponse<String> delete(@PathVariable Long id) {
-
-        service.deleteUser(id);
+        String otp = service.sendOTPToPhone(phone);
 
         return ApiResponse.<String>builder()
                 .success(true)
-                .message("User deleted successfully")
+                .message("OTP generated successfully")
+                .data(otp)
+                .build();
+    }
+
+    // ================= VERIFY OTP =================
+    @PostMapping("/verify-otp")
+    public ApiResponse<String> verifyOTP(
+            @RequestParam String phone,
+            @RequestParam String otp) {
+
+        service.verifyPhoneOTP(phone, otp);
+
+        return ApiResponse.<String>builder()
+                .success(true)
+                .message("Phone verified successfully")
                 .data(null)
                 .build();
     }
 
-    // ================= PAGINATION =================
-    @GetMapping("/paged")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ApiResponse<PageResponse<UserResponseDTO>> getUsers(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "id") String sortBy,
-            @RequestParam(defaultValue = "asc") String direction,
-            @RequestParam(required = false) String search,
-            @RequestParam(required = false) Boolean isActive,
-            @RequestParam(required = false) Boolean isDeleted,
-            @RequestParam(required = false) String role
-    ) {
+    // ================= TEST EMAIL =================
+    @GetMapping("/test-email")
+    public ApiResponse<String> testEmail(@RequestParam String email) {
 
-        UserFilterDTO filter = new UserFilterDTO();
-        filter.setSearch(search);
-        filter.setIsActive(isActive);
-        filter.setIsDeleted(isDeleted);
-        filter.setRole(role);
+        try {
+            emailService.sendEmail(email, "Test Email from Gathbandhan",
+                "<h2>🧪 Email Test Successful!</h2>" +
+                "<p>This is a test email from your Gathbandhan Matrimony application.</p>" +
+                "<p>If you received this, your email configuration is working perfectly! 🎉</p>" +
+                "<p><strong>Timestamp:</strong> " + LocalDateTime.now() + "</p>");
 
-        return ApiResponse.<PageResponse<UserResponseDTO>>builder()
-                .success(true)
-                .message("Users fetched successfully")
-                .data(service.getAllUsers(page, size, sortBy, direction, filter))
-                .build();
+            return ApiResponse.<String>builder()
+                    .success(true)
+                    .message("Test email sent successfully to: " + email)
+                    .data(null)
+                    .build();
+
+        } catch (Exception e) {
+            return ApiResponse.<String>builder()
+                    .success(false)
+                    .message("Email test failed: " + e.getMessage())
+                    .data(null)
+                    .build();
+        }
     }
 
-    // ================= USER STATUS =================
-    @GetMapping("/status/{email}")
-    @PreAuthorize("hasAnyRole('USER','ADMIN')")
-    public ApiResponse<UserResponseDTO> getUserStatus(@PathVariable String email) {
-
-        User user = service.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        UserResponseDTO dto = UserResponseDTO.builder()
-                .id(user.getId())
-                .email(user.getEmail())
-                .isOnline(user.getIsOnline())
-                .lastSeen(user.getLastSeen())
-                .build();
-
-        return ApiResponse.<UserResponseDTO>builder()
-                .success(true)
-                .message("User status fetched")
-                .data(dto)
-                .build();
-    }
-
-    // ================= VERIFY EMAIL =================
+    // ================= REDIRECT OLD EMAIL LINKS =================
     @GetMapping("/verify")
-    public ApiResponse<String> verifyEmail(@RequestParam String token) {
-
-        service.verifyEmail(token);
-
-        return ApiResponse.<String>builder()
-                .success(true)
-                .message("Email verified successfully")
-                .data(null)
-                .build();
-    }
-
-    // ================= RESEND =================
-    @PostMapping("/resend-verification")
-    public ApiResponse<String> resendVerification(@RequestParam String email) {
-
-        service.resendVerification(email);
-
-        return ApiResponse.<String>builder()
-                .success(true)
-                .message("Verification email sent")
-                .data(null)
-                .build();
+    public String redirectOldVerifyLink(@RequestParam String token) {
+        // Redirect old /api/users/verify links to the correct /api/auth/verify endpoint
+        return "redirect:/api/auth/verify?token=" + token;
     }
 }

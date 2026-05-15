@@ -39,8 +39,19 @@ public class Profile {
     @JoinColumn(name = "city_id")
     private City city;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "mother_tongue_id")
+    private MotherTongue motherTongue;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "marital_status_id")
+    private MaritalStatus maritalStatus;
+
     @Column(name = "date_of_birth")
     private LocalDate dateOfBirth;
+
+    @Column(length = 10)
+    private String gender;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "education_level_id")
@@ -66,6 +77,12 @@ public class Profile {
 
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
+
+    @Column(name = "current_step")
+    private Integer currentStep = 1;
+
+    @Column(name = "profile_completed")
+    private Boolean profileCompleted = false;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -141,12 +158,36 @@ public class Profile {
         this.city = city;
     }
 
+    public MotherTongue getMotherTongue() {
+        return motherTongue;
+    }
+
+    public void setMotherTongue(MotherTongue motherTongue) {
+        this.motherTongue = motherTongue;
+    }
+
+    public MaritalStatus getMaritalStatus() {
+        return maritalStatus;
+    }
+
+    public void setMaritalStatus(MaritalStatus maritalStatus) {
+        this.maritalStatus = maritalStatus;
+    }
+
     public LocalDate getDateOfBirth() {
         return dateOfBirth;
     }
 
     public void setDateOfBirth(LocalDate dateOfBirth) {
         this.dateOfBirth = dateOfBirth;
+    }
+
+    public String getGender() {
+        return gender;
+    }
+
+    public void setGender(String gender) {
+        this.gender = gender;
     }
 
     public EducationLevel getEducationLevel() {
@@ -236,5 +277,20 @@ public class Profile {
     public void setBoostScore(Integer boostScore) {
         this.boostScore = boostScore;
     }
-// other getters/setters same as yours...
+
+    public Integer getCurrentStep() {
+        return currentStep;
+    }
+
+    public void setCurrentStep(Integer currentStep) {
+        this.currentStep = currentStep;
+    }
+
+    public Boolean getProfileCompleted() {
+        return profileCompleted;
+    }
+
+    public void setProfileCompleted(Boolean profileCompleted) {
+        this.profileCompleted = profileCompleted;
+    }
 }

@@ -51,7 +51,7 @@ public class AdminAuthController {
 
         // ✅ Return response
         return ResponseEntity.ok(
-                new LoginResponse(accessToken, refreshToken.getToken())
+                new LoginResponse(accessToken, refreshToken.getToken(), null)
         );
     }
 }
