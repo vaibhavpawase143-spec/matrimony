@@ -26,8 +26,10 @@ public class WeightController {
     // ✅ CREATE
     // =========================
     @PostMapping
-    @PreAuthorize("hasAnyRole('USER','ADMIN','SUPER_ADMIN')") // ✅ FIXED
-    public WeightResponseDTO save(@Valid @RequestBody WeightRequestDTO dto) {
+    @PreAuthorize("hasAnyRole('USER','ADMIN','SUPER_ADMIN')")
+    public WeightResponseDTO save(
+            @Valid @RequestBody WeightRequestDTO dto
+    ) {
 
         Weight weight = mapToEntity(dto);
 
@@ -40,8 +42,10 @@ public class WeightController {
     // 🔍 GET BY ID
     // =========================
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('USER','ADMIN','SUPER_ADMIN')") // ✅ FIXED
-    public WeightResponseDTO getById(@PathVariable Long id) {
+    @PreAuthorize("hasAnyRole('USER','ADMIN','SUPER_ADMIN')")
+    public WeightResponseDTO getById(
+            @PathVariable Long id
+    ) {
 
         Weight weight = service.getById(id)
                 .orElseThrow(() -> new RuntimeException("Weight not found"));
@@ -53,7 +57,7 @@ public class WeightController {
     // 🔍 GET ALL
     // =========================
     @GetMapping
-    @PreAuthorize("hasAnyRole('USER','ADMIN','SUPER_ADMIN')") // ✅ FIXED
+//    @PreAuthorize("hasAnyRole('USER','ADMIN','SUPER_ADMIN')")
     public List<WeightResponseDTO> getAll() {
 
         return service.getAll()
@@ -63,10 +67,10 @@ public class WeightController {
     }
 
     // =========================
-    // ❌ DELETE (SOFT)
+    // ❌ DELETE
     // =========================
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('USER','ADMIN','SUPER_ADMIN')") // ✅ FIXED
+    @PreAuthorize("hasAnyRole('USER','ADMIN','SUPER_ADMIN')")
     public String delete(@PathVariable Long id) {
 
         service.delete(id);
@@ -77,12 +81,15 @@ public class WeightController {
     // =========================
     // 🔥 MAPPING
     // =========================
+
     private Weight mapToEntity(WeightRequestDTO dto) {
 
         Weight weight = new Weight();
 
         Admin admin = new Admin();
+
         admin.setId(dto.getAdminId());
+
         weight.setAdmin(admin);
 
         weight.setValue(dto.getValue());
@@ -97,13 +104,28 @@ public class WeightController {
     private WeightResponseDTO mapToResponse(Weight weight) {
 
         return WeightResponseDTO.builder()
+
                 .id(weight.getId())
-                .adminId(weight.getAdmin() != null ? weight.getAdmin().getId() : null)
+
+                .adminId(
+                        weight.getAdmin() != null
+                                ? weight.getAdmin().getId()
+                                : null
+                )
+
                 .adminName(null)
+
+                // IMPORTANT FOR FRONTEND
+                .name(weight.getValue())
+
                 .value(weight.getValue())
+
                 .isActive(weight.getIsActive())
+
                 .createdAt(weight.getCreatedAt())
+
                 .updatedAt(weight.getUpdatedAt())
+
                 .build();
     }
 }

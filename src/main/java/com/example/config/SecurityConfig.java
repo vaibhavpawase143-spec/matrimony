@@ -54,7 +54,7 @@ public class SecurityConfig {
                                 "/api/users/resend-verification",
                                 "/api/users/send-otp",
                                 "/api/users/verify-otp",
-                                "/api/religions/**",
+                                "/api/master/religions/**",
                                 "/api/cities/**",
                                 "/api/states/**",
                                 "/api/occupations/**",
@@ -79,7 +79,8 @@ public class SecurityConfig {
                         ).permitAll()
 
                         // ADMIN LOGIN
-                        .requestMatchers("/api/admin/auth/login", "/api/admin/auth/refresh")
+                        .requestMatchers("/api/admin/auth/login", "/api/admin/auth/refresh","/api/master/**",
+                                "/api/admins/*/castes/**")
                         .permitAll()
 
                         // ADMIN

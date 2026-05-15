@@ -223,16 +223,30 @@ export const searchAPI = {
 export const masterDataAPI = {
   getReligions: async () => {
     try {
+
       console.log('🔍 Fetching religions...');
+
       const result = await apiClient('/religions');
+
       console.log('✅ MASTER API RESPONSE - Religions:', result);
-      console.log('📊 Religions data type:', typeof result, ' isArray:', Array.isArray(result));
+
+      console.log(
+        '📊 Religions data type:',
+        typeof result,
+        ' isArray:',
+        Array.isArray(result)
+      );
+
       console.log('📋 First religion item:', result?.[0]);
-      return result;
+
+      return Array.isArray(result) ? result : [];
+
     } catch (error) {
+
       console.error('❌ Get Religions API error:', error);
-      errorHandler.handle(error, 'Get Religions API');
-      return []; // Return empty array on error to prevent UI crashes
+
+      return [];
+
     }
   },
 
@@ -255,7 +269,7 @@ export const masterDataAPI = {
   getEducationLevels: async () => {
     try {
       console.log('🔍 Fetching education levels...');
-      const result = await apiClient('/education-levels');
+      const result = await apiClient('/master/education-levels');
       console.log('✅ MASTER API RESPONSE - Education Levels:', result);
       console.log('📊 Education Levels data type:', typeof result, ' isArray:', Array.isArray(result));
       console.log('📋 First education level item:', result?.[0]);
@@ -285,7 +299,7 @@ export const masterDataAPI = {
   getMaritalStatuses: async () => {
     try {
       console.log('🔍 Fetching marital statuses...');
-      const result = await apiClient('/marital-statuses');
+      const result = await apiClient('/marital-status');
       console.log('✅ MASTER API RESPONSE - Marital Statuses:', result);
       console.log('📊 Marital Statuses data type:', typeof result, ' isArray:', Array.isArray(result));
       console.log('📋 First marital status item:', result?.[0]);
@@ -297,22 +311,85 @@ export const masterDataAPI = {
     }
   },
 
-  getCastes: async (religionId) => {
-    try {
-      console.log('🔍 Fetching castes...', religionId);
-      const endpoint = religionId ? `/castes?religionId=${religionId}` : '/castes';
-      const result = await apiClient(endpoint);
-      console.log('✅ MASTER API RESPONSE - Castes:', result);
-      console.log('📊 Castes data type:', typeof result, ' isArray:', Array.isArray(result));
-      console.log('📋 First caste item:', result?.[0]);
-      return result;
-    } catch (error) {
-      console.error('❌ Get Castes API error:', error);
-      errorHandler.handle(error, 'Get Castes API');
-      return [];
-    }
-  },
+ getCastes: async (religionId) => {
 
+   try {
+
+     // If no religion selected
+     if (!religionId) {
+       return [];
+     }
+
+     console.log('🔍 Fetching castes...', religionId);
+
+     // Static admin id
+     const adminId = 1;
+
+     // API call
+     const result = await apiClient(
+       `/admins/${adminId}/castes/religion/${religionId}`
+     );
+
+     console.log('✅ MASTER API RESPONSE - Castes:', result);
+
+     console.log(
+       '📊 Castes data type:',
+       typeof result,
+       ' isArray:',
+       Array.isArray(result)
+     );
+
+     console.log('📋 First caste item:', result?.[0]);
+
+     // Safe return
+     return Array.isArray(result) ? result : [];
+
+   } catch (error) {
+
+     console.error('❌ Get Castes API error:', error);
+
+     return [];
+
+   }
+ },
+
+ getSubCastes: async (casteId) => {
+
+   try {
+
+     if (!casteId) {
+       return [];
+     }
+
+     console.log('🔍 Fetching sub castes...', casteId);
+
+     const adminId = 1;
+
+     const result = await apiClient(
+       `/master/sub-castes/caste/${casteId}/admin/${adminId}`
+     );
+
+     console.log('✅ MASTER API RESPONSE - Sub Castes:', result);
+
+     console.log(
+       '📊 Sub Castes data type:',
+       typeof result,
+       ' isArray:',
+       Array.isArray(result)
+     );
+
+     console.log('📋 First sub caste item:', result?.[0]);
+
+     return Array.isArray(result) ? result : [];
+
+   } catch (error) {
+
+     console.error('❌ Get Sub Castes API error:', error);
+
+     return [];
+
+   }
+ },
   getHeights: async () => {
     try {
       console.log('🔍 Fetching heights...');
@@ -331,7 +408,7 @@ export const masterDataAPI = {
   getWeights: async () => {
     try {
       console.log('🔍 Fetching weights...');
-      const result = await apiClient('/weights');
+      const result = await apiClient('/master/weights');
       console.log('✅ MASTER API RESPONSE - Weights:', result);
       console.log('📊 Weights data type:', typeof result, ' isArray:', Array.isArray(result));
       console.log('📋 First weight item:', result?.[0]);
