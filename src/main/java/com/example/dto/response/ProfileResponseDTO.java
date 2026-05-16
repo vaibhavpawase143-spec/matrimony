@@ -13,6 +13,9 @@ public class ProfileResponseDTO {
     private String userName;
     private String firstName;
     private String lastName;
+    private String middleName;
+    private String email;
+    private String phone;
     private String gender;
     private LocalDate dateOfBirth;
 
@@ -21,6 +24,9 @@ public class ProfileResponseDTO {
 
     private Long casteId;
     private String casteName;
+
+    private Long subCasteId;
+    private String subCasteName;
 
     private Long educationLevelId;
     private String educationLevelName;
@@ -43,7 +49,41 @@ public class ProfileResponseDTO {
     private Long maritalStatusId;
     private String maritalStatusName;
 
+    // Physical details
+    private String complexion;
+    private String bodyType;
+
+    // Education & Career
+    private String annualIncome;
+    private String companyName;
+
+    // Location
+    private String country;
+    private String state;
+    private String address;
+
+    // Lifestyle
+    private String diet;
+    private String smoking;
+    private String drinking;
+
+    // Family details
+    private String fatherName;
+    private String fatherOccupation;
+    private String motherName;
+    private String motherOccupation;
+    private String siblingsCount;
+
+    // Partner preferences
+    private String preferredAgeMin;
+    private String preferredAgeMax;
+    private String preferredLocation;
+    private String preferredEducation;
+    private String otherExpectations;
+
+    // About
     private String about;
+    private String aboutMe;
 
     private Boolean isActive;
     private Integer currentStep;

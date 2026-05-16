@@ -27,23 +27,27 @@ public class Profile {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "religion_id")
     private Religion religion;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "caste_id")
     private Caste caste;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "sub_caste_id")
+    private SubCaste subCaste;
+
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "city_id")
     private City city;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "mother_tongue_id")
     private MotherTongue motherTongue;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "marital_status_id")
     private MaritalStatus maritalStatus;
 
@@ -53,19 +57,19 @@ public class Profile {
     @Column(length = 10)
     private String gender;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "education_level_id")
     private EducationLevel educationLevel;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "occupation_id")
     private Occupation occupation;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "height_id")
     private Height height;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "weight_id")
     private Weight weight;
 
@@ -74,6 +78,72 @@ public class Profile {
 
     @Column(name = "image_url")
     private String imageUrl;
+
+    // Physical details
+    @Column(length = 50)
+    private String complexion;
+
+    @Column(length = 50)
+    private String bodyType;
+
+    // Education & Career
+    @Column(length = 100)
+    private String annualIncome;
+
+    @Column(length = 200)
+    private String companyName;
+
+    // Location
+    @Column(length = 100)
+    private String country;
+
+    @Column(length = 100)
+    private String state;
+
+    @Column(length = 500)
+    private String address;
+
+    // Lifestyle
+    @Column(length = 50)
+    private String diet;
+
+    @Column(length = 50)
+    private String smoking;
+
+    @Column(length = 50)
+    private String drinking;
+
+    // Family details
+    @Column(length = 100)
+    private String fatherName;
+
+    @Column(length = 200)
+    private String fatherOccupation;
+
+    @Column(length = 100)
+    private String motherName;
+
+    @Column(length = 200)
+    private String motherOccupation;
+
+    @Column(length = 50)
+    private String siblingsCount;
+
+    // Partner preferences
+    @Column(length = 10)
+    private String preferredAgeMin;
+
+    @Column(length = 10)
+    private String preferredAgeMax;
+
+    @Column(length = 200)
+    private String preferredLocation;
+
+    @Column(length = 200)
+    private String preferredEducation;
+
+    @Column(length = 1000)
+    private String otherExpectations;
 
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
@@ -148,6 +218,14 @@ public class Profile {
 
     public void setCaste(Caste caste) {
         this.caste = caste;
+    }
+
+    public SubCaste getSubCaste() {
+        return subCaste;
+    }
+
+    public void setSubCaste(SubCaste subCaste) {
+        this.subCaste = subCaste;
     }
 
     public City getCity() {
@@ -292,5 +370,166 @@ public class Profile {
 
     public void setProfileCompleted(Boolean profileCompleted) {
         this.profileCompleted = profileCompleted;
+    }
+
+    // Getters and setters for new fields
+    public String getComplexion() {
+        return complexion;
+    }
+
+    public void setComplexion(String complexion) {
+        this.complexion = complexion;
+    }
+
+    public String getBodyType() {
+        return bodyType;
+    }
+
+    public void setBodyType(String bodyType) {
+        this.bodyType = bodyType;
+    }
+
+    public String getAnnualIncome() {
+        return annualIncome;
+    }
+
+    public void setAnnualIncome(String annualIncome) {
+        this.annualIncome = annualIncome;
+    }
+
+    public String getCompanyName() {
+        return companyName;
+    }
+
+    public void setCompanyName(String companyName) {
+        this.companyName = companyName;
+    }
+
+    public String getCountry() {
+        return country;
+    }
+
+    public void setCountry(String country) {
+        this.country = country;
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    public void setState(String state) {
+        this.state = state;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    public String getDiet() {
+        return diet;
+    }
+
+    public void setDiet(String diet) {
+        this.diet = diet;
+    }
+
+    public String getSmoking() {
+        return smoking;
+    }
+
+    public void setSmoking(String smoking) {
+        this.smoking = smoking;
+    }
+
+    public String getDrinking() {
+        return drinking;
+    }
+
+    public void setDrinking(String drinking) {
+        this.drinking = drinking;
+    }
+
+    public String getFatherName() {
+        return fatherName;
+    }
+
+    public void setFatherName(String fatherName) {
+        this.fatherName = fatherName;
+    }
+
+    public String getFatherOccupation() {
+        return fatherOccupation;
+    }
+
+    public void setFatherOccupation(String fatherOccupation) {
+        this.fatherOccupation = fatherOccupation;
+    }
+
+    public String getMotherName() {
+        return motherName;
+    }
+
+    public void setMotherName(String motherName) {
+        this.motherName = motherName;
+    }
+
+    public String getMotherOccupation() {
+        return motherOccupation;
+    }
+
+    public void setMotherOccupation(String motherOccupation) {
+        this.motherOccupation = motherOccupation;
+    }
+
+    public String getSiblingsCount() {
+        return siblingsCount;
+    }
+
+    public void setSiblingsCount(String siblingsCount) {
+        this.siblingsCount = siblingsCount;
+    }
+
+    public String getPreferredAgeMin() {
+        return preferredAgeMin;
+    }
+
+    public void setPreferredAgeMin(String preferredAgeMin) {
+        this.preferredAgeMin = preferredAgeMin;
+    }
+
+    public String getPreferredAgeMax() {
+        return preferredAgeMax;
+    }
+
+    public void setPreferredAgeMax(String preferredAgeMax) {
+        this.preferredAgeMax = preferredAgeMax;
+    }
+
+    public String getPreferredLocation() {
+        return preferredLocation;
+    }
+
+    public void setPreferredLocation(String preferredLocation) {
+        this.preferredLocation = preferredLocation;
+    }
+
+    public String getPreferredEducation() {
+        return preferredEducation;
+    }
+
+    public void setPreferredEducation(String preferredEducation) {
+        this.preferredEducation = preferredEducation;
+    }
+
+    public String getOtherExpectations() {
+        return otherExpectations;
+    }
+
+    public void setOtherExpectations(String otherExpectations) {
+        this.otherExpectations = otherExpectations;
     }
 }
