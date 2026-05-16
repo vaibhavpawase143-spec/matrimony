@@ -220,6 +220,18 @@ useEffect(() => {
   useEffect(() => {
     if (savedProfileData && Object.keys(savedProfileData).length > 0) {
       console.log('🔧 Loading profile data into settings:', savedProfileData);
+      console.log('🔧 Checking specific fields:', {
+        address: savedProfileData.address,
+        smoking: savedProfileData.smoking,
+        drinking: savedProfileData.drinking,
+        country: savedProfileData.country,
+        state: savedProfileData.state,
+        cityId: savedProfileData.cityId,
+        cityName: savedProfileData.cityName,
+        companyName: savedProfileData.companyName,
+        email: savedProfileData.email,
+        phone: savedProfileData.phone
+      });
       
       // Map backend API fields to frontend form fields
      const mappedData = {
@@ -234,6 +246,7 @@ useEffect(() => {
        phone: savedProfileData.phone || '',
        gender: savedProfileData.gender || '',
        dateOfBirth: savedProfileData.dateOfBirth || '',
+       age: savedProfileData.age || calculateAge(savedProfileData.dateOfBirth),
        profilePhotoUrl:
          savedProfileData.imageUrl ||
          savedProfileData.profilePhotoUrl ||
@@ -279,7 +292,8 @@ aboutMe:
        // LOCATION
       country: savedProfileData.country || '',
       state: savedProfileData.state || '',
-      city: savedProfileData.city || '',
+      cityId: savedProfileData.cityId || null,
+      city: savedProfileData.cityName || savedProfileData.city || '',
        address: savedProfileData.address || '',
 
        // FAMILY
@@ -301,6 +315,8 @@ aboutMe:
          '',
        // DIET
        diet: savedProfileData.diet || '',
+       smoking: savedProfileData.smoking || '',
+       drinking: savedProfileData.drinking || '',
 
        // PARTNER PREFERENCE
        preferredAgeMin:
@@ -347,7 +363,18 @@ aboutMe:
         age: calculatedAge
       }));
     } else {
-      setFormData(prev => ({ ...prev, [field]: value }));
+      // Convert ID fields to numbers for backend compatibility
+      const idFields = [
+        'religionId', 'casteId', 'subCasteId', 'motherTongueId',
+        'maritalStatusId', 'educationLevelId', 'occupationId',
+        'heightId', 'weightId', 'cityId'
+      ];
+      
+      const finalValue = idFields.includes(field) && value !== '' 
+        ? (typeof value === 'string' ? parseInt(value, 10) : value)
+        : value;
+      
+      setFormData(prev => ({ ...prev, [field]: finalValue }));
     }
   };
 
@@ -443,7 +470,7 @@ aboutMe:
        dateOfBirth: formData.dateOfBirth,
 
        // ABOUT
-       aboutMe: formData.aboutMe,
+       aboutMe: formData.aboutMe || formData.about,
 
        imageUrl: formData.profilePhotoUrl,
 
@@ -540,7 +567,7 @@ aboutMe:
 
   // Helper function to render form fields
   const renderField = (field) => {
-    const { label, placeholder, type = "text", key, options } = field;
+    const { label, placeholder, type = "text", key, options, readOnly = false } = field;
     
     if (type === "select") {
       let fieldOptions = options;
@@ -764,12 +791,13 @@ aboutMe:
     return (
       <div key={key}>
         <label className="text-xs font-medium text-foreground mb-1 block">{label}</label>
-        <input 
-          type={type} 
+        <input
+          type={type}
           value={formData[key]}
           onChange={(e) => handleInputChange(key, e.target.value)}
-          placeholder={placeholder} 
-          className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" 
+          placeholder={placeholder}
+          readOnly={readOnly}
+          className={`w-full bg-background border border-border rounded-lg px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary ${readOnly ? 'bg-muted cursor-not-allowed' : ''}`}
         />
       </div>
     );
@@ -831,7 +859,7 @@ aboutMe:
                     options: ["Male", "Female", "Other"] 
                   })}
                   {renderField({ label: "Date of Birth", type: "date", key: "dateOfBirth" })}
-                  {renderField({ label: "Age", type: "number", key: "age", placeholder: "Auto-calculated" })}
+                  {renderField({ label: "Age", type: "number", key: "age", placeholder: "Auto-calculated", readOnly: true })}
                   {renderField({ 
                     label: "Marital Status", 
                     key: "maritalStatusId", 
@@ -890,7 +918,7 @@ aboutMe:
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {renderField({ label: "Country", key: "country", type: "select", options: ["India", "USA", "UK", "Canada", "Australia"] })}
                   {renderField({ label: "State/Province", key: "state", type: "select" })}
-                  {renderField({ label: "City", key: "city", type: "select" })}
+                  {renderField({ label: "City", key: "cityId", type: "select" })}
                   {renderField({ label: "Address", placeholder: "Your address", key: "address" })}
                 </div>
               </div>

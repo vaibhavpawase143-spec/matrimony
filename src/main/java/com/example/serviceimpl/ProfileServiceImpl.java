@@ -32,6 +32,7 @@ public class ProfileServiceImpl implements ProfileService {
     private final MatchAsyncService asyncService;
     private final ReligionRepository religionRepository;
     private final CasteRepository casteRepository;
+    private final SubCasteRepository subCasteRepository;
     private final EducationLevelRepository educationRepository;
     private final OccupationRepository occupationRepository;
     private final HeightRepository heightRepository;
@@ -94,11 +95,13 @@ public class ProfileServiceImpl implements ProfileService {
     }
 
     // ================= GET =================
+    @Transactional(readOnly = true)
     public ProfileResponseDTO getMyProfile() {
         return mapToDTO(repository.findByUserIdWithRelations(getCurrentUser().getId())
                 .orElseThrow(() -> new RuntimeException("Profile not found")));
     }
 
+    @Transactional(readOnly = true)
     public ProfileResponseDTO getProfileById(Long id) {
         return mapToDTO(repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Profile not found")));
@@ -163,8 +166,8 @@ public class ProfileServiceImpl implements ProfileService {
     // ================= READ =================
     @Override public Optional<Profile> getById(Long id) { return repository.findById(id); }
     @Override public Optional<Profile> getByUserId(Long userId) { return repository.findByUserIdWithRelations(userId); }
-    @Override public List<Profile> getAll() { return repository.findAllWithUser(); }
-    @Override public List<Profile> getActiveProfiles() { return repository.findActiveProfilesWithUser(); }
+    @Override @Transactional(readOnly = true) public List<Profile> getAll() { return repository.findAllWithUser(); }
+    @Override @Transactional(readOnly = true) public List<Profile> getActiveProfiles() { return repository.findActiveProfilesWithUser(); }
 
     // ================= FILTER =================
     @Override public List<Profile> getByReligion(Long id) { return repository.findByReligionId(id); }
@@ -243,8 +246,11 @@ public class ProfileServiceImpl implements ProfileService {
         if (dto.getDateOfBirth() != null)
             p.setDateOfBirth(dto.getDateOfBirth());
 
+        // Handle both about and aboutMe for frontend compatibility
         if (dto.getAbout() != null)
             p.setAbout(dto.getAbout());
+        if (dto.getAboutMe() != null)
+            p.setAbout(dto.getAboutMe());
 
         if (dto.getImageUrl() != null)
             p.setImageUrl(dto.getImageUrl());
@@ -267,6 +273,11 @@ public class ProfileServiceImpl implements ProfileService {
         // Map caste fields
         if (dto.getCasteId() != null)
             p.setCaste(casteRepository.findById(dto.getCasteId()).orElse(null));
+
+        // Map sub caste fields
+        if (dto.getSubCasteId() != null) {
+            p.setSubCaste(subCasteRepository.findById(dto.getSubCasteId()).orElse(null));
+        }
 
         // Map education level fields
         if (dto.getEducationLevelId() != null)
@@ -295,6 +306,58 @@ public class ProfileServiceImpl implements ProfileService {
         // Map marital status fields
         if (dto.getMaritalStatusId() != null)
             p.setMaritalStatus(maritalStatusRepository.findById(dto.getMaritalStatusId()).orElse(null));
+
+        // Map physical details
+        if (dto.getComplexion() != null)
+            p.setComplexion(dto.getComplexion());
+        if (dto.getBodyType() != null)
+            p.setBodyType(dto.getBodyType());
+
+        // Map education & career
+        if (dto.getAnnualIncome() != null)
+            p.setAnnualIncome(dto.getAnnualIncome());
+        if (dto.getCompanyName() != null)
+            p.setCompanyName(dto.getCompanyName());
+
+        // Map location
+        if (dto.getCountry() != null)
+            p.setCountry(dto.getCountry());
+        if (dto.getState() != null)
+            p.setState(dto.getState());
+        if (dto.getAddress() != null)
+            p.setAddress(dto.getAddress());
+
+        // Map lifestyle
+        if (dto.getDiet() != null)
+            p.setDiet(dto.getDiet());
+        if (dto.getSmoking() != null)
+            p.setSmoking(dto.getSmoking());
+        if (dto.getDrinking() != null)
+            p.setDrinking(dto.getDrinking());
+
+        // Map family details
+        if (dto.getFatherName() != null)
+            p.setFatherName(dto.getFatherName());
+        if (dto.getFatherOccupation() != null)
+            p.setFatherOccupation(dto.getFatherOccupation());
+        if (dto.getMotherName() != null)
+            p.setMotherName(dto.getMotherName());
+        if (dto.getMotherOccupation() != null)
+            p.setMotherOccupation(dto.getMotherOccupation());
+        if (dto.getSiblingsCount() != null)
+            p.setSiblingsCount(dto.getSiblingsCount());
+
+        // Map partner preferences
+        if (dto.getPreferredAgeMin() != null)
+            p.setPreferredAgeMin(dto.getPreferredAgeMin());
+        if (dto.getPreferredAgeMax() != null)
+            p.setPreferredAgeMax(dto.getPreferredAgeMax());
+        if (dto.getPreferredLocation() != null)
+            p.setPreferredLocation(dto.getPreferredLocation());
+        if (dto.getPreferredEducation() != null)
+            p.setPreferredEducation(dto.getPreferredEducation());
+        if (dto.getOtherExpectations() != null)
+            p.setOtherExpectations(dto.getOtherExpectations());
     }
 
     public ProfileResponseDTO mapToDTO(Profile p) {
@@ -309,6 +372,9 @@ public class ProfileServiceImpl implements ProfileService {
             dto.setUserName(p.getUser().getFullName());
             dto.setFirstName(p.getUser().getFirstName());
             dto.setLastName(p.getUser().getLastName());
+            dto.setMiddleName(p.getUser().getMiddleName());
+            dto.setEmail(p.getUser().getEmail());
+            dto.setPhone(p.getUser().getPhone());
             System.out.println("   - User fields mapped: " + p.getUser().getFullName());
         }
         
@@ -316,6 +382,7 @@ public class ProfileServiceImpl implements ProfileService {
         dto.setDateOfBirth(p.getDateOfBirth());
         dto.setImageUrl(p.getImageUrl());
         dto.setAbout(p.getAbout());
+        dto.setAboutMe(p.getAbout()); // Map about to aboutMe for frontend compatibility
         dto.setIsActive(p.getIsActive());
         dto.setCurrentStep(p.getCurrentStep());
         dto.setProfileCompleted(p.getProfileCompleted());
@@ -332,6 +399,12 @@ public class ProfileServiceImpl implements ProfileService {
         if (p.getCaste() != null) {
             dto.setCasteId(p.getCaste().getId());
             dto.setCasteName(p.getCaste().getName());
+        }
+
+        // Map sub caste fields
+        if (p.getSubCaste() != null) {
+            dto.setSubCasteId(p.getSubCaste().getId());
+            dto.setSubCasteName(p.getSubCaste().getName());
         }
 
         // Map education level fields
@@ -375,6 +448,38 @@ public class ProfileServiceImpl implements ProfileService {
             dto.setMaritalStatusId(p.getMaritalStatus().getId());
             dto.setMaritalStatusName(p.getMaritalStatus().getName());
         }
+
+        // Map physical details
+        dto.setComplexion(p.getComplexion());
+        dto.setBodyType(p.getBodyType());
+
+        // Map education & career
+        dto.setAnnualIncome(p.getAnnualIncome());
+        dto.setCompanyName(p.getCompanyName());
+
+        // Map location
+        dto.setCountry(p.getCountry());
+        dto.setState(p.getState());
+        dto.setAddress(p.getAddress());
+
+        // Map lifestyle
+        dto.setDiet(p.getDiet());
+        dto.setSmoking(p.getSmoking());
+        dto.setDrinking(p.getDrinking());
+
+        // Map family details
+        dto.setFatherName(p.getFatherName());
+        dto.setFatherOccupation(p.getFatherOccupation());
+        dto.setMotherName(p.getMotherName());
+        dto.setMotherOccupation(p.getMotherOccupation());
+        dto.setSiblingsCount(p.getSiblingsCount());
+
+        // Map partner preferences
+        dto.setPreferredAgeMin(p.getPreferredAgeMin());
+        dto.setPreferredAgeMax(p.getPreferredAgeMax());
+        dto.setPreferredLocation(p.getPreferredLocation());
+        dto.setPreferredEducation(p.getPreferredEducation());
+        dto.setOtherExpectations(p.getOtherExpectations());
 
         return dto;
     }

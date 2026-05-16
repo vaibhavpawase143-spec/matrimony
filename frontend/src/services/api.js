@@ -397,7 +397,7 @@ export const masterDataAPI = {
       console.log('✅ MASTER API RESPONSE - Heights:', result);
       console.log('📊 Heights data type:', typeof result, ' isArray:', Array.isArray(result));
       console.log('📋 First height item:', result?.[0]);
-      return result;
+      return Array.isArray(result) ? result : [];
     } catch (error) {
       console.error('❌ Get Heights API error:', error);
       errorHandler.handle(error, 'Get Heights API');
@@ -412,7 +412,7 @@ export const masterDataAPI = {
       console.log('✅ MASTER API RESPONSE - Weights:', result);
       console.log('📊 Weights data type:', typeof result, ' isArray:', Array.isArray(result));
       console.log('📋 First weight item:', result?.[0]);
-      return result;
+      return Array.isArray(result) ? result : [];
     } catch (error) {
       console.error('❌ Get Weights API error:', error);
       errorHandler.handle(error, 'Get Weights API');
