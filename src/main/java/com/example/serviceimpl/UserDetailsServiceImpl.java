@@ -2,9 +2,10 @@ package com.example.serviceimpl;
 
 import com.example.model.*;
 import com.example.repository.*;
+import com.example.service.CompatibilityService;
 import com.example.service.UserDetailsService;
-
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.stream.Collectors;
@@ -19,6 +20,11 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     private final PartnerPreferenceRepository prefRepo;
     private final UserSubscriptionRepository subRepo;
     private final PaymentRepository paymentRepo;
+    private final CompatibilityService compatibilityService;
+
+    public org.springframework.security.core.userdetails.UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+        return null;
+    }
 
     @Override
     public UserDetails getUserDetails(Long userId) {
@@ -26,7 +32,8 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        Profile profile = profileRepo.findByUser(user);
+        Profile profile = profileRepo.findByUserId(user.getId())
+                .orElseThrow(() -> new RuntimeException("Profile not found"));
         FamilyDetails family = profile != null ? familyRepo.findByProfile(profile) : null;
         PartnerPreference pref = prefRepo.findByUser(user);
         UserSubscription sub = subRepo.findByUser(user);

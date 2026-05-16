@@ -166,7 +166,13 @@ public class SmokingController {
         return SmokingResponseDTO.builder()
                 .id(s.getId())
                 .adminId(s.getAdmin() != null ? s.getAdmin().getId() : null)
-                .adminName(s.getAdmin() != null ? s.getAdmin().getName() : null)
+
+                // ❌ REMOVE THIS (VERY IMPORTANT)
+                // .adminName(s.getAdmin().getName())
+
+                // ✅ SAFE
+                .adminName(null)
+
                 .value(s.getValue())
                 .isActive(s.getIsActive())
                 .createdAt(s.getCreatedAt())

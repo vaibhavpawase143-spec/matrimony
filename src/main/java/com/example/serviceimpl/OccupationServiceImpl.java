@@ -25,7 +25,9 @@ public class OccupationServiceImpl implements OccupationService {
 
         if (occupationRepository.existsByNameIgnoreCaseAndAdminId(
                 occupation.getName(), adminId)) {
-            throw new RuntimeException("Occupation already exists for this admin: " + occupation.getName());
+            throw new RuntimeException(
+                    "Occupation already exists for this admin: " + occupation.getName()
+            );
         }
 
         return occupationRepository.save(occupation);
@@ -41,14 +43,15 @@ public class OccupationServiceImpl implements OccupationService {
         Long adminId = existing.getAdmin().getId();
 
         occupationRepository.findByNameIgnoreCaseAndAdminId(
-                        occupation.getName(), adminId)
-                .ifPresent(o -> {
-                    if (!o.getId().equals(id)) {
-                        throw new RuntimeException("Occupation already exists for this admin: " + occupation.getName());
-                    }
-                });
+                occupation.getName(), adminId
+        ).ifPresent(o -> {
+            if (!o.getId().equals(id)) {
+                throw new RuntimeException(
+                        "Occupation already exists for this admin: " + occupation.getName()
+                );
+            }
+        });
 
-        // ✏️ Update fields
         existing.setName(occupation.getName());
         existing.setIsActive(occupation.getIsActive());
 
@@ -68,6 +71,12 @@ public class OccupationServiceImpl implements OccupationService {
     @Override
     public Optional<Occupation> getById(Long id) {
         return occupationRepository.findById(id);
+    }
+
+    // 🔍 Get all
+    @Override
+    public List<Occupation> getAll() {
+        return occupationRepository.findAll();
     }
 
     // 🔍 Admin-based
@@ -92,7 +101,7 @@ public class OccupationServiceImpl implements OccupationService {
         return occupationRepository.findByNameIgnoreCaseAndAdminId(name, adminId);
     }
 
-    // ✅ Duplicate check
+    // ✅ Exists
     @Override
     public boolean existsByNameAndAdmin(String name, Long adminId) {
         return occupationRepository.existsByNameIgnoreCaseAndAdminId(name, adminId);
@@ -101,6 +110,7 @@ public class OccupationServiceImpl implements OccupationService {
     // 🔍 Search
     @Override
     public List<Occupation> searchByAdmin(Long adminId, String keyword) {
-        return occupationRepository.findByAdminIdAndNameContainingIgnoreCase(adminId, keyword);
+        return occupationRepository
+                .findByAdminIdAndNameContainingIgnoreCase(adminId, keyword);
     }
 }

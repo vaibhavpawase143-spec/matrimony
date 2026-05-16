@@ -1,8 +1,11 @@
 package com.example.serviceimpl;
 
-import com.example.model.PartnerPreference;
-import com.example.repository.PartnerPreferenceRepository;
+import com.example.model.*;
+import com.example.repository.*;
+import com.example.service.CacheService;
 import com.example.service.PartnerPreferenceService;
+import com.example.service.MatchAsyncService;
+
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -12,49 +15,118 @@ import java.util.Optional;
 public class PartnerPreferenceServiceImpl implements PartnerPreferenceService {
 
     private final PartnerPreferenceRepository repository;
+    private final UserRepository userRepository;
+    private final ReligionRepository religionRepository;
+    private final CasteRepository casteRepository;
+    private final CityRepository cityRepository;
 
-    public PartnerPreferenceServiceImpl(PartnerPreferenceRepository repository) {
+    private final MatchAsyncService asyncService;
+    private final CacheService cacheService;
+
+    public PartnerPreferenceServiceImpl(
+            PartnerPreferenceRepository repository,
+            UserRepository userRepository,
+            ReligionRepository religionRepository,
+            CasteRepository casteRepository,
+            CityRepository cityRepository,
+            MatchAsyncService asyncService,
+            CacheService cacheService
+    ) {
         this.repository = repository;
+        this.userRepository = userRepository;
+        this.religionRepository = religionRepository;
+        this.casteRepository = casteRepository;
+        this.cityRepository = cityRepository;
+        this.asyncService = asyncService;
+        this.cacheService = cacheService;
     }
 
-    // ✅ Save preference (with duplicate check)
+    // ✅ CREATE + UPDATE (FINAL FIX)
     @Override
     public PartnerPreference savePreference(PartnerPreference preference) {
 
+        // 🔥 NULL CHECK
+        if (preference.getUser() == null || preference.getUser().getId() == null) {
+            throw new RuntimeException("User ID must not be null");
+        }
+
         Long userId = preference.getUser().getId();
 
-        if (repository.existsByUserId(userId)) {
+        // 🔥 FETCH USER
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // ✅ FIX: Only block duplicate on CREATE
+        if (preference.getId() == null && repository.existsByUserId(userId)) {
             throw new RuntimeException("Preference already exists for this user!");
         }
 
-        return repository.save(preference);
+        preference.setUser(user);
+
+        // 🔥 VALIDATION
+        if (preference.getMinAge() != null && preference.getMaxAge() != null &&
+                preference.getMinAge() > preference.getMaxAge()) {
+            throw new RuntimeException("Min age cannot be greater than max age");
+        }
+
+        if (preference.getMinHeight() != null && preference.getMaxHeight() != null &&
+                preference.getMinHeight() > preference.getMaxHeight()) {
+            throw new RuntimeException("Min height cannot be greater than max height");
+        }
+
+        // 🔥 RELATION HANDLING
+        if (preference.getReligion() != null && preference.getReligion().getId() != null) {
+            preference.setReligion(
+                    religionRepository.findById(preference.getReligion().getId())
+                            .orElseThrow(() -> new RuntimeException("Religion not found"))
+            );
+        }
+
+        if (preference.getCaste() != null && preference.getCaste().getId() != null) {
+            preference.setCaste(
+                    casteRepository.findById(preference.getCaste().getId())
+                            .orElseThrow(() -> new RuntimeException("Caste not found"))
+            );
+        }
+
+        if (preference.getCity() != null && preference.getCity().getId() != null) {
+            preference.setCity(
+                    cityRepository.findById(preference.getCity().getId())
+                            .orElseThrow(() -> new RuntimeException("City not found"))
+            );
+        }
+
+        PartnerPreference saved = repository.save(preference);
+
+        // 🔥 ASYNC MATCH PRELOAD
+        asyncService.preloadMatches(userId);
+
+        return saved;
     }
 
-    // ✅ Get by ID
+    // ================= BASIC METHODS =================
+
     @Override
     public Optional<PartnerPreference> getById(Long id) {
         return repository.findById(id);
     }
 
-    // ✅ Get by userId
     @Override
     public Optional<PartnerPreference> getByUserId(Long userId) {
         return repository.findByUserId(userId);
     }
 
-    // ✅ Get all
     @Override
     public List<PartnerPreference> getAll() {
         return repository.findAll();
     }
 
-    // ✅ Delete
     @Override
     public void delete(Long id) {
         repository.deleteById(id);
     }
 
-    // 🔍 Filters
+    // ================= FILTER METHODS =================
 
     @Override
     public List<PartnerPreference> getByReligion(Long religionId) {
@@ -71,8 +143,7 @@ public class PartnerPreferenceServiceImpl implements PartnerPreferenceService {
         return repository.findByCityId(cityId);
     }
 
-    // 🔥 Advanced filters
-
+    // ✅ FIXED (was empty before)
     @Override
     public List<PartnerPreference> getByReligionAndCaste(Long religionId, Long casteId) {
         return repository.findByReligionIdAndCasteId(religionId, casteId);

@@ -24,7 +24,6 @@ public class ProfileTypeController {
     public ProfileTypeResponseDTO save(@Valid @RequestBody ProfileTypeRequestDTO dto) {
 
         ProfileType entity = mapToEntity(dto);
-
         ProfileType saved = service.save(entity);
 
         return mapToResponse(saved);
@@ -95,14 +94,13 @@ public class ProfileTypeController {
     }
 
     // =========================
-    // 🔥 MAPPING
+    // 🔁 MAPPING METHODS (FIXED)
     // =========================
 
     private ProfileType mapToEntity(ProfileTypeRequestDTO dto) {
 
         ProfileType pt = new ProfileType();
 
-        // 🔥 set admin only with ID
         Admin admin = new Admin();
         admin.setId(dto.getAdminId());
         pt.setAdmin(admin);
@@ -118,14 +116,19 @@ public class ProfileTypeController {
 
     private ProfileTypeResponseDTO mapToResponse(ProfileType pt) {
 
-        return ProfileTypeResponseDTO.builder()
-                .id(pt.getId())
-                .adminId(pt.getAdmin() != null ? pt.getAdmin().getId() : null)
-                .adminName(pt.getAdmin() != null ? pt.getAdmin().getName() : null) // adjust field
-                .name(pt.getName())
-                .isActive(pt.getIsActive())
-                .createdAt(pt.getCreatedAt())
-                .updatedAt(pt.getUpdatedAt())
-                .build();
+        ProfileTypeResponseDTO dto = new ProfileTypeResponseDTO();
+
+        dto.setId(pt.getId());
+        dto.setAdminId(pt.getAdmin() != null ? pt.getAdmin().getId() : null);
+
+        // ❌ REMOVED: pt.getAdmin().getName() → caused Lazy error
+        dto.setAdminName(null);
+
+        dto.setName(pt.getName());
+        dto.setIsActive(pt.getIsActive());
+        dto.setCreatedAt(pt.getCreatedAt());
+        dto.setUpdatedAt(pt.getUpdatedAt());
+
+        return dto;
     }
 }

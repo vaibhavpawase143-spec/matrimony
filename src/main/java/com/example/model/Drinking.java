@@ -10,11 +10,6 @@ import java.time.LocalDateTime;
         name = "drinking",
         uniqueConstraints = {
                 @UniqueConstraint(columnNames = {"value", "admin_id"})
-        },
-        indexes = {
-                @Index(name = "idx_drinking_name", columnList = "name"),
-                @Index(name = "idx_drinking_admin", columnList = "admin_id"),
-                @Index(name = "idx_drinking_active", columnList = "is_active")
         }
 )
 @Getter
@@ -37,7 +32,8 @@ public class Drinking {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "admin_id")
     private Admin admin;
-
+    @Column(name = "admin_id", insertable = false, updatable = false)
+    private Long adminId;
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 

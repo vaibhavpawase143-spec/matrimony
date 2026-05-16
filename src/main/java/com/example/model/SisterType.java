@@ -1,8 +1,12 @@
 package com.example.model;
 
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
+import lombok.Getter;
+import lombok.Setter;
 
+import java.time.LocalDateTime;
+@Getter
+@Setter
 @Entity
 @Table(
         name = "sister_types",
@@ -91,4 +95,6 @@ public class SisterType {
     public void setIsActive(Boolean isActive) {
         this.isActive = isActive;
     }
+
+
 }

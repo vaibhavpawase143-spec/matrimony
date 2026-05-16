@@ -1,6 +1,8 @@
 package com.example.model;
 
 import jakarta.persistence.*;
+import lombok.Builder;
+
 import java.time.LocalDateTime;
 import java.util.Set;
 
@@ -12,6 +14,10 @@ public class UserDetails {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+
+    public void setId(Long id) {   // ✅ ADD THIS
+        this.id = id;
+    }
     // ===== USER =====
     private Long userId;
     private String fullName;
@@ -171,4 +177,8 @@ public class UserDetails {
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    private String password;
+    public String getPassword() {
+        return password;
+    }
 }

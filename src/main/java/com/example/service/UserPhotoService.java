@@ -1,34 +1,20 @@
 package com.example.service;
 
-import com.example.model.UserPhoto;
 import com.example.model.PhotoType;
+import com.example.model.UserPhoto;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface UserPhotoService {
 
-    // ✅ Upload / Save photo
-    UserPhoto save(UserPhoto photo);
+    String upload(MultipartFile file, PhotoType type);
 
-    // 🔍 Get by ID
-    Optional<UserPhoto> getById(Long id);
+    List<String> uploadMultiple(List<MultipartFile> files);
 
-    // 🔍 All photos of a user
-    List<UserPhoto> getByUser(Long userId);
+    void delete(PhotoType type);
 
-    // 🔍 Photos by type (PROFILE, GALLERY, KUNDALI)
-    List<UserPhoto> getByUserAndType(Long userId, PhotoType photoType);
+    List<UserPhoto> getMyPhotos();
 
-    // 🔍 Single photo (like profile pic)
-    Optional<UserPhoto> getSingleByUserAndType(Long userId, PhotoType photoType);
-
-    // 🔍 Check exists
-    boolean exists(Long userId, PhotoType photoType);
-
-    // ❌ Delete by type
-    void deleteByUserAndType(Long userId, PhotoType photoType);
-
-    // 🔍 Get all
-    List<UserPhoto> getAll();
+    String getMyProfilePhoto();
 }

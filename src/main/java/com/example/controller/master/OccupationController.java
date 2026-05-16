@@ -19,7 +19,15 @@ import java.util.stream.Collectors;
 public class OccupationController {
 
     private final OccupationService occupationService;
+    // ADD THIS METHOD ONLY (rest is already correct)
 
+    @GetMapping
+    public List<OccupationResponseDTO> getAll() {
+        return occupationService.getAll()
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
     // ✅ Create
     @PostMapping
     public OccupationResponseDTO create(@Valid @RequestBody OccupationRequestDTO dto) {

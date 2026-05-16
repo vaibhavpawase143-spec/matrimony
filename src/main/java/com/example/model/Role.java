@@ -1,5 +1,6 @@
 package com.example.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.Set;
@@ -18,7 +19,8 @@ public class Role {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Keep if required by your system
+    // 🔥 FIX: prevent circular lazy loading
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "admin_id")
     private Admin admin;
@@ -35,7 +37,7 @@ public class Role {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    // 🔥 OPTIONAL (for bidirectional mapping)
+    // Optional (for user mapping)
     @ManyToMany(mappedBy = "roles")
     private Set<User> users;
 

@@ -1,156 +1,124 @@
 package com.example.controller.user;
 
+import com.example.dto.request.LoginRequest;
+import com.example.dto.request.UserRegisterRequestDTO;
+import com.example.dto.response.ApiResponse;
+import com.example.dto.response.AuthResponse;
 import com.example.dto.response.UserResponseDTO;
-import com.example.model.Role;
 import com.example.model.User;
+import com.example.service.EmailService;
 import com.example.service.UserService;
-
 import lombok.RequiredArgsConstructor;
-
-import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "http://localhost:3000")
 public class UserController {
 
     private final UserService service;
+    private final EmailService emailService;
 
-    // =========================
-    // ➕ CREATE USER (ADMIN ONLY)
-    // =========================
-    @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
-    public UserResponseDTO create(@RequestBody User user) {
+    // ================= REGISTER =================
+    @PostMapping("/register")
+    public ApiResponse<UserResponseDTO> register(@RequestBody UserRegisterRequestDTO dto) {
 
-        // 🔥 FIX: using register() instead of create()
-        User savedUser = service.register(user);
+        User savedUser = service.register(dto);
 
-        return mapToResponse(savedUser);
-    }
+        String token = UUID.randomUUID().toString();
+        service.saveVerificationToken(savedUser.getId(), token);
 
-    // =========================
-    // 🔍 GET USER BY ID
-    // =========================
-    @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('USER','ADMIN')")
-    public UserResponseDTO getById(@PathVariable Long id) {
+        emailService.sendVerificationEmail(savedUser.getEmail(), token);
 
-        User user = service.getById(id)
+        // send OTP
+        service.sendOTPToPhone(savedUser.getPhone());
+
+        UserResponseDTO response = service.getById(savedUser.getId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        return mapToResponse(user);
-    }
-
-    // =========================
-    // 🔍 GET ALL USERS
-    // =========================
-    @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
-    public Set<UserResponseDTO> getAll() {
-
-        return service.getAll()
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toSet());
-    }
-
-    // =========================
-    // ✅ VERIFY EMAIL
-    // =========================
-    @PutMapping("/{id}/verify-email")
-    @PreAuthorize("hasAnyRole('USER','ADMIN')")
-    public String verifyEmail(@PathVariable Long id) {
-
-        User user = service.getById(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        user.setEmailVerifiedAt(LocalDateTime.now());
-        service.update(id, user);
-
-        return "Email verified successfully";
-    }
-
-    // =========================
-    // ✅ VERIFY PHONE
-    // =========================
-    @PutMapping("/{id}/verify-phone")
-    @PreAuthorize("hasAnyRole('USER','ADMIN')")
-    public String verifyPhone(@PathVariable Long id) {
-
-        User user = service.getById(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        user.setPhoneVerifiedAt(LocalDateTime.now());
-        service.update(id, user);
-
-        return "Phone verified successfully";
-    }
-
-    // =========================
-    // ❌ DEACTIVATE USER (ADMIN ONLY)
-    // =========================
-    @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public String deactivate(@PathVariable Long id) {
-
-        service.deactivate(id);
-
-        return "User deactivated successfully";
-    }
-
-    // =========================
-    // 🔍 SEARCH USERS
-    // =========================
-    @GetMapping("/search")
-    @PreAuthorize("hasRole('ADMIN')")
-    public Set<UserResponseDTO> search(@RequestParam String keyword) {
-
-        return service.search(keyword)
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toSet());
-    }
-
-    // =========================
-    // 🔥 TEST API (JWT CHECK)
-    // =========================
-    @GetMapping("/test")
-    @PreAuthorize("hasAnyRole('USER','ADMIN')")
-    public String test() {
-        return "JWT is working perfectly 🔥";
-    }
-
-    // =========================
-    // 🔁 MAPPING METHOD
-    // =========================
-    private UserResponseDTO mapToResponse(User user) {
-
-        Set<String> roles = user.getRoles() != null
-                ? user.getRoles().stream()
-                .map(Role::getName)
-                .collect(Collectors.toSet())
-                : null;
-
-        return UserResponseDTO.builder()
-                .id(user.getId())
-                .firstName(user.getFirstName())
-                .lastName(user.getLastName())
-                .fullName(user.getFullName())
-                .email(user.getEmail())
-                .phone(user.getPhone())
-                .isActive(user.getIsActive())
-                .emailVerified(user.getEmailVerifiedAt() != null)
-                .phoneVerified(user.getPhoneVerifiedAt() != null)
-                .roles(roles)
-                .createdAt(user.getCreatedAt())
-                .updatedAt(user.getUpdatedAt())
+        return ApiResponse.<UserResponseDTO>builder()
+                .success(true)
+                .message("User registered successfully. Please verify your email and phone number.")
+                .data(response)
                 .build();
+    }
+
+    // ================= LOGIN =================
+    @PostMapping("/login")
+    public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request) {
+
+        String token = service.loginAndGenerateToken(
+                request.getEmail(),
+                request.getPassword()
+        );
+
+        return ResponseEntity.ok(new AuthResponse(token));
+    }
+
+    // ================= PHONE VERIFICATION - SEND OTP =================
+    // ================= PHONE VERIFICATION - SEND OTP =================
+    @PostMapping("/send-otp")
+    public ApiResponse<String> sendOTP(@RequestParam String phone) {
+
+        String otp = service.sendOTPToPhone(phone);
+
+        return ApiResponse.<String>builder()
+                .success(true)
+                .message("OTP generated successfully")
+                .data(otp)
+                .build();
+    }
+
+    // ================= VERIFY OTP =================
+    @PostMapping("/verify-otp")
+    public ApiResponse<String> verifyOTP(
+            @RequestParam String phone,
+            @RequestParam String otp) {
+
+        service.verifyPhoneOTP(phone, otp);
+
+        return ApiResponse.<String>builder()
+                .success(true)
+                .message("Phone verified successfully")
+                .data(null)
+                .build();
+    }
+
+    // ================= TEST EMAIL =================
+    @GetMapping("/test-email")
+    public ApiResponse<String> testEmail(@RequestParam String email) {
+
+        try {
+            emailService.sendEmail(email, "Test Email from Gathbandhan",
+                "<h2>🧪 Email Test Successful!</h2>" +
+                "<p>This is a test email from your Gathbandhan Matrimony application.</p>" +
+                "<p>If you received this, your email configuration is working perfectly! 🎉</p>" +
+                "<p><strong>Timestamp:</strong> " + LocalDateTime.now() + "</p>");
+
+            return ApiResponse.<String>builder()
+                    .success(true)
+                    .message("Test email sent successfully to: " + email)
+                    .data(null)
+                    .build();
+
+        } catch (Exception e) {
+            return ApiResponse.<String>builder()
+                    .success(false)
+                    .message("Email test failed: " + e.getMessage())
+                    .data(null)
+                    .build();
+        }
+    }
+
+    // ================= REDIRECT OLD EMAIL LINKS =================
+    @GetMapping("/verify")
+    public String redirectOldVerifyLink(@RequestParam String token) {
+        // Redirect old /api/users/verify links to the correct /api/auth/verify endpoint
+        return "redirect:/api/auth/verify?token=" + token;
     }
 }

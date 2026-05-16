@@ -193,10 +193,14 @@ public class SubCasteController {
 
         return SubCasteResponseDTO.builder()
                 .id(s.getId())
+
+                // ✅ SAFE (ONLY ID)
                 .adminId(s.getAdmin() != null ? s.getAdmin().getId() : null)
-                .adminName(s.getAdmin() != null ? s.getAdmin().getName() : null)
+                .adminName(null)
+
                 .casteId(s.getCaste() != null ? s.getCaste().getId() : null)
-                .casteName(s.getCaste() != null ? s.getCaste().getName() : null)
+                .casteName(null)
+
                 .name(s.getName())
                 .isActive(s.getIsActive())
                 .createdAt(s.getCreatedAt())

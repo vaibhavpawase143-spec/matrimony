@@ -25,7 +25,9 @@ public class MotherTongueServiceImpl implements MotherTongueService {
 
         if (motherTongueRepository.existsByNameIgnoreCaseAndAdminId(
                 motherTongue.getName(), adminId)) {
-            throw new RuntimeException("MotherTongue already exists for this admin: " + motherTongue.getName());
+            throw new RuntimeException(
+                    "MotherTongue already exists for this admin: " + motherTongue.getName()
+            );
         }
 
         return motherTongueRepository.save(motherTongue);
@@ -39,13 +41,16 @@ public class MotherTongueServiceImpl implements MotherTongueService {
                 .orElseThrow(() -> new RuntimeException("MotherTongue not found with id: " + id));
 
         Long adminId = existing.getAdmin().getId();
+
         motherTongueRepository.findByNameIgnoreCaseAndAdminId(
-                        motherTongue.getName(), adminId)
-                .ifPresent(m -> {
-                    if (!m.getId().equals(id)) {
-                        throw new RuntimeException("MotherTongue already exists for this admin: " + motherTongue.getName());
-                    }
-                });
+                motherTongue.getName(), adminId
+        ).ifPresent(m -> {
+            if (!m.getId().equals(id)) {
+                throw new RuntimeException(
+                        "MotherTongue already exists for this admin: " + motherTongue.getName()
+                );
+            }
+        });
 
         // ✏️ Update fields
         existing.setName(motherTongue.getName());
@@ -57,6 +62,7 @@ public class MotherTongueServiceImpl implements MotherTongueService {
     // ❌ Delete
     @Override
     public void delete(Long id) {
+
         MotherTongue existing = motherTongueRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("MotherTongue not found with id: " + id));
 
@@ -67,6 +73,12 @@ public class MotherTongueServiceImpl implements MotherTongueService {
     @Override
     public Optional<MotherTongue> getById(Long id) {
         return motherTongueRepository.findById(id);
+    }
+
+    // 🔍 Get all ✅ FIXED
+    @Override
+    public List<MotherTongue> getAll() {
+        return motherTongueRepository.findAll();
     }
 
     // 🔍 Admin-based
@@ -85,7 +97,7 @@ public class MotherTongueServiceImpl implements MotherTongueService {
         return motherTongueRepository.findByAdminIdAndIsActiveFalse(adminId);
     }
 
-    // 🔍 Find by name (admin-specific)
+    // 🔍 Find by name
     @Override
     public Optional<MotherTongue> getByNameAndAdmin(String name, Long adminId) {
         return motherTongueRepository.findByNameIgnoreCaseAndAdminId(name, adminId);
@@ -100,6 +112,7 @@ public class MotherTongueServiceImpl implements MotherTongueService {
     // 🔍 Search
     @Override
     public List<MotherTongue> searchByAdmin(Long adminId, String keyword) {
-        return motherTongueRepository.findByAdminIdAndNameContainingIgnoreCase(adminId, keyword);
+        return motherTongueRepository
+                .findByAdminIdAndNameContainingIgnoreCase(adminId, keyword);
     }
 }
