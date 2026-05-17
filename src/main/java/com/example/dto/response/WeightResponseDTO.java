@@ -13,12 +13,17 @@ public class WeightResponseDTO {
     private Long id;
 
     private Long adminId;
+
     private String adminName;
+
+    // IMPORTANT FOR FRONTEND
+    private String name;
 
     private String value;
 
     private Boolean isActive;
 
     private LocalDateTime createdAt;
+
     private LocalDateTime updatedAt;
 }

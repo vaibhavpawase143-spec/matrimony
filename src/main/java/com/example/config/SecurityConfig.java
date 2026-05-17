@@ -1,27 +1,19 @@
 package com.example.config;
 
-import com.example.security.JwtFilter;
-import com.example.security.JwtUtil;
-import com.example.security.CustomAuthenticationEntryPoint;
-import com.example.security.CustomAccessDeniedHandler;
-import com.example.security.SecurityUserDetailsService;
-
+import com.example.security.*;
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfigurationSource;
 
 @Configuration
 @EnableMethodSecurity
@@ -32,6 +24,7 @@ public class SecurityConfig {
     private final SecurityUserDetailsService securityUserDetailsService;
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
+    private final CorsConfigurationSource corsConfigurationSource;
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
@@ -48,7 +41,7 @@ public class SecurityConfig {
 
         http
                 .csrf(csrf -> csrf.disable())
-                .cors(cors -> {})
+                .cors(cors -> cors.configurationSource(corsConfigurationSource))
 
                 .authorizeHttpRequests(auth -> auth
 
@@ -59,15 +52,40 @@ public class SecurityConfig {
                                 "/api/users/register",
                                 "/api/users/verify",
                                 "/api/users/resend-verification",
+                                "/api/users/send-otp",
+                                "/api/users/verify-otp",
+                                "/api/master/religions/**",
+                                "/api/cities/**",
+                                "/api/states/**",
+                                "/api/occupations/**",
+                                "/api/education-levels/**",
+                                "/api/marital-statuses/**",
+                                "/api/mother-tongues/**",
+                                "/api/heights/**",
+                                "/api/weights/**",
+                                "/api/family-values/**",
+                                "/api/family-types/**",
+                                "/api/family-statuses/**",
+                                "/api/employed/**",
+                                "/api/incomes/**",
+                                "/api/manglik-statuses/**",
+                                "/api/interests/**",
+                                "/api/fields-of-study/**",
+                                "/api/subscription-plans/**",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/api/image/**"
 
                         ).permitAll()
 
+                        // ADMIN LOGIN
+                        .requestMatchers("/api/admin/auth/login", "/api/admin/auth/refresh","/api/master/**",
+                                "/api/admins/*/castes/**")
+                        .permitAll()
+
                         // ADMIN
-                        .requestMatchers("/api/admin/**")
-                        .hasRole("ADMIN")
+                        .requestMatchers("/api/admin/**", "/api/admins/**")
+                        .hasAnyRole("ADMIN", "SUPER_ADMIN")
 
                         // USER + ADMIN
                         .requestMatchers("/api/users/**")
@@ -96,3 +114,4 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 }
+
