@@ -28,6 +28,7 @@ public class User {
     private Long id;
 
     private String firstName;
+    private String middleName;
     private String lastName;
 
     @Column(nullable = false)
@@ -97,6 +98,7 @@ public class User {
     // ================= CUSTOM METHODS =================
     public String getFullName() {
         return (firstName != null ? firstName : "") + " " +
+                (middleName != null ? middleName + " " : "") +
                 (lastName != null ? lastName : "");
     }
 
