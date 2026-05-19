@@ -2,17 +2,16 @@ import { Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 
 const AdminRoute = ({ children }) => {
-  const { user, role } = useAuth();
+  const { user, token } = useAuth();
   
-  // Check if user is admin
-  const isAdmin = role === "ADMIN" || user?.role === "ADMIN";
+  // Check if user has admin token (simpler check)
+  const hasAdminToken = token && token.length > 0;
   
   console.log("AdminRoute: Checking admin access");
   console.log("AdminRoute: user:", user);
-  console.log("AdminRoute: role:", role);
-  console.log("AdminRoute: isAdmin:", isAdmin);
+  console.log("AdminRoute: has token:", hasAdminToken);
   
-  return isAdmin ? children : <Navigate to="/login" />;
+  return hasAdminToken ? children : <Navigate to="/login" />;
 };
 
 export default AdminRoute;

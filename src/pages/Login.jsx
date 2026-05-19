@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/components/Toast";
 import { useLoading } from "@/hooks/useLoading";
 import { useLanguage } from "@/context/LanguageContext.jsx";
+import { authAPI } from "@/services/api";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -16,9 +17,10 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [errors, setErrors] = useState({});
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
 
     const errs = {};
@@ -46,42 +48,52 @@ const Login = () => {
     startLoading(t?.login?.messages?.loggingIn || "Logging in...");
 
     try {
-      // Simple local login
-      const adminEmail = "admin@gmail.com";
-      const adminPassword = "admin123";
-
-      const userEmail = "user@gmail.com";
-      const userPassword = "user123";
-
-      let user = null;
-
-      if (email.trim() === adminEmail && password === adminPassword) {
-        user = {
-          first_name: "Admin",
-          email: adminEmail,
-          role: "ADMIN",
-        };
-      } else if (email.trim() === userEmail && password === userPassword) {
-        user = {
-          first_name: "User",
-          email: userEmail,
-          role: "USER",
-        };
-      } else {
-        throw new Error("Invalid email or password");
+      // Call backend API (admin or user login)
+      const response = await authAPI.login({ email: email.trim(), password }, isAdmin);
+      
+      console.log('🔐 Login.jsx - Login API response:', response);
+      
+      if (!response.success) {
+        throw new Error(response.message || 'Login failed');
       }
 
-      console.log("Login: Attempting login with user:", user);
-      console.log("Login: User role:", user.role);
+      // Use profile data from login response (backend already fetches it)
+      let userData = response.data;
+      
+      console.log('🔐 Login.jsx - Profile data from login response:', userData);
+      console.log('🔐 Login.jsx - userData keys:', userData ? Object.keys(userData) : 'null');
+      
+      // If no profile data in response, fetch it separately
+      if (!userData) {
+        try {
+          console.log('🔐 Login.jsx - No profile data in login response, fetching current user profile...');
+          const profileData = await authAPI.getCurrentUser();
+          console.log('🔐 Login.jsx - Profile data received:', profileData);
+          if (profileData) {
+            userData = profileData;
+          } else {
+            // Profile not found, user may need to create profile
+            userData = {
+              needsProfile: true
+            };
+          }
+        } catch (profileErr) {
+          console.error('🔐 Login.jsx - Profile fetch error:', profileErr);
+          userData = {
+            needsProfile: true
+          };
+        }
+      }
 
-      // Store user data in localStorage first
-      localStorage.setItem("user", JSON.stringify(user));
-      localStorage.setItem("role", user.role);
-
-      // Call login with full user object
-      login(user);
-
-      console.log("Login: Auth state updated, navigating to:", user.role === "ADMIN" ? "/admin" : "/home");
+      // Update auth context
+      const userRole = userData?.role || "USER";
+      const token = response.token;
+      console.log('🔐 Login.jsx - Calling useAuth login with:');
+      console.log('  - userData:', userData);
+      console.log('  - token:', token && typeof token === 'string' ? token.substring(0, Math.min(50, token.length)) + '...' : 'null');
+      console.log('  - userRole:', userRole);
+      
+      login(userData, token, userRole);
 
       if (rememberMe) {
         localStorage.setItem("rememberedEmail", email.trim());
@@ -92,18 +104,29 @@ const Login = () => {
       success(t?.login?.messages?.loginSuccess || "Login successful");
       stopLoading();
 
-      // Add small delay to ensure auth state is updated before navigation
+      // Navigate based on login type and profile status
       setTimeout(() => {
-        console.log("Login: Navigating to:", user.role === "ADMIN" ? "/admin" : "/home");
-        if (user.role === "ADMIN") {
+        if (isAdmin) {
           navigate("/admin");
+        } else if (userData?.needsProfile) {
+          navigate("/profile/create"); // Redirect to profile creation
         } else {
           navigate("/home");
         }
       }, 100);
+
     } catch (err) {
       stopLoading();
-      error(err.message || t?.login?.messages?.loginFailed || "Login failed");
+      
+      // Always use backend error message directly - no overrides
+      error(err.message);
+      
+      // Handle specific error cases for navigation
+      if (err.errorCode === 'ERR_EMAIL_NOT_VERIFIED' || err.errorCode === 'ERR_PHONE_NOT_VERIFIED') {
+        setTimeout(() => {
+          navigate("/request-verification");
+        }, 2000);
+      }
     }
   };
 
@@ -119,6 +142,20 @@ const Login = () => {
       <Heart className="absolute top-24 right-[20%] h-4 w-4 text-pink-soft fill-pink-soft opacity-30 animate-float-heart [animation-delay:1s]" />
 
       <div className="bg-card rounded-2xl shadow-2xl p-8 w-full max-w-md mx-4 relative z-10">
+        {/* Admin/User Toggle */}
+        <div className="flex justify-center mb-4">
+          <button
+            type="button"
+            onClick={() => setIsAdmin(!isAdmin)}
+            className={`px-4 py-2 text-sm rounded-lg transition-colors ${
+              isAdmin 
+                ? "bg-primary text-white" 
+                : "bg-secondary text-secondary-foreground"
+            }`}
+          >
+            {isAdmin ? "User Login" : "Admin Login"}
+          </button>
+        </div>
         <div className="text-center mb-6">
           <div className="flex items-center justify-center gap-2 mb-2">
             <Heart className="h-7 w-7 text-primary fill-primary" />
@@ -174,15 +211,20 @@ const Login = () => {
             )}
           </div>
 
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={rememberMe}
-              onChange={(e) => setRememberMe(e.target.checked)}
-            />
-            <span className="text-xs">
-              {t?.login?.rememberMe || "Remember me"}
-            </span>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+              />
+              <span className="text-xs">
+                {t?.login?.rememberMe || "Remember me"}
+              </span>
+            </div>
+            <Link to="/forgot-password" className="text-xs text-primary hover:underline">
+              Forgot Password?
+            </Link>
           </div>
 
           <button

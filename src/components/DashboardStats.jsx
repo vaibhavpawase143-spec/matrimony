@@ -1,14 +1,14 @@
 import { Heart, Send, MessageSquare, Bookmark, Eye, Users } from 'lucide-react';
 
 const DashboardStats = ({ stats = {} }) => {
+  // Use real stats or default to 0 for empty state
   const defaultStats = {
-    totalMatches: 24,
-    interestsSent: 5,
-    interestsReceived: 8,
-    bookmarkedProfiles: 12,
-    profileViews: 42,
-    messages: 6,
-    ...stats,
+    totalMatches: stats.totalMatches || 0,
+    interestsSent: stats.interestsSent || 0,
+    interestsReceived: stats.interestsReceived || 0,
+    bookmarkedProfiles: stats.bookmarkedProfiles || 0,
+    profileViews: stats.profileViews || 0,
+    messages: stats.messages || 0,
   };
 
   const statItems = [

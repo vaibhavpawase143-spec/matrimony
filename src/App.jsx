@@ -18,6 +18,9 @@ import Index from "./pages/Index";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import VerifyEmail from "./pages/VerifyEmail";
+import RequestVerification from "./pages/RequestVerification";
+import CreateProfile from "./pages/CreateProfile";
 import Search from "./pages/Search";
 import ProfileDetails from "./pages/ProfileDetails";
 import Kundli from "./pages/Kundli";
@@ -63,6 +66,9 @@ const App = () => (
                     <Route path="/" element={<Index />} />
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
+                    <Route path="/verify-email" element={<VerifyEmail />} />
+                    <Route path="/request-verification" element={<RequestVerification />} />
+                    <Route path="/profile/create" element={<CreateProfile />} />
                     <Route path="/about" element={<About />} />
                     <Route path="/contact" element={<Contact />} />
                     <Route path="/privacy-policy" element={<PrivacyPolicy />} />

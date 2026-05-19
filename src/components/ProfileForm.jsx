@@ -27,6 +27,10 @@ const ProfileForm = ({
   const [formData, setFormData] = useState({
     // Personal Details
     fullName: "",
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
     gender: "",
     dateOfBirth: "",
     age: "",
@@ -75,13 +79,19 @@ const ProfileForm = ({
     
     // Other
     aboutMe: "",
-    email: "",
-    phone: "",
     profilePhoto: null,
     profilePhotoUrl: "",
     
     ...initialData
   });
+
+  // Calculate age from dateOfBirth on mount or when initialData changes
+  useEffect(() => {
+    if (initialData.dateOfBirth && !initialData.age) {
+      const calculatedAge = calculateAge(initialData.dateOfBirth);
+      setFormData(prev => ({ ...prev, age: calculatedAge }));
+    }
+  }, [initialData.dateOfBirth, initialData.age]);
 
   // Auto-calculate age from DOB
   const calculateAge = (dob) => {
@@ -191,7 +201,7 @@ const ProfileForm = ({
 
   // Helper function to render form fields
   const renderField = (field) => {
-    const { label, placeholder, type = "text", key, options } = field;
+    const { label, placeholder, type = "text", key, options, readOnly = false } = field;
     
     if (type === "select") {
       let fieldOptions = options;
@@ -227,12 +237,13 @@ const ProfileForm = ({
     return (
       <div key={key}>
         <label className="text-xs font-medium text-foreground mb-1 block">{label}</label>
-        <input 
-          type={type} 
+        <input
+          type={type}
           value={formData[key]}
           onChange={(e) => handleInputChange(key, e.target.value)}
-          placeholder={placeholder} 
-          className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" 
+          placeholder={placeholder}
+          readOnly={readOnly}
+          className={`w-full bg-background border border-border rounded-lg px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary ${readOnly ? 'bg-muted cursor-not-allowed' : ''}`}
         />
       </div>
     );
@@ -267,11 +278,54 @@ const ProfileForm = ({
       {/* Personal Details Section */}
       <div>
         <h3 className="text-sm font-semibold text-foreground mb-3 pb-2 border-b border-border">Personal Details</h3>
+        
+        {/* Pre-populated fields from registration (read-only) */}
+        {(formData.firstName || formData.lastName || formData.email || formData.phone) && (
+          <div className="mb-4 p-3 bg-muted/30 rounded-lg border border-border">
+            <p className="text-xs font-medium text-muted-foreground mb-2">Information provided during registration:</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {formData.email && (
+                <div>
+                  <label className="text-xs font-medium text-foreground mb-1 block">Email</label>
+                  <input 
+                    type="email" 
+                    value={formData.email}
+                    readOnly
+                    className="w-full bg-muted border border-border rounded-lg px-4 py-2 text-sm text-muted-foreground cursor-not-allowed" 
+                  />
+                </div>
+              )}
+              {formData.phone && (
+                <div>
+                  <label className="text-xs font-medium text-foreground mb-1 block">Phone</label>
+                  <input 
+                    type="tel" 
+                    value={formData.phone}
+                    readOnly
+                    className="w-full bg-muted border border-border rounded-lg px-4 py-2 text-sm text-muted-foreground cursor-not-allowed" 
+                  />
+                </div>
+              )}
+              {(formData.firstName || formData.lastName) && (
+                <div>
+                  <label className="text-xs font-medium text-foreground mb-1 block">Name</label>
+                  <input 
+                    type="text" 
+                    value={`${formData.firstName || ""} ${formData.lastName || ""}`.trim()}
+                    readOnly
+                    className="w-full bg-muted border border-border rounded-lg px-4 py-2 text-sm text-muted-foreground cursor-not-allowed" 
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+        
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {renderField({ label: "Full Name", placeholder: "Your full name", key: "fullName" })}
           {renderField({ label: "Gender", key: "gender", type: "select", options: ["Male", "Female", "Other"] })}
           {renderField({ label: "Date of Birth", type: "date", key: "dateOfBirth" })}
-          {renderField({ label: "Age", type: "number", key: "age", placeholder: "Auto-calculated" })}
+          {renderField({ label: "Age", type: "number", key: "age", placeholder: "Auto-calculated", readOnly: true })}
           {renderField({ label: "Marital Status", key: "maritalStatus", type: "select" })}
           {renderField({ label: "Religion", key: "religion", type: "select" })}
           {renderField({ label: "Caste", key: "caste", type: "select" })}
