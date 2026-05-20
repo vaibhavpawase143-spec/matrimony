@@ -10,16 +10,16 @@ import java.util.Optional;
 @Repository
 public interface ComplexionRepository extends JpaRepository<Complexion, Long> {
 
-    // 🔍 Find by value
-    Optional<Complexion> findByValue(String value);
+    // 🔍 Find by name
+    Optional<Complexion> findByName(String name);
 
     // 🔥 Case-insensitive (important)
-    Optional<Complexion> findByValueIgnoreCase(String value);
+    Optional<Complexion> findByNameIgnoreCase(String name);
 
     // ✅ Duplicate check
-    boolean existsByValue(String value);
+    boolean existsByName(String name);
 
-    boolean existsByValueIgnoreCase(String value);
+    boolean existsByNameIgnoreCase(String name);
 
     // 🔍 Active / Inactive
     List<Complexion> findByIsActiveTrue();
@@ -32,8 +32,8 @@ public interface ComplexionRepository extends JpaRepository<Complexion, Long> {
     List<Complexion> findByAdminIdAndIsActiveTrue(Long adminId);
 
     // 🔍 Search (global)
-    List<Complexion> findByValueContainingIgnoreCase(String keyword);
+    List<Complexion> findByNameContainingIgnoreCase(String keyword);
 
     // 🔥 Search within admin (multi-tenant support)
-    List<Complexion> findByAdminIdAndValueContainingIgnoreCase(Long adminId, String keyword);
+    List<Complexion> findByAdminIdAndNameContainingIgnoreCase(Long adminId, String keyword);
 }

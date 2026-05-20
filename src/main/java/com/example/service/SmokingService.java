@@ -27,8 +27,8 @@ public interface SmokingService {
     // 🔍 Search
     List<Smoking> searchByAdmin(Long adminId, String keyword);
 
-    // 🔍 Find by value (admin-specific)
-    Optional<Smoking> getByValueAndAdmin(String value, Long adminId);
+    // 🔍 Find by name (admin-specific)
+    Optional<Smoking> getByNameAndAdmin(String name, Long adminId);
 
     // ✅ Delete
     void delete(Long id);

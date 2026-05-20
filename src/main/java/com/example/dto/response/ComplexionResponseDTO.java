@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 public class ComplexionResponseDTO {
 
     private Long id;
-    private String value;
+    private String name;
     private Boolean isActive;
     private Long adminId;
     private LocalDateTime createdAt;
@@ -16,8 +16,8 @@ public class ComplexionResponseDTO {
         return id;
     }
 
-    public String getValue() {
-        return value;
+    public String getName() {
+        return name;
     }
 
     public Boolean getIsActive() {
@@ -36,8 +36,8 @@ public class ComplexionResponseDTO {
         this.id = id;
     }
 
-    public void setValue(String value) {
-        this.value = value;
+    public void setName(String name) {
+        this.name = name;
     }
 
     public void setIsActive(Boolean isActive) {

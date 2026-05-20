@@ -40,8 +40,8 @@ public class ComplexionServiceImpl implements ComplexionService {
     public Complexion create(Complexion complexion) {
 
         // 🔥 Duplicate check (important)
-        if (complexionRepository.existsByValueIgnoreCase(complexion.getValue())) {
-            throw new RuntimeException("Complexion already exists: " + complexion.getValue());
+        if (complexionRepository.existsByNameIgnoreCase(complexion.getName())) {
+            throw new RuntimeException("Complexion already exists: " + complexion.getName());
         }
 
         return complexionRepository.save(complexion);
@@ -54,15 +54,15 @@ public class ComplexionServiceImpl implements ComplexionService {
         Complexion existing = getById(id);
 
         // 🔥 Duplicate check (exclude same record)
-        complexionRepository.findByValueIgnoreCase(complexion.getValue())
+        complexionRepository.findByNameIgnoreCase(complexion.getName())
                 .ifPresent(c -> {
                     if (!c.getId().equals(id)) {
-                        throw new RuntimeException("Complexion already exists: " + complexion.getValue());
+                        throw new RuntimeException("Complexion already exists: " + complexion.getName());
                     }
                 });
 
         // ✏️ Update fields
-        existing.setValue(complexion.getValue());
+        existing.setName(complexion.getName());
         existing.setIsActive(complexion.getIsActive());
 
         return complexionRepository.save(existing);
@@ -89,6 +89,6 @@ public class ComplexionServiceImpl implements ComplexionService {
     // 🔍 Search
     @Override
     public List<Complexion> search(String keyword) {
-        return complexionRepository.findByValueContainingIgnoreCase(keyword);
+        return complexionRepository.findByNameContainingIgnoreCase(keyword);
     }
 }

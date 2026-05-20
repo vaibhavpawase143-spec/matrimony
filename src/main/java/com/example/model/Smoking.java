@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(
         name = "smoking",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"admin_id", "value"}),
+        uniqueConstraints = @UniqueConstraint(columnNames = {"admin_id", "name"}),
         indexes = {
                 @Index(name = "idx_smoking_value", columnList = "value")
         }
@@ -18,8 +18,8 @@ public class Smoking {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 50)
-    private String value;
+    @Column(name = "name", nullable = false, length = 50)
+    private String name;
 
     // ✅ SAFE LAZY
     @ManyToOne(fetch = FetchType.LAZY)
@@ -60,8 +60,8 @@ public class Smoking {
         return id;
     }
 
-    public String getValue() {
-        return value;
+    public String getName() {
+        return name;
     }
 
     public Admin getAdmin() {
@@ -82,8 +82,8 @@ public class Smoking {
 
     // ===== Setters =====
 
-    public void setValue(String value) {
-        this.value = value;
+    public void setName(String name) {
+        this.name = name;
     }
 
     public void setAdmin(Admin admin) {

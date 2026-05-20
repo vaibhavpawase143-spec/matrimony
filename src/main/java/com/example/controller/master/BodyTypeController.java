@@ -19,37 +19,42 @@ public class BodyTypeController {
     private final BodyTypeService bodyTypeService;
 
     // ================= CREATE =================
-    @PostMapping
-    public BodyTypeResponseDTO create(@PathVariable Long adminId,
-                                      @Valid @RequestBody BodyTypeRequestDTO dto) {
+    @PostMapping("/{adminId}")
+    public BodyTypeResponseDTO create(
+            @PathVariable Long adminId,
+            @Valid @RequestBody BodyTypeRequestDTO dto
+    ) {
 
         BodyType saved = bodyTypeService.create(mapToEntity(dto), adminId);
+
         return mapToResponse(saved);
     }
 
     // ================= GET BY ID =================
-    @GetMapping("/{id}")
-    public BodyTypeResponseDTO getById(@PathVariable Long adminId,
-                                       @PathVariable Long id) {
+    @GetMapping("/{id}/{adminId}")
+    public BodyTypeResponseDTO getById(
+            @PathVariable Long id,
+            @PathVariable Long adminId
+    ) {
 
         return mapToResponse(bodyTypeService.getById(id, adminId));
     }
 
-    // ================= GET ALL =================
+    // ================= GET ALL (PUBLIC) =================
     @GetMapping
-    public List<BodyTypeResponseDTO> getAll(@PathVariable Long adminId) {
+    public List<BodyTypeResponseDTO> getAll() {
 
-        return bodyTypeService.getAll(adminId)
+        return bodyTypeService.getAll(null)
                 .stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
 
-    // ================= GET ACTIVE =================
+    // ================= GET ACTIVE (PUBLIC) =================
     @GetMapping("/active")
-    public List<BodyTypeResponseDTO> getActive(@PathVariable Long adminId) {
+    public List<BodyTypeResponseDTO> getActive() {
 
-        return bodyTypeService.getActive(adminId)
+        return bodyTypeService.getActive(null)
                 .stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
@@ -57,30 +62,37 @@ public class BodyTypeController {
 
     // ================= GET INACTIVE =================
     @GetMapping("/inactive")
-    public List<BodyTypeResponseDTO> getInactive(@PathVariable Long adminId) {
+    public List<BodyTypeResponseDTO> getInactive() {
 
-        return bodyTypeService.getInactive(adminId)
+        return bodyTypeService.getInactive(null)
                 .stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
 
     // ================= UPDATE =================
-    @PutMapping("/{id}")
-    public BodyTypeResponseDTO update(@PathVariable Long adminId,
-                                      @PathVariable Long id,
-                                      @Valid @RequestBody BodyTypeRequestDTO dto) {
+    @PutMapping("/{id}/{adminId}")
+    public BodyTypeResponseDTO update(
+            @PathVariable Long id,
+            @PathVariable Long adminId,
+            @Valid @RequestBody BodyTypeRequestDTO dto
+    ) {
 
-        BodyType updated = bodyTypeService.update(id, mapToEntity(dto), adminId);
+        BodyType updated =
+                bodyTypeService.update(id, mapToEntity(dto), adminId);
+
         return mapToResponse(updated);
     }
 
     // ================= DELETE =================
-    @DeleteMapping("/{id}")
-    public String delete(@PathVariable Long adminId,
-                         @PathVariable Long id) {
+    @DeleteMapping("/{id}/{adminId}")
+    public String delete(
+            @PathVariable Long id,
+            @PathVariable Long adminId
+    ) {
 
         bodyTypeService.delete(id, adminId);
+
         return "Body type deleted successfully";
     }
 
@@ -90,8 +102,13 @@ public class BodyTypeController {
 
         BodyType bt = new BodyType();
 
-        bt.setValue(dto.getValue());
-        bt.setIsActive(dto.getIsActive() != null ? dto.getIsActive() : true);
+        bt.setName(dto.getName());
+
+        bt.setIsActive(
+                dto.getIsActive() != null
+                        ? dto.getIsActive()
+                        : true
+        );
 
         return bt;
     }
@@ -101,7 +118,7 @@ public class BodyTypeController {
         BodyTypeResponseDTO dto = new BodyTypeResponseDTO();
 
         dto.setId(bt.getId());
-        dto.setValue(bt.getValue());
+        dto.setName(bt.getName());
         dto.setIsActive(bt.getIsActive());
         dto.setCreatedAt(bt.getCreatedAt());
 

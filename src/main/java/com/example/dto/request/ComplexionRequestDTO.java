@@ -8,7 +8,7 @@ public class ComplexionRequestDTO {
 
     @NotBlank(message = "Complexion value is required")
     @Size(min = 2, max = 120, message = "Complexion must be 2-120 characters")
-    private String value;
+    private String name;
 
     @NotNull(message = "Admin ID is required")
     private Long adminId;
@@ -17,8 +17,8 @@ public class ComplexionRequestDTO {
 
     // ================= GETTERS & SETTERS =================
 
-    public String getValue() {
-        return value;
+    public String getName() {
+        return name;
     }
 
     public Long getAdminId() {
@@ -29,8 +29,8 @@ public class ComplexionRequestDTO {
         return isActive;
     }
 
-    public void setValue(String value) {
-        this.value = value;
+    public void setName(String name) {
+        this.name = name;
     }
 
     public void setAdminId(Long adminId) {

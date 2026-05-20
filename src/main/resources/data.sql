@@ -19,30 +19,30 @@ TRUNCATE TABLE
     castes,
     states,
     countries,
-    blood_group,
-    body_type,
-    brother_type,
+    blood_groups,
+    body_types,
+    brother_types,
     complexions,
-    diet,
-    disability_status,
+    diets,
+    disability_statuses,
     drinking,
     education_levels,
-    employment_status,
-    family_type,
-    family_value,
+    employed,
+    family_types,
+    family_values,
     family_status,
-    field_of_study,
+    fields_of_study,
     heights,
     incomes,
     manglik_status,
     marital_status,
     mother_tongues,
     occupations,
-    profile_type,
+    profile_types,
     qualifications,
     religions,
     roles,
-    sister_type,
+    sister_types,
     smoking,
     subscription_plans,
     weights
@@ -54,7 +54,7 @@ TRUNCATE TABLE
 -- =====================================================================
 
 -- Blood Groups
-INSERT INTO blood_group (admin_id, type, is_active, created_at, updated_at) VALUES
+INSERT INTO blood_groups (admin_id, type, is_active, created_at, updated_at) VALUES
 (NULL, 'A+', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 (NULL, 'A-', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 (NULL, 'B+', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
@@ -66,7 +66,7 @@ INSERT INTO blood_group (admin_id, type, is_active, created_at, updated_at) VALU
 (NULL, 'Don''t Know', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- Body Types
-INSERT INTO body_type (admin_id, name, is_active, created_at, updated_at) VALUES
+INSERT INTO body_types (admin_id, name, is_active, created_at, updated_at) VALUES
 (NULL, 'Slim', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 (NULL, 'Athletic', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 (NULL, 'Average', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
@@ -74,7 +74,7 @@ INSERT INTO body_type (admin_id, name, is_active, created_at, updated_at) VALUES
 (NULL, 'Stocky', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- Brother Types
-INSERT INTO brother_type (admin_id, name, is_active, created_at, updated_at) VALUES
+INSERT INTO brother_types (admin_id, value, is_active, created_at, updated_at) VALUES
 (NULL, 'No Brother', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 (NULL, '1 Brother', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 (NULL, '2 Brothers', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
@@ -84,7 +84,7 @@ INSERT INTO brother_type (admin_id, name, is_active, created_at, updated_at) VAL
 (NULL, 'Unmarried Brother(s)', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- Complexion Types
-INSERT INTO complexion (admin_id, name, is_active, created_at, updated_at) VALUES
+INSERT INTO complexions (admin_id, name, is_active, created_at, updated_at) VALUES
 (NULL, 'Very Fair', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 (NULL, 'Fair', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 (NULL, 'Wheatish', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
@@ -93,7 +93,7 @@ INSERT INTO complexion (admin_id, name, is_active, created_at, updated_at) VALUE
 (NULL, 'Dark', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- Diet Preferences
-INSERT INTO diet (admin_id, name, is_active, created_at, updated_at) VALUES
+INSERT INTO diets (admin_id, name, is_active, created_at, updated_at) VALUES
 (NULL, 'Vegetarian', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 (NULL, 'Non-Vegetarian', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 (NULL, 'Eggetarian', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
@@ -101,7 +101,7 @@ INSERT INTO diet (admin_id, name, is_active, created_at, updated_at) VALUES
 (NULL, 'Occasionally Non-Veg', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- Disability Status
-INSERT INTO disability_status (admin_id, name, is_active, created_at, updated_at) VALUES
+INSERT INTO disability_statuses (admin_id, value, is_active, created_at, updated_at) VALUES
 (NULL, 'None', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 (NULL, 'Physical Disability', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 (NULL, 'Visual Impairment', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
@@ -129,7 +129,7 @@ INSERT INTO education_levels (admin_id, name, is_active, created_at, updated_at)
 (NULL, 'Professional Degree', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- Employment Status
-INSERT INTO employment_status (admin_id, name, is_active, created_at, updated_at) VALUES
+INSERT INTO employed (admin_id, name, is_active, created_at, updated_at) VALUES
 (NULL, 'Employed', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 (NULL, 'Self-Employed', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 (NULL, 'Business Owner', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
@@ -139,7 +139,7 @@ INSERT INTO employment_status (admin_id, name, is_active, created_at, updated_at
 (NULL, 'Homemaker', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- Family Types
-INSERT INTO family_type (admin_id, name, is_active, created_at, updated_at) VALUES
+INSERT INTO family_types (admin_id, name, is_active, created_at, updated_at) VALUES
 (NULL, 'Joint Family', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 (NULL, 'Nuclear Family', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 (NULL, 'Small Family', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
@@ -147,7 +147,7 @@ INSERT INTO family_type (admin_id, name, is_active, created_at, updated_at) VALU
 (NULL, 'No Family', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- Family Values
-INSERT INTO family_value (admin_id, name, is_active, created_at, updated_at) VALUES
+INSERT INTO family_values (admin_id, name, is_active, created_at, updated_at) VALUES
 (NULL, 'Traditional', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 (NULL, 'Moderate', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 (NULL, 'Liberal', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
@@ -163,7 +163,7 @@ INSERT INTO family_status (admin_id, name, is_active, created_at, updated_at) VA
 (NULL, 'Poor', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- Field of Study
-INSERT INTO field_of_study (admin_id, name, is_active, created_at, updated_at) VALUES
+INSERT INTO fields_of_study (admin_id, name, is_active, created_at, updated_at) VALUES
 (NULL, 'Engineering', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 (NULL, 'Medicine', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 (NULL, 'Arts', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
@@ -283,7 +283,7 @@ INSERT INTO mother_tongues (admin_id, name, is_active, created_at, updated_at) V
 (NULL, 'Other', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- Profile Types
-INSERT INTO profile_type (admin_id, name, is_active, created_at, updated_at) VALUES
+INSERT INTO profile_types (admin_id, name, is_active, created_at, updated_at) VALUES
 (NULL, 'Regular', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 (NULL, 'Premium', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 (NULL, 'Elite', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
@@ -333,7 +333,7 @@ INSERT INTO roles (admin_id, name, is_active, created_at, updated_at) VALUES
 (NULL, 'VERIFIED_USER', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- Sister Types
-INSERT INTO sister_type (admin_id, name, is_active, created_at, updated_at) VALUES
+INSERT INTO sister_types (admin_id, value, is_active, created_at, updated_at) VALUES
 (NULL, 'No Sister', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 (NULL, '1 Sister', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 (NULL, '2 Sisters', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
@@ -352,7 +352,7 @@ INSERT INTO smoking (admin_id, name, is_active, created_at, updated_at) VALUES
 (NULL, 'Quit Smoking', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- Subscription Plans
-INSERT INTO subscription_plans (admin_id, name, price, duration_days, features, is_active, created_at, updated_at) VALUES
+INSERT INTO subscription_plans (admin_id, name, price, duration, features, is_active, created_at, updated_at) VALUES
 (NULL, 'Free', 0.00, 0, 'Basic profile creation, Limited search', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 (NULL, 'Basic', 299.00, 30, 'Enhanced profile, Contact details, Advanced search', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 (NULL, 'Premium', 599.00, 90, 'All Basic features, Priority listing, Chat support', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),

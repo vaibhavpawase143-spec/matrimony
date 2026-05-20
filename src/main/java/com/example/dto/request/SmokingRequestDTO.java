@@ -13,7 +13,7 @@ public class SmokingRequestDTO {
 
     @NotBlank(message = "Value is required")
     @Size(max = 50, message = "Value must be less than 50 characters")
-    private String value;
+    private String name;
 
     private Boolean isActive;
 }
