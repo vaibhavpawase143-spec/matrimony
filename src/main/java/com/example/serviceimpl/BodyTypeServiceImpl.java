@@ -26,7 +26,7 @@ public class BodyTypeServiceImpl implements BodyTypeService {
 
         // 🔍 Duplicate check
         boolean exists = bodyTypeRepository.findAll().stream()
-                .anyMatch(bt -> bt.getValue().equalsIgnoreCase(bodyType.getValue())
+                .anyMatch(bt -> bt.getName().equalsIgnoreCase(bodyType.getName())
                         && bt.getAdmin().getId().equals(adminId));
 
         if (exists) {
@@ -55,20 +55,24 @@ public class BodyTypeServiceImpl implements BodyTypeService {
     // ✅ Get all
     @Override
     public List<BodyType> getAll(Long adminId) {
-
+        if (adminId == null) {
+            return bodyTypeRepository.findAll();
+        }
         return bodyTypeRepository.findAll()
                 .stream()
-                .filter(bt -> bt.getAdmin().getId().equals(adminId))
+                .filter(bt -> bt.getAdmin() != null && bt.getAdmin().getId().equals(adminId))
                 .toList();
     }
 
     // ✅ Get active
     @Override
     public List<BodyType> getActive(Long adminId) {
-
+        if (adminId == null) {
+            return bodyTypeRepository.findByIsActiveTrue();
+        }
         return bodyTypeRepository.findAll()
                 .stream()
-                .filter(bt -> bt.getAdmin().getId().equals(adminId)
+                .filter(bt -> bt.getAdmin() != null && bt.getAdmin().getId().equals(adminId)
                         && Boolean.TRUE.equals(bt.getIsActive()))
                 .toList();
     }
@@ -76,10 +80,12 @@ public class BodyTypeServiceImpl implements BodyTypeService {
     // ✅ Get inactive
     @Override
     public List<BodyType> getInactive(Long adminId) {
-
+        if (adminId == null) {
+            return bodyTypeRepository.findByIsActiveFalse();
+        }
         return bodyTypeRepository.findAll()
                 .stream()
-                .filter(bt -> bt.getAdmin().getId().equals(adminId)
+                .filter(bt -> bt.getAdmin() != null && bt.getAdmin().getId().equals(adminId)
                         && Boolean.FALSE.equals(bt.getIsActive()))
                 .toList();
     }
@@ -92,7 +98,7 @@ public class BodyTypeServiceImpl implements BodyTypeService {
 
         // 🔍 Duplicate check
         boolean exists = bodyTypeRepository.findAll().stream()
-                .anyMatch(bt -> bt.getValue().equalsIgnoreCase(updated.getValue())
+                .anyMatch(bt -> bt.getName().equalsIgnoreCase(updated.getName())
                         && bt.getAdmin().getId().equals(adminId)
                         && !bt.getId().equals(id));
 
@@ -100,7 +106,7 @@ public class BodyTypeServiceImpl implements BodyTypeService {
             throw new RuntimeException("Body type already exists");
         }
 
-        existing.setValue(updated.getValue());
+        existing.setName(updated.getName());
         existing.setIsActive(updated.getIsActive());
 
         return bodyTypeRepository.save(existing);

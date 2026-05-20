@@ -28,12 +28,12 @@ import profile1 from "@/assets/profile1.jpg";
 const Account = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
-  const { userName, logout } = useAuth();
+  const { user, logout } = useAuth();
   const { profileData, loading } = useProfileData();
 
   // Debug logging
   console.log('🔧 Account page - Profile data:', profileData);
-  console.log('🔧 Account page - User name from auth:', userName);
+  console.log('🔧 Account page - User from auth:', user);
 
   if (loading) {
     return (
@@ -48,8 +48,8 @@ const Account = () => {
       profileData?.firstName && profileData?.lastName
         ? `${profileData.firstName} ${profileData.lastName}`
         : profileData?.fullName ||
-          (userName
-            ? `${userName.charAt(0).toUpperCase()}${userName.slice(1)}`
+          (user?.firstName
+            ? `${user.firstName.charAt(0).toUpperCase()}${user.firstName.slice(1)}`
             : "User"),
     email: profileData?.email || "",
     phone: profileData?.phone || "",
@@ -332,9 +332,14 @@ const Account = () => {
           >
             <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
               <img
-                src={userDetails.profilePhoto}
+                src={userDetails.profilePhoto || "/default-profile.png"}
                 alt="Profile"
                 className="h-24 w-24 rounded-full object-cover border-4 border-background shadow-sm"
+                onError={(e) => {
+                  console.error('👤 Account: Profile image load error:', e.target.src);
+                  e.target.onerror = null;
+                  e.target.src = "/default-profile.png";
+                }}
               />
 
               <div className="flex-1">

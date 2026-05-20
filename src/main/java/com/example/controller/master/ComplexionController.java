@@ -97,7 +97,7 @@ public class ComplexionController {
 
         Complexion entity = new Complexion();
 
-        entity.setValue(dto.getValue());
+        entity.setName(dto.getName());
 
         // Admin mapping
         Admin admin = new Admin();
@@ -114,7 +114,7 @@ public class ComplexionController {
         ComplexionResponseDTO dto = new ComplexionResponseDTO();
 
         dto.setId(entity.getId());
-        dto.setValue(entity.getValue());
+        dto.setName(entity.getName());
         dto.setIsActive(entity.getIsActive());
         dto.setCreatedAt(entity.getCreatedAt());
 

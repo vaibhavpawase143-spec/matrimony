@@ -51,28 +51,48 @@ const Login = () => {
       // Call backend API (admin or user login)
       const response = await authAPI.login({ email: email.trim(), password }, isAdmin);
       
+      console.log('🔐 Login.jsx - Login API response:', response);
+      
       if (!response.success) {
         throw new Error(response.message || 'Login failed');
       }
 
-      // Try to get user profile after login
+      // Use profile data from login response (backend already fetches it)
       let userData = response.data;
-      try {
-        const profileData = await authAPI.getCurrentUser();
-        if (profileData) {
-          userData = { ...userData, ...profileData };
+      
+      console.log('🔐 Login.jsx - Profile data from login response:', userData);
+      console.log('🔐 Login.jsx - userData keys:', userData ? Object.keys(userData) : 'null');
+      
+      // If no profile data in response, fetch it separately
+      if (!userData) {
+        try {
+          console.log('🔐 Login.jsx - No profile data in login response, fetching current user profile...');
+          const profileData = await authAPI.getCurrentUser();
+          console.log('🔐 Login.jsx - Profile data received:', profileData);
+          if (profileData) {
+            userData = profileData;
+          } else {
+            // Profile not found, user may need to create profile
+            userData = {
+              needsProfile: true
+            };
+          }
+        } catch (profileErr) {
+          console.error('🔐 Login.jsx - Profile fetch error:', profileErr);
+          userData = {
+            needsProfile: true
+          };
         }
-      } catch (profileErr) {
-        // Profile not found, user may need to create profile
-        userData = {
-          ...userData,
-          needsProfile: true
-        };
       }
 
       // Update auth context
       const userRole = userData?.role || "USER";
       const token = response.token;
+      console.log('🔐 Login.jsx - Calling useAuth login with:');
+      console.log('  - userData:', userData);
+      console.log('  - token:', token && typeof token === 'string' ? token.substring(0, Math.min(50, token.length)) + '...' : 'null');
+      console.log('  - userRole:', userRole);
+      
       login(userData, token, userRole);
 
       if (rememberMe) {
@@ -97,24 +117,15 @@ const Login = () => {
 
     } catch (err) {
       stopLoading();
-      const errorMessage = err.message || t?.login?.messages?.loginFailed || "Login failed";
       
-      // Handle specific error cases
-      if (errorMessage.includes("verify your email") || errorMessage.includes("verify your phone")) {
-        error("Please verify your email and phone number first");
+      // Always use backend error message directly - no overrides
+      error(err.message);
+      
+      // Handle specific error cases for navigation
+      if (err.errorCode === 'ERR_EMAIL_NOT_VERIFIED' || err.errorCode === 'ERR_PHONE_NOT_VERIFIED') {
         setTimeout(() => {
           navigate("/request-verification");
         }, 2000);
-      } else if (errorMessage.includes("Invalid credentials") || errorMessage.includes("Bad credentials")) {
-        error("Invalid email or password");
-      } else if (errorMessage.includes("User not found") || errorMessage.includes("User does not exist")) {
-        error("No account found with this email");
-      } else if (errorMessage.includes("Account is blocked") || errorMessage.includes("is blocked")) {
-        error("Your account has been blocked. Please contact support");
-      } else if (errorMessage.includes("Account is not active") || errorMessage.includes("is not active")) {
-        error("Your account is not active. Please contact support");
-      } else {
-        error(errorMessage);
       }
     }
   };
@@ -200,15 +211,20 @@ const Login = () => {
             )}
           </div>
 
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={rememberMe}
-              onChange={(e) => setRememberMe(e.target.checked)}
-            />
-            <span className="text-xs">
-              {t?.login?.rememberMe || "Remember me"}
-            </span>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+              />
+              <span className="text-xs">
+                {t?.login?.rememberMe || "Remember me"}
+              </span>
+            </div>
+            <Link to="/forgot-password" className="text-xs text-primary hover:underline">
+              Forgot Password?
+            </Link>
           </div>
 
           <button

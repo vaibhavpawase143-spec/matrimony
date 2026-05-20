@@ -5,7 +5,7 @@ import { useLoading } from "@/hooks/useLoading";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/context/LanguageContext.jsx";
 import ProfileForm from "@/components/ProfileForm";
-import { authAPI } from "@/services/api";
+import { authAPI, profileAPI } from "@/services/api";
 
 const CreateProfile = () => {
   const navigate = useNavigate();
@@ -47,51 +47,39 @@ const CreateProfile = () => {
           phone: userData.phone || "",
           gender: userData.gender || "",
           dateOfBirth: userData.dob || "",
-          religion: userData.religion || "",
+          religionId: userData.religionId || null,
           
           // Other fields will remain empty for user to fill
-          maritalStatus: "",
-          caste: "",
-          subCaste: "",
-          motherTongue: "",
-          height: "",
-          weight: "",
-          complexion: "",
-          bodyType: "",
-          highestEducation: "",
-          profession: "",
-          annualIncome: "",
+          maritalStatusId: null,
+          casteId: null,
+          subCasteId: null,
+          motherTongueId: null,
+          heightId: null,
+          weightId: null,
+          complexionId: null,
+          bodyTypeId: null,
+          educationLevelId: null,
+          occupationId: null,
+          incomeId: null,
           companyName: "",
-          location: "",
-          city: "",
-          state: "",
-          country: "",
-          aboutYourself: "",
-          familyValues: "",
-          familyStatus: "",
-          familyType: "",
+          countryId: null,
+          stateId: null,
+          cityId: null,
+          address: "",
+          aboutMe: "",
+          fatherName: "",
           fatherOccupation: "",
+          motherName: "",
           motherOccupation: "",
-          siblings: "",
-          diet: "",
-          drinking: "",
-          smoking: "",
-          hobbies: "",
-          interests: "",
-          partnerPreferences: {
-            minAge: "",
-            maxAge: "",
-            minHeight: "",
-            maxHeight: "",
-            religion: "",
-            caste: "",
-            education: "",
-            profession: "",
-            location: "",
-            diet: "",
-            drinking: "",
-            smoking: ""
-          }
+          siblingsCount: "",
+          dietId: null,
+          smokingId: null,
+          drinkingId: null,
+          preferredAgeMin: "",
+          preferredAgeMax: "",
+          preferredLocation: "",
+          preferredEducation: "",
+          otherExpectations: ""
         };
         
         setProfileData(mappedProfileData);
@@ -111,7 +99,7 @@ const CreateProfile = () => {
           phone: user.phone || "",
           gender: user.gender || "",
           dateOfBirth: user.dob || "",
-          religion: user.religion || "",
+          religionId: user.religionId || null,
         };
         setProfileData(basicProfileData);
       }
@@ -122,21 +110,8 @@ const CreateProfile = () => {
     try {
       startLoading("Saving profile...");
       
-      // Call backend API to save profile
-      const response = await fetch('/api/profiles', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(formData)
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to save profile');
-      }
-
-      const result = await response.json();
+      // Call backend API to save profile using api.js client
+      const result = await profileAPI.updateProfile(null, formData);
       
       success("Profile saved successfully!");
       stopLoading();
@@ -148,7 +123,29 @@ const CreateProfile = () => {
       
     } catch (err) {
       console.error("Profile save error:", err);
-      error(err.message || "Failed to save profile");
+      
+      // Use backend error message directly
+      const errorMessage = err.message || "Failed to save profile";
+      
+      // Handle specific error cases using error codes and status from backend
+      if (err.status === 400) {
+        // Validation error - check for field-specific errors
+        if (err.validationErrors && typeof err.validationErrors === 'object') {
+          error("Please fix the validation errors");
+          // Could set field-specific errors here if needed
+        } else {
+          error(errorMessage);
+        }
+      } else if (err.status === 401) {
+        error(errorMessage);
+      } else if (err.status === 409) {
+        error(errorMessage);
+      } else if (err.status === 500) {
+        error("Server error. Please try again later.");
+      } else {
+        error(errorMessage);
+      }
+      
       stopLoading();
     }
   };

@@ -21,8 +21,8 @@ public class DrinkingServiceImpl implements DrinkingService {
     @Override
     public Drinking create(Drinking drinking) {
 
-        if (drinkingRepository.existsByValueIgnoreCase(drinking.getValue())) {
-            throw new RuntimeException("Drinking already exists: " + drinking.getValue());
+        if (drinkingRepository.existsByNameIgnoreCase(drinking.getName())) {
+            throw new RuntimeException("Drinking already exists: " + drinking.getName());
         }
 
         return drinkingRepository.save(drinking);
@@ -35,15 +35,15 @@ public class DrinkingServiceImpl implements DrinkingService {
         Drinking existing = drinkingRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Drinking not found with id: " + id));
 
-        drinkingRepository.findByValueIgnoreCase(drinking.getValue())
+        drinkingRepository.findByNameIgnoreCase(drinking.getName())
                 .ifPresent(d -> {
                     if (!d.getId().equals(id)) {
-                        throw new RuntimeException("Drinking already exists: " + drinking.getValue());
+                        throw new RuntimeException("Drinking already exists: " + drinking.getName());
                     }
                 });
 
         // ✏️ Update fields
-        existing.setValue(drinking.getValue());
+        existing.setName(drinking.getName());
         existing.setIsActive(drinking.getIsActive());
 
         return drinkingRepository.save(existing);
@@ -70,26 +70,26 @@ public class DrinkingServiceImpl implements DrinkingService {
         return drinkingRepository.findAll();
     }
 
-    // 🔍 Find by value
+    // 🔍 Find by name
     @Override
-    public Optional<Drinking> getByValue(String value) {
-        return drinkingRepository.findByValue(value);
+    public Optional<Drinking> getByName(String name) {
+        return drinkingRepository.findByName(name);
     }
 
     @Override
-    public Optional<Drinking> getByValueIgnoreCase(String value) {
-        return drinkingRepository.findByValueIgnoreCase(value);
+    public Optional<Drinking> getByNameIgnoreCase(String name) {
+        return drinkingRepository.findByNameIgnoreCase(name);
     }
 
     // ✅ Duplicate check
     @Override
-    public boolean existsByValue(String value) {
-        return drinkingRepository.existsByValue(value);
+    public boolean existsByName(String name) {
+        return drinkingRepository.existsByName(name);
     }
 
     @Override
-    public boolean existsByValueIgnoreCase(String value) {
-        return drinkingRepository.existsByValueIgnoreCase(value);
+    public boolean existsByNameIgnoreCase(String name) {
+        return drinkingRepository.existsByNameIgnoreCase(name);
     }
 
     // 🔍 Active / Inactive
@@ -117,11 +117,11 @@ public class DrinkingServiceImpl implements DrinkingService {
     // 🔍 Search
     @Override
     public List<Drinking> search(String keyword) {
-        return drinkingRepository.findByValueContainingIgnoreCase(keyword);
+        return drinkingRepository.findByNameContainingIgnoreCase(keyword);
     }
 
     @Override
     public List<Drinking> searchByAdmin(Long adminId, String keyword) {
-        return drinkingRepository.findByAdminIdAndValueContainingIgnoreCase(adminId, keyword);
+        return drinkingRepository.findByAdminIdAndNameContainingIgnoreCase(adminId, keyword);
     }
 }

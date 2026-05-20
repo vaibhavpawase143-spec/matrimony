@@ -20,6 +20,7 @@ const SettingsPage = () => {
   const { getOptions } = useMatrimonyOptions();
   const [masterOptions, setMasterOptions] = useState({
     religions: [],
+    states: [],
     cities: [],
     educationLevels: [],
     occupations: [],
@@ -27,8 +28,18 @@ const SettingsPage = () => {
     weights: [],
     maritalStatuses: [],
     castes: [],
-    motherTongues: []
+    subCastes: [],
+    motherTongues: [],
+    bodyTypes: [],
+    complexions: [],
+    countries: [],
+    diets: [],
+    smoking: [],
+    drinking: [],
+    incomes: []
   });
+  
+  const [masterDataLoaded, setMasterDataLoaded] = useState(false);
   
   // Profile form state - matching backend DTO structure
   const [formData, setFormData] = useState({
@@ -55,7 +66,17 @@ const SettingsPage = () => {
     occupationId: null,
     heightId: null,
     weightId: null,
+    stateId: null,
     cityId: null,
+    
+    // Additional master data IDs
+    bodyTypeId: null,
+    complexionId: null,
+    countryId: null,
+    dietId: null,
+    smokingId: null,
+    drinkingId: null,
+    incomeId: null,
     
     // For UI purposes
     profilePhoto: null,
@@ -74,64 +95,94 @@ const SettingsPage = () => {
       try {
         console.log('🔍 Loading master data from APIs...');
         
-        const [religions, cities, educationLevels, occupations, maritalStatuses, heights, weights, motherTongues] = await Promise.all([
-          masterDataAPI.getReligions(),
-          masterDataAPI.getCities(),
-          masterDataAPI.getEducationLevels(),
-          masterDataAPI.getOccupations(),
-          masterDataAPI.getMaritalStatuses(),
-          masterDataAPI.getHeights(),
-          masterDataAPI.getWeights(),
-          masterDataAPI.getMotherTongues()
-        ]);
+        // Load master data sequentially to prevent crashes if one API fails
+        const religions = await masterDataAPI.getReligions().catch(e => { console.error('Religions API failed:', e); return []; });
+        const states = await masterDataAPI.getStates().catch(e => { console.error('States API failed:', e); return []; });
+        const educationLevels = await masterDataAPI.getEducationLevels().catch(e => { console.error('EducationLevels API failed:', e); return []; });
+        const occupations = await masterDataAPI.getOccupations().catch(e => { console.error('Occupations API failed:', e); return []; });
+        const maritalStatuses = await masterDataAPI.getMaritalStatuses().catch(e => { console.error('MaritalStatuses API failed:', e); return []; });
+        const heights = await masterDataAPI.getHeights().catch(e => { console.error('Heights API failed:', e); return []; });
+        const weights = await masterDataAPI.getWeights().catch(e => { console.error('Weights API failed:', e); return []; });
+        const motherTongues = await masterDataAPI.getMotherTongues().catch(e => { console.error('MotherTongues API failed:', e); return []; });
+        const bodyTypes = await masterDataAPI.getBodyTypes().catch(e => { console.error('BodyTypes API failed:', e); return []; });
+        const complexions = await masterDataAPI.getComplexions().catch(e => { console.error('Complexions API failed:', e); return []; });
+        const countries = await masterDataAPI.getCountries().catch(e => { console.error('Countries API failed:', e); return []; });
+        const diets = await masterDataAPI.getDiets().catch(e => { console.error('Diets API failed:', e); return []; });
+        const smoking = await masterDataAPI.getSmoking().catch(e => { console.error('Smoking API failed:', e); return []; });
+        const drinking = await masterDataAPI.getDrinking().catch(e => { console.error('Drinking API failed:', e); return []; });
+        const incomes = await masterDataAPI.getIncomes().catch(e => { console.error('Incomes API failed:', e); return []; });
         
         console.log('📊 Master data loaded:', {
           religions: religions?.length || 0,
-          cities: cities?.length || 0,
+          states: states?.length || 0,
           educationLevels: educationLevels?.length || 0,
           occupations: occupations?.length || 0,
           maritalStatuses: maritalStatuses?.length || 0,
           heights: heights?.length || 0,
           weights: weights?.length || 0,
-          motherTongues: motherTongues?.length || 0
+          motherTongues: motherTongues?.length || 0,
+          bodyTypes: bodyTypes?.length || 0,
+          complexions: complexions?.length || 0,
+          countries: countries?.length || 0,
+          diets: diets?.length || 0,
+          smoking: smoking?.length || 0,
+          drinking: drinking?.length || 0,
+          incomes: incomes?.length || 0
         });
         
         // Ensure all data are arrays
         const safeData = {
           religions: Array.isArray(religions) ? religions : [],
-          cities: Array.isArray(cities) ? cities : [],
+          states: Array.isArray(states) ? states : [],
+          cities: [], // Will be loaded based on selected state
           educationLevels: Array.isArray(educationLevels) ? educationLevels : [],
           occupations: Array.isArray(occupations) ? occupations : [],
           maritalStatuses: Array.isArray(maritalStatuses) ? maritalStatuses : [],
           heights: Array.isArray(heights) ? heights : [],
           weights: Array.isArray(weights) ? weights : [],
           castes: [], // Will be loaded based on selected religion
-          motherTongues: Array.isArray(motherTongues) ? motherTongues : []
+          subCastes: [], // Will be loaded based on selected caste
+          motherTongues: Array.isArray(motherTongues) ? motherTongues : [],
+          bodyTypes: Array.isArray(bodyTypes) ? bodyTypes : [],
+          complexions: Array.isArray(complexions) ? complexions : [],
+          countries: Array.isArray(countries) ? countries : [],
+          diets: Array.isArray(diets) ? diets : [],
+          smoking: Array.isArray(smoking) ? smoking : [],
+          drinking: Array.isArray(drinking) ? drinking : [],
+          incomes: Array.isArray(incomes) ? incomes : []
         };
         
         setMasterOptions(safeData);
-        
+        setMasterDataLoaded(true);
+        console.log('✅ Master data set successfully');
+
       } catch (error) {
         console.error('❌ Failed to load master data:', error);
-        // Set empty arrays on error to prevent UI crashes
         setMasterOptions({
           religions: [],
+          states: [],
           cities: [],
           educationLevels: [],
           occupations: [],
           maritalStatuses: [],
           heights: [],
           weights: [],
-         castes: [],
-         subCastes: [],
-         motherTongues: []
+          castes: [],
+          subCastes: [],
+          motherTongues: [],
+          bodyTypes: [],
+          complexions: [],
+          countries: [],
+          diets: [],
+          smoking: [],
+          drinking: [],
+          incomes: []
         });
       }
     };
-    
+
     loadMasterData();
   }, []);
-
   // Load castes when religion changes
   useEffect(() => {
     const loadCastes = async () => {
@@ -216,9 +267,68 @@ useEffect(() => {
 
 }, [formData.casteId]);
 
-  // Load saved profile data on mount
+useEffect(() => {
+
+  const loadCities = async () => {
+
+    if (formData.stateId) {
+
+      try {
+
+        console.log(
+          "🔍 Loading cities for stateId:",
+          formData.stateId
+        );
+
+        const cities =
+          await masterDataAPI.getCities(
+            formData.stateId
+          );
+
+        console.log(
+          "✅ Cities loaded:",
+          cities
+        );
+
+        setMasterOptions(prev => ({
+          ...prev,
+          cities: Array.isArray(cities)
+            ? cities
+            : []
+        }));
+
+      } catch (error) {
+
+        console.error(
+          "❌ Failed to load cities:",
+          error
+        );
+
+        setMasterOptions(prev => ({
+          ...prev,
+          cities: []
+        }));
+
+      }
+
+    } else {
+
+      setMasterOptions(prev => ({
+        ...prev,
+        cities: []
+      }));
+
+    }
+
+  };
+
+  loadCities();
+
+}, [formData.stateId]);
+
+  // Load saved profile data on mount - ONLY after master data is loaded
   useEffect(() => {
-    if (savedProfileData && Object.keys(savedProfileData).length > 0) {
+    if (masterDataLoaded && savedProfileData && Object.keys(savedProfileData).length > 0) {
       console.log('🔧 Loading profile data into settings:', savedProfileData);
       console.log('🔧 Checking specific fields:', {
         address: savedProfileData.address,
@@ -266,9 +376,9 @@ useEffect(() => {
 
        weightId: savedProfileData.weightId || null,
 
-       complexion: savedProfileData.complexion || '',
+       complexionId: savedProfileData.complexionId || null,
 
-       bodyType: savedProfileData.bodyType || '',
+       bodyTypeId: savedProfileData.bodyTypeId || null,
 
 aboutMe:
   savedProfileData.aboutMe ||
@@ -283,18 +393,16 @@ aboutMe:
        occupationId:
          savedProfileData.occupationId || null,
 
-       annualIncome:
-         savedProfileData.annualIncome || '',
+       incomeId: savedProfileData.incomeId || null,
 
        companyName:
          savedProfileData.companyName || '',
 
        // LOCATION
-      country: savedProfileData.country || '',
-      state: savedProfileData.state || '',
+      countryId: savedProfileData.countryId || null,
+      stateId: savedProfileData.stateId || null,
       cityId: savedProfileData.cityId || null,
-      city: savedProfileData.cityName || savedProfileData.city || '',
-       address: savedProfileData.address || '',
+      address: savedProfileData.address || '',
 
        // FAMILY
        fatherName:
@@ -313,10 +421,10 @@ aboutMe:
          savedProfileData.siblingsCount ||
          savedProfileData.siblings ||
          '',
-       // DIET
-       diet: savedProfileData.diet || '',
-       smoking: savedProfileData.smoking || '',
-       drinking: savedProfileData.drinking || '',
+       // LIFESTYLE IDs
+       dietId: savedProfileData.dietId || null,
+       smokingId: savedProfileData.smokingId || null,
+       drinkingId: savedProfileData.drinkingId || null,
 
        // PARTNER PREFERENCE
        preferredAgeMin:
@@ -337,9 +445,9 @@ aboutMe:
      };
       
       console.log('🔧 Mapped data for form:', mappedData);
-            setFormData(prev => ({ ...prev, ...mappedData }));
+      setFormData(prev => ({ ...prev, ...mappedData }));
     }
-  }, [savedProfileData]);
+  }, [savedProfileData, masterDataLoaded]);
 
   // Auto-calculate age from DOB
   const calculateAge = (dob) => {
@@ -367,7 +475,9 @@ aboutMe:
       const idFields = [
         'religionId', 'casteId', 'subCasteId', 'motherTongueId',
         'maritalStatusId', 'educationLevelId', 'occupationId',
-        'heightId', 'weightId', 'cityId'
+        'heightId', 'weightId', 'stateId', 'cityId',
+        'bodyTypeId', 'complexionId', 'countryId', 'dietId',
+        'smokingId', 'drinkingId', 'incomeId'
       ];
       
       const finalValue = idFields.includes(field) && value !== '' 
@@ -485,26 +595,26 @@ aboutMe:
        heightId: formData.heightId,
        weightId: formData.weightId,
 
-       complexion: formData.complexion,
-       bodyType: formData.bodyType,
+       complexion: formData.complexionId,
+       bodyType: formData.bodyTypeId,
 
        // EDUCATION
        educationLevelId: formData.educationLevelId,
        occupationId: formData.occupationId,
 
-       annualIncome: formData.annualIncome,
+       incomeId: formData.incomeId,
        companyName: formData.companyName,
 
        // LOCATION
-       country: formData.country,
-       state: formData.state,
+       countryId: formData.countryId,
+       stateId: formData.stateId,
        cityId: formData.cityId,
        address: formData.address,
 
        // LIFESTYLE
-       diet: formData.diet,
-       smoking: formData.smoking,
-       drinking: formData.drinking,
+       dietId: formData.dietId,
+       smokingId: formData.smokingId,
+       drinkingId: formData.drinkingId,
 
        // FAMILY
        fatherName: formData.fatherName,
@@ -564,186 +674,102 @@ aboutMe:
   const handleNotificationToggle = (label, isChecked) => {
     info(`${label} ${isChecked ? 'enabled' : 'disabled'}`);
   };
+const renderField = (field) => {
 
-  // Helper function to render form fields
-  const renderField = (field) => {
-    const { label, placeholder, type = "text", key, options, readOnly = false } = field;
-    
-    if (type === "select") {
-      let fieldOptions = options;
-      
-    // Use master data options for dropdowns that need ID-value mapping
-    if (key === 'religionId') {
+  const {
+    label,
+    placeholder,
+    type = "text",
+    key,
+    options,
+    readOnly = false
+  } = field;
 
-      fieldOptions = masterOptions.religions;
+  // ================= SELECT =================
+  if (type === "select") {
 
-      console.log(
-        '🔍 Religion options:',
-        fieldOptions,
-        'length:',
-        fieldOptions?.length
-      );
+    let fieldOptions = options || [];
 
+    // Dynamic master data
+    if (key === 'stateId') {
+      fieldOptions = masterOptions.states;
     } else if (key === 'cityId') {
-
       fieldOptions = masterOptions.cities;
-
-      console.log(
-        '🔍 City options:',
-        fieldOptions,
-        'length:',
-        fieldOptions?.length
-      );
-
-    } else if (key === 'educationLevelId') {
-
-      fieldOptions = masterOptions.educationLevels;
-
-      console.log(
-        '🔍 Education Level options:',
-        fieldOptions,
-        'length:',
-        fieldOptions?.length
-      );
-
-    } else if (key === 'occupationId') {
-
-      fieldOptions = masterOptions.occupations;
-
-      console.log(
-        '🔍 Occupation options:',
-        fieldOptions,
-        'length:',
-        fieldOptions?.length
-      );
-
-    } else if (key === 'maritalStatusId') {
-
-      fieldOptions = masterOptions.maritalStatuses;
-
-      console.log(
-        '🔍 Marital Status options:',
-        fieldOptions,
-        'length:',
-        fieldOptions?.length
-      );
-
+    } else if (key === 'religionId') {
+      fieldOptions = masterOptions.religions;
     } else if (key === 'casteId') {
-
       fieldOptions = masterOptions.castes;
-
-      console.log(
-        '🔍 Caste options:',
-        fieldOptions,
-        'length:',
-        fieldOptions?.length
-      );
-
     } else if (key === 'subCasteId') {
-
       fieldOptions = masterOptions.subCastes;
-
-      console.log(
-        '🔍 Sub Caste options:',
-        fieldOptions,
-        'length:',
-        fieldOptions?.length
-      );
-
     } else if (key === 'motherTongueId') {
-
       fieldOptions = masterOptions.motherTongues;
-
-      console.log(
-        '🔍 Mother Tongue options:',
-        fieldOptions,
-        'length:',
-        fieldOptions?.length
-      );
-
+    } else if (key === 'educationLevelId') {
+      fieldOptions = masterOptions.educationLevels;
+    } else if (key === 'occupationId') {
+      fieldOptions = masterOptions.occupations;
+    } else if (key === 'maritalStatusId') {
+      fieldOptions = masterOptions.maritalStatuses;
     } else if (key === 'heightId') {
-
       fieldOptions = masterOptions.heights;
-
-      console.log(
-        '🔍 Height options:',
-        fieldOptions,
-        'length:',
-        fieldOptions?.length
-      );
-
     } else if (key === 'weightId') {
-
       fieldOptions = masterOptions.weights;
-
-      console.log(
-        '🔍 Weight options:',
-        fieldOptions,
-        'length:',
-        fieldOptions?.length
-      );
-
-    } else if (key === 'city') {
-
-      fieldOptions = getOptions(key, formData.state);
-
-    } else if (!options) {
-
-      fieldOptions = getOptions(key);
-
+    } else if (key === 'bodyTypeId') {
+      fieldOptions = masterOptions.bodyTypes;
+    } else if (key === 'complexionId') {
+      fieldOptions = masterOptions.complexions;
+    } else if (key === 'countryId') {
+      fieldOptions = masterOptions.countries;
+    } else if (key === 'dietId') {
+      fieldOptions = masterOptions.diets;
+    } else if (key === 'smokingId') {
+      fieldOptions = masterOptions.smoking;
+    } else if (key === 'drinkingId') {
+      fieldOptions = masterOptions.drinking;
+    } else if (key === 'incomeId') {
+      fieldOptions = masterOptions.incomes;
     }
 
+    console.log(
+      `📋 Dropdown options for ${key}:`,
+      fieldOptions
+    );
+
     return (
+
       <div key={key}>
+
         <label className="text-xs font-medium text-foreground mb-1 block">
           {label}
         </label>
 
         <select
-          value={formData[key] || ''}
+          value={formData[key]?.toString() || ''}
 
           onChange={(e) => {
 
             const value = e.target.value;
 
-            console.log(
-              `🔄 Changed ${key} to:`,
-              value,
-              'type:',
-              typeof value,
-              'current formData:',
-              formData
-            );
-
             handleInputChange(key, value);
 
-            // Reset caste when religion changes
+            // Reset caste/sub caste
             if (key === 'religionId') {
-
-              console.log(
-                '🔄 Resetting caste due to religion change'
-              );
 
               handleInputChange('casteId', '');
               handleInputChange('subCasteId', '');
 
             }
 
-            // Reset sub caste when caste changes
+            // Reset sub caste
             if (key === 'casteId') {
-
-              console.log(
-                '🔄 Resetting sub caste due to caste change'
-              );
 
               handleInputChange('subCasteId', '');
 
             }
 
-            // Reset city when state changes
-            if (key === 'state') {
+            // Reset city
+            if (key === 'stateId') {
 
-              handleInputChange('city', '');
+              handleInputChange('cityId', '');
 
             }
 
@@ -753,59 +779,72 @@ aboutMe:
         >
 
           <option value="">
-            Select {label.toLowerCase()}
+            Select {label}
           </option>
 
-          {fieldOptions &&
-            fieldOptions.length > 0 &&
-            fieldOptions.map(opt => {
-
-              const optionValue = opt.id || opt;
-
-              const optionLabel = opt.name || opt;
-
-              console.log(
-                `📋 Dropdown option for ${key}:`,
-                {
-                  value: optionValue,
-                  label: optionLabel,
-                  rawOpt: opt
-                }
-              );
-
-              return (
-                <option
-                  key={optionValue}
-                  value={optionValue}
-                >
-                  {optionLabel}
-                </option>
-              );
-
-            })}
+          {fieldOptions?.map((opt) => {
+            const optionValue = (opt.id || opt.value || opt).toString();
+            const optionLabel = opt.name || opt.value || opt.range || opt;
+            return (
+              <option
+                key={optionValue}
+                value={optionValue}
+              >
+                {optionLabel}
+              </option>
+            );
+          })}
 
         </select>
-      </div>
-    );
-}
-    return (
-      <div key={key}>
-        <label className="text-xs font-medium text-foreground mb-1 block">{label}</label>
-        <input
-          type={type}
-          value={formData[key]}
-          onChange={(e) => handleInputChange(key, e.target.value)}
-          placeholder={placeholder}
-          readOnly={readOnly}
-          className={`w-full bg-background border border-border rounded-lg px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary ${readOnly ? 'bg-muted cursor-not-allowed' : ''}`}
-        />
-      </div>
-    );
-  };
 
+      </div>
+
+    );
+
+  }
+
+  // ================= INPUT =================
   return (
-    <div className="min-h-screen bg-muted/30">
-      <Navbar />
+
+    <div key={key}>
+
+      <label className="text-xs font-medium text-foreground mb-1 block">
+        {label}
+      </label>
+
+      <input
+        type={type}
+
+        value={formData[key] || ""}
+
+        onChange={(e) =>
+          handleInputChange(
+            key,
+            e.target.value
+          )
+        }
+
+        placeholder={placeholder}
+
+        readOnly={readOnly}
+
+        className={`w-full bg-background border border-border rounded-lg px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary ${
+          readOnly
+            ? 'bg-muted cursor-not-allowed'
+            : ''
+        }`}
+      />
+
+    </div>
+
+  );
+
+};
+
+return (
+  <div className="min-h-screen bg-muted/30">
+
+    <Navbar />
 
       <div className="py-8 text-center" style={{ background: "linear-gradient(135deg, hsl(270 60% 35%), hsl(290 55% 45%), hsl(270 50% 55%))" }}>
         <h1 className="text-3xl md:text-4xl font-display font-bold text-primary-foreground mb-2">Settings</h1>
@@ -831,7 +870,16 @@ aboutMe:
                 <label className="text-sm font-medium text-foreground mb-3 block">Profile Photo</label>
                 {formData.profilePhotoUrl ? (
                   <div className="relative w-20 h-20 rounded-full overflow-hidden mb-3">
-                    <img src={formData.profilePhotoUrl} alt="Profile" className="w-full h-full object-cover" />
+                    <img 
+                      src={formData.profilePhotoUrl} 
+                      alt="Profile" 
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        console.error('⚙️ SettingsPage: Profile photo load error:', e.target.src);
+                        e.target.onerror = null;
+                        e.target.src = "/default-profile.png";
+                      }}
+                    />
                     <button
                       onClick={removeProfilePhoto}
                       className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity"
@@ -884,15 +932,13 @@ aboutMe:
                   {renderField({ label: "Weight", key: "weightId", type: "select" })}
                   {renderField({ 
                     label: "Complexion", 
-                    key: "complexion", 
-                    type: "select", 
-                    options: ["Fair", "Wheatish", "Wheatish Brown", "Brown", "Dark"] 
+                    key: "complexionId", 
+                    type: "select"
                   })}
                   {renderField({ 
                     label: "Body Type", 
-                    key: "bodyType", 
-                    type: "select", 
-                    options: ["Slim", "Average", "Athletic", "Heavy"] 
+                    key: "bodyTypeId", 
+                    type: "select"
                   })}
                 </div>
               </div>
@@ -907,7 +953,7 @@ aboutMe:
                     type: "select" 
                   })}
                   {renderField({ label: "Profession/Occupation", key: "occupationId", type: "select" })}
-                  {renderField({ label: "Annual Income", key: "annualIncome", type: "select" })}
+                  {renderField({ label: "Annual Income", key: "incomeId", type: "select" })}
                   {renderField({ label: "Company Name", placeholder: "Your company", key: "companyName" })}
                 </div>
               </div>
@@ -916,8 +962,12 @@ aboutMe:
               <div>
                 <h3 className="text-sm font-semibold text-foreground mb-3 pb-2 border-b border-border">Location Details</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {renderField({ label: "Country", key: "country", type: "select", options: ["India", "USA", "UK", "Canada", "Australia"] })}
-                  {renderField({ label: "State/Province", key: "state", type: "select" })}
+                  {renderField({ label: "Country", key: "countryId", type: "select" })}
+                  {renderField({
+  label: "State/Province",
+  key: "stateId",
+  type: "select"
+})}
                   {renderField({ label: "City", key: "cityId", type: "select" })}
                   {renderField({ label: "Address", placeholder: "Your address", key: "address" })}
                 </div>
@@ -929,21 +979,18 @@ aboutMe:
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {renderField({ 
                     label: "Diet", 
-                    key: "diet", 
-                    type: "select", 
-                    options: ["Vegetarian", "Non-Vegetarian", "Vegan"] 
+                    key: "dietId", 
+                    type: "select"
                   })}
                   {renderField({ 
                     label: "Smoking", 
-                    key: "smoking", 
-                    type: "select", 
-                    options: ["No", "Yes", "Occasionally"] 
+                    key: "smokingId", 
+                    type: "select"
                   })}
                   {renderField({ 
                     label: "Drinking", 
-                    key: "drinking", 
-                    type: "select", 
-                    options: ["No", "Yes", "Occasionally"] 
+                    key: "drinkingId", 
+                    type: "select"
                   })}
                 </div>
               </div>
@@ -956,7 +1003,7 @@ aboutMe:
                   {renderField({ label: "Father's Occupation", placeholder: "Your father's occupation", key: "fatherOccupation" })}
                   {renderField({ label: "Mother's Name", placeholder: "Your mother's name", key: "motherName" })}
                   {renderField({ label: "Mother's Occupation", placeholder: "Your mother's occupation", key: "motherOccupation" })}
-                  {renderField({ label: "Number of Siblings", key: "siblingsCount", type: "select" })}
+                  {renderField({ label: "Number of Siblings", key: "siblingsCount", type: "number", placeholder: "0" })}
                 </div>
               </div>
 
@@ -987,7 +1034,7 @@ aboutMe:
                   <label className="text-xs font-medium text-foreground mb-1 block">About Me</label>
                   <textarea 
                     rows={4} 
-                    value={formData.aboutMe}
+                    value={formData.aboutMe || ""}
                     onChange={(e) => handleInputChange("aboutMe", e.target.value)}
                     placeholder="Tell us about yourself, your interests, personality and what you are looking for..." 
                     className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none" 

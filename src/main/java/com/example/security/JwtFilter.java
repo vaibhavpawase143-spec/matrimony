@@ -52,6 +52,9 @@ public class JwtFilter extends OncePerRequestFilter {
             String token = authHeader.substring(7);
             String username = jwtUtil.extractUsername(token);
 
+            System.out.println("🔐 JWT Filter - Extracted username: " + username);
+            System.out.println("🔐 JWT Filter - Token: " + (token != null && token.length() > 50 ? token.substring(0, 50) + "..." : token));
+
             if (username != null &&
                     SecurityContextHolder.getContext().getAuthentication() == null) {
 
@@ -59,6 +62,7 @@ public class JwtFilter extends OncePerRequestFilter {
 
                     // 🔥 GET ROLES FROM JWT
                     List<String> roles = jwtUtil.extractRoles(token);
+                    System.out.println("🔐 JWT Filter - Roles: " + roles);
 
                     List<SimpleGrantedAuthority> authorities = roles.stream()
                             .map(SimpleGrantedAuthority::new)
@@ -76,10 +80,12 @@ public class JwtFilter extends OncePerRequestFilter {
                     );
 
                     SecurityContextHolder.getContext().setAuthentication(authToken);
+                    System.out.println("🔐 JWT Filter - Authentication set for user: " + username);
                 }
             }
 
         } catch (Exception e) {
+            System.err.println("❌ JWT Filter Error: " + e.getMessage());
             response.sendError(401, "Invalid or expired token");
             return;
         }

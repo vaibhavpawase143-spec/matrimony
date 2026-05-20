@@ -267,12 +267,21 @@ public class UserServiceImpl implements UserService {
                 .stream()
                 .map(Role::getName)
                 .toList();
+        
+        System.out.println("🔑 loginWithProfile - Generating token for email: " + user.getEmail());
+        System.out.println("🔑 loginWithProfile - User ID: " + user.getId());
+        System.out.println("🔑 loginWithProfile - Roles: " + roles);
+        
         String accessToken = jwtUtil.generateToken(user.getEmail(), roles);
         RefreshToken refreshToken = refreshTokenService.createToken(user.getEmail());
+        
+        System.out.println("🔑 loginWithProfile - Generated access token: " + (accessToken != null && accessToken.length() > 50 ? accessToken.substring(0, 50) + "..." : accessToken));
 
         // Get profile data
+        System.out.println("👤 loginWithProfile - Fetching profile for User ID: " + user.getId());
         ProfileResponseDTO profileData = profileRepository.findByUserId(user.getId())
                 .map(profile -> {
+                    System.out.println("👤 loginWithProfile - Found Profile ID: " + profile.getId() + " for User ID: " + profile.getUser().getId());
                     ProfileResponseDTO dto = new ProfileResponseDTO();
                     dto.setId(profile.getId());
                     dto.setUserId(profile.getUser().getId());
@@ -285,6 +294,9 @@ public class UserServiceImpl implements UserService {
                     return dto;
                 })
                 .orElse(null);
+        
+        System.out.println("👤 loginWithProfile - Profile data: " + (profileData != null ? "Profile ID: " + profileData.getId() : "null"));
+        System.out.println("👤 loginWithProfile - Full LoginResponse being returned: accessToken=" + (accessToken != null ? "present" : "null") + ", profile=" + (profileData != null ? "present" : "null"));
 
         return new LoginResponse(accessToken, refreshToken.getToken(), profileData);
     }
