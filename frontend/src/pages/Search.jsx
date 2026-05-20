@@ -39,6 +39,7 @@ const SearchPage = () => {
   const [searchResults, setSearchResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [totalResults, setTotalResults] = useState(0);
+  const [profileImageErrors, setProfileImageErrors] = useState({});
   
   // State for search filters
   const [filters, setFilters] = useState({
@@ -74,45 +75,127 @@ const SearchPage = () => {
   }, []);
 
   const loadMasterData = async () => {
+
     try {
-      const [
-        religionsRes,
-        citiesRes,
-        educationLevelsRes,
-        occupationsRes,
-        maritalStatusesRes
-      ] = await Promise.all([
-        masterDataAPI.getReligions(),
-        masterDataAPI.getCities(),
-        masterDataAPI.getEducationLevels(),
-        masterDataAPI.getOccupations(),
-        masterDataAPI.getMaritalStatuses()
-      ]);
+
+      console.log("🔍 Loading master data safely...");
+
+      let religionsRes = [];
+      let citiesRes = { data: [] };
+      let educationLevelsRes = { data: [] };
+      let occupationsRes = { data: [] };
+      let maritalStatusesRes = { data: [] };
+
+      try {
+        religionsRes =
+          await masterDataAPI.getReligions();
+      } catch (e) {
+        console.log("❌ Religions API failed");
+      }
+
+      try {
+        citiesRes =
+          await masterDataAPI.getCities();
+      } catch (e) {
+        console.log("❌ Cities API failed");
+      }
+
+      try {
+        educationLevelsRes =
+          await masterDataAPI.getEducationLevels();
+      } catch (e) {
+        console.log("❌ Education API failed");
+      }
+
+      try {
+        occupationsRes =
+          await masterDataAPI.getOccupations();
+      } catch (e) {
+        console.log("❌ Occupations API failed");
+      }
+
+      try {
+        maritalStatusesRes =
+          await masterDataAPI.getMaritalStatuses();
+      } catch (e) {
+        console.log("❌ Marital Status API failed");
+      }
+
+     setMasterData({
+
+       religions:
+         religionsRes || [],
+
+       castes: [],
+
+       cities:
+         citiesRes || [],
+
+       educationLevels:
+         educationLevelsRes || [],
+
+       occupations:
+         occupationsRes || [],
+
+       heights: [],
+
+       weights: [],
+
+       maritalStatuses:
+         maritalStatusesRes || []
+
+     });
+      console.log(
+        "✅ Master data loaded successfully"
+      );
+
+    } catch (err) {
+
+      console.warn(
+        "❌ Failed to load master data:",
+        err.message
+      );
 
       setMasterData({
-        religions: religionsRes.data || [],
-        castes: [], // Load based on selected religion
-        cities: citiesRes.data || [],
-        educationLevels: educationLevelsRes.data || [],
-        occupations: occupationsRes.data || [],
-        heights: [], // Add if needed
-        weights: [], // Add if needed
-        maritalStatuses: maritalStatusesRes.data || []
-      });
-    } catch (err) {
-      console.warn('Failed to load master data:', err.message);
-      // Fallback to local options if API fails
-      setMasterData({
-        religions: getOptions('religion').map(r => ({ value: r, label: r })),
-        cities: getOptions('city').map(c => ({ value: c, label: c })),
-        educationLevels: getOptions('education').map(e => ({ value: e, label: e })),
-        occupations: getOptions('occupation').map(o => ({ value: o, label: o })),
-        maritalStatuses: getOptions('maritalStatus').map(m => ({ value: m, label: m })),
+
+        religions:
+          getOptions('religion').map(r => ({
+            value: r,
+            label: r
+          })),
+
+        cities:
+          getOptions('city').map(c => ({
+            value: c,
+            label: c
+          })),
+
+        educationLevels:
+          getOptions('education').map(e => ({
+            value: e,
+            label: e
+          })),
+
+        occupations:
+          getOptions('occupation').map(o => ({
+            value: o,
+            label: o
+          })),
+
+        maritalStatuses:
+          getOptions('maritalStatus').map(m => ({
+            value: m,
+            label: m
+          })),
+
         castes: [],
         heights: [],
         weights: []
+
       });
+
     }
+
   };
 
   const performSearch = async () => {
@@ -316,40 +399,42 @@ const SearchPage = () => {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
                 {searchResults.map((profile) => (
-                  <Link to={`/profile/${profile.id}`} key={profile.id} className="bg-card rounded-xl overflow-hidden border border-border shadow-sm hover:shadow-md transition-shadow group">
+                  <Link to={`/profile/${profile?.id}`} key={profile?.id} className="bg-card rounded-xl overflow-hidden border border-border shadow-sm hover:shadow-md transition-shadow group">
                     <div className="aspect-[3/4] overflow-hidden bg-muted">
-                      {profile.photo_url || profile.profilePhotoUrl ? (
+                      {profile?.photo_url || profile?.profilePhotoUrl ? (
                         <img 
-                          src={profile.photo_url || profile.profilePhotoUrl} 
-                          alt={profile.name || profile.fullName} 
+                          src={profile?.photo_url || profile?.profilePhotoUrl} 
+                          alt={profile?.name || profile?.fullName} 
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                           onError={(e) => {
-                            e.target.style.display = 'none';
-                            e.target.nextSibling.style.display = 'flex';
+                            console.error('🔍 Search: Profile image load error for profile', profile?.id, ':', e.target.src);
+                            e.target.onerror = null;
+                            setProfileImageErrors(prev => ({ ...prev, [profile?.id]: true }));
                           }}
                         />
-                      ) : (
+                      ) : null}
+                      {(!profile?.photo_url && !profile?.profilePhotoUrl) || profileImageErrors[profile?.id] ? (
                         <div className="w-full h-full flex items-center justify-center bg-muted">
                           <div className="text-center">
                             <div className="w-16 h-16 bg-muted-foreground/20 rounded-full mx-auto mb-2 flex items-center justify-center">
                               <span className="text-muted-foreground text-xl">
-                                {profile.name?.charAt(0)?.toUpperCase() || '?'}
+                                {profile?.name?.charAt(0)?.toUpperCase() || '?'}
                               </span>
                             </div>
                             <p className="text-xs text-muted-foreground">No Photo</p>
                           </div>
                         </div>
-                      )}
+                      ) : null}
                     </div>
                     <div className="p-4">
                       <h3 className="text-sm font-semibold text-foreground">
-                        {profile.name || 'Unknown'}, <span className="text-primary">{profile.age || '?'}</span>
+                        {profile?.name || 'Unknown'}, <span className="text-primary">{profile?.age || '?'}</span>
                       </h3>
                       <p className="text-xs text-muted-foreground mt-0.5">
-                        {profile.occupation || 'Profession not specified'} · {profile.city || 'Location not specified'}
+                        {profile?.occupation || 'Profession not specified'} · {profile?.city || 'Location not specified'}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {profile.education_level || 'Education not specified'} · {profile.religion || 'Religion not specified'}
+                        {profile?.education_level || 'Education not specified'} · {profile?.religion || 'Religion not specified'}
                       </p>
                       <div className="flex gap-2 mt-3">
                         <button className="flex-1 bg-accent/10 text-accent text-xs font-semibold py-1.5 rounded-lg hover:bg-accent/20 transition-colors">

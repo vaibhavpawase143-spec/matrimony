@@ -45,9 +45,14 @@ public class ProfileServiceImpl implements ProfileService {
     // ================= CURRENT USER =================
     private User getCurrentUser() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        System.out.println("👤 getCurrentUser - Email from SecurityContext: " + email);
+        System.out.println("👤 getCurrentUser - Full Authentication: " + SecurityContextHolder.getContext().getAuthentication());
 
-        return userRepository.findByEmailIgnoreCase(email)
+        User user = userRepository.findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        System.out.println("👤 getCurrentUser - Found User ID: " + user.getId() + ", Email: " + user.getEmail());
+        return user;
     }
 
     // ================= CREATE =================
@@ -97,8 +102,14 @@ public class ProfileServiceImpl implements ProfileService {
     // ================= GET =================
     @Transactional(readOnly = true)
     public ProfileResponseDTO getMyProfile() {
-        return mapToDTO(repository.findByUserIdWithRelations(getCurrentUser().getId())
-                .orElseThrow(() -> new RuntimeException("Profile not found")));
+        User currentUser = getCurrentUser();
+        System.out.println("📄 getMyProfile - Fetching profile for User ID: " + currentUser.getId());
+        
+        Profile profile = repository.findByUserIdWithRelations(currentUser.getId())
+                .orElseThrow(() -> new RuntimeException("Profile not found"));
+        
+        System.out.println("📄 getMyProfile - Found Profile ID: " + profile.getId() + " for User ID: " + profile.getUser().getId());
+        return mapToDTO(profile);
     }
 
     @Transactional(readOnly = true)

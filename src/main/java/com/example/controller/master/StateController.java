@@ -8,9 +8,12 @@ import com.example.model.State;
 import com.example.service.StateService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -66,14 +69,29 @@ public class StateController {
     // GET ALL
     // =========================
     @GetMapping
-    public List<StateResponseDTO> getAll() {
+    public ResponseEntity<?> getAll() {
 
-        return service.getAll()
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+        try {
+
+            List<StateResponseDTO> states =
+                    service.getAll()
+                            .stream()
+                            .map(this::mapToResponse)
+                            .collect(Collectors.toList());
+
+            return ResponseEntity.ok(states);
+
+        } catch (Exception e) {
+
+            e.printStackTrace();
+
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of(
+                            "error", e.getMessage()
+                    ));
+        }
     }
-
     // =========================
     // ADMIN APIs
     // =========================

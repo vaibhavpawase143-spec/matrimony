@@ -15,6 +15,7 @@ const ProfileDetails = () => {
   const { t } = useLanguage();
   const { id } = useParams();
   const [profile, setProfile] = useState(null);
+  const [imageError, setImageError] = useState(false);
 
   useEffect(() => {
     // TODO: fetch profile by ID from backend
@@ -44,7 +45,29 @@ const ProfileDetails = () => {
           <div className="lg:col-span-1 space-y-4">
             <div className="bg-card rounded-xl overflow-hidden border border-border">
               <div className="aspect-[3/4] overflow-hidden">
-                <img src={profile.image} alt={profile.name} className="w-full h-full object-cover" />
+                {profile.image && !imageError ? (
+                  <img 
+                    src={profile.image} 
+                    alt={profile.name} 
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      console.error('👤 ProfileDetails: Profile image load error:', e.target.src);
+                      e.target.onerror = null;
+                      setImageError(true);
+                    }}
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-muted">
+                    <div className="text-center">
+                      <div className="w-16 h-16 bg-muted-foreground/20 rounded-full mx-auto mb-2 flex items-center justify-center">
+                        <span className="text-muted-foreground text-xl">
+                          {profile.name?.charAt(0)?.toUpperCase() || '?'}
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">No Photo</p>
+                    </div>
+                  </div>
+                )}
               </div>
               <div className="p-4 space-y-2">
                 <button className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-2.5 rounded-lg text-sm transition-colors">

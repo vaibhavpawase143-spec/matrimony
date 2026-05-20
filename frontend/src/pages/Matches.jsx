@@ -13,6 +13,7 @@ const Matches = () => {
   const { success, error } = useToast();
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [profileImageErrors, setProfileImageErrors] = useState({});
 
   // Load matches on component mount
   useEffect(() => {
@@ -70,36 +71,47 @@ const Matches = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {matches.map((m, i) => (
             <motion.div
-              key={m.id}
+              key={m?.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.1 }}
               className="bg-card rounded-xl border border-border overflow-hidden hover:shadow-lg transition-shadow group"
             >
               <div className="aspect-[4/3] overflow-hidden relative">
-                <img 
-                  src={m.profilePhotoUrl || m.imageUrl || profile1} 
-                  alt={m.fullName || m.name} 
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  onError={(e) => {
-                    e.target.src = profile1; // Fallback to default image
-                  }}
-                />
+                {m?.profilePhotoUrl || m?.imageUrl ? (
+                  <img 
+                    src={m?.profilePhotoUrl || m?.imageUrl} 
+                    alt={m?.fullName || m?.name} 
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    onError={(e) => {
+                      console.error('❤️ Matches: Profile image load error for match', m?.id, ':', e.target.src);
+                      e.target.onerror = null;
+                      setProfileImageErrors(prev => ({ ...prev, [m?.id]: true }));
+                    }}
+                  />
+                ) : null}
+                {(!m?.profilePhotoUrl && !m?.imageUrl) || profileImageErrors[m?.id] ? (
+                  <img 
+                    src={profile1} 
+                    alt={m?.fullName || m?.name} 
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                ) : null}
                 <div className="absolute top-3 right-3 bg-emerald-badge text-primary-foreground text-xs font-bold px-2.5 py-1 rounded-full">
-                  {m.compatibility || Math.floor(Math.random() * 20) + 80}% Match
+                  {m?.compatibility || Math.floor(Math.random() * 20) + 80}% Match
                 </div>
               </div>
               <div className="p-4">
                 <h3 className="text-base font-semibold text-foreground">
-                  {m.fullName || m.name}, <span className="text-primary">{m.age || '?'}</span>
+                  {m?.fullName || m?.name}, <span className="text-primary">{m?.age || '?'}</span>
                 </h3>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  {m.profession || m.occupation || 'Profession not specified'} · {m.city || 'Location not specified'}
+                  {m?.profession || m?.occupation || 'Profession not specified'} · {m?.city || 'Location not specified'}
                 </p>
 
                 <div className="flex gap-2 mt-4">
                   <Link 
-                    to={`/profile/${m.id}`}
+                    to={`/profile/${m?.id}`}
                     className="flex-1 flex items-center justify-center gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold py-2 rounded-lg transition-colors text-center"
                   >
                     <Heart className="h-3.5 w-3.5" /> {t.matches.connect || 'View'}

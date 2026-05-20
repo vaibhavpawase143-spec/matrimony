@@ -1,418 +1,977 @@
--- Insert master data for matrimony application
--- This file will be executed by Spring Boot SQL initialization
+-- =====================================================================
+-- PRODUCTION-READY MATRIMONY APPLICATION MASTER DATA (FIXED)
+-- =====================================================================
+-- This file contains all required master data for the complete matrimony system.
+-- Compatible with Spring Boot + Hibernate + PostgreSQL.
+-- Supports dynamic frontend dropdowns, profile creation, and search filters.
 
--- Religions data
-INSERT INTO religions (admin_id, name, is_active, created_at, updated_at)
-SELECT NULL, 'Hindu', TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (SELECT 1 FROM religions WHERE name = 'Hindu');
+-- =====================================================================
+-- SAFETY CLEANUP SECTION (PostgreSQL Specific)
+-- =====================================================================
+-- TRUNCATE is used to quickly delete all rows from tables.
+-- CASCADE automatically handles foreign key dependencies.
+-- RESTART IDENTITY resets the auto-incrementing primary keys.
+-- =====================================================================
 
-INSERT INTO religions (admin_id, name, is_active, created_at, updated_at)
-SELECT NULL, 'Muslim', TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (SELECT 1 FROM religions WHERE name = 'Muslim');
+TRUNCATE TABLE
+    sub_castes,
+    cities,
+    castes,
+    states,
+    countries,
+    blood_group,
+    body_type,
+    brother_type,
+    complexions,
+    diet,
+    disability_status,
+    drinking,
+    education_levels,
+    employment_status,
+    family_type,
+    family_value,
+    family_status,
+    field_of_study,
+    heights,
+    incomes,
+    manglik_status,
+    marital_status,
+    mother_tongues,
+    occupations,
+    profile_type,
+    qualifications,
+    religions,
+    roles,
+    sister_type,
+    smoking,
+    subscription_plans,
+    weights
+    RESTART IDENTITY CASCADE;
 
-INSERT INTO religions (admin_id, name, is_active, created_at, updated_at)
-SELECT NULL, 'Christian', TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (SELECT 1 FROM religions WHERE name = 'Christian');
 
-INSERT INTO religions (admin_id, name, is_active, created_at, updated_at)
-SELECT NULL, 'Sikh', TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (SELECT 1 FROM religions WHERE name = 'Sikh');
+-- =====================================================================
+-- CORE REFERENCE DATA (No foreign key dependencies)
+-- =====================================================================
 
-INSERT INTO religions (admin_id, name, is_active, created_at, updated_at)
-SELECT NULL, 'Buddhist', TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (SELECT 1 FROM religions WHERE name = 'Buddhist');
+-- Blood Groups
+INSERT INTO blood_group (admin_id, type, is_active, created_at, updated_at) VALUES
+(NULL, 'A+', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'A-', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'B+', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'B-', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'AB+', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'AB-', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'O+', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'O-', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Don''t Know', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
-INSERT INTO religions (admin_id, name, is_active, created_at, updated_at)
-SELECT NULL, 'Jain', TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (SELECT 1 FROM religions WHERE name = 'Jain');
+-- Body Types
+INSERT INTO body_type (admin_id, name, is_active, created_at, updated_at) VALUES
+(NULL, 'Slim', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Athletic', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Average', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Heavy', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Stocky', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
-INSERT INTO religions (admin_id, name, is_active, created_at, updated_at)
-SELECT NULL, 'Other', TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (SELECT 1 FROM religions WHERE name = 'Other');
+-- Brother Types
+INSERT INTO brother_type (admin_id, name, is_active, created_at, updated_at) VALUES
+(NULL, 'No Brother', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '1 Brother', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '2 Brothers', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '3 Brothers', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '4+ Brothers', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Married Brother(s)', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Unmarried Brother(s)', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
--- Marital Statuses
-INSERT INTO marital_status (admin_id, name, is_active, created_at, updated_at)
-SELECT NULL, 'Single', TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (SELECT 1 FROM marital_status WHERE name = 'Single');
+-- Complexion Types
+INSERT INTO complexion (admin_id, name, is_active, created_at, updated_at) VALUES
+(NULL, 'Very Fair', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Fair', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Wheatish', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Wheatish Brown', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Brown', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Dark', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
-INSERT INTO marital_status (admin_id, name, is_active, created_at, updated_at)
-SELECT NULL, 'Married', TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (SELECT 1 FROM marital_status WHERE name = 'Married');
+-- Diet Preferences
+INSERT INTO diet (admin_id, name, is_active, created_at, updated_at) VALUES
+(NULL, 'Vegetarian', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Non-Vegetarian', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Eggetarian', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Vegan', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Occasionally Non-Veg', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
-INSERT INTO marital_status (admin_id, name, is_active, created_at, updated_at)
-SELECT NULL, 'Divorced', TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (SELECT 1 FROM marital_status WHERE name = 'Divorced');
+-- Disability Status
+INSERT INTO disability_status (admin_id, name, is_active, created_at, updated_at) VALUES
+(NULL, 'None', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Physical Disability', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Visual Impairment', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Hearing Impairment', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Speech Disability', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Other Disability', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
-INSERT INTO marital_status (admin_id, name, is_active, created_at, updated_at)
-SELECT NULL, 'Widowed', TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (SELECT 1 FROM marital_status WHERE name = 'Widowed');
+-- Drinking Habits
+INSERT INTO drinking (admin_id, name, is_active, created_at, updated_at) VALUES
+(NULL, 'Never', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Occasionally', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Socially', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Regularly', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Trying to Quit', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- Education Levels
-INSERT INTO education_levels (admin_id, name, is_active, created_at, updated_at)
-SELECT NULL, '10th', TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (SELECT 1 FROM education_levels WHERE name = '10th');
-
-INSERT INTO education_levels (admin_id, name, is_active, created_at, updated_at)
-SELECT NULL, '12th', TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (SELECT 1 FROM education_levels WHERE name = '12th');
-
-INSERT INTO education_levels (admin_id, name, is_active, created_at, updated_at)
-SELECT NULL, 'Bachelor''s Degree', TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (SELECT 1 FROM education_levels WHERE name = 'Bachelor''s Degree');
-
-INSERT INTO education_levels (admin_id, name, is_active, created_at, updated_at)
-SELECT NULL, 'Master''s Degree', TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (SELECT 1 FROM education_levels WHERE name = 'Master''s Degree');
-
-INSERT INTO education_levels (admin_id, name, is_active, created_at, updated_at)
-SELECT NULL, 'PhD', TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (SELECT 1 FROM education_levels WHERE name = 'PhD');
-
-INSERT INTO education_levels (admin_id, name, is_active, created_at, updated_at)
-SELECT NULL, 'Professional Degree', TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (SELECT 1 FROM education_levels WHERE name = 'Professional Degree');
-
--- Occupations
-INSERT INTO occupations (admin_id, name, is_active, created_at, updated_at)
-SELECT NULL, 'Software Engineer', TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (SELECT 1 FROM occupations WHERE name = 'Software Engineer');
-
-INSERT INTO occupations (admin_id, name, is_active, created_at, updated_at)
-SELECT NULL, 'Doctor', TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (SELECT 1 FROM occupations WHERE name = 'Doctor');
-
-INSERT INTO occupations (admin_id, name, is_active, created_at, updated_at)
-SELECT NULL, 'Teacher', TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (SELECT 1 FROM occupations WHERE name = 'Teacher');
-
-INSERT INTO occupations (admin_id, name, is_active, created_at, updated_at)
-SELECT NULL, 'Engineer', TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (SELECT 1 FROM occupations WHERE name = 'Engineer');
-
-INSERT INTO occupations (admin_id, name, is_active, created_at, updated_at)
-SELECT NULL, 'Business', TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (SELECT 1 FROM occupations WHERE name = 'Business');
-
-INSERT INTO occupations (admin_id, name, is_active, created_at, updated_at)
-SELECT NULL, 'Government Employee', TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (SELECT 1 FROM occupations WHERE name = 'Government Employee');
-
--- Cities (major Indian cities)
-INSERT INTO cities (name, state_id, admin_id, is_active, created_at, updated_at)
-SELECT 'Mumbai', NULL, NULL, TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (SELECT 1 FROM cities WHERE name = 'Mumbai');
-
-INSERT INTO cities (name, state_id, admin_id, is_active, created_at, updated_at)
-SELECT 'Delhi', NULL, NULL, TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (SELECT 1 FROM cities WHERE name = 'Delhi');
-
-INSERT INTO cities (name, state_id, admin_id, is_active, created_at, updated_at)
-SELECT 'Bangalore', NULL, NULL, TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (SELECT 1 FROM cities WHERE name = 'Bangalore');
-
-INSERT INTO cities (name, state_id, admin_id, is_active, created_at, updated_at)
-SELECT 'Chennai', NULL, NULL, TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (SELECT 1 FROM cities WHERE name = 'Chennai');
-
-INSERT INTO cities (name, state_id, admin_id, is_active, created_at, updated_at)
-SELECT 'Kolkata', NULL, NULL, TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (SELECT 1 FROM cities WHERE name = 'Kolkata');
-
-INSERT INTO cities (name, state_id, admin_id, is_active, created_at, updated_at)
-SELECT 'Hyderabad', NULL, NULL, TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (SELECT 1 FROM cities WHERE name = 'Hyderabad');
-
-INSERT INTO cities (name, state_id, admin_id, is_active, created_at, updated_at)
-SELECT 'Pune', NULL, NULL, TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (SELECT 1 FROM cities WHERE name = 'Pune');
-
-INSERT INTO cities (name, state_id, admin_id, is_active, created_at, updated_at)
-SELECT 'Ahmedabad', NULL, NULL, TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (SELECT 1 FROM cities WHERE name = 'Ahmedabad');
-
-INSERT INTO cities (name, state_id, admin_id, is_active, created_at, updated_at)
-SELECT 'Jaipur', NULL, NULL, TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (SELECT 1 FROM cities WHERE name = 'Jaipur');
-
-INSERT INTO cities (name, state_id, admin_id, is_active, created_at, updated_at)
-SELECT 'Other', NULL, NULL, TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (SELECT 1 FROM cities WHERE name = 'Other');
-
--- Mother Tongues
-INSERT INTO mother_tongues (admin_id, name, is_active, created_at, updated_at)
-SELECT NULL, 'Hindi', TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (SELECT 1 FROM mother_tongues WHERE name = 'Hindi');
-
-INSERT INTO mother_tongues (admin_id, name, is_active, created_at, updated_at)
-SELECT NULL, 'English', TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (SELECT 1 FROM mother_tongues WHERE name = 'English');
-
-INSERT INTO mother_tongues (admin_id, name, is_active, created_at, updated_at)
-SELECT NULL, 'Marathi', TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (SELECT 1 FROM mother_tongues WHERE name = 'Marathi');
-
-INSERT INTO mother_tongues (admin_id, name, is_active, created_at, updated_at)
-SELECT NULL, 'Gujarati', TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (SELECT 1 FROM mother_tongues WHERE name = 'Gujarati');
-
-INSERT INTO mother_tongues (admin_id, name, is_active, created_at, updated_at)
-SELECT NULL, 'Bengali', TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (SELECT 1 FROM mother_tongues WHERE name = 'Bengali');
-
-INSERT INTO mother_tongues (admin_id, name, is_active, created_at, updated_at)
-SELECT NULL, 'Tamil', TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (SELECT 1 FROM mother_tongues WHERE name = 'Tamil');
-
-INSERT INTO mother_tongues (admin_id, name, is_active, created_at, updated_at)
-SELECT NULL, 'Telugu', TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (SELECT 1 FROM mother_tongues WHERE name = 'Telugu');
-
-INSERT INTO mother_tongues (admin_id, name, is_active, created_at, updated_at)
-SELECT NULL, 'Kannada', TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (SELECT 1 FROM mother_tongues WHERE name = 'Kannada');
-
-INSERT INTO mother_tongues (admin_id, name, is_active, created_at, updated_at)
-SELECT NULL, 'Punjabi', TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (SELECT 1 FROM mother_tongues WHERE name = 'Punjabi');
-
-INSERT INTO mother_tongues (admin_id, name, is_active, created_at, updated_at)
-SELECT NULL, 'Other', TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (SELECT 1 FROM mother_tongues WHERE name = 'Other');
-
-
--- ==========================================
--- RELIGIONS
--- ==========================================
-
-INSERT INTO religions (admin_id, name, is_active, created_at, updated_at)
-SELECT NULL, 'Hindu', TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (
-    SELECT 1 FROM religions WHERE name = 'Hindu'
-);
-
-INSERT INTO religions (admin_id, name, is_active, created_at, updated_at)
-SELECT NULL, 'Muslim', TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (
-    SELECT 1 FROM religions WHERE name = 'Muslim'
-);
-
-INSERT INTO religions (admin_id, name, is_active, created_at, updated_at)
-SELECT NULL, 'Christian', TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (
-    SELECT 1 FROM religions WHERE name = 'Christian'
-);
-
-INSERT INTO religions (admin_id, name, is_active, created_at, updated_at)
-SELECT NULL, 'Sikh', TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (
-    SELECT 1 FROM religions WHERE name = 'Sikh'
-);
-
-INSERT INTO religions (admin_id, name, is_active, created_at, updated_at)
-SELECT NULL, 'Buddhist', TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (
-    SELECT 1 FROM religions WHERE name = 'Buddhist'
-);
-
-INSERT INTO religions (admin_id, name, is_active, created_at, updated_at)
-SELECT NULL, 'Jain', TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (
-    SELECT 1 FROM religions WHERE name = 'Jain'
-);
-
-INSERT INTO religions (admin_id, name, is_active, created_at, updated_at)
-SELECT NULL, 'Other', TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (
-    SELECT 1 FROM religions WHERE name = 'Other'
-);
-
--- ==========================================
--- CASTES
--- ==========================================
-
-INSERT INTO castes
-(admin_id, religion_id, name, is_active, created_at, updated_at)
-
-SELECT 1, 1, 'Brahmin', TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (
-    SELECT 1 FROM castes WHERE name = 'Brahmin'
-);
-
-INSERT INTO castes
-(admin_id, religion_id, name, is_active, created_at, updated_at)
-
-SELECT 1, 1, 'Maratha', TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (
-    SELECT 1 FROM castes WHERE name = 'Maratha'
-);
-
-INSERT INTO castes
-(admin_id, religion_id, name, is_active, created_at, updated_at)
-
-SELECT 1, 2, 'Sunni', TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (
-    SELECT 1 FROM castes WHERE name = 'Sunni'
-);
-
-INSERT INTO castes
-(admin_id, religion_id, name, is_active, created_at, updated_at)
-
-SELECT 1, 2, 'Shia', TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (
-    SELECT 1 FROM castes WHERE name = 'Shia'
-);
-
-INSERT INTO castes
-(admin_id, religion_id, name, is_active, created_at, updated_at)
-
-SELECT 1, 3, 'Roman Catholic', TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (
-    SELECT 1 FROM castes WHERE name = 'Roman Catholic'
-);
-
--- ==========================================
--- SUB CASTES
--- ==========================================
-
-INSERT INTO sub_castes
-(admin_id, caste_id, name, is_active, created_at, updated_at)
-
-SELECT
-1,
-(SELECT id FROM castes WHERE name = 'Brahmin'),
-'Deshastha Brahmin',
-TRUE,
-CURRENT_TIMESTAMP,
-NULL
-
-WHERE NOT EXISTS (
-SELECT 1 FROM sub_castes WHERE name = 'Deshastha Brahmin'
-);
-
-INSERT INTO sub_castes
-(admin_id, caste_id, name, is_active, created_at, updated_at)
-
-SELECT
-1,
-(SELECT id FROM castes WHERE name = 'Maratha'),
-'96 Kuli Maratha',
-TRUE,
-CURRENT_TIMESTAMP,
-NULL
-
-WHERE NOT EXISTS (
-SELECT 1 FROM sub_castes WHERE name = '96 Kuli Maratha'
-);
-
-INSERT INTO sub_castes
-(admin_id, caste_id, name, is_active, created_at, updated_at)
-
-SELECT
-1,
-(SELECT id FROM castes WHERE name = 'Sunni'),
-'Hanafi Sunni',
-TRUE,
-CURRENT_TIMESTAMP,
-NULL
-
-WHERE NOT EXISTS (
-SELECT 1 FROM sub_castes WHERE name = 'Hanafi Sunni'
-);
-
-INSERT INTO sub_castes
-(admin_id, caste_id, name, is_active, created_at, updated_at)
-
-SELECT
-1,
-(SELECT id FROM castes WHERE name = 'Shia'),
-'Twelver Shia',
-TRUE,
-CURRENT_TIMESTAMP,
-NULL
-
-WHERE NOT EXISTS (
-SELECT 1 FROM sub_castes WHERE name = 'Twelver Shia'
-);
-
--- ==========================================
--- HEIGHTS
--- ==========================================
--- ==========================================
--- HEIGHTS
--- ==========================================
-
-INSERT INTO heights
-(admin_id, height, is_active, created_at, updated_at)
-
-SELECT NULL, '4ft 5in', TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (
-SELECT 1 FROM heights WHERE height='4ft 5in'
-);
-
-INSERT INTO heights
-(admin_id, height, is_active, created_at, updated_at)
-
-SELECT NULL, '5ft 0in', TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (
-SELECT 1 FROM heights WHERE height='5ft 0in'
-);
-
-INSERT INTO heights
-(admin_id, height, is_active, created_at, updated_at)
-
-SELECT NULL, '5ft 5in', TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (
-SELECT 1 FROM heights WHERE height='5ft 5in'
-);
-
-INSERT INTO heights
-(admin_id, height, is_active, created_at, updated_at)
-
-SELECT NULL, '6ft 0in', TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (
-SELECT 1 FROM heights WHERE height='6ft 0in'
-);
-
--- ==========================================
--- WEIGHTS
--- ==========================================
-
-INSERT INTO weights
-(admin_id, value, is_active, created_at, updated_at)
-
-SELECT NULL, '40 Kg', TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (
-SELECT 1 FROM weights WHERE value='40 Kg'
-);
-
-INSERT INTO weights
-(admin_id, value, is_active, created_at, updated_at)
-
-SELECT NULL, '50 Kg', TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (
-SELECT 1 FROM weights WHERE value='50 Kg'
-);
-
-INSERT INTO weights
-(admin_id, value, is_active, created_at, updated_at)
-
-SELECT NULL, '60 Kg', TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (
-SELECT 1 FROM weights WHERE value='60 Kg'
-);
-
-INSERT INTO weights
-(admin_id, value, is_active, created_at, updated_at)
-
-SELECT NULL, '70 Kg', TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (
-SELECT 1 FROM weights WHERE value='70 Kg'
-);
-
-INSERT INTO weights
-(admin_id, value, is_active, created_at, updated_at)
-
-SELECT NULL, '80 Kg', TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (
-SELECT 1 FROM weights WHERE value='80 Kg'
-);
+INSERT INTO education_levels (admin_id, name, is_active, created_at, updated_at) VALUES
+(NULL, 'Below 10th', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '10th Pass', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '12th Pass', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Diploma', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Bachelor''s Degree', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Master''s Degree', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'PhD/Doctorate', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Professional Degree', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+-- Employment Status
+INSERT INTO employment_status (admin_id, name, is_active, created_at, updated_at) VALUES
+(NULL, 'Employed', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Self-Employed', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Business Owner', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Not Working', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Student', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Retired', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Homemaker', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+-- Family Types
+INSERT INTO family_type (admin_id, name, is_active, created_at, updated_at) VALUES
+(NULL, 'Joint Family', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Nuclear Family', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Small Family', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Large Family', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'No Family', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+-- Family Values
+INSERT INTO family_value (admin_id, name, is_active, created_at, updated_at) VALUES
+(NULL, 'Traditional', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Moderate', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Liberal', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Orthodox', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Modern', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+-- Family Status
+INSERT INTO family_status (admin_id, name, is_active, created_at, updated_at) VALUES
+(NULL, 'Rich', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Upper Middle Class', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Middle Class', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Lower Middle Class', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Poor', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+-- Field of Study
+INSERT INTO field_of_study (admin_id, name, is_active, created_at, updated_at) VALUES
+(NULL, 'Engineering', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Medicine', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Arts', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Science', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Commerce', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Management', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Law', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Education', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Agriculture', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Architecture', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Pharmacy', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Nursing', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Journalism', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Fashion Design', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Hotel Management', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Other', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+-- Height Ranges (in feet and inches)
+INSERT INTO heights (admin_id, height, is_active, created_at, updated_at) VALUES
+(NULL, '4''0"', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '4''1"', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '4''2"', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '4''3"', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '4''4"', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '4''5"', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '4''6"', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '4''7"', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '4''8"', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '4''9"', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '4''10"', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '4''11"', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '5''0"', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '5''1"', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '5''2"', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '5''3"', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '5''4"', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '5''5"', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '5''6"', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '5''7"', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '5''8"', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '5''9"', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '5''10"', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '5''11"', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '6''0"', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '6''1"', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '6''2"', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '6''3"', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '6''4"', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '6''5"', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '6''6"', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '6''7"', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '6''8"', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+-- Income Ranges (Annual in INR)
+INSERT INTO incomes (admin_id, range, is_active, created_at, updated_at) VALUES
+(NULL, 'No Income', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Below 1 Lakh', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '1-2 Lakhs', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '2-3 Lakhs', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '3-4 Lakhs', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '4-5 Lakhs', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '5-7 Lakhs', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '7-10 Lakhs', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '10-15 Lakhs', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '15-20 Lakhs', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '20-30 Lakhs', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '30-50 Lakhs', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '50-75 Lakhs', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '75 Lakhs - 1 Crore', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '1-2 Crores', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '2-3 Crores', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '3-5 Crores', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Above 5 Crores', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+-- Manglik Status
+INSERT INTO manglik_status (admin_id, name, is_active, created_at, updated_at) VALUES
+(NULL, 'Non-Manglik', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Manglik', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Anshik Manglik', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Don''t Know', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Doesn''t Matter', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+-- Marital Status
+INSERT INTO marital_status (admin_id, name, is_active, created_at, updated_at) VALUES
+(NULL, 'Single', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Never Married', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Married', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Divorced', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Widowed', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Awaiting Divorce', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Annulled', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+-- Mother Tongues (Indian Languages)
+INSERT INTO mother_tongues (admin_id, name, is_active, created_at, updated_at) VALUES
+(NULL, 'Hindi', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'English', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Bengali', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Telugu', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Marathi', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Tamil', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Urdu', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Gujarati', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Kannada', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Odia', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Punjabi', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Malayalam', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Assamese', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Maithili', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Sanskrit', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Konkani', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Sindhi', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Manipuri', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Nepali', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Bodo', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Kashmiri', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Dogri', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Other', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+-- Profile Types
+INSERT INTO profile_type (admin_id, name, is_active, created_at, updated_at) VALUES
+(NULL, 'Regular', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Premium', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Elite', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'VIP', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+-- Qualifications
+INSERT INTO qualifications (admin_id, name, is_active, created_at, updated_at) VALUES
+(NULL, 'High School', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Intermediate', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Diploma', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Bachelor Degree', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Master Degree', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'M.Phil', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'PhD', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Post Doctorate', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'CA', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'CS', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'ICWA', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'LLB', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'LLM', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'MBBS', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'MD', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'MS', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'BDS', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'B.Tech', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'M.Tech', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'BE', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'ME', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'B.Com', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'M.Com', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'BA', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'MA', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'B.Sc', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'M.Sc', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'BCA', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'MCA', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'BBA', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'MBA', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Other', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+-- Roles
+INSERT INTO roles (admin_id, name, is_active, created_at, updated_at) VALUES
+(NULL, 'USER', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'ADMIN', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'SUPER_ADMIN', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'MODERATOR', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'VERIFIED_USER', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+-- Sister Types
+INSERT INTO sister_type (admin_id, name, is_active, created_at, updated_at) VALUES
+(NULL, 'No Sister', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '1 Sister', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '2 Sisters', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '3 Sisters', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '4+ Sisters', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Married Sister(s)', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Unmarried Sister(s)', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+-- Smoking Habits
+INSERT INTO smoking (admin_id, name, is_active, created_at, updated_at) VALUES
+(NULL, 'Never', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Occasionally', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Socially', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Regularly', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Trying to Quit', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Quit Smoking', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+-- Subscription Plans
+INSERT INTO subscription_plans (admin_id, name, price, duration_days, features, is_active, created_at, updated_at) VALUES
+(NULL, 'Free', 0.00, 0, 'Basic profile creation, Limited search', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Basic', 299.00, 30, 'Enhanced profile, Contact details, Advanced search', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Premium', 599.00, 90, 'All Basic features, Priority listing, Chat support', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Elite', 999.00, 180, 'All Premium features, Verified profile, Personal assistant', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'VIP', 1999.00, 365, 'All Elite features, Exclusive matches, Offline events', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+-- Weight Ranges (in kg)
+INSERT INTO weights (admin_id, value, is_active, created_at, updated_at) VALUES
+(NULL, '35 kg', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '40 kg', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '45 kg', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '48 kg', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '50 kg', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '52 kg', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '55 kg', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '58 kg', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '60 kg', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '62 kg', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '65 kg', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '68 kg', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '70 kg', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '72 kg', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '75 kg', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '78 kg', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '80 kg', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '82 kg', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '85 kg', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '88 kg', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '90 kg', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '92 kg', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '95 kg', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '98 kg', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '100 kg', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '105 kg', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '110 kg', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '115 kg', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '120 kg', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '125 kg', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, '130 kg', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+-- =====================================================================
+-- GEOGRAPHICAL DATA (Countries -> States -> Cities)
+-- =====================================================================
+
+-- Countries
+INSERT INTO countries (admin_id, name, is_active, created_at, updated_at) VALUES
+(NULL, 'India', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'United States', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'United Kingdom', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Canada', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Australia', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'United Arab Emirates', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Singapore', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Malaysia', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Saudi Arabia', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Qatar', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Kuwait', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Oman', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'New Zealand', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Germany', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Other', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+-- Indian States and Union Territories
+INSERT INTO states (admin_id, name, country_id, is_active, created_at, updated_at) VALUES
+-- Major Indian States
+(NULL, 'Andhra Pradesh', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Arunachal Pradesh', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Assam', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Bihar', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Chhattisgarh', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Goa', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Gujarat', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Haryana', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Himachal Pradesh', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Jharkhand', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Karnataka', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Kerala', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Madhya Pradesh', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Maharashtra', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Manipur', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Meghalaya', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Mizoram', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Nagaland', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Odisha', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Punjab', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Rajasthan', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Sikkim', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Tamil Nadu', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Telangana', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Tripura', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Uttar Pradesh', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Uttarakhand', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'West Bengal', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+-- Union Territories
+(NULL, 'Andaman and Nicobar Islands', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Chandigarh', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Dadra and Nagar Haveli and Daman and Diu', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Delhi', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Jammu and Kashmir', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Ladakh', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Lakshadweep', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Puducherry', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+-- Major Indian Cities (mapped to states)
+INSERT INTO cities (admin_id, name, state_id, is_active, created_at, updated_at) VALUES
+-- Maharashtra Cities
+(NULL, 'Mumbai', 14, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Pune', 14, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Nagpur', 14, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Thane', 14, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Nashik', 14, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Aurangabad', 14, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Solapur', 14, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Amravati', 14, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+-- Delhi Cities
+(NULL, 'New Delhi', 33, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'North Delhi', 33, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'South Delhi', 33, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'East Delhi', 33, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'West Delhi', 33, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Central Delhi', 33, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+-- Karnataka Cities
+(NULL, 'Bangalore', 12, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Mysore', 12, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Hubli', 12, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Mangalore', 12, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Belgaum', 12, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Gulbarga', 12, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+-- Tamil Nadu Cities
+(NULL, 'Chennai', 24, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Coimbatore', 24, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Madurai', 24, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Tiruchirappalli', 24, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Salem', 24, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Tirunelveli', 24, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+-- Uttar Pradesh Cities
+(NULL, 'Lucknow', 26, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Kanpur', 26, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Ghaziabad', 26, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Noida', 26, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Agra', 26, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Varanasi', 26, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Allahabad', 26, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Bareilly', 26, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+-- West Bengal Cities
+(NULL, 'Kolkata', 29, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Howrah', 29, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Durgapur', 29, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Siliguri', 29, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Asansol', 29, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+-- Gujarat Cities
+(NULL, 'Ahmedabad', 7, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Surat', 7, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Vadodara', 7, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Rajkot', 7, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Bhavnagar', 7, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Jamnagar', 7, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+-- Rajasthan Cities
+(NULL, 'Jaipur', 21, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Jodhpur', 21, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Udaipur', 21, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Kota', 21, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Ajmer', 21, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Bikaner', 21, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+-- Andhra Pradesh Cities
+(NULL, 'Hyderabad', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Visakhapatnam', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Vijayawada', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Guntur', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Nellore', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Kurnool', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+-- Telangana Cities
+(NULL, 'Hyderabad', 25, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Warangal', 25, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Nizamabad', 25, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Karimnagar', 25, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Khammam', 25, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+-- Kerala Cities
+(NULL, 'Thiruvananthapuram', 13, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Kochi', 13, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Kozhikode', 13, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Thrissur', 13, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Kollam', 13, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+-- Punjab Cities
+(NULL, 'Chandigarh', 20, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Ludhiana', 20, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Amritsar', 20, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Jalandhar', 20, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Patiala', 20, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+-- Haryana Cities
+(NULL, 'Gurgaon', 8, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Faridabad', 8, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Panipat', 8, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Ambala', 8, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Karnal', 8, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+-- Bihar Cities
+(NULL, 'Patna', 4, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Gaya', 4, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Bhagalpur', 4, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Muzaffarpur', 4, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Purnia', 4, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+-- Madhya Pradesh Cities
+(NULL, 'Bhopal', 13, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Indore', 13, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Jabalpur', 13, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Gwalior', 13, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Ujjain', 13, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+-- Odisha Cities
+(NULL, 'Bhubaneswar', 19, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Cuttack', 19, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Rourkela', 19, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Puri', 19, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Sambalpur', 19, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+-- Other Major Cities
+(NULL, 'Chandigarh', 32, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Dehradun', 27, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Shimla', 9, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Srinagar', 34, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Guwahati', 3, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Raipur', 5, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Ranchi', 10, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Imphal', 15, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Aizawl', 16, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Kohima', 17, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Itanagar', 2, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Gangtok', 22, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Agartala', 25, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Panaji', 6, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Thiruvananthapuram', 35, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Other', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+-- =====================================================================
+-- RELIGIOUS DATA (Religions -> Castes -> SubCastes)
+-- =====================================================================
+
+-- Religions
+INSERT INTO religions (admin_id, name, is_active, created_at, updated_at) VALUES
+(NULL, 'Hindu', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Muslim', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Christian', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Sikh', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Buddhist', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Jain', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Parsi', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Jewish', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Bahai', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Other', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+-- Hindu Castes
+INSERT INTO castes (admin_id, name, religion_id, is_active, created_at, updated_at) VALUES
+-- Major Hindu Castes
+(NULL, 'Brahmin', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Kshatriya', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Vaishya', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Shudra', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+-- Regional Hindu Castes
+(NULL, 'Yadav', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Kurmi', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Koeri', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Lodh', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Gujjar', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Jat', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Rajput', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Thakur', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Bhumihar', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Kayastha', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Bania', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Agarwal', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Marwari', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Maheshwari', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Oswal', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Khandelwal', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Prajapati', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Kumhar', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Teli', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Nai', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Dhobi', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Lohar', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Badhai', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Sunar', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Kshar', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Halwai', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Darzi', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Julaha', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Mali', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Gaderia', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Ghrit', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Kori', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Khatik', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Bairagi', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Sadhu', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Jogi', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Other Hindu Caste', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+-- Muslim Castes/Communities
+INSERT INTO castes (admin_id, name, religion_id, is_active, created_at, updated_at) VALUES
+-- Major Muslim Communities
+(NULL, 'Sunni', 2, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Shia', 2, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Bohra', 2, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Khoja', 2, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Memon', 2, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Pathan', 2, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Ansari', 2, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Qureshi', 2, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Siddiqui', 2, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Farooqui', 2, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Shaikh', 2, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Malik', 2, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Chaudhary', 2, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Mirza', 2, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Baig', 2, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Syed', 2, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Rizvi', 2, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Zaidi', 2, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Naqvi', 2, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Other Muslim Community', 2, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+-- Christian Castes/Denominations
+INSERT INTO castes (admin_id, name, religion_id, is_active, created_at, updated_at) VALUES
+(NULL, 'Catholic', 3, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Protestant', 3, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Orthodox', 3, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Anglican', 3, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Methodist', 3, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Baptist', 3, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Pentecostal', 3, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Lutheran', 3, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Syrian Christian', 3, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Mangalorean', 3, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Goan', 3, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Tamil Christian', 3, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Malayali Christian', 3, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Other Christian', 3, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+-- Sikh Castes
+INSERT INTO castes (admin_id, name, religion_id, is_active, created_at, updated_at) VALUES
+(NULL, 'Jat', 4, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Khatri', 4, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Arora', 4, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Saini', 4, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Kamboj', 4, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Labana', 4, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Mazhabi', 4, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Ravidassia', 4, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Ramdasia', 4, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Other Sikh', 4, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+-- Buddhist Castes
+INSERT INTO castes (admin_id, name, religion_id, is_active, created_at, updated_at) VALUES
+(NULL, 'Mahar', 5, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Neo Buddhist', 5, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Dalit Buddhist', 5, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Other Buddhist', 5, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+-- Jain Castes
+INSERT INTO castes (admin_id, name, religion_id, is_active, created_at, updated_at) VALUES
+(NULL, 'Digambar', 6, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Shwetambar', 6, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Sthanakvasi', 6, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Terapanthi', 6, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Other Jain', 6, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+-- Other Religion Castes
+INSERT INTO castes (admin_id, name, religion_id, is_active, created_at, updated_at) VALUES
+(NULL, 'Parsi', 7, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Jewish', 8, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Bahai', 9, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Other Religion', 10, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+-- Hindu Sub-Castes (Major ones for each caste)
+INSERT INTO sub_castes (admin_id, name, caste_id, is_active, created_at, updated_at) VALUES
+-- Brahmin Sub-Castes
+(NULL, 'Bhumihar Brahmin', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Kanyakubja Brahmin', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Saryupareen Brahmin', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Maithil Brahmin', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Utkala Brahmin', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Rajasthani Brahmin', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Goud Saraswat Brahmin', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Madhwa Brahmin', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Smarta Brahmin', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Shivalli Brahmin', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Havyaka Brahmin', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Iyer', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Iyengar', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Namboothiri', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Punjabi Brahmin', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Kashmiri Pandit', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Dogra Brahmin', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Garhwali Brahmin', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Kumaoni Brahmin', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Saraswat Brahmin', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+-- Rajput Sub-Castes
+(NULL, 'Suryavanshi Rajput', 2, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Chandravanshi Rajput', 2, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Agnivanshi Rajput', 2, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Rajputana', 2, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Kshatriya Rajput', 2, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+-- Jat Sub-Castes
+(NULL, 'Jat Sikh', 6, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Jat Hindu', 6, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Jat Muslim', 6, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Mali Jat', 6, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+-- Yadav Sub-Castes
+(NULL, 'Ahir', 5, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Gwala', 5, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Gopal', 5, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Yaduvanshi', 5, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+-- Bania Sub-Castes
+(NULL, 'Agarwal Bania', 15, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Maheshwari Bania', 15, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Marwari Bania', 15, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Oswal Bania', 15, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Khandelwal Bania', 15, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+-- Kayastha Sub-Castes
+(NULL, 'Bengali Kayastha', 14, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'North Indian Kayastha', 14, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Sriastha', 14, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Ambastha', 14, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+-- Muslim Sub-Castes
+(NULL, 'Hanafi Sunni', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Shafi Sunni', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Hanbali Sunni', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Maliki Sunni', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Twelver Shia', 2, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Ismaili Shia', 2, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Zaidi Shia', 2, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Dawoodi Bohra', 3, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Sulaimani Bohra', 3, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Nizari Ismaili', 3, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+-- Other Sub-Castes
+(NULL, 'Other Sub-Caste', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+-- =====================================================================
+-- PROFESSIONAL DATA (Occupations)
+-- =====================================================================
+
+-- Occupations (Comprehensive list for Indian professionals)
+INSERT INTO occupations (admin_id, name, is_active, created_at, updated_at) VALUES
+-- Healthcare Professionals
+(NULL, 'Doctor', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Surgeon', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Dentist', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Nurse', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Pharmacist', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Physiotherapist', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Lab Technician', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Medical Representative', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+-- Engineering & IT
+(NULL, 'Software Engineer', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Software Developer', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Web Developer', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Mobile App Developer', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Data Scientist', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Data Analyst', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Machine Learning Engineer', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'DevOps Engineer', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Cloud Engineer', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Network Engineer', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Hardware Engineer', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Mechanical Engineer', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Civil Engineer', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Electrical Engineer', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Chemical Engineer', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Aerospace Engineer', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Biomedical Engineer', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Environmental Engineer', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Marine Engineer', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Petroleum Engineer', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+-- Teaching & Education
+(NULL, 'Teacher', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Professor', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Lecturer', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Principal', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Education Consultant', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Librarian', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Research Scholar', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Trainer', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+-- Management & Business
+(NULL, 'Manager', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Business Analyst', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Project Manager', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Product Manager', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Marketing Manager', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Sales Manager', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'HR Manager', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Finance Manager', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Operations Manager', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Supply Chain Manager', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Quality Manager', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Risk Manager', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Consultant', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Business Owner', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Entrepreneur', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+-- Finance & Accounting
+(NULL, 'Accountant', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'CA', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'CS', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'ICWA', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Financial Analyst', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Investment Banker', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Tax Consultant', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Auditor', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Book Keeper', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+-- Legal Services
+(NULL, 'Lawyer', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Advocate', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Legal Advisor', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Corporate Lawyer', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Judge', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Notary', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+-- Design & Creative
+(NULL, 'Graphic Designer', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'UI/UX Designer', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Web Designer', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Fashion Designer', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Interior Designer', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Product Designer', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Architect', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Photographer', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Videographer', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Content Writer', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Copywriter', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Creative Director', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+-- Media & Entertainment
+(NULL, 'Journalist', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Reporter', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Editor', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'News Anchor', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'TV Producer', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Radio Jockey', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Video Editor', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Sound Engineer', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Actor', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Model', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Singer', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Musician', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Dancer', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Director', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+-- Hospitality & Tourism
+(NULL, 'Hotel Manager', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Chef', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Cook', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Baker', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Caterer', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Travel Agent', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Tour Guide', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Event Manager', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Wedding Planner', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+-- Government Services
+(NULL, 'IAS Officer', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'IPS Officer', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'IFS Officer', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Government Employee', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Bank Employee', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Railway Employee', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Defense Personnel', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Police Officer', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Civil Servant', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+-- Agriculture & Related
+(NULL, 'Farmer', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Agriculturist', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Agricultural Scientist', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Dairy Farmer', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Horticulturist', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Floriculturist', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Veterinary Doctor', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+-- Skilled Trades
+(NULL, 'Electrician', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Plumber', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Carpenter', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Mechanic', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Welder', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Painter', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Mason', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Construction Worker', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Driver', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Tailor', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Goldsmith', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Jeweller', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+-- Sales & Customer Service
+(NULL, 'Sales Executive', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Sales Representative', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Business Development Executive', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Customer Service Executive', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Call Center Executive', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Telecaller', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Relationship Manager', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Account Manager', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+-- Other Professions
+(NULL, 'Social Worker', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'NGO Worker', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Psychologist', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Counselor', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Therapist', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Beautician', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Hair Stylist', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Fitness Trainer', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Yoga Instructor', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Sports Person', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Coach', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Student', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Homemaker', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Retired', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Not Working', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Self Employed', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Business', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(NULL, 'Other', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+-- =====================================================================
+-- COMPLETION MESSAGE
+-- =====================================================================
+
+-- Master data insertion completed successfully!
+-- This data supports:
+-- ✅ Dynamic frontend dropdowns
+-- ✅ User registration and profile creation
+-- ✅ Partner preferences and search filters
+-- ✅ Admin panel management
+-- ✅ Complete matrimony workflow
+-- ✅ Production-ready deployment

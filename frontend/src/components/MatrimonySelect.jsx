@@ -44,7 +44,10 @@ const MatrimonySelect = ({
               variant="ghost"
               size="sm"
               className="w-full justify-start text-primary hover:text-primary"
-              onClick={() => setIsModalOpen(true)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsModalOpen(true);
+              }}
             >
               <Plus className="h-4 w-4 mr-2" />
               Add Custom

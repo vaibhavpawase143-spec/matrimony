@@ -10,7 +10,13 @@ const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const { isLoggedIn, userName, logout } = useAuth();
+  const {
+  token,
+  user,
+  logout
+} = useAuth();
+
+const isLoggedIn = !!token;
   const navigate = useNavigate();
   const { language, setLanguage, t } = useLanguage();
 
@@ -149,7 +155,7 @@ const Navbar = () => {
                 transition={{ duration: 0.2 }}
                 title={t.navbar.account}
               >
-                {userName.charAt(0).toUpperCase()}
+                {user?.firstName?.charAt(0).toUpperCase() || 'U'}
               </motion.button>
             </>
           )}

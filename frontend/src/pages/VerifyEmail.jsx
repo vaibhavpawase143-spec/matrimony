@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { useToast } from "@/components/Toast";
 import { useLoading } from "@/hooks/useLoading";
 import { useLanguage } from "@/context/LanguageContext.jsx";
-import { authAPI } from "@/services/api";
+import { apiClient } from "@/services/api";
 
 const VerifyEmail = () => {
   const [searchParams] = useSearchParams();
@@ -25,14 +25,10 @@ const VerifyEmail = () => {
 
     startLoading("Verifying email...");
     
-    // Call backend to verify email
-    fetch(`/api/auth/verify?token=${token}`)
-      .then((response) => {
-        if (response.ok) {
-          return response.json();
-        }
-        throw new Error("Verification failed");
-      })
+    // Call backend to verify email using api.js client
+    apiClient(`/auth/verify?token=${token}`, {
+      method: "POST"
+    })
       .then((data) => {
         setStatus("success");
         success("Email verified successfully! You can now login.");
@@ -45,21 +41,21 @@ const VerifyEmail = () => {
       })
       .catch((err) => {
         setStatus("error");
+        
+        // Use backend error message directly
         const errorMessage = err.message || "Email verification failed";
         
-        // Handle specific error cases
-        if (errorMessage.includes("Invalid token") || errorMessage.includes("expired")) {
-          error("This verification link has expired or is invalid. Please request a new verification email.");
-        } else if (errorMessage.includes("Token not found") || errorMessage.includes("not found")) {
-          error("Verification token not found. Please request a new verification email.");
-        } else if (errorMessage.includes("Email already verified") || errorMessage.includes("already verified")) {
-          error("This email is already verified. You can proceed to login.");
+        // Handle specific error cases using error codes and status from backend
+        if (err.errorCode === 'ERR_TOKEN_EXPIRED' || err.errorCode === 'ERR_INVALID_TOKEN' || err.status === 400) {
+          error(errorMessage);
+        } else if (err.errorCode === 'ERR_EMAIL_ALREADY_VERIFIED') {
+          error(errorMessage);
           setTimeout(() => {
             navigate("/login");
           }, 2000);
-        } else if (errorMessage.includes("User not found") || errorMessage.includes("user not found")) {
-          error("User account not found. Please register for a new account.");
-        } else if (errorMessage.includes("Server error") || errorMessage.includes("Internal server error")) {
+        } else if (err.status === 404) {
+          error(errorMessage);
+        } else if (err.status === 500) {
           error("Server is experiencing issues. Please try again later.");
         } else {
           error(errorMessage);

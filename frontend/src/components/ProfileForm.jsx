@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { Upload, X, Save } from "lucide-react";
-import MatrimonySelect from "./MatrimonySelect";
-import { useMatrimonyOptions } from "@/hooks/useMatrimonyOptions";
+import { masterDataAPI } from "@/services/api";
 import { useLoading } from "@/hooks/useLoading";
 
 /**
@@ -22,8 +21,30 @@ const ProfileForm = ({
   isLoading = false,
   showPhotoUpload = true 
 }) => {
-  const { getOptions, addCustomOption } = useMatrimonyOptions();
   const { startLoading, stopLoading } = useLoading();
+  
+  const [masterOptions, setMasterOptions] = useState({
+    religions: [],
+    states: [],
+    cities: [],
+    educationLevels: [],
+    occupations: [],
+    heights: [],
+    weights: [],
+    maritalStatuses: [],
+    castes: [],
+    subCastes: [],
+    motherTongues: [],
+    bodyTypes: [],
+    complexions: [],
+    countries: [],
+    diets: [],
+    smoking: [],
+    drinking: [],
+    incomes: []
+  });
+  
+  const [masterDataLoaded, setMasterDataLoaded] = useState(false);
   const [formData, setFormData] = useState({
     // Personal Details
     fullName: "",
@@ -34,34 +55,34 @@ const ProfileForm = ({
     gender: "",
     dateOfBirth: "",
     age: "",
-    maritalStatus: "",
-    religion: "",
-    caste: "",
-    subCaste: "",
-    motherTongue: "",
+    maritalStatusId: null,
+    religionId: null,
+    casteId: null,
+    subCasteId: null,
+    motherTongueId: null,
     
     // Physical Details
-    height: "",
-    weight: "",
-    complexion: "",
-    bodyType: "",
+    heightId: null,
+    weightId: null,
+    complexionId: null,
+    bodyTypeId: null,
     
     // Education & Career
-    highestEducation: "",
-    profession: "",
-    annualIncome: "",
+    educationLevelId: null,
+    occupationId: null,
+    incomeId: null,
     companyName: "",
     
     // Location
-    country: "India",
-    state: "",
-    city: "",
+    countryId: null,
+    stateId: null,
+    cityId: null,
     address: "",
     
     // Lifestyle
-    diet: "",
-    smoking: "",
-    drinking: "",
+    dietId: null,
+    smokingId: null,
+    drinkingId: null,
     
     // Family Details
     fatherName: "",
@@ -85,13 +106,158 @@ const ProfileForm = ({
     ...initialData
   });
 
+  // Load master data options from backend
+  useEffect(() => {
+    const loadMasterData = async () => {
+      try {
+        console.log('🔍 Loading master data from APIs in ProfileForm...');
+        
+        const [
+          religions,
+          states,
+          educationLevels,
+          occupations,
+          maritalStatuses,
+          heights,
+          weights,
+          motherTongues,
+          bodyTypes,
+          complexions,
+          countries,
+          diets,
+          smoking,
+          drinking,
+          incomes
+        ] = await Promise.all([
+          masterDataAPI.getReligions(),
+          masterDataAPI.getStates(),
+          masterDataAPI.getEducationLevels(),
+          masterDataAPI.getOccupations(),
+          masterDataAPI.getMaritalStatuses(),
+          masterDataAPI.getHeights(),
+          masterDataAPI.getWeights(),
+          masterDataAPI.getMotherTongues(),
+          masterDataAPI.getBodyTypes(),
+          masterDataAPI.getComplexions(),
+          masterDataAPI.getCountries(),
+          masterDataAPI.getDiets(),
+          masterDataAPI.getSmoking(),
+          masterDataAPI.getDrinking(),
+          masterDataAPI.getIncomes()
+        ]);
+        
+        console.log('📊 Master data loaded in ProfileForm:', {
+          religions: religions?.length || 0,
+          states: states?.length || 0,
+          educationLevels: educationLevels?.length || 0,
+          occupations: occupations?.length || 0
+        });
+        
+        const safeData = {
+          religions: Array.isArray(religions) ? religions : [],
+          states: Array.isArray(states) ? states : [],
+          cities: [],
+          educationLevels: Array.isArray(educationLevels) ? educationLevels : [],
+          occupations: Array.isArray(occupations) ? occupations : [],
+          maritalStatuses: Array.isArray(maritalStatuses) ? maritalStatuses : [],
+          heights: Array.isArray(heights) ? heights : [],
+          weights: Array.isArray(weights) ? weights : [],
+          castes: [],
+          subCastes: [],
+          motherTongues: Array.isArray(motherTongues) ? motherTongues : [],
+          bodyTypes: Array.isArray(bodyTypes) ? bodyTypes : [],
+          complexions: Array.isArray(complexions) ? complexions : [],
+          countries: Array.isArray(countries) ? countries : [],
+          diets: Array.isArray(diets) ? diets : [],
+          smoking: Array.isArray(smoking) ? smoking : [],
+          drinking: Array.isArray(drinking) ? drinking : [],
+          incomes: Array.isArray(incomes) ? incomes : []
+        };
+        
+        setMasterOptions(safeData);
+        setMasterDataLoaded(true);
+        console.log('✅ Master data set successfully in ProfileForm');
+      } catch (error) {
+        console.error('❌ Failed to load master data in ProfileForm:', error);
+        setMasterDataLoaded(true); // Set to true even on error to allow form to render
+      }
+    };
+
+    loadMasterData();
+  }, []);
+
+  // Load castes when religion changes
+  useEffect(() => {
+    const loadCastes = async () => {
+      if (formData.religionId) {
+        try {
+          console.log('🔍 Loading castes for religion in ProfileForm:', formData.religionId);
+          const castes = await masterDataAPI.getCastes(formData.religionId);
+          const safeCastes = Array.isArray(castes) ? castes : [];
+          setMasterOptions(prev => ({ ...prev, castes: safeCastes }));
+        } catch (error) {
+          console.error('❌ Failed to load castes in ProfileForm:', error);
+          setMasterOptions(prev => ({ ...prev, castes: [] }));
+        }
+      } else {
+        setMasterOptions(prev => ({ ...prev, castes: [] }));
+      }
+    };
+    
+    loadCastes();
+  }, [formData.religionId]);
+
+  // Load sub castes when caste changes
+  useEffect(() => {
+    const loadSubCastes = async () => {
+      if (formData.casteId) {
+        try {
+          console.log('🔍 Loading sub castes for caste in ProfileForm:', formData.casteId);
+          const subCastes = await masterDataAPI.getSubCastes(formData.casteId);
+          const safeSubCastes = Array.isArray(subCastes) ? subCastes : [];
+          setMasterOptions(prev => ({ ...prev, subCastes: safeSubCastes }));
+        } catch (error) {
+          console.error('❌ Failed to load sub castes in ProfileForm:', error);
+          setMasterOptions(prev => ({ ...prev, subCastes: [] }));
+        }
+      } else {
+        setMasterOptions(prev => ({ ...prev, subCastes: [] }));
+      }
+    };
+    
+    loadSubCastes();
+  }, [formData.casteId]);
+
+  // Load cities when state changes
+  useEffect(() => {
+    const loadCities = async () => {
+      if (formData.stateId) {
+        try {
+          console.log('🔍 Loading cities for state in ProfileForm:', formData.stateId);
+          const cities = await masterDataAPI.getCities(formData.stateId);
+          setMasterOptions(prev => ({
+            ...prev,
+            cities: Array.isArray(cities) ? cities : []
+          }));
+        } catch (error) {
+          console.error('❌ Failed to load cities in ProfileForm:', error);
+          setMasterOptions(prev => ({ ...prev, cities: [] }));
+        }
+      } else {
+        setMasterOptions(prev => ({ ...prev, cities: [] }));
+      }
+    };
+    
+    loadCities();
+  }, [formData.stateId]);
+
   // Calculate age from dateOfBirth on mount or when initialData changes
   useEffect(() => {
-    if (initialData.dateOfBirth && !initialData.age) {
+    if (masterDataLoaded && initialData.dateOfBirth && !initialData.age) {
       const calculatedAge = calculateAge(initialData.dateOfBirth);
       setFormData(prev => ({ ...prev, age: calculatedAge }));
     }
-  }, [initialData.dateOfBirth, initialData.age]);
+  }, [initialData.dateOfBirth, initialData.age, masterDataLoaded]);
 
   // Auto-calculate age from DOB
   const calculateAge = (dob) => {
@@ -115,7 +281,20 @@ const ProfileForm = ({
         age: calculatedAge
       }));
     } else {
-      setFormData(prev => ({ ...prev, [field]: value }));
+      // Convert ID fields to numbers for backend compatibility
+      const idFields = [
+        'religionId', 'casteId', 'subCasteId', 'motherTongueId',
+        'maritalStatusId', 'educationLevelId', 'occupationId',
+        'heightId', 'weightId', 'stateId', 'cityId',
+        'bodyTypeId', 'complexionId', 'countryId', 'dietId',
+        'smokingId', 'drinkingId', 'incomeId'
+      ];
+      
+      const finalValue = idFields.includes(field) && value !== '' 
+        ? (typeof value === 'string' ? parseInt(value, 10) : value)
+        : value;
+      
+      setFormData(prev => ({ ...prev, [field]: finalValue }));
     }
   };
 
@@ -157,19 +336,19 @@ const ProfileForm = ({
 
   const validateForm = () => {
     const requiredFields = [
-      'fullName', 'gender', 'dateOfBirth', 'maritalStatus', 
-      'religion', 'motherTongue', 'highestEducation', 'profession', 'city'
+      'fullName', 'gender', 'dateOfBirth', 'maritalStatusId', 
+      'religionId', 'motherTongueId', 'educationLevelId', 'occupationId', 'cityId'
     ];
     
     for (let field of requiredFields) {
       if (!formData[field] || formData[field].toString().trim() === "") {
-        const fieldLabel = field.replace(/([A-Z])/g, ' $1').trim();
+        const fieldLabel = field.replace(/([A-Z])/g, ' $1').replace('Id', '').trim();
         onError && onError(`${fieldLabel} is required`);
         return false;
       }
     }
 
-    if (!formData.email.includes("@")) {
+    if (formData.email && !formData.email.includes("@")) {
       onError && onError("Please enter a valid email address");
       return false;
     }
@@ -204,32 +383,80 @@ const ProfileForm = ({
     const { label, placeholder, type = "text", key, options, readOnly = false } = field;
     
     if (type === "select") {
-      let fieldOptions = options;
+      let fieldOptions = options || [];
       
-      // Handle city dropdown based on selected state
-      if (key === 'city') {
-        fieldOptions = getOptions(key, formData.state);
-      } else {
-        fieldOptions = options || getOptions(key);
+      // Dynamic master data
+      if (key === 'stateId') {
+        fieldOptions = masterOptions.states;
+      } else if (key === 'cityId') {
+        fieldOptions = masterOptions.cities;
+      } else if (key === 'religionId') {
+        fieldOptions = masterOptions.religions;
+      } else if (key === 'casteId') {
+        fieldOptions = masterOptions.castes;
+      } else if (key === 'subCasteId') {
+        fieldOptions = masterOptions.subCastes;
+      } else if (key === 'motherTongueId') {
+        fieldOptions = masterOptions.motherTongues;
+      } else if (key === 'educationLevelId') {
+        fieldOptions = masterOptions.educationLevels;
+      } else if (key === 'occupationId') {
+        fieldOptions = masterOptions.occupations;
+      } else if (key === 'maritalStatusId') {
+        fieldOptions = masterOptions.maritalStatuses;
+      } else if (key === 'heightId') {
+        fieldOptions = masterOptions.heights;
+      } else if (key === 'weightId') {
+        fieldOptions = masterOptions.weights;
+      } else if (key === 'bodyTypeId') {
+        fieldOptions = masterOptions.bodyTypes;
+      } else if (key === 'complexionId') {
+        fieldOptions = masterOptions.complexions;
+      } else if (key === 'countryId') {
+        fieldOptions = masterOptions.countries;
+      } else if (key === 'dietId') {
+        fieldOptions = masterOptions.diets;
+      } else if (key === 'smokingId') {
+        fieldOptions = masterOptions.smoking;
+      } else if (key === 'drinkingId') {
+        fieldOptions = masterOptions.drinking;
+      } else if (key === 'incomeId') {
+        fieldOptions = masterOptions.incomes;
       }
       
       return (
         <div key={key}>
           <label className="text-xs font-medium text-foreground mb-1 block">{label}</label>
-          <MatrimonySelect
-            value={formData[key]}
-            onChange={(value) => {
+          <select
+            value={formData[key]?.toString() || ''}
+            onChange={(e) => {
+              const value = e.target.value;
               handleInputChange(key, value);
-              // Reset city when state changes
-              if (key === 'state') {
-                handleInputChange('city', '');
+              // Reset dependent fields
+              if (key === 'religionId') {
+                handleInputChange('casteId', '');
+                handleInputChange('subCasteId', '');
+              }
+              if (key === 'casteId') {
+                handleInputChange('subCasteId', '');
+              }
+              if (key === 'stateId') {
+                handleInputChange('cityId', '');
               }
             }}
-            options={fieldOptions}
-            placeholder={`Select ${label.toLowerCase()}`}
-            fieldType={key}
-            onAddCustom={addCustomOption}
-          />
+            className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+          >
+            <option value="">Select {label.toLowerCase()}</option>
+            {fieldOptions?.map((opt) => {
+              const optionValue = (opt.id || opt.value || opt).toString();
+              const optionLabel = opt.name || opt.value || opt.range || opt;
+              return (
+                <option key={optionValue} value={optionValue}>
+                  {optionLabel}
+                </option>
+              );
+            })}
+          </select>
         </div>
       );
     }
@@ -239,7 +466,7 @@ const ProfileForm = ({
         <label className="text-xs font-medium text-foreground mb-1 block">{label}</label>
         <input
           type={type}
-          value={formData[key]}
+          value={formData[key] || ""}
           onChange={(e) => handleInputChange(key, e.target.value)}
           placeholder={placeholder}
           readOnly={readOnly}
@@ -326,11 +553,19 @@ const ProfileForm = ({
           {renderField({ label: "Gender", key: "gender", type: "select", options: ["Male", "Female", "Other"] })}
           {renderField({ label: "Date of Birth", type: "date", key: "dateOfBirth" })}
           {renderField({ label: "Age", type: "number", key: "age", placeholder: "Auto-calculated", readOnly: true })}
-          {renderField({ label: "Marital Status", key: "maritalStatus", type: "select" })}
-          {renderField({ label: "Religion", key: "religion", type: "select" })}
-          {renderField({ label: "Caste", key: "caste", type: "select" })}
-          {renderField({ label: "Sub-caste", key: "subCaste", type: "select" })}
-          {renderField({ label: "Mother Tongue", key: "motherTongue", type: "select" })}
+          {renderField({ 
+            label: "Marital Status", 
+            key: "maritalStatusId", 
+            type: "select" 
+          })}
+          {renderField({ 
+            label: "Religion", 
+            key: "religionId", 
+            type: "select" 
+          })}
+          {renderField({ label: "Caste", key: "casteId", type: "select" })}
+          {renderField({ label: "Sub-caste", key: "subCasteId", type: "select" })}
+          {renderField({ label: "Mother Tongue", key: "motherTongueId", type: "select" })}
         </div>
       </div>
 
@@ -338,10 +573,18 @@ const ProfileForm = ({
       <div>
         <h3 className="text-sm font-semibold text-foreground mb-3 pb-2 border-b border-border">Physical Details</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {renderField({ label: "Height", key: "height", type: "select" })}
-          {renderField({ label: "Weight", key: "weight", type: "select" })}
-          {renderField({ label: "Complexion", key: "complexion", type: "select" })}
-          {renderField({ label: "Body Type", key: "bodyType", type: "select" })}
+          {renderField({ label: "Height", key: "heightId", type: "select" })}
+          {renderField({ label: "Weight", key: "weightId", type: "select" })}
+          {renderField({ 
+            label: "Complexion", 
+            key: "complexionId", 
+            type: "select"
+          })}
+          {renderField({ 
+            label: "Body Type", 
+            key: "bodyTypeId", 
+            type: "select"
+          })}
         </div>
       </div>
 
@@ -349,9 +592,13 @@ const ProfileForm = ({
       <div>
         <h3 className="text-sm font-semibold text-foreground mb-3 pb-2 border-b border-border">Education & Career</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {renderField({ label: "Highest Education", key: "highestEducation", type: "select" })}
-          {renderField({ label: "Profession/Occupation", key: "profession", type: "select" })}
-          {renderField({ label: "Annual Income", key: "annualIncome", type: "select" })}
+          {renderField({ 
+            label: "Highest Education", 
+            key: "educationLevelId", 
+            type: "select" 
+          })}
+          {renderField({ label: "Profession/Occupation", key: "occupationId", type: "select" })}
+          {renderField({ label: "Annual Income", key: "incomeId", type: "select" })}
           {renderField({ label: "Company Name", placeholder: "Your company", key: "companyName" })}
         </div>
       </div>
@@ -360,9 +607,13 @@ const ProfileForm = ({
       <div>
         <h3 className="text-sm font-semibold text-foreground mb-3 pb-2 border-b border-border">Location Details</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {renderField({ label: "Country", key: "country", type: "select", options: ["India", "USA", "UK", "Canada", "Australia"] })}
-          {renderField({ label: "State/Province", key: "state", type: "select" })}
-          {renderField({ label: "City", key: "city", type: "select" })}
+          {renderField({ label: "Country", key: "countryId", type: "select" })}
+          {renderField({
+  label: "State/Province",
+  key: "stateId",
+  type: "select"
+})}
+          {renderField({ label: "City", key: "cityId", type: "select" })}
           {renderField({ label: "Address", placeholder: "Your address", key: "address" })}
         </div>
       </div>
@@ -371,9 +622,21 @@ const ProfileForm = ({
       <div>
         <h3 className="text-sm font-semibold text-foreground mb-3 pb-2 border-b border-border">Lifestyle</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {renderField({ label: "Diet", key: "diet", type: "select" })}
-          {renderField({ label: "Smoking", key: "smoking", type: "select" })}
-          {renderField({ label: "Drinking", key: "drinking", type: "select" })}
+          {renderField({ 
+            label: "Diet", 
+            key: "dietId", 
+            type: "select"
+          })}
+          {renderField({ 
+            label: "Smoking", 
+            key: "smokingId", 
+            type: "select"
+          })}
+          {renderField({ 
+            label: "Drinking", 
+            key: "drinkingId", 
+            type: "select"
+          })}
         </div>
       </div>
 
@@ -385,7 +648,7 @@ const ProfileForm = ({
           {renderField({ label: "Father's Occupation", placeholder: "Your father's occupation", key: "fatherOccupation" })}
           {renderField({ label: "Mother's Name", placeholder: "Your mother's name", key: "motherName" })}
           {renderField({ label: "Mother's Occupation", placeholder: "Your mother's occupation", key: "motherOccupation" })}
-          {renderField({ label: "Number of Siblings", key: "siblingsCount", type: "select" })}
+          {renderField({ label: "Number of Siblings", key: "siblingsCount", type: "number", placeholder: "0" })}
         </div>
       </div>
 
@@ -416,7 +679,7 @@ const ProfileForm = ({
           <label className="text-xs font-medium text-foreground mb-1 block">About Me</label>
           <textarea 
             rows={4} 
-            value={formData.aboutMe}
+            value={formData.aboutMe || ""}
             onChange={(e) => handleInputChange("aboutMe", e.target.value)}
             placeholder="Tell us about yourself, your interests, personality and what you are looking for..." 
             className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none" 

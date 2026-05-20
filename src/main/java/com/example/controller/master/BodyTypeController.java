@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/admins/{adminId}/body-types")
+@RequestMapping("/api/body-types")
 @RequiredArgsConstructor
 public class BodyTypeController {
 
