@@ -113,8 +113,11 @@ export const authAPI = {
         token: token
       };
     } catch (error) {
-      errorHandler.handle(error, 'Login API');
-      throw error;
+      console.error('Login API Error:', error);
+
+      throw new Error(
+        error?.message || 'Something went wrong'
+      );
     }
   },
 
@@ -134,8 +137,11 @@ export const authAPI = {
         token: null // Explicitly no token from registration
       };
     } catch (error) {
-      errorHandler.handle(error, 'Registration API');
-      throw error;
+      console.error('Login API Error:', error);
+
+      throw new Error(
+        error?.message || 'Something went wrong'
+      );
     }
   },
 
@@ -175,8 +181,11 @@ export const profileAPI = {
       const endpoint = userId ? `/profiles/${userId}` : '/profiles/me';
       return await apiClient(endpoint);
     } catch (error) {
-      errorHandler.handle(error, 'Get Profile API');
-      throw error;
+     console.error('Login API Error:', error);
+
+     throw new Error(
+       error?.message || 'Something went wrong'
+     );
     }
   },
 
@@ -188,8 +197,11 @@ export const profileAPI = {
         body: JSON.stringify(data),
       });
     } catch (error) {
-      errorHandler.handle(error, 'Update Profile API');
-      throw error;
+      console.error('Login API Error:', error);
+
+      throw new Error(
+        error?.message || 'Something went wrong'
+      );
     }
   },
 
@@ -202,8 +214,11 @@ export const profileAPI = {
       });
       return await apiClient(`/profiles?${params}`);
     } catch (error) {
-      errorHandler.handle(error, 'Get Profiles API');
-      throw error;
+      console.error('Login API Error:', error);
+
+      throw new Error(
+        error?.message || 'Something went wrong'
+      );
     }
   }
 };
@@ -214,8 +229,11 @@ export const searchAPI = {
       const params = new URLSearchParams(filters);
       return await apiClient(`/profiles/search?${params}`);
     } catch (error) {
-      errorHandler.handle(error, 'Search Profiles API');
-      throw error;
+      console.error('Login API Error:', error);
+
+      throw new Error(
+        error?.message || 'Something went wrong'
+      );
     }
   }
 };
@@ -261,8 +279,30 @@ export const masterDataAPI = {
       return result;
     } catch (error) {
       console.error('❌ Get Cities API error:', error);
-      errorHandler.handle(error, 'Get Cities API');
+      console.error('Login API Error:', error);
+
+      throw new Error(
+        error?.message || 'Something went wrong'
+      );
+    }
+  },
+  getGenders: async () => {
+    try {
+
+      console.log('🔍 Fetching genders...');
+
+      const result = await apiClient('/genders');
+
+      console.log('✅ MASTER API RESPONSE - Genders:', result);
+
+      return Array.isArray(result) ? result : [];
+
+    } catch (error) {
+
+      console.error('❌ Get Genders API error:', error);
+
       return [];
+
     }
   },
 
@@ -276,8 +316,11 @@ export const masterDataAPI = {
       return result;
     } catch (error) {
       console.error('❌ Get Education Levels API error:', error);
-      errorHandler.handle(error, 'Get Education Levels API');
-      return [];
+      console.error('Login API Error:', error);
+
+      throw new Error(
+        error?.message || 'Something went wrong'
+      );
     }
   },
 
@@ -291,8 +334,11 @@ export const masterDataAPI = {
       return result;
     } catch (error) {
       console.error('❌ Get Occupations API error:', error);
-      errorHandler.handle(error, 'Get Occupations API');
-      return [];
+      console.error('Login API Error:', error);
+
+      throw new Error(
+        error?.message || 'Something went wrong'
+      );
     }
   },
 
@@ -306,8 +352,49 @@ export const masterDataAPI = {
       return result;
     } catch (error) {
       console.error('❌ Get Marital Statuses API error:', error);
-      errorHandler.handle(error, 'Get Marital Statuses API');
+     console.error('Login API Error:', error);
+
+     throw new Error(
+       error?.message || 'Something went wrong'
+     );
+    }
+  },
+
+  getComplexions: async () => {
+    try {
+
+      const result =
+        await apiClient('/complexions');
+
+      return Array.isArray(result)
+        ? result
+        : [];
+
+    } catch (error) {
+
+      console.error(error);
+
       return [];
+
+    }
+  },
+
+  getBodyTypes: async () => {
+    try {
+
+      const result =
+        await apiClient('/body-types');
+
+      return Array.isArray(result)
+        ? result
+        : [];
+
+    } catch (error) {
+
+      console.error(error);
+
+      return [];
+
     }
   },
 
@@ -400,8 +487,11 @@ export const masterDataAPI = {
       return Array.isArray(result) ? result : [];
     } catch (error) {
       console.error('❌ Get Heights API error:', error);
-      errorHandler.handle(error, 'Get Heights API');
-      return [];
+      console.error('Login API Error:', error);
+
+      throw new Error(
+        error?.message || 'Something went wrong'
+      );
     }
   },
 
@@ -415,8 +505,11 @@ export const masterDataAPI = {
       return Array.isArray(result) ? result : [];
     } catch (error) {
       console.error('❌ Get Weights API error:', error);
-      errorHandler.handle(error, 'Get Weights API');
-      return [];
+      console.error('Login API Error:', error);
+
+      throw new Error(
+        error?.message || 'Something went wrong'
+      );
     }
   },
 
@@ -430,8 +523,11 @@ export const masterDataAPI = {
       return result;
     } catch (error) {
       console.error('❌ Get Mother Tongues API error:', error);
-      errorHandler.handle(error, 'Get Mother Tongues API');
-      return [];
+      console.error('Login API Error:', error);
+
+      throw new Error(
+        error?.message || 'Something went wrong'
+      );
     }
   }
 };
