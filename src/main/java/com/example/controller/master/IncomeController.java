@@ -1,7 +1,7 @@
 package com.example.controller.master;
 
 import com.example.dto.request.IncomeRequestDTO;
-import com.example.dto.responce.IncomeResponseDTO;
+import com.example.dto.response.IncomeResponseDTO;
 import com.example.model.Admin;
 import com.example.model.Income;
 import com.example.service.IncomeService;

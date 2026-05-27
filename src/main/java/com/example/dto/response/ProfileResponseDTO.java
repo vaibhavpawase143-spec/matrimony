@@ -1,6 +1,7 @@
 package com.example.dto.response;
 
 import lombok.Data;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -8,89 +9,235 @@ import java.time.LocalDateTime;
 public class ProfileResponseDTO {
 
     private Long id;
+
     private String imageUrl;
+
     private Long userId;
+
     private String userName;
+
     private String firstName;
+
     private String lastName;
+
     private String middleName;
+
     private String email;
+
     private String phone;
-    private String gender;
+
     private LocalDate dateOfBirth;
 
+    // =====================================================
+    // RELIGION
+    // =====================================================
+
     private Long religionId;
+
     private String religionName;
 
+    // =====================================================
+    // CASTE
+    // =====================================================
+
     private Long casteId;
+
     private String casteName;
 
+    // =====================================================
+    // SUB CASTE
+    // =====================================================
+
     private Long subCasteId;
+
     private String subCasteName;
 
+    // =====================================================
+    // EDUCATION
+    // =====================================================
+
     private Long educationLevelId;
+
     private String educationLevelName;
 
+    // =====================================================
+    // OCCUPATION
+    // =====================================================
+
     private Long occupationId;
+
     private String occupationName;
 
+    // =====================================================
+    // HEIGHT
+    // =====================================================
+
     private Long heightId;
+
     private String heightValue;
 
+    // =====================================================
+    // WEIGHT
+    // =====================================================
+
     private Long weightId;
+
     private String weightValue;
 
+    // =====================================================
+    // CITY
+    // =====================================================
+
     private Long cityId;
+
     private String cityName;
 
+    // =====================================================
+    // STATE
+    // =====================================================
+
+    private Long stateId;
+
+    private String stateName;
+
+    // =====================================================
+    // COUNTRY
+    // =====================================================
+
+    private Long countryId;
+
+    private String countryName;
+
+    // =====================================================
+    // MOTHER TONGUE
+    // =====================================================
+
     private Long motherTongueId;
+
     private String motherTongueName;
 
+    // =====================================================
+    // MARITAL STATUS
+    // =====================================================
+
     private Long maritalStatusId;
+
     private String maritalStatusName;
 
-    // Physical details
-    private String complexion;
-    private String bodyType;
+    // =====================================================
+    // GENDER
+    // =====================================================
 
-    // Education & Career
-    private String annualIncome;
+    private Long genderId;
+
+    private String genderName;
+
+    // =====================================================
+    // BODY TYPE
+    // =====================================================
+
+    private Long bodyTypeId;
+
+    private String bodyTypeName;
+
+    // =====================================================
+    // COMPLEXION
+    // =====================================================
+
+    private Long complexionId;
+
+    private String complexionName;
+
+    // =====================================================
+    // EXTRA DETAILS
+    // =====================================================
+
+
+
     private String companyName;
 
-    // Location
-    private String country;
-    private String state;
     private String address;
 
-    // Lifestyle
-    private String diet;
-    private String smoking;
-    private String drinking;
+// =====================================================
+// INCOME
+// =====================================================
 
-    // Family details
+    private Long incomeId;
+    private String incomeValue;
+
+// =====================================================
+// DIET
+// =====================================================
+
+    private Long dietId;
+    private String dietValue;
+
+// =====================================================
+// SMOKING
+// =====================================================
+
+    private Long smokingId;
+    private String smokingValue;
+
+// =====================================================
+// DRINKING
+// =====================================================
+
+    private Long drinkingId;
+    private String drinkingValue;
+
+    // =====================================================
+    // FAMILY
+    // =====================================================
+
     private String fatherName;
-    private String fatherOccupation;
-    private String motherName;
-    private String motherOccupation;
-    private String siblingsCount;
 
-    // Partner preferences
-    private String preferredAgeMin;
-    private String preferredAgeMax;
+    private String fatherOccupation;
+
+    private String motherName;
+
+    private String motherOccupation;
+
+    private Integer siblingsCount;
+
+    private Integer preferredAgeMin;
+
+    private Integer preferredAgeMax;
+
     private String preferredLocation;
+
     private String preferredEducation;
+
     private String otherExpectations;
 
-    // About
+    // =====================================================
+    // ABOUT
+    // =====================================================
+
     private String about;
-    private String aboutMe;
+
+    // =====================================================
+    // SYSTEM
+    // =====================================================
 
     private Boolean isActive;
+
     private Integer currentStep;
+
     private Boolean profileCompleted;
 
-    private String message; // For error/status messages
+    private Boolean isPremium;
+
+    private Integer boostScore;
+
+    private String message;
+
+    // =====================================================
+    // AUDIT
+    // =====================================================
 
     private LocalDateTime createdAt;
+    private String aboutMe;
+    private String cityValue;
     private LocalDateTime updatedAt;
 }

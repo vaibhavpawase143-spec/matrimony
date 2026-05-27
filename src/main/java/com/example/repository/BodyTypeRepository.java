@@ -10,16 +10,16 @@ import java.util.Optional;
 @Repository
 public interface BodyTypeRepository extends JpaRepository<BodyType, Long> {
 
-    // 🔍 Find by name
-    Optional<BodyType> findByName(String name);
+    // 🔍 Find by value
+    Optional<BodyType> findByValue(String value);
 
     // 🔥 Case-insensitive (important for real-world data)
-    Optional<BodyType> findByNameIgnoreCase(String name);
+    Optional<BodyType> findByValueIgnoreCase(String value);
 
     // ✅ Duplicate check
-    boolean existsByName(String name);
+    boolean existsByValue(String value);
 
-    boolean existsByNameIgnoreCase(String name);
+    boolean existsByValueIgnoreCase(String value);
 
     // 🔍 Active / Inactive
     List<BodyType> findByIsActiveTrue();
@@ -32,5 +32,5 @@ public interface BodyTypeRepository extends JpaRepository<BodyType, Long> {
     List<BodyType> findByAdminIdAndIsActiveTrue(Long adminId);
 
     // 🔥 Combined filter (best practice)
-    List<BodyType> findByAdminIdAndNameIgnoreCase(Long adminId, String name);
+    List<BodyType> findByAdminIdAndValueIgnoreCase(Long adminId, String value);
 }

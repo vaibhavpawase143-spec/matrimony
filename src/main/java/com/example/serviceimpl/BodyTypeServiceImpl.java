@@ -26,8 +26,19 @@ public class BodyTypeServiceImpl implements BodyTypeService {
 
         // 🔍 Duplicate check
         boolean exists = bodyTypeRepository.findAll().stream()
-                .anyMatch(bt -> bt.getName().equalsIgnoreCase(bodyType.getName())
-                        && bt.getAdmin().getId().equals(adminId));
+                .anyMatch(bt ->
+
+                        bt.getValue().equalsIgnoreCase(bodyType.getValue())
+
+                                &&
+
+                                (
+                                        bt.getAdmin() == null
+                                                ||
+                                                bt.getAdmin().getId().equals(adminId)
+                                )
+
+                );
 
         if (exists) {
             throw new RuntimeException("Body type already exists");
@@ -45,7 +56,14 @@ public class BodyTypeServiceImpl implements BodyTypeService {
         BodyType bt = bodyTypeRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Body type not found"));
 
-        if (!bt.getAdmin().getId().equals(adminId)) {
+        if (
+
+                bt.getAdmin() != null
+                        &&
+
+                        !bt.getAdmin().getId().equals(adminId)
+
+        ) {
             throw new RuntimeException("Unauthorized access");
         }
 
@@ -55,38 +73,28 @@ public class BodyTypeServiceImpl implements BodyTypeService {
     // ✅ Get all
     @Override
     public List<BodyType> getAll(Long adminId) {
-        if (adminId == null) {
-            return bodyTypeRepository.findAll();
-        }
-        return bodyTypeRepository.findAll()
-                .stream()
-                .filter(bt -> bt.getAdmin() != null && bt.getAdmin().getId().equals(adminId))
-                .toList();
+
+        return bodyTypeRepository.findAll();
+
     }
 
     // ✅ Get active
     @Override
     public List<BodyType> getActive(Long adminId) {
-        if (adminId == null) {
-            return bodyTypeRepository.findByIsActiveTrue();
-        }
+
         return bodyTypeRepository.findAll()
                 .stream()
-                .filter(bt -> bt.getAdmin() != null && bt.getAdmin().getId().equals(adminId)
-                        && Boolean.TRUE.equals(bt.getIsActive()))
+                .filter(bt -> Boolean.TRUE.equals(bt.getIsActive()))
                 .toList();
     }
 
     // ✅ Get inactive
     @Override
     public List<BodyType> getInactive(Long adminId) {
-        if (adminId == null) {
-            return bodyTypeRepository.findByIsActiveFalse();
-        }
+
         return bodyTypeRepository.findAll()
                 .stream()
-                .filter(bt -> bt.getAdmin() != null && bt.getAdmin().getId().equals(adminId)
-                        && Boolean.FALSE.equals(bt.getIsActive()))
+                .filter(bt -> Boolean.FALSE.equals(bt.getIsActive()))
                 .toList();
     }
 
@@ -98,15 +106,29 @@ public class BodyTypeServiceImpl implements BodyTypeService {
 
         // 🔍 Duplicate check
         boolean exists = bodyTypeRepository.findAll().stream()
-                .anyMatch(bt -> bt.getName().equalsIgnoreCase(updated.getName())
-                        && bt.getAdmin().getId().equals(adminId)
-                        && !bt.getId().equals(id));
+                .anyMatch(bt ->
+
+                        bt.getValue().equalsIgnoreCase(updated.getValue())
+
+                                &&
+
+                                (
+                                        bt.getAdmin() == null
+                                                ||
+                                                bt.getAdmin().getId().equals(adminId)
+                                )
+
+                                &&
+
+                                !bt.getId().equals(id)
+
+                );
 
         if (exists) {
             throw new RuntimeException("Body type already exists");
         }
 
-        existing.setName(updated.getName());
+        existing.setValue(updated.getValue());
         existing.setIsActive(updated.getIsActive());
 
         return bodyTypeRepository.save(existing);

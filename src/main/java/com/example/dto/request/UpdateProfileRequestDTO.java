@@ -2,74 +2,138 @@ package com.example.dto.request;
 
 import jakarta.validation.constraints.Size;
 import lombok.Data;
+
 import java.time.LocalDate;
 
 @Data
 public class UpdateProfileRequestDTO {
 
-    private Long userId;
+    // =====================================================
+    // BASIC DETAILS
+    // =====================================================
 
-    // Basic fields
     private String firstName;
+
     private String lastName;
+
     private String middleName;
-    private String gender;
+
     private LocalDate dateOfBirth;
+
     private String email;
+
     private String phone;
 
-    // About
-    @Size(max = 1000, message = "About cannot exceed 1000 characters")
-    private String about;
-    private String aboutMe;
-
-    // Profile photo
     private String imageUrl;
 
-    // Religion & Caste
+    // =====================================================
+    // MASTER TABLE IDS
+    // =====================================================
+
+    // Religion
     private Long religionId;
+
+    // Caste
     private Long casteId;
+
+    // Sub Caste
     private Long subCasteId;
+
+    // Mother Tongue
     private Long motherTongueId;
 
-    // Personal
+    // Marital Status
     private Long maritalStatusId;
+
+    // Gender
+    private Long genderId;
+
+    // Education
+    private Long educationLevelId;
+
+    // Occupation
+    private Long occupationId;
+
+    // Height
     private Long heightId;
+
+    // Weight
     private Long weightId;
 
-    // Physical details
-    private String complexion;
-    private String bodyType;
+    // Body Type
+    private Long bodyTypeId;
 
-    // Education & Career
-    private Long educationLevelId;
-    private Long occupationId;
-    private String annualIncome;
+    // Complexion
+    private Long complexionId;
+
+    // Country
+    private Long countryId;
+
+    // State
+    private Long stateId;
+
+    // City
+    private Long cityId;
+
+    // =====================================================
+    // NEW MASTER TABLE IDS
+    // =====================================================
+
+    // Income
+    private Long incomeId;
+
+    // Diet
+    private Long dietId;
+
+    // Smoking
+    private Long smokingId;
+
+    // Drinking
+    private Long drinkingId;
+
+    // =====================================================
+    // ABOUT
+    // =====================================================
+
+    @Size(
+            max = 1000,
+            message = "About cannot exceed 1000 characters"
+    )
+    private String about;
+
+    private String aboutMe;
+
+    // =====================================================
+    // EDUCATION & CAREER
+    // =====================================================
+
     private String companyName;
 
-    // Location
-    private String country;
-    private String state;
-    private Long cityId;
-    private String city;
+    // =====================================================
+    // LOCATION
+    // =====================================================
+
     private String address;
 
-    // Lifestyle
-    private String diet;
-    private String smoking;
-    private String drinking;
+    // =====================================================
+    // FAMILY DETAILS
+    // =====================================================
 
-    // Family details
     private String fatherName;
-    private String fatherOccupation;
-    private String motherName;
-    private String motherOccupation;
-    private String siblingsCount;
 
-    // Partner preferences
-    private String preferredAgeMin;
-    private String preferredAgeMax;
+    private String fatherOccupation;
+
+    private String motherName;
+
+    private String motherOccupation;
+
+    private Integer siblingsCount;
+    private Integer preferredAgeMin;
+    private Integer preferredAgeMax;
+
     private String preferredLocation;
+
     private String preferredEducation;
+
     private String otherExpectations;
 }

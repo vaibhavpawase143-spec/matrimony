@@ -27,6 +27,7 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // ================= BASIC =================
     private String firstName;
     private String middleName;
     private String lastName;
@@ -40,22 +41,42 @@ public class User {
     @Column(nullable = false)
     private String password;
 
+    // ================= STATUS =================
     private Boolean isActive = true;
+
     private Boolean emailVerified = false;
+
+    // IMPORTANT FIX
     private Boolean phoneVerified = false;
 
     private LocalDateTime emailVerifiedAt;
     private LocalDateTime phoneVerifiedAt;
 
+    // ================= OTP =================
+    private String otp;
+
+    private LocalDateTime otpExpiry;
+
     // ================= AUDIT =================
     private Boolean isDeleted = false;
+
     private Long deletedBy;
+
     private LocalDateTime deletedAt;
+
     private Long updatedBy;
 
+    // ================= USER ACTIVITY =================
     private Boolean isOnline = false;
+
     private LocalDateTime lastSeen;
+
     private LocalDateTime lastLogin;
+
+    // ================= SECURITY =================
+    private Boolean isBlocked = false;
+
+    private Integer reportCount = 0;
 
     // ================= ROLE =================
     @ManyToMany(fetch = FetchType.LAZY)
@@ -77,64 +98,45 @@ public class User {
 
     // ================= TIMESTAMP =================
     private LocalDateTime createdAt;
+
     private LocalDateTime updatedAt;
-
-    private Boolean isBlocked = false;
-    private Integer reportCount = 0;
-
-    // Stripe customer ID for payment processing
-    private String stripeCustomerId;
 
     public User() {}
 
     // ================= LIFECYCLE =================
     @PrePersist
     protected void onCreate() {
+
         createdAt = LocalDateTime.now();
+
         updatedAt = LocalDateTime.now();
+
     }
 
     @PreUpdate
     protected void onUpdate() {
+
         updatedAt = LocalDateTime.now();
+
     }
 
     // ================= CUSTOM METHODS =================
     public String getFullName() {
-        return (firstName != null ? firstName : "") + " " +
-                (middleName != null ? middleName + " " : "") +
-                (lastName != null ? lastName : "");
+
+        return
+                (firstName != null ? firstName : "")
+                        + " "
+                        + (middleName != null ? middleName + " " : "")
+                        + (lastName != null ? lastName : "");
+
     }
 
-    public void setId(@NotNull(message = "User ID is required") Long userId) {
+    public void setId(
+            @NotNull(message = "User ID is required")
+            Long userId
+    ) {
+
         this.id = userId;
-    }
 
-    public void setProfile(Profile profile) {
-        this.profile = profile;
-    }
-
-    public void setPartnerPreference(PartnerPreference partnerPreference) {
-        this.partnerPreference = partnerPreference;
-    }
-
-    public void setEmailVerifiedAt(LocalDateTime emailVerifiedAt) {
-        this.emailVerifiedAt = emailVerifiedAt;
-    }
-
-    public void setPhoneVerifiedAt(LocalDateTime phoneVerifiedAt) {
-        this.phoneVerifiedAt = phoneVerifiedAt;
-    }
-
-    public void setLastLogin(LocalDateTime lastLogin) {
-        this.lastLogin = lastLogin;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-
-    public void setIsActive(Boolean isActive) {
-        this.isActive = isActive;
     }
 }

@@ -139,7 +139,7 @@ public class SmokingController {
         admin.setId(dto.getAdminId());
         s.setAdmin(admin);
 
-        s.setName(dto.getName());
+        s.setValue(dto.getValue());
 
         if (dto.getIsActive() != null) {
             s.setIsActive(dto.getIsActive());
@@ -152,8 +152,8 @@ public class SmokingController {
 
         // 🚫 DO NOT update admin
 
-        if (dto.getName() != null) {
-            s.setName(dto.getName());
+        if (dto.getValue() != null) {
+            s.setValue(dto.getValue());
         }
 
         if (dto.getIsActive() != null) {
@@ -173,7 +173,7 @@ public class SmokingController {
                 // ✅ SAFE
                 .adminName(null)
 
-                .name(s.getName())
+                .value(s.getValue())
                 .isActive(s.getIsActive())
                 .createdAt(s.getCreatedAt())
                 .updatedAt(s.getUpdatedAt())

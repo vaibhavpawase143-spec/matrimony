@@ -12,83 +12,99 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/body-types")
 @RequiredArgsConstructor
 public class BodyTypeController {
 
     private final BodyTypeService bodyTypeService;
 
-    // ================= CREATE =================
-    @PostMapping("/{adminId}")
+    // =========================================
+    // PUBLIC API FOR FRONTEND DROPDOWN
+    // =========================================
+
+    @GetMapping("/api/body-types")
+    public List<BodyTypeResponseDTO> getAllPublic() {
+
+        Long adminId = 1L;
+
+        return bodyTypeService.getActive(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    // =========================================
+    // ADMIN APIs
+    // =========================================
+
+    @PostMapping("/api/admins/{adminId}/body-types")
     public BodyTypeResponseDTO create(
             @PathVariable Long adminId,
             @Valid @RequestBody BodyTypeRequestDTO dto
     ) {
 
-        BodyType saved = bodyTypeService.create(mapToEntity(dto), adminId);
+        BodyType saved =
+                bodyTypeService.create(
+                        mapToEntity(dto),
+                        adminId
+                );
 
         return mapToResponse(saved);
     }
 
-    // ================= GET BY ID =================
-    @GetMapping("/{id}/{adminId}")
+    @GetMapping("/api/admins/{adminId}/body-types/{id}")
     public BodyTypeResponseDTO getById(
-            @PathVariable Long id,
+            @PathVariable Long adminId,
+            @PathVariable Long id
+    ) {
+
+        return mapToResponse(
+                bodyTypeService.getById(id, adminId)
+        );
+    }
+
+    @GetMapping("/api/admins/{adminId}/body-types")
+    public List<BodyTypeResponseDTO> getAll(
             @PathVariable Long adminId
     ) {
 
-        return mapToResponse(bodyTypeService.getById(id, adminId));
-    }
-
-    // ================= GET ALL (PUBLIC) =================
-    @GetMapping
-    public List<BodyTypeResponseDTO> getAll() {
-
-        return bodyTypeService.getAll(null)
+        return bodyTypeService.getAll(adminId)
                 .stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
 
-    // ================= GET ACTIVE (PUBLIC) =================
-    @GetMapping("/active")
-    public List<BodyTypeResponseDTO> getActive() {
+    @GetMapping("/api/admins/{adminId}/body-types/active")
+    public List<BodyTypeResponseDTO> getActive(
+            @PathVariable Long adminId
+    ) {
 
-        return bodyTypeService.getActive(null)
+        return bodyTypeService.getActive(adminId)
                 .stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
 
-    // ================= GET INACTIVE =================
-    @GetMapping("/inactive")
-    public List<BodyTypeResponseDTO> getInactive() {
-
-        return bodyTypeService.getInactive(null)
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
-    }
-
-    // ================= UPDATE =================
-    @PutMapping("/{id}/{adminId}")
+    @PutMapping("/api/admins/{adminId}/body-types/{id}")
     public BodyTypeResponseDTO update(
-            @PathVariable Long id,
             @PathVariable Long adminId,
+            @PathVariable Long id,
             @Valid @RequestBody BodyTypeRequestDTO dto
     ) {
 
         BodyType updated =
-                bodyTypeService.update(id, mapToEntity(dto), adminId);
+                bodyTypeService.update(
+                        id,
+                        mapToEntity(dto),
+                        adminId
+                );
 
         return mapToResponse(updated);
     }
 
-    // ================= DELETE =================
-    @DeleteMapping("/{id}/{adminId}")
+    @DeleteMapping("/api/admins/{adminId}/body-types/{id}")
     public String delete(
-            @PathVariable Long id,
-            @PathVariable Long adminId
+            @PathVariable Long adminId,
+            @PathVariable Long id
     ) {
 
         bodyTypeService.delete(id, adminId);
@@ -96,13 +112,17 @@ public class BodyTypeController {
         return "Body type deleted successfully";
     }
 
-    // ================= MAPPERS =================
+    // =========================================
+    // MAPPERS
+    // =========================================
 
-    private BodyType mapToEntity(BodyTypeRequestDTO dto) {
+    private BodyType mapToEntity(
+            BodyTypeRequestDTO dto
+    ) {
 
         BodyType bt = new BodyType();
 
-        bt.setName(dto.getName());
+        bt.setValue(dto.getValue());
 
         bt.setIsActive(
                 dto.getIsActive() != null
@@ -113,17 +133,22 @@ public class BodyTypeController {
         return bt;
     }
 
-    private BodyTypeResponseDTO mapToResponse(BodyType bt) {
+    private BodyTypeResponseDTO mapToResponse(
+            BodyType bt
+    ) {
 
-        BodyTypeResponseDTO dto = new BodyTypeResponseDTO();
+        BodyTypeResponseDTO dto =
+                new BodyTypeResponseDTO();
 
         dto.setId(bt.getId());
-        dto.setName(bt.getName());
+        dto.setValue(bt.getValue());
         dto.setIsActive(bt.getIsActive());
         dto.setCreatedAt(bt.getCreatedAt());
 
         if (bt.getAdmin() != null) {
-            dto.setAdminId(bt.getAdmin().getId());
+            dto.setAdminId(
+                    bt.getAdmin().getId()
+            );
         }
 
         return dto;

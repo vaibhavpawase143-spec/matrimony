@@ -21,11 +21,11 @@ public class SmokingServiceImpl implements SmokingService {
     @Override
     public Smoking save(Smoking smoking) {
 
-        String name = smoking.getName();
+        String value = smoking.getValue();
         Long adminId = smoking.getAdmin().getId();
 
         Optional<Smoking> existing =
-                repository.findByNameIgnoreCaseAndAdminId(name, adminId);
+                repository.findByValueIgnoreCaseAndAdminId(value, adminId);
 
         if (existing.isPresent() &&
                 !existing.get().getId().equals(smoking.getId())) {
@@ -67,13 +67,13 @@ public class SmokingServiceImpl implements SmokingService {
     // 🔍 Search
     @Override
     public List<Smoking> searchByAdmin(Long adminId, String keyword) {
-        return repository.findByAdminIdAndNameContainingIgnoreCase(adminId, keyword);
+        return repository.findByAdminIdAndValueContainingIgnoreCase(adminId, keyword);
     }
 
     // 🔍 Find by value
     @Override
-    public Optional<Smoking> getByNameAndAdmin(String name, Long adminId) {
-        return repository.findByNameIgnoreCaseAndAdminId(name, adminId);
+    public Optional<Smoking> getByValueAndAdmin(String value, Long adminId) {
+        return repository.findByValueIgnoreCaseAndAdminId(value, adminId);
     }
 
     // ✅ Delete

@@ -49,6 +49,7 @@ public class UserServiceImpl implements UserService {
     private final OccupationRepository occupationRepository;
     private final HeightRepository heightRepository;
     private final WeightRepository weightRepository;
+    private final GenderRepository genderRepository;
 
     // ================= REGISTER =================
     @Override
@@ -58,7 +59,7 @@ public class UserServiceImpl implements UserService {
         System.out.println("   - First Name: " + request.getFirstName());
         System.out.println("   - Last Name: " + request.getLastName());
         System.out.println("   - Phone: " + request.getPhone());
-        System.out.println("   - Gender: " + request.getGender());
+        System.out.println("   - Gender ID: " + request.getGenderId());
         System.out.println("   - Date of Birth: " + request.getDateOfBirth());
 
         if (userRepository.existsByEmail(request.getEmail())) {
@@ -94,8 +95,14 @@ public class UserServiceImpl implements UserService {
                     profile.setIsActive(true);
                     
                     // Set basic fields from registration
-                    if (request.getGender() != null) {
-                        profile.setGender(request.getGender());
+                    if (request.getGenderId() != null) {
+
+                        profile.setGender(
+
+                                genderRepository
+                                        .findById(request.getGenderId())
+                                        .orElse(null)
+                        );
                     }
                     if (request.getDateOfBirth() != null) {
                         profile.setDateOfBirth(request.getDateOfBirth());
@@ -105,7 +112,7 @@ public class UserServiceImpl implements UserService {
                     System.out.println("✅ Empty profile created for user: " + savedUser.getEmail());
                     System.out.println("   - Profile ID: " + savedProfile.getId());
                     System.out.println("   - User ID: " + savedUser.getId());
-                    System.out.println("   - Basic info set: gender=" + request.getGender() + 
+                    System.out.println("   - Basic info set: genderId=" + request.getGenderId() +
                         ", dob=" + request.getDateOfBirth());
                     
                     // Verify the profile was saved correctly
@@ -267,21 +274,12 @@ public class UserServiceImpl implements UserService {
                 .stream()
                 .map(Role::getName)
                 .toList();
-        
-        System.out.println("🔑 loginWithProfile - Generating token for email: " + user.getEmail());
-        System.out.println("🔑 loginWithProfile - User ID: " + user.getId());
-        System.out.println("🔑 loginWithProfile - Roles: " + roles);
-        
         String accessToken = jwtUtil.generateToken(user.getEmail(), roles);
         RefreshToken refreshToken = refreshTokenService.createToken(user.getEmail());
-        
-        System.out.println("🔑 loginWithProfile - Generated access token: " + (accessToken != null && accessToken.length() > 50 ? accessToken.substring(0, 50) + "..." : accessToken));
 
         // Get profile data
-        System.out.println("👤 loginWithProfile - Fetching profile for User ID: " + user.getId());
         ProfileResponseDTO profileData = profileRepository.findByUserId(user.getId())
                 .map(profile -> {
-                    System.out.println("👤 loginWithProfile - Found Profile ID: " + profile.getId() + " for User ID: " + profile.getUser().getId());
                     ProfileResponseDTO dto = new ProfileResponseDTO();
                     dto.setId(profile.getId());
                     dto.setUserId(profile.getUser().getId());
@@ -294,9 +292,6 @@ public class UserServiceImpl implements UserService {
                     return dto;
                 })
                 .orElse(null);
-        
-        System.out.println("👤 loginWithProfile - Profile data: " + (profileData != null ? "Profile ID: " + profileData.getId() : "null"));
-        System.out.println("👤 loginWithProfile - Full LoginResponse being returned: accessToken=" + (accessToken != null ? "present" : "null") + ", profile=" + (profileData != null ? "present" : "null"));
 
         return new LoginResponse(accessToken, refreshToken.getToken(), profileData);
     }

@@ -38,7 +38,7 @@ public class State {
     private Boolean isActive = true;
 
     // ✅ SAFE LAZY
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "country_id", nullable = false)
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Country country;

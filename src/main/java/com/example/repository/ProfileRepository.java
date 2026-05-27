@@ -13,9 +13,13 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface ProfileRepository extends JpaRepository<Profile, Long>, JpaSpecificationExecutor<Profile> {
+public interface ProfileRepository
+        extends JpaRepository<Profile, Long>,
+        JpaSpecificationExecutor<Profile> {
 
-    // ================= BASIC =================
+    // =====================================================
+    // BASIC
+    // =====================================================
 
     Optional<Profile> findByUserId(Long userId);
 
@@ -25,47 +29,92 @@ public interface ProfileRepository extends JpaRepository<Profile, Long>, JpaSpec
 
     boolean existsByUser(User user);
 
-    // ================= 🔥 FETCH JOIN FOR SINGLE PROFILE =================
+    // =====================================================
+    // ACTIVE
+    // =====================================================
+
+    List<Profile> findByIsActiveTrue();
+
+    // =====================================================
+    // FETCH SINGLE PROFILE WITH RELATIONS
+    // =====================================================
 
     @Query("""
         SELECT p FROM Profile p
         JOIN FETCH p.user
         LEFT JOIN FETCH p.city
+        LEFT JOIN FETCH p.state
+        LEFT JOIN FETCH p.country
         LEFT JOIN FETCH p.religion
         LEFT JOIN FETCH p.caste
+        LEFT JOIN FETCH p.subCaste
         LEFT JOIN FETCH p.educationLevel
         LEFT JOIN FETCH p.occupation
         LEFT JOIN FETCH p.height
         LEFT JOIN FETCH p.weight
+        LEFT JOIN FETCH p.gender
+        LEFT JOIN FETCH p.bodyType
+        LEFT JOIN FETCH p.complexion
+        LEFT JOIN FETCH p.motherTongue
+        LEFT JOIN FETCH p.maritalStatus
         WHERE p.user.id = :userId
         AND p.isActive = true
     """)
-    Optional<Profile> findByUserIdWithRelations(Long userId);
+    Optional<Profile> findByUserIdWithRelations(
+            Long userId
+    );
 
-    // ================= 🔥 FETCH WITH USER =================
+    // =====================================================
+    // FETCH ALL WITH USER
+    // =====================================================
 
     @Query("""
         SELECT p FROM Profile p
         JOIN FETCH p.user
         LEFT JOIN FETCH p.city
+        LEFT JOIN FETCH p.state
+        LEFT JOIN FETCH p.country
         LEFT JOIN FETCH p.religion
         LEFT JOIN FETCH p.caste
+        LEFT JOIN FETCH p.educationLevel
+        LEFT JOIN FETCH p.occupation
+        LEFT JOIN FETCH p.gender
     """)
     List<Profile> findAllWithUser();
 
-    // ================= ✅ FIXED ACTIVE =================
+    // =====================================================
+    // ACTIVE PROFILES WITH USER
+    // =====================================================
 
     @Query("""
-        SELECT p FROM Profile p
-        JOIN FETCH p.user
-        LEFT JOIN FETCH p.city
-        LEFT JOIN FETCH p.religion
-        LEFT JOIN FETCH p.caste
-        WHERE p.isActive = true
-    """)
+    SELECT p FROM Profile p
+    JOIN FETCH p.user
+    LEFT JOIN FETCH p.city
+    LEFT JOIN FETCH p.state
+    LEFT JOIN FETCH p.country
+    LEFT JOIN FETCH p.religion
+    LEFT JOIN FETCH p.caste
+    LEFT JOIN FETCH p.subCaste
+    LEFT JOIN FETCH p.educationLevel
+    LEFT JOIN FETCH p.occupation
+    LEFT JOIN FETCH p.height
+    LEFT JOIN FETCH p.weight
+    LEFT JOIN FETCH p.gender
+    LEFT JOIN FETCH p.bodyType
+    LEFT JOIN FETCH p.complexion
+    LEFT JOIN FETCH p.motherTongue
+    LEFT JOIN FETCH p.maritalStatus
+    LEFT JOIN FETCH p.income
+    LEFT JOIN FETCH p.diet
+    LEFT JOIN FETCH p.smoking
+    LEFT JOIN FETCH p.drinking
+""")
+
     List<Profile> findActiveProfilesWithUser();
 
-    // ================= PAGINATION =================
+    // =====================================================
+    // PAGINATION
+    // =====================================================
 
     @Query("""
         SELECT p FROM Profile p
@@ -74,22 +123,44 @@ public interface ProfileRepository extends JpaRepository<Profile, Long>, JpaSpec
         AND u.isActive = true
         AND u.id != :userId
     """)
-    Page<Profile> findActiveProfilesExcludingUser(Long userId, Pageable pageable);
+    Page<Profile> findActiveProfilesExcludingUser(
+            Long userId,
+            Pageable pageable
+    );
 
-    // ================= 🔥 MATCHING =================
+    // =====================================================
+    // MATCHING
+    // =====================================================
 
     @Query(
             value = """
         SELECT p,
 
         (
-            CASE WHEN (:religionId IS NOT NULL AND p.religion.id = :religionId) THEN 20 ELSE 0 END +
-            CASE WHEN (:casteId IS NOT NULL AND p.caste.id = :casteId) THEN 15 ELSE 0 END +
-            CASE WHEN (:cityId IS NOT NULL AND p.city.id = :cityId) THEN 15 ELSE 0 END +
-            CASE 
-                WHEN (:minDob IS NOT NULL AND :maxDob IS NOT NULL 
-                      AND p.dateOfBirth BETWEEN :minDob AND :maxDob)
-                THEN 20 ELSE 0 
+            CASE
+                WHEN (:religionId IS NOT NULL
+                      AND p.religion.id = :religionId)
+                THEN 20 ELSE 0
+            END +
+
+            CASE
+                WHEN (:casteId IS NOT NULL
+                      AND p.caste.id = :casteId)
+                THEN 15 ELSE 0
+            END +
+
+            CASE
+                WHEN (:cityId IS NOT NULL
+                      AND p.city.id = :cityId)
+                THEN 15 ELSE 0
+            END +
+
+            CASE
+                WHEN (:minDob IS NOT NULL
+                      AND :maxDob IS NOT NULL
+                      AND p.dateOfBirth
+                      BETWEEN :minDob AND :maxDob)
+                THEN 20 ELSE 0
             END
         ) as score
 
@@ -105,6 +176,7 @@ public interface ProfileRepository extends JpaRepository<Profile, Long>, JpaSpec
 
         ORDER BY score DESC
         """,
+
             countQuery = """
         SELECT COUNT(p)
         FROM Profile p
@@ -124,7 +196,9 @@ public interface ProfileRepository extends JpaRepository<Profile, Long>, JpaSpec
             Pageable pageable
     );
 
-    // ================= 🔥 FILTER (FIXED WITH FETCH) =================
+    // =====================================================
+    // FILTERS
+    // =====================================================
 
     @Query("""
         SELECT p FROM Profile p
@@ -161,35 +235,52 @@ public interface ProfileRepository extends JpaRepository<Profile, Long>, JpaSpec
     """)
     List<Profile> findByOccupationId(Long id);
 
-    // ================= COMBINATIONS =================
+    // =====================================================
+    // COMBINATIONS
+    // =====================================================
 
     @Query("""
         SELECT p FROM Profile p
         JOIN FETCH p.user
-        WHERE p.religion.id = :religionId AND p.caste.id = :casteId
+        WHERE p.religion.id = :religionId
+        AND p.caste.id = :casteId
     """)
-    List<Profile> findByReligionIdAndCasteId(Long religionId, Long casteId);
+    List<Profile> findByReligionIdAndCasteId(
+            Long religionId,
+            Long casteId
+    );
 
     @Query("""
         SELECT p FROM Profile p
         JOIN FETCH p.user
-        WHERE p.city.id = :cityId AND p.educationLevel.id = :educationLevelId
+        WHERE p.city.id = :cityId
+        AND p.educationLevel.id = :educationLevelId
     """)
-    List<Profile> findByCityIdAndEducationLevelId(Long cityId, Long educationLevelId);
+    List<Profile> findByCityIdAndEducationLevelId(
+            Long cityId,
+            Long educationLevelId
+    );
 
     @Query("""
         SELECT p FROM Profile p
         JOIN FETCH p.user
-        WHERE p.occupation.id = :occupationId AND p.city.id = :cityId
+        WHERE p.occupation.id = :occupationId
+        AND p.city.id = :cityId
     """)
-    List<Profile> findByOccupationIdAndCityId(Long occupationId, Long cityId);
+    List<Profile> findByOccupationIdAndCityId(
+            Long occupationId,
+            Long cityId
+    );
 
     @Query("""
         SELECT p FROM Profile p
         JOIN FETCH p.user
-        WHERE p.religion.id = :religionId 
-        AND p.city.id = :cityId 
+        WHERE p.religion.id = :religionId
+        AND p.city.id = :cityId
         AND p.isActive = true
     """)
-    List<Profile> findByReligionIdAndCityIdAndIsActiveTrue(Long religionId, Long cityId);
+    List<Profile> findByReligionIdAndCityIdAndIsActiveTrue(
+            Long religionId,
+            Long cityId
+    );
 }

@@ -14,7 +14,7 @@ public class SmokingResponseDTO {
     private Long adminId;
     private String adminName;
 
-    private String name;
+    private String value;
 
     private Boolean isActive;
 

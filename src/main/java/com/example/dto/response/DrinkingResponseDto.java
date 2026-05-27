@@ -7,6 +7,7 @@ public class DrinkingResponseDto {
     private Long id;
     private Long adminId;
     private String name;
+    private String value;
     private Boolean isActive;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -35,6 +36,14 @@ public class DrinkingResponseDto {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getValue() {
+        return value;
+    }
+
+    public void setValue(String value) {
+        this.value = value;
     }
 
     public Boolean getIsActive() {

@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 @Table(
         name = "body_types",
         uniqueConstraints = {
-                @UniqueConstraint(columnNames = {"name"})
+                @UniqueConstraint(columnNames = {"value"})
         },
         indexes = {
                 @Index(name = "idx_body_type_active", columnList = "is_active")
@@ -23,8 +23,8 @@ public class BodyType {
     @JoinColumn(name = "admin_id")
     private Admin admin;
 
-    @Column(name="name" ,nullable = false, length = 50)
-    private String name;
+    @Column(nullable = false, length = 50)
+    private String value;
 
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
@@ -59,12 +59,12 @@ public class BodyType {
         this.admin = admin;
     }
 
-    public String getName() {
-        return name;
+    public String getValue() {
+        return value;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setValue(String value) {
+        this.value = value;
     }
 
     public Boolean getIsActive() {

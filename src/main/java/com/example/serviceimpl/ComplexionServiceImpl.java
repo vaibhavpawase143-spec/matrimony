@@ -40,8 +40,8 @@ public class ComplexionServiceImpl implements ComplexionService {
     public Complexion create(Complexion complexion) {
 
         // 🔥 Duplicate check (important)
-        if (complexionRepository.existsByNameIgnoreCase(complexion.getName())) {
-            throw new RuntimeException("Complexion already exists: " + complexion.getName());
+        if (complexionRepository.existsByValueIgnoreCase(complexion.getValue())) {
+            throw new RuntimeException("Complexion already exists: " + complexion.getValue());
         }
 
         return complexionRepository.save(complexion);
@@ -54,15 +54,15 @@ public class ComplexionServiceImpl implements ComplexionService {
         Complexion existing = getById(id);
 
         // 🔥 Duplicate check (exclude same record)
-        complexionRepository.findByNameIgnoreCase(complexion.getName())
+        complexionRepository.findByValueIgnoreCase(complexion.getValue())
                 .ifPresent(c -> {
                     if (!c.getId().equals(id)) {
-                        throw new RuntimeException("Complexion already exists: " + complexion.getName());
+                        throw new RuntimeException("Complexion already exists: " + complexion.getValue());
                     }
                 });
 
         // ✏️ Update fields
-        existing.setName(complexion.getName());
+        existing.setValue(complexion.getValue());
         existing.setIsActive(complexion.getIsActive());
 
         return complexionRepository.save(existing);
@@ -78,17 +78,21 @@ public class ComplexionServiceImpl implements ComplexionService {
     // 🔍 Admin-based
     @Override
     public List<Complexion> getByAdmin(Long adminId) {
-        return complexionRepository.findByAdminId(adminId);
+
+        return complexionRepository.findAll();
+
     }
 
     @Override
     public List<Complexion> getActiveByAdmin(Long adminId) {
-        return complexionRepository.findByAdminIdAndIsActiveTrue(adminId);
+
+        return complexionRepository.findByIsActiveTrue();
+
     }
 
     // 🔍 Search
     @Override
     public List<Complexion> search(String keyword) {
-        return complexionRepository.findByNameContainingIgnoreCase(keyword);
+        return complexionRepository.findByValueContainingIgnoreCase(keyword);
     }
 }

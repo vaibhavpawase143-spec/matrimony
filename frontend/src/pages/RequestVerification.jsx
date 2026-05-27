@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "@/components/Toast";
 import { useLoading } from "@/hooks/useLoading";
 import { useLanguage } from "@/context/LanguageContext.jsx";
-import { apiClient } from "@/services/api";
+import { authAPI } from "@/services/api";
 
 const RequestVerification = () => {
   const navigate = useNavigate();
@@ -29,32 +29,37 @@ const RequestVerification = () => {
 
     startLoading("Sending verification email...");
 
-    // Call backend to send verification email using api.js client
-    apiClient(`/auth/send-verification?email=${encodeURIComponent(email.trim())}`, {
+    // Call backend to send verification email
+    fetch(`/api/auth/send-verification?email=${encodeURIComponent(email.trim())}`, {
       method: "POST"
     })
+      .then((response) => {
+        if (response.ok) {
+          return response.json();
+        }
+        throw new Error("Failed to send verification email");
+      })
       .then((data) => {
         setIsSent(true);
         success("Verification email sent successfully!");
         stopLoading();
       })
       .catch((err) => {
-        // Use backend error message directly
         const errorMessage = err.message || "Failed to send verification email";
         
-        // Handle specific error cases using error codes and status from backend
-        if (err.status === 404) {
-          error(errorMessage);
-        } else if (err.errorCode === 'ERR_EMAIL_ALREADY_VERIFIED') {
-          error(errorMessage);
+        // Handle specific error cases
+        if (errorMessage.includes("User not found") || errorMessage.includes("user not found")) {
+          error("No account found with this email address. Please check your email or register for a new account.");
+        } else if (errorMessage.includes("Email already verified") || errorMessage.includes("already verified")) {
+          error("This email is already verified. You can proceed to login.");
           setTimeout(() => {
             navigate("/login");
           }, 2000);
-        } else if (err.status === 400) {
-          error(errorMessage);
-        } else if (err.status === 429) {
-          error(errorMessage);
-        } else if (err.status === 500) {
+        } else if (errorMessage.includes("Invalid email format") || errorMessage.includes("Invalid email")) {
+          error("Please enter a valid email address");
+        } else if (errorMessage.includes("Rate limit exceeded") || errorMessage.includes("too many requests")) {
+          error("Too many verification requests. Please wait a few minutes before trying again.");
+        } else if (errorMessage.includes("Server error") || errorMessage.includes("Internal server error")) {
           error("Server is experiencing issues. Please try again later.");
         } else {
           error(errorMessage);
@@ -71,10 +76,16 @@ const RequestVerification = () => {
 
     startLoading("Bypassing verification...");
 
-    // Development bypass using api.js client
-    apiClient(`/auth/bypass-verification?email=${encodeURIComponent(email.trim())}`, {
+    // Development bypass
+    fetch(`/api/auth/bypass-verification?email=${encodeURIComponent(email.trim())}`, {
       method: "POST"
     })
+      .then((response) => {
+        if (response.ok) {
+          return response.json();
+        }
+        throw new Error("Failed to bypass verification");
+      })
       .then((data) => {
         success("Email verification bypassed! You can now login.");
         stopLoading();
@@ -85,23 +96,20 @@ const RequestVerification = () => {
         }, 1000);
       })
       .catch((err) => {
-        // Use backend error message directly
         const errorMessage = err.message || "Failed to bypass verification";
         
-        // Handle specific error cases using error codes and status from backend
-        if (err.status === 404) {
-          error(errorMessage);
-        } else if (err.errorCode === 'ERR_EMAIL_ALREADY_VERIFIED') {
-          error(errorMessage);
+        // Handle specific error cases
+        if (errorMessage.includes("User not found") || errorMessage.includes("user not found")) {
+          error("No account found with this email address. Please check your email or register for a new account.");
+        } else if (errorMessage.includes("Email already verified") || errorMessage.includes("already verified")) {
+          error("This email is already verified. You can proceed to login.");
           setTimeout(() => {
             navigate("/login");
           }, 2000);
-        } else if (err.errorCode === 'ERR_BYPASS_NOT_ALLOWED' || err.status === 403) {
-          error(errorMessage);
-        } else if (err.status === 400) {
-          error(errorMessage);
-        } else if (err.status === 500) {
-          error("Server is experiencing issues. Please try again later.");
+        } else if (errorMessage.includes("Bypass not allowed") || errorMessage.includes("not allowed in production")) {
+          error("Verification bypass is not available in production mode.");
+        } else if (errorMessage.includes("Invalid email format") || errorMessage.includes("Invalid email")) {
+          error("Please enter a valid email address");
         } else {
           error(errorMessage);
         }
