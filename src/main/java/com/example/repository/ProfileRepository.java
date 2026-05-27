@@ -87,14 +87,29 @@ public interface ProfileRepository
     // =====================================================
 
     @Query("""
-        SELECT p FROM Profile p
-        JOIN FETCH p.user
-        LEFT JOIN FETCH p.city
-        LEFT JOIN FETCH p.religion
-        LEFT JOIN FETCH p.caste
-        LEFT JOIN FETCH p.gender
-        WHERE p.isActive = true
-    """)
+    SELECT p FROM Profile p
+    JOIN FETCH p.user
+    LEFT JOIN FETCH p.city
+    LEFT JOIN FETCH p.state
+    LEFT JOIN FETCH p.country
+    LEFT JOIN FETCH p.religion
+    LEFT JOIN FETCH p.caste
+    LEFT JOIN FETCH p.subCaste
+    LEFT JOIN FETCH p.educationLevel
+    LEFT JOIN FETCH p.occupation
+    LEFT JOIN FETCH p.height
+    LEFT JOIN FETCH p.weight
+    LEFT JOIN FETCH p.gender
+    LEFT JOIN FETCH p.bodyType
+    LEFT JOIN FETCH p.complexion
+    LEFT JOIN FETCH p.motherTongue
+    LEFT JOIN FETCH p.maritalStatus
+    LEFT JOIN FETCH p.income
+    LEFT JOIN FETCH p.diet
+    LEFT JOIN FETCH p.smoking
+    LEFT JOIN FETCH p.drinking
+""")
+
     List<Profile> findActiveProfilesWithUser();
 
     // =====================================================
