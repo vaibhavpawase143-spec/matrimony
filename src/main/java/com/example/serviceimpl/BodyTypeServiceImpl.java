@@ -26,8 +26,19 @@ public class BodyTypeServiceImpl implements BodyTypeService {
 
         // 🔍 Duplicate check
         boolean exists = bodyTypeRepository.findAll().stream()
-                .anyMatch(bt -> bt.getValue().equalsIgnoreCase(bodyType.getValue())
-                        && bt.getAdmin().getId().equals(adminId));
+                .anyMatch(bt ->
+
+                        bt.getValue().equalsIgnoreCase(bodyType.getValue())
+
+                                &&
+
+                                (
+                                        bt.getAdmin() == null
+                                                ||
+                                                bt.getAdmin().getId().equals(adminId)
+                                )
+
+                );
 
         if (exists) {
             throw new RuntimeException("Body type already exists");
@@ -45,7 +56,14 @@ public class BodyTypeServiceImpl implements BodyTypeService {
         BodyType bt = bodyTypeRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Body type not found"));
 
-        if (!bt.getAdmin().getId().equals(adminId)) {
+        if (
+
+                bt.getAdmin() != null
+                        &&
+
+                        !bt.getAdmin().getId().equals(adminId)
+
+        ) {
             throw new RuntimeException("Unauthorized access");
         }
 
@@ -56,10 +74,8 @@ public class BodyTypeServiceImpl implements BodyTypeService {
     @Override
     public List<BodyType> getAll(Long adminId) {
 
-        return bodyTypeRepository.findAll()
-                .stream()
-                .filter(bt -> bt.getAdmin().getId().equals(adminId))
-                .toList();
+        return bodyTypeRepository.findAll();
+
     }
 
     // ✅ Get active
@@ -68,8 +84,7 @@ public class BodyTypeServiceImpl implements BodyTypeService {
 
         return bodyTypeRepository.findAll()
                 .stream()
-                .filter(bt -> bt.getAdmin().getId().equals(adminId)
-                        && Boolean.TRUE.equals(bt.getIsActive()))
+                .filter(bt -> Boolean.TRUE.equals(bt.getIsActive()))
                 .toList();
     }
 
@@ -79,8 +94,7 @@ public class BodyTypeServiceImpl implements BodyTypeService {
 
         return bodyTypeRepository.findAll()
                 .stream()
-                .filter(bt -> bt.getAdmin().getId().equals(adminId)
-                        && Boolean.FALSE.equals(bt.getIsActive()))
+                .filter(bt -> Boolean.FALSE.equals(bt.getIsActive()))
                 .toList();
     }
 
@@ -92,9 +106,23 @@ public class BodyTypeServiceImpl implements BodyTypeService {
 
         // 🔍 Duplicate check
         boolean exists = bodyTypeRepository.findAll().stream()
-                .anyMatch(bt -> bt.getValue().equalsIgnoreCase(updated.getValue())
-                        && bt.getAdmin().getId().equals(adminId)
-                        && !bt.getId().equals(id));
+                .anyMatch(bt ->
+
+                        bt.getValue().equalsIgnoreCase(updated.getValue())
+
+                                &&
+
+                                (
+                                        bt.getAdmin() == null
+                                                ||
+                                                bt.getAdmin().getId().equals(adminId)
+                                )
+
+                                &&
+
+                                !bt.getId().equals(id)
+
+                );
 
         if (exists) {
             throw new RuntimeException("Body type already exists");
