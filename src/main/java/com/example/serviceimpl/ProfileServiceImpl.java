@@ -1209,7 +1209,17 @@ public class ProfileServiceImpl implements ProfileService {
         dto.setAboutMe(
                 p.getAboutMe()
         );
+        dto.setCurrentStep(
+                p.getCurrentStep()
+        );
 
+        dto.setProfileCompleted(
+                p.getProfileCompleted()
+        );
+
+        dto.setIsActive(
+                p.getIsActive()
+        );
         return dto;
     }
 
