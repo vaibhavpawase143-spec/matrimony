@@ -204,11 +204,7 @@ diets: Array.isArray(diets?.data)
   ? diets
   : [],
 
-drinkingOptions: Array.isArray(drinkingOptions?.data)
-  ? drinkingOptions.data
-  : Array.isArray(drinkingOptions)
-  ? drinkingOptions
-  : [],
+
 drinkingOptions: Array.isArray(drinkingOptions?.data)
   ? drinkingOptions.data
   : Array.isArray(drinkingOptions)
