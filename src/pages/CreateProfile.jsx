@@ -5,7 +5,7 @@ import { useLoading } from "@/hooks/useLoading";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/context/LanguageContext.jsx";
 import ProfileForm from "@/components/ProfileForm";
-import { authAPI, profileAPI } from "@/services/api";
+import { authAPI } from "@/services/api";
 
 const CreateProfile = () => {
   const navigate = useNavigate();
@@ -122,8 +122,21 @@ const CreateProfile = () => {
     try {
       startLoading("Saving profile...");
       
-      // Call backend API to save profile using api.js client
-      const result = await profileAPI.updateProfile(null, formData);
+      // Call backend API to save profile
+      const response = await fetch('/api/profiles', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(formData)
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save profile');
+      }
+
+      const result = await response.json();
       
       success("Profile saved successfully!");
       stopLoading();
@@ -135,29 +148,7 @@ const CreateProfile = () => {
       
     } catch (err) {
       console.error("Profile save error:", err);
-      
-      // Use backend error message directly
-      const errorMessage = err.message || "Failed to save profile";
-      
-      // Handle specific error cases using error codes and status from backend
-      if (err.status === 400) {
-        // Validation error - check for field-specific errors
-        if (err.validationErrors && typeof err.validationErrors === 'object') {
-          error("Please fix the validation errors");
-          // Could set field-specific errors here if needed
-        } else {
-          error(errorMessage);
-        }
-      } else if (err.status === 401) {
-        error(errorMessage);
-      } else if (err.status === 409) {
-        error(errorMessage);
-      } else if (err.status === 500) {
-        error("Server error. Please try again later.");
-      } else {
-        error(errorMessage);
-      }
-      
+      error(err.message || "Failed to save profile");
       stopLoading();
     }
   };

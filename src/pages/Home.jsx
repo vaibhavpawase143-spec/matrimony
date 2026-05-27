@@ -9,7 +9,7 @@ import ThemeToggle from "@/components/ThemeToggle";
 import ProfileCompletionBar from "@/components/ProfileCompletionBar";
 import DashboardStats from "@/components/DashboardStats";
 import LikeBookmarkButtons from "@/components/LikeBookmarkButtons";
-import { useProfileCompletion } from "@/hooks/useProfileCompletion";
+
 import { useLanguage } from "@/context/LanguageContext.jsx";
 import { useProfileData } from "@/hooks/useProfileData";
 import { profileAPI } from "@/services/api";
@@ -54,7 +54,15 @@ const HomeFixed = () => {
   };
 
   // Use real profile data for completion tracking
-  const profileCompletion = useProfileCompletion(profileData || {});
+const profileCompletion = {
+  completionPercentage:
+    profileData?.currentStep || 0,
+
+  message:
+    (profileData?.currentStep || 0) >= 100
+      ? "Profile completed"
+      : "Complete your profile"
+};
 
   const handleLogout = () => {
     logout();

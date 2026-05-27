@@ -19,9 +19,9 @@ const SelectField = ({ label, options, value, onChange, placeholder = "Select" }
       >
         <option value="">{placeholder}</option>
         {options.map((o) => (
-          <option key={o.value || o} value={o.value || o}>
-            {o.label || o}
-          </option>
+            <option key={o.id} value={o.id}>
+                {o.name}
+            </option>
         ))}
       </select>
       <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />

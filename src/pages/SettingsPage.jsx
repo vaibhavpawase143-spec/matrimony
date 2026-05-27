@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import { useToast } from "@/components/Toast";
 import { useProfileData } from "@/hooks/useProfileData";
-import { useMatrimonyOptions } from "@/hooks/useMatrimonyOptions";
+
 import { masterDataAPI } from "@/services/api";
 
 const tabs = [
@@ -17,9 +17,10 @@ const SettingsPage = () => {
   const [activeTab, setActiveTab] = useState("profile");
   const { success, error, info } = useToast();
   const { profileData: savedProfileData, saveProfileData } = useProfileData();
-  const { getOptions } = useMatrimonyOptions();
+
   const [masterOptions, setMasterOptions] = useState({
     religions: [],
+    genders: [],
     cities: [],
     educationLevels: [],
     occupations: [],
@@ -27,7 +28,16 @@ const SettingsPage = () => {
     weights: [],
     maritalStatuses: [],
     castes: [],
-    motherTongues: []
+    subCastes: [],
+    complexions: [],
+    bodyTypes: [],
+   motherTongues: [],
+   countries: [],
+   incomes: [],
+   diets: [],
+   smokingOptions: [],
+   drinkingOptions: [],
+   states: []
   });
   
   // Profile form state - matching backend DTO structure
@@ -40,7 +50,7 @@ const SettingsPage = () => {
     phone: "",
     
     // Profile fields matching backend DTO
-    gender: "",
+
     dateOfBirth: "",
     about: "",
     imageUrl: "",
@@ -54,8 +64,41 @@ const SettingsPage = () => {
     educationLevelId: null,
     occupationId: null,
     heightId: null,
+   genderId: null,
+   complexionId: null,
+   bodyTypeId: null,
+   countryId: null,
+   stateId: null,
     weightId: null,
     cityId: null,
+    incomeId: null,
+    dietId: null,
+    smokingId: null,
+    drinkingId: null,
+
+    fatherName: "",
+    fatherOccupation: "",
+
+    motherName: "",
+    motherOccupation: "",
+
+    siblingsCount: "",
+
+    companyName: "",
+
+    address: "",
+
+    preferredAgeMin: "",
+    preferredAgeMax: "",
+
+    preferredLocation: "",
+    preferredEducation: "",
+
+    otherExpectations: "",
+
+    aboutMe: "",
+
+    age: "",
     
     // For UI purposes
     profilePhoto: null,
@@ -74,39 +117,100 @@ const SettingsPage = () => {
       try {
         console.log('🔍 Loading master data from APIs...');
         
-        const [religions, cities, educationLevels, occupations, maritalStatuses, heights, weights, motherTongues] = await Promise.all([
-          masterDataAPI.getReligions(),
-          masterDataAPI.getCities(),
-          masterDataAPI.getEducationLevels(),
-          masterDataAPI.getOccupations(),
-          masterDataAPI.getMaritalStatuses(),
-          masterDataAPI.getHeights(),
-          masterDataAPI.getWeights(),
-          masterDataAPI.getMotherTongues()
-        ]);
+   const [
+     incomes,
+     diets,
+     smokingOptions,
+     drinkingOptions,
+     religions,
+     genders,
+     cities,
+     educationLevels,
+     occupations,
+     maritalStatuses,
+     heights,
+     complexions,
+     bodyTypes,
+     weights,
+     motherTongues,
+     countries,
+     states
+   ] = await Promise.all([
+
+     masterDataAPI.getIncomes(),
+     masterDataAPI.getDiets(),
+     masterDataAPI.getSmokingOptions(),
+     masterDataAPI.getDrinkingOptions(),
+
+     masterDataAPI.getReligions(),
+     masterDataAPI.getGenders(),
+     masterDataAPI.getCities(),
+     masterDataAPI.getEducationLevels(),
+     masterDataAPI.getOccupations(),
+     masterDataAPI.getMaritalStatuses(),
+     masterDataAPI.getHeights(),
+     masterDataAPI.getComplexions(),
+     masterDataAPI.getBodyTypes(),
+     masterDataAPI.getWeights(),
+     masterDataAPI.getMotherTongues(),
+     masterDataAPI.getCountries(),
+     masterDataAPI.getStates()
+
+   ]);
         
         console.log('📊 Master data loaded:', {
           religions: religions?.length || 0,
+          genders: genders?.length || 0,
           cities: cities?.length || 0,
           educationLevels: educationLevels?.length || 0,
           occupations: occupations?.length || 0,
           maritalStatuses: maritalStatuses?.length || 0,
           heights: heights?.length || 0,
           weights: weights?.length || 0,
+          complexions: complexions?.length || 0,
+          bodyTypes: bodyTypes?.length || 0,
           motherTongues: motherTongues?.length || 0
         });
         
         // Ensure all data are arrays
         const safeData = {
           religions: Array.isArray(religions) ? religions : [],
-          cities: Array.isArray(cities) ? cities : [],
+          genders: Array.isArray(genders) ? genders : [],
+cities: Array.isArray(cities?.data)
+  ? cities.data
+  : Array.isArray(cities)
+  ? cities
+  : [],
           educationLevels: Array.isArray(educationLevels) ? educationLevels : [],
           occupations: Array.isArray(occupations) ? occupations : [],
           maritalStatuses: Array.isArray(maritalStatuses) ? maritalStatuses : [],
           heights: Array.isArray(heights) ? heights : [],
           weights: Array.isArray(weights) ? weights : [],
+          complexions: Array.isArray(complexions) ? complexions : [],
+          bodyTypes: Array.isArray(bodyTypes) ? bodyTypes : [],
           castes: [], // Will be loaded based on selected religion
-          motherTongues: Array.isArray(motherTongues) ? motherTongues : []
+motherTongues: Array.isArray(motherTongues) ? motherTongues : [],
+countries: Array.isArray(countries) ? countries : [],
+incomes: Array.isArray(incomes) ? incomes : [],
+smokingOptions: Array.isArray(smokingOptions?.data)
+  ? smokingOptions.data
+  : Array.isArray(smokingOptions)
+  ? smokingOptions
+  : [],
+
+diets: Array.isArray(diets?.data)
+  ? diets.data
+  : Array.isArray(diets)
+  ? diets
+  : [],
+
+
+drinkingOptions: Array.isArray(drinkingOptions?.data)
+  ? drinkingOptions.data
+  : Array.isArray(drinkingOptions)
+  ? drinkingOptions
+  : [],
+states: Array.isArray(states) ? states : []
         };
         
         setMasterOptions(safeData);
@@ -114,18 +218,27 @@ const SettingsPage = () => {
       } catch (error) {
         console.error('❌ Failed to load master data:', error);
         // Set empty arrays on error to prevent UI crashes
-        setMasterOptions({
-          religions: [],
-          cities: [],
-          educationLevels: [],
-          occupations: [],
-          maritalStatuses: [],
-          heights: [],
-          weights: [],
-         castes: [],
-         subCastes: [],
-         motherTongues: []
-        });
+    setMasterOptions({
+      religions: [],
+      genders: [],
+      cities: [],
+      educationLevels: [],
+      occupations: [],
+      maritalStatuses: [],
+      heights: [],
+      weights: [],
+      castes: [],
+      subCastes: [],
+      complexions: [],
+      bodyTypes: [],
+      motherTongues: [],
+      countries: [],
+      incomes: [],
+      diets: [],
+      smokingOptions: [],
+      drinkingOptions: [],
+      states: []
+    });
       }
     };
     
@@ -163,7 +276,7 @@ useEffect(() => {
       try {
 
         console.log(
-          '🔍 Loading sub castes for caste:',
+          "🔍 Loading sub castes for caste:",
           formData.casteId
         );
 
@@ -172,25 +285,17 @@ useEffect(() => {
             formData.casteId
           );
 
-        console.log(
-          '✅ Sub Castes loaded:',
-          subCastes
-        );
-
-        const safeSubCastes =
-          Array.isArray(subCastes)
-            ? subCastes
-            : [];
-
         setMasterOptions(prev => ({
           ...prev,
-          subCastes: safeSubCastes
+          subCastes: Array.isArray(subCastes)
+            ? subCastes
+            : []
         }));
 
       } catch (error) {
 
         console.error(
-          '❌ Failed to load sub castes:',
+          "❌ Failed to load sub castes:",
           error
         );
 
@@ -215,24 +320,105 @@ useEffect(() => {
   loadSubCastes();
 
 }, [formData.casteId]);
+// Load cities when state changes
+useEffect(() => {
 
+  const loadCities = async () => {
+
+    if (formData.stateId) {
+
+      try {
+
+        const cities =
+          await masterDataAPI.getCitiesByState(
+            formData.stateId
+          );
+      console.log("🏙 Cities API Response:", cities);
+
+        setMasterOptions(prev => ({
+          ...prev,
+         cities: Array.isArray(cities?.data)
+           ? cities.data
+           : Array.isArray(cities)
+           ? cities
+           : []
+        }));
+
+      } catch (error) {
+
+        console.error(
+          "Failed to load cities",
+          error
+        );
+
+        setMasterOptions(prev => ({
+          ...prev,
+          cities: []
+        }));
+
+      }
+
+    } else {
+
+      setMasterOptions(prev => ({
+        ...prev,
+        cities: []
+      }));
+
+    }
+
+  };
+
+  loadCities();
+
+}, [formData.stateId]);
   // Load saved profile data on mount
   useEffect(() => {
     if (savedProfileData && Object.keys(savedProfileData).length > 0) {
       console.log('🔧 Loading profile data into settings:', savedProfileData);
-      console.log('🔧 Checking specific fields:', {
-        address: savedProfileData.address,
-        smoking: savedProfileData.smoking,
-        drinking: savedProfileData.drinking,
-        country: savedProfileData.country,
-        state: savedProfileData.state,
-        cityId: savedProfileData.cityId,
-        cityName: savedProfileData.cityName,
-        companyName: savedProfileData.companyName,
-        email: savedProfileData.email,
-        phone: savedProfileData.phone
-      });
-      
+    console.log('🔧 Checking specific fields:', {
+      address: savedProfileData.address,
+
+      smokingId: savedProfileData.smokingId,
+
+      drinkingId: savedProfileData.drinkingId,
+
+      countryId:
+        savedProfileData.countryId,
+
+      stateId:
+        savedProfileData.stateId,
+
+      cityId:
+        savedProfileData.cityId,
+
+      religionId:
+        savedProfileData.religionId,
+
+      casteId:
+        savedProfileData.casteId,
+
+      subCasteId:
+        savedProfileData.subCasteId,
+
+      motherTongueId:
+        savedProfileData.motherTongueId,
+
+      heightId:
+        savedProfileData.heightId,
+
+      weightId:
+        savedProfileData.weightId,
+
+      companyName:
+        savedProfileData.companyName,
+
+      email:
+        savedProfileData.email,
+
+      phone:
+        savedProfileData.phone
+    });
       // Map backend API fields to frontend form fields
      const mappedData = {
 
@@ -244,7 +430,7 @@ useEffect(() => {
          `${savedProfileData.firstName || ''} ${savedProfileData.lastName || ''}`.trim(),
        email: savedProfileData.email || '',
        phone: savedProfileData.phone || '',
-       gender: savedProfileData.gender || '',
+      genderId: savedProfileData.genderId || null,
        dateOfBirth: savedProfileData.dateOfBirth || '',
        age: savedProfileData.age || calculateAge(savedProfileData.dateOfBirth),
        profilePhotoUrl:
@@ -253,28 +439,50 @@ useEffect(() => {
          '',
 
        // RELIGION
-       religionId: savedProfileData.religionId || null,
-       casteId: savedProfileData.casteId || null,
-       subCasteId: savedProfileData.subCasteId || null,
-       motherTongueId: savedProfileData.motherTongueId || null,
+       religionId:
+         savedProfileData.religionId ||
+         savedProfileData.religion?.id ||
+         null,
+      casteId:
+        savedProfileData.casteId ||
+        savedProfileData.caste?.id ||
+        null,
+       subCasteId:
+         savedProfileData.subCasteId ||
+         savedProfileData.subCaste?.id ||
+         null,
+       motherTongueId:
+         savedProfileData.motherTongueId ||
+         savedProfileData.motherTongue?.id ||
+         null,
 
        // PERSONAL
        maritalStatusId:
          savedProfileData.maritalStatusId || null,
 
-       heightId: savedProfileData.heightId || null,
+      heightId:
+        savedProfileData.heightId ||
+        savedProfileData.height?.id ||
+        null,
 
-       weightId: savedProfileData.weightId || null,
+       weightId:
+         savedProfileData.weightId ||
+         savedProfileData.weight?.id ||
+         null,
 
-       complexion: savedProfileData.complexion || '',
+     complexionId:
+       savedProfileData.complexionId || null,
 
-       bodyType: savedProfileData.bodyType || '',
+     bodyTypeId:
+       savedProfileData.bodyTypeId || null,
 
 aboutMe:
   savedProfileData.aboutMe ||
   savedProfileData.about ||
   savedProfileData.about_me ||
   '',
+  about:
+    savedProfileData.about || '',
 
        // EDUCATION
        educationLevelId:
@@ -283,16 +491,27 @@ aboutMe:
        occupationId:
          savedProfileData.occupationId || null,
 
-       annualIncome:
-         savedProfileData.annualIncome || '',
+       incomeId:
+         savedProfileData.incomeId || '',
 
        companyName:
          savedProfileData.companyName || '',
 
        // LOCATION
-      country: savedProfileData.country || '',
-      state: savedProfileData.state || '',
-      cityId: savedProfileData.cityId || null,
+countryId:
+  savedProfileData.countryId ||
+  savedProfileData.country?.id ||
+  null,
+
+stateId:
+  savedProfileData.stateId ||
+  savedProfileData.state?.id ||
+  null,
+
+cityId:
+  savedProfileData.cityId ||
+  savedProfileData.city?.id ||
+  null,      cityId: savedProfileData.cityId || null,
       city: savedProfileData.cityName || savedProfileData.city || '',
        address: savedProfileData.address || '',
 
@@ -313,10 +532,10 @@ aboutMe:
          savedProfileData.siblingsCount ||
          savedProfileData.siblings ||
          '',
-       // DIET
-       diet: savedProfileData.diet || '',
-       smoking: savedProfileData.smoking || '',
-       drinking: savedProfileData.drinking || '',
+       // dietId
+       dietId: savedProfileData.dietId || '',
+       smokingId: savedProfileData.smokingId || '',
+       drinkingId: savedProfileData.drinkingId || '',
 
        // PARTNER PREFERENCE
        preferredAgeMin:
@@ -364,12 +583,28 @@ aboutMe:
       }));
     } else {
       // Convert ID fields to numbers for backend compatibility
-      const idFields = [
-        'religionId', 'casteId', 'subCasteId', 'motherTongueId',
-        'maritalStatusId', 'educationLevelId', 'occupationId',
-        'heightId', 'weightId', 'cityId'
-      ];
-      
+    const idFields = [
+      'religionId',
+      'casteId',
+      'subCasteId',
+      'motherTongueId',
+      'maritalStatusId',
+      'educationLevelId',
+      'occupationId',
+      'heightId',
+      'weightId',
+      'cityId',
+      'genderId',
+      'bodyTypeId',
+      'complexionId',
+      'countryId',
+      'stateId',
+
+      'incomeId',
+      'dietId',
+      'smokingId',
+      'drinkingId'
+    ];
       const finalValue = idFields.includes(field) && value !== '' 
         ? (typeof value === 'string' ? parseInt(value, 10) : value)
         : value;
@@ -426,7 +661,7 @@ aboutMe:
       return false;
     }
     
-    if (!formData.gender) {
+   if (!formData.genderId) {
       error("Gender is required");
       return false;
     }
@@ -466,13 +701,15 @@ aboutMe:
        email: formData.email,
        phone: formData.phone,
 
-       gender: formData.gender,
+     genderId: formData.genderId,
        dateOfBirth: formData.dateOfBirth,
 
        // ABOUT
        aboutMe: formData.aboutMe || formData.about,
+       about: formData.aboutMe || formData.about,
 
-       imageUrl: formData.profilePhotoUrl,
+ imageUrl: formData.profilePhotoUrl,
+
 
        // RELIGION
        religionId: formData.religionId,
@@ -485,26 +722,26 @@ aboutMe:
        heightId: formData.heightId,
        weightId: formData.weightId,
 
-       complexion: formData.complexion,
-       bodyType: formData.bodyType,
+       complexionId: formData.complexionId,
+       bodyTypeId: formData.bodyTypeId,
 
        // EDUCATION
        educationLevelId: formData.educationLevelId,
        occupationId: formData.occupationId,
 
-       annualIncome: formData.annualIncome,
+       incomeId: formData.incomeId,
        companyName: formData.companyName,
 
        // LOCATION
-       country: formData.country,
-       state: formData.state,
+      countryId: formData.countryId,
+      stateId: formData.stateId,
        cityId: formData.cityId,
        address: formData.address,
 
        // LIFESTYLE
-       diet: formData.diet,
-       smoking: formData.smoking,
-       drinking: formData.drinking,
+       dietId: formData.dietId,
+       smokingId: formData.smokingId,
+       drinkingId: formData.drinkingId,
 
        // FAMILY
        fatherName: formData.fatherName,
@@ -566,242 +803,371 @@ aboutMe:
   };
 
   // Helper function to render form fields
-  const renderField = (field) => {
-    const { label, placeholder, type = "text", key, options, readOnly = false } = field;
-    
-    if (type === "select") {
-      let fieldOptions = options;
-      
-    // Use master data options for dropdowns that need ID-value mapping
-    if (key === 'religionId') {
+const renderField = (field) => {
 
-      fieldOptions = masterOptions.religions;
+  const {
+    label,
+    placeholder,
+    type = "text",
+    key,
+    options,
+    readOnly = false
+  } = field;
 
-      console.log(
-        '🔍 Religion options:',
-        fieldOptions,
-        'length:',
-        fieldOptions?.length
-      );
+  // =========================================
+  // SELECT DROPDOWNS
+  // =========================================
+  if (type === "select") {
 
-    } else if (key === 'cityId') {
+    let fieldOptions = [];
 
-      fieldOptions = masterOptions.cities;
+    // =========================================
+    // BACKEND MASTER DATA OPTIONS
+    // =========================================
 
-      console.log(
-        '🔍 City options:',
-        fieldOptions,
-        'length:',
-        fieldOptions?.length
-      );
+if (key === "genderId") {
 
-    } else if (key === 'educationLevelId') {
-
-      fieldOptions = masterOptions.educationLevels;
-
-      console.log(
-        '🔍 Education Level options:',
-        fieldOptions,
-        'length:',
-        fieldOptions?.length
-      );
-
-    } else if (key === 'occupationId') {
-
-      fieldOptions = masterOptions.occupations;
-
-      console.log(
-        '🔍 Occupation options:',
-        fieldOptions,
-        'length:',
-        fieldOptions?.length
-      );
-
-    } else if (key === 'maritalStatusId') {
-
-      fieldOptions = masterOptions.maritalStatuses;
-
-      console.log(
-        '🔍 Marital Status options:',
-        fieldOptions,
-        'length:',
-        fieldOptions?.length
-      );
-
-    } else if (key === 'casteId') {
-
-      fieldOptions = masterOptions.castes;
-
-      console.log(
-        '🔍 Caste options:',
-        fieldOptions,
-        'length:',
-        fieldOptions?.length
-      );
-
-    } else if (key === 'subCasteId') {
-
-      fieldOptions = masterOptions.subCastes;
-
-      console.log(
-        '🔍 Sub Caste options:',
-        fieldOptions,
-        'length:',
-        fieldOptions?.length
-      );
-
-    } else if (key === 'motherTongueId') {
-
-      fieldOptions = masterOptions.motherTongues;
-
-      console.log(
-        '🔍 Mother Tongue options:',
-        fieldOptions,
-        'length:',
-        fieldOptions?.length
-      );
-
-    } else if (key === 'heightId') {
-
-      fieldOptions = masterOptions.heights;
-
-      console.log(
-        '🔍 Height options:',
-        fieldOptions,
-        'length:',
-        fieldOptions?.length
-      );
-
-    } else if (key === 'weightId') {
-
-      fieldOptions = masterOptions.weights;
-
-      console.log(
-        '🔍 Weight options:',
-        fieldOptions,
-        'length:',
-        fieldOptions?.length
-      );
-
-    } else if (key === 'city') {
-
-      fieldOptions = getOptions(key, formData.state);
-
-    } else if (!options) {
-
-      fieldOptions = getOptions(key);
+      fieldOptions =
+        masterOptions.genders || [];
 
     }
 
+    else if (key === "religionId") {
+
+      fieldOptions =
+        masterOptions.religions || [];
+
+    }
+
+    else if (key === "cityId") {
+
+      fieldOptions =
+        masterOptions.cities || [];
+
+    }
+
+    else if (key === "educationLevelId") {
+
+      fieldOptions =
+        masterOptions.educationLevels || [];
+
+    }
+
+    else if (key === "occupationId") {
+
+      fieldOptions =
+        masterOptions.occupations || [];
+
+    }
+
+    else if (key === "maritalStatusId") {
+
+      fieldOptions =
+        masterOptions.maritalStatuses || [];
+
+    }
+
+    else if (key === "casteId") {
+
+      fieldOptions =
+        masterOptions.castes || [];
+
+    }
+
+    else if (key === "subCasteId") {
+
+      fieldOptions =
+        masterOptions.subCastes || [];
+
+    }
+
+    else if (key === "motherTongueId") {
+
+      fieldOptions =
+        masterOptions.motherTongues || [];
+
+    }
+
+    else if (key === "heightId") {
+
+      fieldOptions =
+        masterOptions.heights || [];
+
+    }
+
+    else if (key === "weightId") {
+
+      fieldOptions =
+        masterOptions.weights || [];
+
+    }
+
+    // =========================================
+    // STATIC OPTIONS
+    // =========================================
+
+
+else if (key === "complexionId") {
+
+  fieldOptions =
+    masterOptions.complexions || [];
+
+}
+
+else if (key === "bodyTypeId") {
+
+  fieldOptions =
+    masterOptions.bodyTypes || [];
+
+}
+else if (key === "countryId") {
+
+  fieldOptions =
+    masterOptions.countries || [];
+
+}
+
+else if (key === "stateId") {
+
+  fieldOptions =
+    masterOptions.states || [];
+
+}
+else if (key === "incomeId") {
+
+  fieldOptions =
+    masterOptions.incomes || [];
+
+}
+
+else if (key === "dietId") {
+
+  fieldOptions =
+    masterOptions.diets || [];
+
+}
+
+else if (key === "smokingId") {
+
+  fieldOptions =
+    masterOptions.smokingOptions || [];
+
+}
+
+else if (key === "drinkingId") {
+
+  fieldOptions =
+    masterOptions.drinkingOptions || [];
+
+}
+    else {
+
+
+        fieldOptions =
+          options || [];
+
+    }
+
+    console.log(
+      `📋 Dropdown options for ${key}:`,
+      fieldOptions
+    );
+
     return (
+
       <div key={key}>
+
         <label className="text-xs font-medium text-foreground mb-1 block">
           {label}
         </label>
 
         <select
-          value={formData[key] || ''}
+          value={formData[key] || ""}
 
           onChange={(e) => {
 
             const value = e.target.value;
 
             console.log(
-              `🔄 Changed ${key} to:`,
-              value,
-              'type:',
-              typeof value,
-              'current formData:',
-              formData
+              `🔄 Changed ${key}:`,
+              value
             );
 
-            handleInputChange(key, value);
+            handleInputChange(
+              key,
+              value
+            );
 
-            // Reset caste when religion changes
-            if (key === 'religionId') {
+            // =========================================
+            // RESET DEPENDENT DROPDOWNS
+            // =========================================
 
-              console.log(
-                '🔄 Resetting caste due to religion change'
+            if (key === "religionId") {
+
+              handleInputChange(
+                "casteId",
+                ""
               );
 
-              handleInputChange('casteId', '');
-              handleInputChange('subCasteId', '');
+              handleInputChange(
+                "subCasteId",
+                ""
+              );
 
             }
 
-            // Reset sub caste when caste changes
-            if (key === 'casteId') {
+            if (key === "casteId") {
 
-              console.log(
-                '🔄 Resetting sub caste due to caste change'
+              handleInputChange(
+                "subCasteId",
+                ""
               );
-
-              handleInputChange('subCasteId', '');
 
             }
 
-            // Reset city when state changes
-            if (key === 'state') {
+           if (key === "stateId") {
 
-              handleInputChange('city', '');
+         handleInputChange(
+           "cityId",
+           ""
+         );
 
             }
 
           }}
 
-          className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+          className="
+            w-full
+            bg-background
+            border
+            border-border
+            rounded-lg
+            px-4
+            py-2.5
+            text-sm
+            text-foreground
+            focus:outline-none
+            focus:ring-2
+            focus:ring-primary/20
+            focus:border-primary
+          "
         >
 
           <option value="">
             Select {label.toLowerCase()}
           </option>
 
-          {fieldOptions &&
-            fieldOptions.length > 0 &&
-            fieldOptions.map(opt => {
+        {fieldOptions &&
+          fieldOptions.length > 0 &&
+          fieldOptions.map((opt) => {
 
-              const optionValue = opt.id || opt;
+          const optionValue =
+            opt?.id ??
+            opt?.cityId ??
+            opt?.stateId ??
+            opt?.countryId ??
+            opt?.casteId ??
+            opt?.subCasteId ??
+            opt?.value ??
+            opt;
 
-              const optionLabel = opt.name || opt;
+        const optionLabel =
 
-              console.log(
-                `📋 Dropdown option for ${key}:`,
-                {
-                  value: optionValue,
-                  label: optionLabel,
-                  rawOpt: opt
-                }
-              );
+          key === "drinkingId"
+            ? opt?.value
 
-              return (
-                <option
-                  key={optionValue}
-                  value={optionValue}
-                >
-                  {optionLabel}
-                </option>
-              );
+          : key === "smokingId"
+            ? opt?.value
 
-            })}
+          : key === "dietId"
+            ? opt?.name ?? opt?.value
 
+          : opt?.name ??
+            opt?.cityName ??
+            opt?.stateName ??
+            opt?.countryName ??
+            opt?.casteName ??
+            opt?.subCasteName ??
+            opt?.value ??
+            opt?.range ??
+            opt?.label ??
+            "Select Option";
+            return (
+
+              <option
+                key={optionValue}
+                value={optionValue}
+              >
+                {optionLabel}
+              </option>
+
+            );
+
+          })}
         </select>
+
       </div>
+
     );
-}
-    return (
-      <div key={key}>
-        <label className="text-xs font-medium text-foreground mb-1 block">{label}</label>
-        <input
-          type={type}
-          value={formData[key]}
-          onChange={(e) => handleInputChange(key, e.target.value)}
-          placeholder={placeholder}
-          readOnly={readOnly}
-          className={`w-full bg-background border border-border rounded-lg px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary ${readOnly ? 'bg-muted cursor-not-allowed' : ''}`}
-        />
-      </div>
-    );
-  };
+
+  }
+
+  // =========================================
+  // NORMAL INPUT FIELD
+  // =========================================
+
+  return (
+
+    <div key={key}>
+
+      <label className="text-xs font-medium text-foreground mb-1 block">
+        {label}
+      </label>
+
+      <input
+        type={type}
+
+        value={formData[key] || ""}
+
+        onChange={(e) =>
+          handleInputChange(
+            key,
+            e.target.value
+          )
+        }
+
+        placeholder={placeholder}
+
+        readOnly={readOnly}
+
+        className={`
+          w-full
+          bg-background
+          border
+          border-border
+          rounded-lg
+          px-4
+          py-2.5
+          text-sm
+          text-foreground
+          placeholder:text-muted-foreground
+          focus:outline-none
+          focus:ring-2
+          focus:ring-primary/20
+          focus:border-primary
+          ${
+            readOnly
+              ? "bg-muted cursor-not-allowed"
+              : ""
+          }
+        `}
+      />
+
+    </div>
+
+  );
+
+};
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -852,11 +1218,10 @@ aboutMe:
                 <h3 className="text-sm font-semibold text-foreground mb-3 pb-2 border-b border-border">Personal Details</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {renderField({ label: "Full Name", placeholder: "Your full name", key: "fullName" })}
-                  {renderField({ 
-                    label: "Gender", 
-                    key: "gender", 
-                    type: "select", 
-                    options: ["Male", "Female", "Other"] 
+                  {renderField({
+                    label: "Gender",
+                   key: "genderId",
+                    type: "select"
                   })}
                   {renderField({ label: "Date of Birth", type: "date", key: "dateOfBirth" })}
                   {renderField({ label: "Age", type: "number", key: "age", placeholder: "Auto-calculated", readOnly: true })}
@@ -884,15 +1249,13 @@ aboutMe:
                   {renderField({ label: "Weight", key: "weightId", type: "select" })}
                   {renderField({ 
                     label: "Complexion", 
-                    key: "complexion", 
-                    type: "select", 
-                    options: ["Fair", "Wheatish", "Wheatish Brown", "Brown", "Dark"] 
+                   key: "complexionId",
+                    type: "select",
                   })}
                   {renderField({ 
                     label: "Body Type", 
-                    key: "bodyType", 
-                    type: "select", 
-                    options: ["Slim", "Average", "Athletic", "Heavy"] 
+                  key: "bodyTypeId",
+                    type: "select",
                   })}
                 </div>
               </div>
@@ -907,7 +1270,7 @@ aboutMe:
                     type: "select" 
                   })}
                   {renderField({ label: "Profession/Occupation", key: "occupationId", type: "select" })}
-                  {renderField({ label: "Annual Income", key: "annualIncome", type: "select" })}
+                  {renderField({ label: "Annual Income", key: "incomeId", type: "select" })}
                   {renderField({ label: "Company Name", placeholder: "Your company", key: "companyName" })}
                 </div>
               </div>
@@ -916,35 +1279,57 @@ aboutMe:
               <div>
                 <h3 className="text-sm font-semibold text-foreground mb-3 pb-2 border-b border-border">Location Details</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {renderField({ label: "Country", key: "country", type: "select", options: ["India", "USA", "UK", "Canada", "Australia"] })}
-                  {renderField({ label: "State/Province", key: "state", type: "select" })}
-                  {renderField({ label: "City", key: "cityId", type: "select" })}
-                  {renderField({ label: "Address", placeholder: "Your address", key: "address" })}
+                {renderField({
+                  label: "Country",
+                  key: "countryId",
+                  type: "select"
+                })}
+
+                {renderField({
+                  label: "State",
+                  key: "stateId",
+                  type: "select"
+                })}
+
+                {renderField({
+                  label: "City",
+                  key: "cityId",
+                  type: "select"
+                })}
+
+                {renderField({
+                  label: "Address",
+                  key: "address",
+                  placeholder: "Enter address"
+                })}
+
                 </div>
+
               </div>
 
               {/* Lifestyle Section */}
               <div>
                 <h3 className="text-sm font-semibold text-foreground mb-3 pb-2 border-b border-border">Lifestyle</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {renderField({ 
-                    label: "Diet", 
-                    key: "diet", 
-                    type: "select", 
-                    options: ["Vegetarian", "Non-Vegetarian", "Vegan"] 
-                  })}
-                  {renderField({ 
-                    label: "Smoking", 
-                    key: "smoking", 
-                    type: "select", 
-                    options: ["No", "Yes", "Occasionally"] 
-                  })}
-                  {renderField({ 
-                    label: "Drinking", 
-                    key: "drinking", 
-                    type: "select", 
-                    options: ["No", "Yes", "Occasionally"] 
-                  })}
+                {renderField({
+                  label: "Diet",
+                  key: "dietId",
+                  type: "select"
+                })}
+
+                {renderField({
+                  label: "Smoking",
+                  key: "smokingId",
+                  type: "select"
+                })}
+
+                {renderField({
+                  label: "Drinking",
+                  key: "drinkingId",
+                  type: "select"
+                })}
+
+
                 </div>
               </div>
 
@@ -956,7 +1341,11 @@ aboutMe:
                   {renderField({ label: "Father's Occupation", placeholder: "Your father's occupation", key: "fatherOccupation" })}
                   {renderField({ label: "Mother's Name", placeholder: "Your mother's name", key: "motherName" })}
                   {renderField({ label: "Mother's Occupation", placeholder: "Your mother's occupation", key: "motherOccupation" })}
-                  {renderField({ label: "Number of Siblings", key: "siblingsCount", type: "select" })}
+{renderField({
+  label: "Number of Siblings",
+  key: "siblingsCount",
+  placeholder: "Enter siblings count"
+})}
                 </div>
               </div>
 
