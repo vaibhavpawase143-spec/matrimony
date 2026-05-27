@@ -97,47 +97,128 @@ INSERT INTO occupations (admin_id, name, is_active, created_at, updated_at)
 SELECT NULL, 'Government Employee', TRUE, CURRENT_TIMESTAMP, NULL
 WHERE NOT EXISTS (SELECT 1 FROM occupations WHERE name = 'Government Employee');
 
--- Cities (major Indian cities)
-INSERT INTO cities (name, state_id, admin_id, is_active, created_at, updated_at)
-SELECT 'Mumbai', NULL, NULL, TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (SELECT 1 FROM cities WHERE name = 'Mumbai');
+-- ==========================================
+-- CITIES
+-- ==========================================
 
-INSERT INTO cities (name, state_id, admin_id, is_active, created_at, updated_at)
-SELECT 'Delhi', NULL, NULL, TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (SELECT 1 FROM cities WHERE name = 'Delhi');
+INSERT INTO cities
+(admin_id, state_id, name, is_active, created_at, updated_at)
 
-INSERT INTO cities (name, state_id, admin_id, is_active, created_at, updated_at)
-SELECT 'Bangalore', NULL, NULL, TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (SELECT 1 FROM cities WHERE name = 'Bangalore');
+SELECT
+NULL,
+(SELECT id FROM states WHERE name = 'Maharashtra'),
+'Mumbai',
+TRUE,
+CURRENT_TIMESTAMP,
+CURRENT_TIMESTAMP
 
-INSERT INTO cities (name, state_id, admin_id, is_active, created_at, updated_at)
-SELECT 'Chennai', NULL, NULL, TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (SELECT 1 FROM cities WHERE name = 'Chennai');
+WHERE NOT EXISTS (
+    SELECT 1 FROM cities WHERE name='Mumbai'
+);
 
-INSERT INTO cities (name, state_id, admin_id, is_active, created_at, updated_at)
-SELECT 'Kolkata', NULL, NULL, TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (SELECT 1 FROM cities WHERE name = 'Kolkata');
+INSERT INTO cities
+(admin_id, state_id, name, is_active, created_at, updated_at)
 
-INSERT INTO cities (name, state_id, admin_id, is_active, created_at, updated_at)
-SELECT 'Hyderabad', NULL, NULL, TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (SELECT 1 FROM cities WHERE name = 'Hyderabad');
+SELECT
+NULL,
+(SELECT id FROM states WHERE name = 'Maharashtra'),
+'Pune',
+TRUE,
+CURRENT_TIMESTAMP,
+CURRENT_TIMESTAMP
 
-INSERT INTO cities (name, state_id, admin_id, is_active, created_at, updated_at)
-SELECT 'Pune', NULL, NULL, TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (SELECT 1 FROM cities WHERE name = 'Pune');
+WHERE NOT EXISTS (
+    SELECT 1 FROM cities WHERE name='Pune'
+);
 
-INSERT INTO cities (name, state_id, admin_id, is_active, created_at, updated_at)
-SELECT 'Ahmedabad', NULL, NULL, TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (SELECT 1 FROM cities WHERE name = 'Ahmedabad');
+INSERT INTO cities
+(admin_id, state_id, name, is_active, created_at, updated_at)
 
-INSERT INTO cities (name, state_id, admin_id, is_active, created_at, updated_at)
-SELECT 'Jaipur', NULL, NULL, TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (SELECT 1 FROM cities WHERE name = 'Jaipur');
+SELECT
+NULL,
+(SELECT id FROM states WHERE name = 'Maharashtra'),
+'Nagpur',
+TRUE,
+CURRENT_TIMESTAMP,
+CURRENT_TIMESTAMP
 
-INSERT INTO cities (name, state_id, admin_id, is_active, created_at, updated_at)
-SELECT 'Other', NULL, NULL, TRUE, CURRENT_TIMESTAMP, NULL
-WHERE NOT EXISTS (SELECT 1 FROM cities WHERE name = 'Other');
+WHERE NOT EXISTS (
+    SELECT 1 FROM cities WHERE name='Nagpur'
+);
 
+INSERT INTO cities
+(admin_id, state_id, name, is_active, created_at, updated_at)
+
+SELECT
+NULL,
+(SELECT id FROM states WHERE name = 'Gujarat'),
+'Ahmedabad',
+TRUE,
+CURRENT_TIMESTAMP,
+CURRENT_TIMESTAMP
+
+WHERE NOT EXISTS (
+    SELECT 1 FROM cities WHERE name='Ahmedabad'
+);
+
+INSERT INTO cities
+(admin_id, state_id, name, is_active, created_at, updated_at)
+
+SELECT
+NULL,
+(SELECT id FROM states WHERE name = 'Gujarat'),
+'Surat',
+TRUE,
+CURRENT_TIMESTAMP,
+CURRENT_TIMESTAMP
+
+WHERE NOT EXISTS (
+    SELECT 1 FROM cities WHERE name='Surat'
+);
+
+INSERT INTO cities
+(admin_id, state_id, name, is_active, created_at, updated_at)
+
+SELECT
+NULL,
+(SELECT id FROM states WHERE name = 'Karnataka'),
+'Bangalore',
+TRUE,
+CURRENT_TIMESTAMP,
+CURRENT_TIMESTAMP
+
+WHERE NOT EXISTS (
+    SELECT 1 FROM cities WHERE name='Bangalore'
+);
+
+INSERT INTO cities
+(admin_id, state_id, name, is_active, created_at, updated_at)
+
+SELECT
+NULL,
+(SELECT id FROM states WHERE name = 'Karnataka'),
+'Mysore',
+TRUE,
+CURRENT_TIMESTAMP,
+CURRENT_TIMESTAMP
+
+WHERE NOT EXISTS (
+    SELECT 1 FROM cities WHERE name='Mysore'
+);
+INSERT INTO cities
+(name, state_id, admin_id, is_active, created_at, updated_at)
+
+SELECT
+'Mysore',
+(SELECT id FROM states WHERE name='Karnataka' LIMIT 1),
+NULL,
+TRUE,
+CURRENT_TIMESTAMP,
+CURRENT_TIMESTAMP
+
+WHERE NOT EXISTS (
+    SELECT 1 FROM cities WHERE name='Mysore'
+);
 -- Mother Tongues
 INSERT INTO mother_tongues (admin_id, name, is_active, created_at, updated_at)
 SELECT NULL, 'Hindi', TRUE, CURRENT_TIMESTAMP, NULL
@@ -233,7 +314,7 @@ WHERE NOT EXISTS (
 INSERT INTO castes
 (admin_id, religion_id, name, is_active, created_at, updated_at)
 
-SELECT 1, 1, 'Brahmin', TRUE, CURRENT_TIMESTAMP, NULL
+SELECT NULL, 1, 'Brahmin', TRUE, CURRENT_TIMESTAMP, NULL
 WHERE NOT EXISTS (
     SELECT 1 FROM castes WHERE name = 'Brahmin'
 );
@@ -241,7 +322,7 @@ WHERE NOT EXISTS (
 INSERT INTO castes
 (admin_id, religion_id, name, is_active, created_at, updated_at)
 
-SELECT 1, 1, 'Maratha', TRUE, CURRENT_TIMESTAMP, NULL
+SELECT NULL, 1, 'Maratha', TRUE, CURRENT_TIMESTAMP, NULL
 WHERE NOT EXISTS (
     SELECT 1 FROM castes WHERE name = 'Maratha'
 );
@@ -249,7 +330,7 @@ WHERE NOT EXISTS (
 INSERT INTO castes
 (admin_id, religion_id, name, is_active, created_at, updated_at)
 
-SELECT 1, 2, 'Sunni', TRUE, CURRENT_TIMESTAMP, NULL
+SELECT NULL, 2, 'Sunni', TRUE, CURRENT_TIMESTAMP, NULL
 WHERE NOT EXISTS (
     SELECT 1 FROM castes WHERE name = 'Sunni'
 );
@@ -257,7 +338,7 @@ WHERE NOT EXISTS (
 INSERT INTO castes
 (admin_id, religion_id, name, is_active, created_at, updated_at)
 
-SELECT 1, 2, 'Shia', TRUE, CURRENT_TIMESTAMP, NULL
+SELECT NULL, 2, 'Shia', TRUE, CURRENT_TIMESTAMP, NULL
 WHERE NOT EXISTS (
     SELECT 1 FROM castes WHERE name = 'Shia'
 );
@@ -265,7 +346,7 @@ WHERE NOT EXISTS (
 INSERT INTO castes
 (admin_id, religion_id, name, is_active, created_at, updated_at)
 
-SELECT 1, 3, 'Roman Catholic', TRUE, CURRENT_TIMESTAMP, NULL
+SELECT NULL, 3, 'Roman Catholic', TRUE, CURRENT_TIMESTAMP, NULL
 WHERE NOT EXISTS (
     SELECT 1 FROM castes WHERE name = 'Roman Catholic'
 );
@@ -278,62 +359,22 @@ INSERT INTO sub_castes
 (admin_id, caste_id, name, is_active, created_at, updated_at)
 
 SELECT
-1,
-(SELECT id FROM castes WHERE name = 'Brahmin'),
+(SELECT id FROM admins LIMIT 1),
+
+(SELECT id FROM castes
+ WHERE name = 'Brahmin'
+ LIMIT 1),
+
 'Deshastha Brahmin',
 TRUE,
 CURRENT_TIMESTAMP,
-NULL
+CURRENT_TIMESTAMP
 
 WHERE NOT EXISTS (
-SELECT 1 FROM sub_castes WHERE name = 'Deshastha Brahmin'
+    SELECT 1
+    FROM sub_castes
+    WHERE name = 'Deshastha Brahmin'
 );
-
-INSERT INTO sub_castes
-(admin_id, caste_id, name, is_active, created_at, updated_at)
-
-SELECT
-1,
-(SELECT id FROM castes WHERE name = 'Maratha'),
-'96 Kuli Maratha',
-TRUE,
-CURRENT_TIMESTAMP,
-NULL
-
-WHERE NOT EXISTS (
-SELECT 1 FROM sub_castes WHERE name = '96 Kuli Maratha'
-);
-
-INSERT INTO sub_castes
-(admin_id, caste_id, name, is_active, created_at, updated_at)
-
-SELECT
-1,
-(SELECT id FROM castes WHERE name = 'Sunni'),
-'Hanafi Sunni',
-TRUE,
-CURRENT_TIMESTAMP,
-NULL
-
-WHERE NOT EXISTS (
-SELECT 1 FROM sub_castes WHERE name = 'Hanafi Sunni'
-);
-
-INSERT INTO sub_castes
-(admin_id, caste_id, name, is_active, created_at, updated_at)
-
-SELECT
-1,
-(SELECT id FROM castes WHERE name = 'Shia'),
-'Twelver Shia',
-TRUE,
-CURRENT_TIMESTAMP,
-NULL
-
-WHERE NOT EXISTS (
-SELECT 1 FROM sub_castes WHERE name = 'Twelver Shia'
-);
-
 -- ==========================================
 -- HEIGHTS
 -- ==========================================
@@ -415,4 +456,363 @@ INSERT INTO weights
 SELECT NULL, '80 Kg', TRUE, CURRENT_TIMESTAMP, NULL
 WHERE NOT EXISTS (
 SELECT 1 FROM weights WHERE value='80 Kg'
+);
+
+INSERT INTO genders (name, is_active, created_at, updated_at)
+SELECT 'Male', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+    SELECT 1 FROM genders WHERE name = 'Male'
+);
+
+INSERT INTO genders (name, is_active, created_at, updated_at)
+SELECT 'Female', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+    SELECT 1 FROM genders WHERE name = 'Female'
+);
+
+INSERT INTO genders (name, is_active, created_at, updated_at)
+SELECT 'Other', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+    SELECT 1 FROM genders WHERE name = 'Other'
+);
+-- ==========================================
+-- COMPLEXIONS
+-- ==========================================
+
+INSERT INTO complexions
+(admin_id, value, is_active, created_at, updated_at)
+
+SELECT NULL, 'Fair', TRUE, CURRENT_TIMESTAMP, NULL
+WHERE NOT EXISTS (
+SELECT 1 FROM complexions WHERE value='Fair'
+);
+
+INSERT INTO complexions
+(admin_id, value, is_active, created_at, updated_at)
+
+SELECT NULL, 'Wheatish', TRUE, CURRENT_TIMESTAMP, NULL
+WHERE NOT EXISTS (
+SELECT 1 FROM complexions WHERE value='Wheatish'
+);
+
+INSERT INTO complexions
+(admin_id, value, is_active, created_at, updated_at)
+
+SELECT NULL, 'Dark', TRUE, CURRENT_TIMESTAMP, NULL
+WHERE NOT EXISTS (
+SELECT 1 FROM complexions WHERE value='Dark'
+);
+
+INSERT INTO complexions
+(admin_id, value, is_active, created_at, updated_at)
+
+SELECT NULL, 'Very Fair', TRUE, CURRENT_TIMESTAMP, NULL
+WHERE NOT EXISTS (
+SELECT 1 FROM complexions WHERE value='Very Fair'
+);
+-- ==========================================
+-- BODY TYPES
+-- ==========================================
+
+INSERT INTO body_types
+(admin_id, value, is_active, created_at, updated_at)
+
+SELECT NULL, 'Slim', TRUE, CURRENT_TIMESTAMP, NULL
+WHERE NOT EXISTS (
+SELECT 1 FROM body_types WHERE value='Slim'
+);
+
+INSERT INTO body_types
+(admin_id, value, is_active, created_at, updated_at)
+
+SELECT NULL, 'Average', TRUE, CURRENT_TIMESTAMP, NULL
+WHERE NOT EXISTS (
+SELECT 1 FROM body_types WHERE value='Average'
+);
+
+INSERT INTO body_types
+(admin_id, value, is_active, created_at, updated_at)
+
+SELECT NULL, 'Athletic', TRUE, CURRENT_TIMESTAMP, NULL
+WHERE NOT EXISTS (
+SELECT 1 FROM body_types WHERE value='Athletic'
+);
+
+INSERT INTO body_types
+(admin_id, value, is_active, created_at, updated_at)
+
+SELECT NULL, 'Heavy', TRUE, CURRENT_TIMESTAMP, NULL
+WHERE NOT EXISTS (
+SELECT 1 FROM body_types WHERE value='Heavy'
+);
+
+-- ==========================================
+-- COUNTRIES
+-- ==========================================
+
+INSERT INTO countries
+(admin_id, name, is_active, created_at, updated_at)
+
+SELECT
+NULL,
+'India',
+TRUE,
+CURRENT_TIMESTAMP,
+CURRENT_TIMESTAMP
+
+WHERE NOT EXISTS (
+    SELECT 1 FROM countries
+    WHERE name = 'India'
+);
+
+INSERT INTO countries
+(admin_id, name, is_active, created_at, updated_at)
+
+SELECT
+NULL,
+'USA',
+TRUE,
+CURRENT_TIMESTAMP,
+CURRENT_TIMESTAMP
+
+WHERE NOT EXISTS (
+    SELECT 1 FROM countries
+    WHERE name = 'USA'
+);
+
+-- ==========================================
+-- STATES
+-- ==========================================
+
+INSERT INTO states
+(admin_id, country_id, name, is_active, created_at, updated_at)
+
+SELECT
+NULL,
+
+(
+    SELECT id
+    FROM countries
+    WHERE name = 'India'
+    LIMIT 1
+),
+
+'Maharashtra',
+TRUE,
+CURRENT_TIMESTAMP,
+CURRENT_TIMESTAMP
+
+WHERE NOT EXISTS (
+    SELECT 1 FROM states
+    WHERE name = 'Maharashtra'
+);
+
+INSERT INTO states
+(admin_id, country_id, name, is_active, created_at, updated_at)
+
+SELECT
+NULL,
+
+(
+    SELECT id
+    FROM countries
+    WHERE name = 'India'
+    LIMIT 1
+),
+
+'Gujarat',
+TRUE,
+CURRENT_TIMESTAMP,
+CURRENT_TIMESTAMP
+
+WHERE NOT EXISTS (
+    SELECT 1 FROM states
+    WHERE name = 'Gujarat'
+);
+
+INSERT INTO states
+(admin_id, country_id, name, is_active, created_at, updated_at)
+
+SELECT
+NULL,
+
+(
+    SELECT id
+    FROM countries
+    WHERE name = 'India'
+    LIMIT 1
+),
+
+'Karnataka',
+TRUE,
+CURRENT_TIMESTAMP,
+CURRENT_TIMESTAMP
+
+WHERE NOT EXISTS (
+    SELECT 1 FROM states
+    WHERE name = 'Karnataka'
+);
+--- ==========================================
+ -- INCOMES
+ -- ==========================================
+
+ INSERT INTO incomes
+ (admin_id, range, is_active, created_at, updated_at)
+
+ SELECT NULL, '1 Lakh - 2 Lakhs', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+ WHERE NOT EXISTS (
+     SELECT 1 FROM incomes WHERE range='1 Lakh - 2 Lakhs'
+ );
+
+ INSERT INTO incomes
+ (admin_id, range, is_active, created_at, updated_at)
+
+ SELECT NULL, '2 Lakhs - 5 Lakhs', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+ WHERE NOT EXISTS (
+     SELECT 1 FROM incomes WHERE range='2 Lakhs - 5 Lakhs'
+ );
+
+ INSERT INTO incomes
+ (admin_id, range, is_active, created_at, updated_at)
+
+ SELECT NULL, '5 Lakhs - 10 Lakhs', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+ WHERE NOT EXISTS (
+     SELECT 1 FROM incomes WHERE range='5 Lakhs - 10 Lakhs'
+ );
+
+ INSERT INTO incomes
+ (admin_id, range, is_active, created_at, updated_at)
+
+ SELECT NULL, '10 Lakhs+', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+ WHERE NOT EXISTS (
+     SELECT 1 FROM incomes WHERE range='10 Lakhs+'
+ );
+-- ==========================================
+-- DIETS
+-- ==========================================
+
+INSERT INTO diets
+(admin_id, name, is_active, created_at, updated_at)
+
+SELECT NULL, 'Vegetarian', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+    SELECT 1 FROM diets WHERE name='Vegetarian'
+);
+
+INSERT INTO diets
+(admin_id, name, is_active, created_at, updated_at)
+
+SELECT NULL, 'Non Vegetarian', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+    SELECT 1 FROM diets WHERE name='Non Vegetarian'
+);
+
+INSERT INTO diets
+(admin_id, name, is_active, created_at, updated_at)
+
+SELECT NULL, 'Eggetarian', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+    SELECT 1 FROM diets WHERE name='Eggetarian'
+);
+
+INSERT INTO diets
+(admin_id, name, is_active, created_at, updated_at)
+
+SELECT NULL, 'Vegan', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+    SELECT 1 FROM diets WHERE name='Vegan'
+);
+-- ==========================================
+-- SMOKING
+-- ==========================================
+
+INSERT INTO smoking
+(admin_id, value, is_active, created_at, updated_at)
+
+SELECT
+NULL,
+'Non-Smoker',
+TRUE,
+CURRENT_TIMESTAMP,
+CURRENT_TIMESTAMP
+
+WHERE NOT EXISTS (
+    SELECT 1 FROM smoking WHERE value='Non-Smoker'
+);
+
+INSERT INTO smoking
+(admin_id, value, is_active, created_at, updated_at)
+
+SELECT
+NULL,
+'Occasional Smoker',
+TRUE,
+CURRENT_TIMESTAMP,
+CURRENT_TIMESTAMP
+
+WHERE NOT EXISTS (
+    SELECT 1 FROM smoking WHERE value='Occasional Smoker'
+);
+
+INSERT INTO smoking
+(admin_id, value, is_active, created_at, updated_at)
+
+SELECT
+NULL,
+'Regular Smoker',
+TRUE,
+CURRENT_TIMESTAMP,
+CURRENT_TIMESTAMP
+
+WHERE NOT EXISTS (
+    SELECT 1 FROM smoking WHERE value='Regular Smoker'
+);
+
+-- ==========================================
+-- DRINKING
+-- ==========================================
+
+INSERT INTO drinking
+(admin_id, name, value, is_active, created_at, updated_at)
+
+SELECT
+NULL,
+'Drinking Habit',
+'Non-Drinker',
+TRUE,
+CURRENT_TIMESTAMP,
+CURRENT_TIMESTAMP
+
+WHERE NOT EXISTS (
+    SELECT 1 FROM drinking WHERE value='Non-Drinker'
+);
+
+INSERT INTO drinking
+(admin_id, name, value, is_active, created_at, updated_at)
+
+SELECT
+NULL,
+'Drinking Habit',
+'Occasionally',
+TRUE,
+CURRENT_TIMESTAMP,
+CURRENT_TIMESTAMP
+
+WHERE NOT EXISTS (
+    SELECT 1 FROM drinking WHERE value='Occasionally'
+);
+
+INSERT INTO drinking
+(admin_id, name, value, is_active, created_at, updated_at)
+
+SELECT
+NULL,
+'Drinking Habit',
+'Regularly',
+TRUE,
+CURRENT_TIMESTAMP,
+CURRENT_TIMESTAMP
+
+WHERE NOT EXISTS (
+    SELECT 1 FROM drinking WHERE value='Regularly'
 );

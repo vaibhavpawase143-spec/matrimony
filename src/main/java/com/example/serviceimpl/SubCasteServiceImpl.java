@@ -17,80 +17,157 @@ public class SubCasteServiceImpl implements SubCasteService {
         this.repository = repository;
     }
 
-    // ✅ Save (admin-wise duplicate check)
+    // =========================================
+    // SAVE
+    // =========================================
+
     @Override
     public SubCaste save(SubCaste subCaste) {
 
         String name = subCaste.getName();
-        Long adminId = subCaste.getAdmin().getId();
+
+        Long adminId = subCaste.getAdmin() != null
+                ? subCaste.getAdmin().getId()
+                : null;
 
         Optional<SubCaste> existing =
-                repository.findByNameIgnoreCaseAndAdminId(name, adminId);
+                repository.findAccessibleByName(
+                        name,
+                        adminId
+                );
 
-        if (existing.isPresent() &&
-                !existing.get().getId().equals(subCaste.getId())) {
-            throw new RuntimeException("SubCaste already exists for this admin!");
+        if (existing.isPresent()
+                && !existing.get().getId().equals(subCaste.getId())) {
+
+            throw new RuntimeException(
+                    "SubCaste already exists!"
+            );
         }
 
         return repository.save(subCaste);
     }
 
-    // ✅ Get by ID
+    // =========================================
+    // GET BY ID
+    // =========================================
+
     @Override
     public Optional<SubCaste> getById(Long id) {
+
         return repository.findById(id);
     }
 
-    // 🔍 Get all
+    // =========================================
+    // GET ALL
+    // =========================================
+
     @Override
     public List<SubCaste> getAll() {
+
         return repository.findAll();
     }
 
-    // 🔍 Get by admin
+    // =========================================
+    // GET BY ADMIN
+    // =========================================
+
     @Override
     public List<SubCaste> getByAdmin(Long adminId) {
-        return repository.findByAdminId(adminId);
+
+        return repository.findAllAvailable(adminId);
     }
 
-    // 🔍 Active / Inactive
+    // =========================================
+    // ACTIVE
+    // =========================================
+
     @Override
     public List<SubCaste> getActiveByAdmin(Long adminId) {
-        return repository.findByAdminIdAndIsActiveTrue(adminId);
+
+        return repository.findAllActiveAvailable(adminId);
     }
+
+    // =========================================
+    // INACTIVE
+    // =========================================
 
     @Override
     public List<SubCaste> getInactiveByAdmin(Long adminId) {
-        return repository.findByAdminIdAndIsActiveFalse(adminId);
+
+        return repository.findAllInactiveAvailable(adminId);
     }
 
-    // 🔍 Caste + admin
+    // =========================================
+    // BY CASTE
+    // =========================================
+
     @Override
-    public List<SubCaste> getByCasteAndAdmin(Long casteId, Long adminId) {
-        return repository.findByCaste_IdAndAdminId(casteId, adminId);
+    public List<SubCaste> getByCasteAndAdmin(
+            Long casteId,
+            Long adminId
+    ) {
+
+        return repository.findAvailableByCaste(
+                casteId,
+                adminId
+        );
     }
 
-    // 🔍 Active by caste + admin
+    // =========================================
+    // ACTIVE BY CASTE
+    // =========================================
+
     @Override
-    public List<SubCaste> getActiveByCasteAndAdmin(Long casteId, Long adminId) {
-        return repository.findByCaste_IdAndAdminIdAndIsActiveTrue(casteId, adminId);
+    public List<SubCaste> getActiveByCasteAndAdmin(
+            Long casteId,
+            Long adminId
+    ) {
+
+        return repository.findActiveAvailableByCaste(
+                casteId,
+                adminId
+        );
     }
 
-    // 🔍 Search
+    // =========================================
+    // SEARCH
+    // =========================================
+
     @Override
-    public List<SubCaste> searchByAdmin(Long adminId, String keyword) {
-        return repository.findByAdminIdAndNameContainingIgnoreCase(adminId, keyword);
+    public List<SubCaste> searchByAdmin(
+            Long adminId,
+            String keyword
+    ) {
+
+        return repository.searchAvailable(
+                keyword,
+                adminId
+        );
     }
 
-    // 🔍 Find by name
+    // =========================================
+    // FIND BY NAME
+    // =========================================
+
     @Override
-    public Optional<SubCaste> getByNameAndAdmin(String name, Long adminId) {
-        return repository.findByNameIgnoreCaseAndAdminId(name, adminId);
+    public Optional<SubCaste> getByNameAndAdmin(
+            String name,
+            Long adminId
+    ) {
+
+        return repository.findAccessibleByName(
+                name,
+                adminId
+        );
     }
 
-    // ✅ Delete
+    // =========================================
+    // DELETE
+    // =========================================
+
     @Override
     public void delete(Long id) {
+
         repository.deleteById(id);
     }
 }

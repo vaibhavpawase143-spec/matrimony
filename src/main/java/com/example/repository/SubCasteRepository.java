@@ -2,6 +2,7 @@ package com.example.repository;
 
 import com.example.model.SubCaste;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -10,26 +11,155 @@ import java.util.Optional;
 @Repository
 public interface SubCasteRepository extends JpaRepository<SubCaste, Long> {
 
-    // 🔍 Find by name (admin-specific)
-    Optional<SubCaste> findByNameIgnoreCaseAndAdminId(String name, Long adminId);
+    // =========================================
+    // FIND BY NAME
+    // =========================================
 
-    // 🔍 Check duplicate (admin-specific)
-    boolean existsByNameIgnoreCaseAndAdminId(String name, Long adminId);
+    @Query("""
+        SELECT s FROM SubCaste s
+        WHERE LOWER(s.name) = LOWER(:name)
+        AND (
+            s.admin.id = :adminId
+            OR s.admin IS NULL
+        )
+    """)
+    Optional<SubCaste> findAccessibleByName(
+            String name,
+            Long adminId
+    );
 
-    // 🔍 Get all by admin
-    List<SubCaste> findByAdminId(Long adminId);
+    // =========================================
+    // DUPLICATE CHECK
+    // =========================================
 
-    // 🔍 Active / Inactive by admin
-    List<SubCaste> findByAdminIdAndIsActiveTrue(Long adminId);
+    @Query("""
+        SELECT COUNT(s) > 0
+        FROM SubCaste s
+        WHERE LOWER(s.name) = LOWER(:name)
+        AND (
+            s.admin.id = :adminId
+            OR s.admin IS NULL
+        )
+    """)
+    boolean existsAccessible(
+            String name,
+            Long adminId
+    );
 
-    List<SubCaste> findByAdminIdAndIsActiveFalse(Long adminId);
+    // =========================================
+    // GET BY ID
+    // =========================================
 
-    // 🔍 Filter by caste + admin
-    List<SubCaste> findByCaste_IdAndAdminId(Long casteId, Long adminId);
+    @Query("""
+        SELECT s FROM SubCaste s
+        WHERE s.id = :id
+        AND (
+            s.admin.id = :adminId
+            OR s.admin IS NULL
+        )
+    """)
+    Optional<SubCaste> findAccessibleById(
+            Long id,
+            Long adminId
+    );
 
-    // 🔍 Active by caste + admin
-    List<SubCaste> findByCaste_IdAndAdminIdAndIsActiveTrue(Long casteId, Long adminId);
+    // =========================================
+    // GET ALL
+    // =========================================
 
-    // 🔍 Search (admin + keyword)
-    List<SubCaste> findByAdminIdAndNameContainingIgnoreCase(Long adminId, String keyword);
+    @Query("""
+        SELECT s FROM SubCaste s
+        WHERE (
+            s.admin.id = :adminId
+            OR s.admin IS NULL
+        )
+        ORDER BY s.name ASC
+    """)
+    List<SubCaste> findAllAvailable(Long adminId);
+
+    // =========================================
+    // ACTIVE
+    // =========================================
+
+    @Query("""
+        SELECT s FROM SubCaste s
+        WHERE s.isActive = true
+        AND (
+            s.admin.id = :adminId
+            OR s.admin IS NULL
+        )
+        ORDER BY s.name ASC
+    """)
+    List<SubCaste> findAllActiveAvailable(Long adminId);
+
+    // =========================================
+    // INACTIVE
+    // =========================================
+
+    @Query("""
+        SELECT s FROM SubCaste s
+        WHERE s.isActive = false
+        AND (
+            s.admin.id = :adminId
+            OR s.admin IS NULL
+        )
+        ORDER BY s.name ASC
+    """)
+    List<SubCaste> findAllInactiveAvailable(Long adminId);
+
+    // =========================================
+    // CASTE FILTER
+    // =========================================
+
+    @Query("""
+        SELECT s FROM SubCaste s
+        WHERE s.caste.id = :casteId
+        AND (
+            s.admin.id = :adminId
+            OR s.admin IS NULL
+        )
+        ORDER BY s.name ASC
+    """)
+    List<SubCaste> findAvailableByCaste(
+            Long casteId,
+            Long adminId
+    );
+
+    // =========================================
+    // ACTIVE BY CASTE
+    // =========================================
+
+    @Query("""
+        SELECT s FROM SubCaste s
+        WHERE s.caste.id = :casteId
+        AND s.isActive = true
+        AND (
+            s.admin.id = :adminId
+            OR s.admin IS NULL
+        )
+        ORDER BY s.name ASC
+    """)
+    List<SubCaste> findActiveAvailableByCaste(
+            Long casteId,
+            Long adminId
+    );
+
+    // =========================================
+    // SEARCH
+    // =========================================
+
+    @Query("""
+        SELECT s FROM SubCaste s
+        WHERE LOWER(s.name)
+        LIKE LOWER(CONCAT('%', :keyword, '%'))
+        AND (
+            s.admin.id = :adminId
+            OR s.admin IS NULL
+        )
+        ORDER BY s.name ASC
+    """)
+    List<SubCaste> searchAvailable(
+            String keyword,
+            Long adminId
+    );
 }

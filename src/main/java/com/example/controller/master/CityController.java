@@ -1,7 +1,7 @@
 package com.example.controller.master;
 
 import com.example.dto.request.CityRequestDTO;
-import com.example.dto.responce.CityResponseDTO;
+import com.example.dto.response.CityResponseDTO;
 import com.example.model.Admin;
 import com.example.model.City;
 import com.example.model.State;

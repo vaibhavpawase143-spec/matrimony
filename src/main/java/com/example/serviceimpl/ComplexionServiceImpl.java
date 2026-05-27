@@ -78,12 +78,16 @@ public class ComplexionServiceImpl implements ComplexionService {
     // 🔍 Admin-based
     @Override
     public List<Complexion> getByAdmin(Long adminId) {
-        return complexionRepository.findByAdminId(adminId);
+
+        return complexionRepository.findAll();
+
     }
 
     @Override
     public List<Complexion> getActiveByAdmin(Long adminId) {
-        return complexionRepository.findByAdminIdAndIsActiveTrue(adminId);
+
+        return complexionRepository.findByIsActiveTrue();
+
     }
 
     // 🔍 Search

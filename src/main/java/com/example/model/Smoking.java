@@ -23,7 +23,7 @@ public class Smoking {
 
     // ✅ SAFE LAZY
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "admin_id", nullable = false)
+    @JoinColumn(name = "admin_id")
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Admin admin;
 

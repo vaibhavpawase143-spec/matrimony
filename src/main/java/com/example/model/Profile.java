@@ -1,6 +1,7 @@
 package com.example.model;
 
 import jakarta.persistence.*;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -23,97 +24,129 @@ public class Profile {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // =====================================================
+    // USER
+    // =====================================================
+
     @OneToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    // =====================================================
+    // MASTER TABLE RELATIONS
+    // =====================================================
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "religion_id")
     private Religion religion;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "caste_id")
     private Caste caste;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sub_caste_id")
     private SubCaste subCaste;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "city_id")
     private City city;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "state_id")
+    private State state;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "country_id")
+    private Country country;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "mother_tongue_id")
     private MotherTongue motherTongue;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "marital_status_id")
     private MaritalStatus maritalStatus;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "gender_id")
+    private Gender gender;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "education_level_id")
+    private EducationLevel educationLevel;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "occupation_id")
+    private Occupation occupation;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "height_id")
+    private Height height;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "weight_id")
+    private Weight weight;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "body_type_id")
+    private BodyType bodyType;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "complexion_id")
+    private Complexion complexion;
+
+    // =====================================================
+    // BASIC PROFILE
+    // =====================================================
 
     @Column(name = "date_of_birth")
     private LocalDate dateOfBirth;
 
-    @Column(length = 10)
-    private String gender;
-
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "education_level_id")
-    private EducationLevel educationLevel;
-
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "occupation_id")
-    private Occupation occupation;
-
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "height_id")
-    private Height height;
-
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "weight_id")
-    private Weight weight;
-
     @Column(length = 1000)
     private String about;
 
-    @Column(name = "image_url")
+    @Column(length = 2000)
+    private String aboutMe;
+
+    @Column(name = "image_url", columnDefinition = "TEXT")
     private String imageUrl;
 
-    // Physical details
-    @Column(length = 50)
-    private String complexion;
+    // =====================================================
+    // CAREER
+    // =====================================================
 
-    @Column(length = 50)
-    private String bodyType;
-
-    // Education & Career
-    @Column(length = 100)
-    private String annualIncome;
-
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "income_id")
+    private Income income;
     @Column(length = 200)
     private String companyName;
 
-    // Location
-    @Column(length = 100)
-    private String country;
-
-    @Column(length = 100)
-    private String state;
+    // =====================================================
+    // ADDRESS
+    // =====================================================
 
     @Column(length = 500)
     private String address;
 
-    // Lifestyle
-    @Column(length = 50)
-    private String diet;
+    // =====================================================
+    // LIFESTYLE
+    // =====================================================
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "diet_id")
+    private Diet diet;
 
-    @Column(length = 50)
-    private String smoking;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "smoking_id")
+    private Smoking smoking;
 
-    @Column(length = 50)
-    private String drinking;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "drinking_id")
+    private Drinking drinking;
+    // =====================================================
+    // FAMILY
+    // =====================================================
 
-    // Family details
     @Column(length = 100)
     private String fatherName;
 
@@ -126,15 +159,17 @@ public class Profile {
     @Column(length = 200)
     private String motherOccupation;
 
-    @Column(length = 50)
-    private String siblingsCount;
+    @Column(name = "siblings_count")
+    private Integer siblingsCount;
+    // =====================================================
+    // PARTNER PREFERENCE
+    // =====================================================
 
-    // Partner preferences
-    @Column(length = 10)
-    private String preferredAgeMin;
+    @Column(name = "preferred_age_min")
+    private Integer preferredAgeMin;
 
-    @Column(length = 10)
-    private String preferredAgeMax;
+    @Column(name = "preferred_age_max")
+    private Integer preferredAgeMax;
 
     @Column(length = 200)
     private String preferredLocation;
@@ -145,6 +180,10 @@ public class Profile {
     @Column(length = 1000)
     private String otherExpectations;
 
+    // =====================================================
+    // SYSTEM
+    // =====================================================
+
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 
@@ -154,24 +193,59 @@ public class Profile {
     @Column(name = "profile_completed")
     private Boolean profileCompleted = false;
 
+    @Column(name = "is_premium")
+    private Boolean isPremium = false;
+
+    @Column(name = "boost_score")
+    private Integer boostScore = 0;
+
+    // =====================================================
+    // AUDIT
+    // =====================================================
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    public Profile() {}
-    // 🔥 PREMIUM / BOOST SYSTEM
-    @Column(name = "is_premium")
-    private Boolean isPremium = false;
+    // =====================================================
+    // CONSTRUCTOR
+    // =====================================================
 
-    @Column(name = "boost_score")
-    private Integer boostScore = 0;
+    public Profile() {
+    }
+
+    // =====================================================
+    // LIFECYCLE
+    // =====================================================
+
     @PrePersist
     protected void onCreate() {
+
         this.createdAt = LocalDateTime.now();
+
         this.updatedAt = LocalDateTime.now();
-        if (this.isActive == null) this.isActive = true;
+
+        if (this.isActive == null) {
+            this.isActive = true;
+        }
+
+        if (this.profileCompleted == null) {
+            this.profileCompleted = false;
+        }
+
+        if (this.currentStep == null) {
+            this.currentStep = 1;
+        }
+
+        if (this.isPremium == null) {
+            this.isPremium = false;
+        }
+
+        if (this.boostScore == null) {
+            this.boostScore = 0;
+        }
     }
 
     @PreUpdate
@@ -179,14 +253,9 @@ public class Profile {
         this.updatedAt = LocalDateTime.now();
     }
 
-    // ✅ FIXED GETTER
-    public Boolean getIsActive() {
-        return isActive;
-    }
-
-    public void setIsActive(Boolean isActive) {
-        this.isActive = isActive;
-    }
+    // =====================================================
+    // GETTERS & SETTERS
+    // =====================================================
 
     public Long getId() {
         return id;
@@ -236,6 +305,22 @@ public class Profile {
         this.city = city;
     }
 
+    public State getState() {
+        return state;
+    }
+
+    public void setState(State state) {
+        this.state = state;
+    }
+
+    public Country getCountry() {
+        return country;
+    }
+
+    public void setCountry(Country country) {
+        this.country = country;
+    }
+
     public MotherTongue getMotherTongue() {
         return motherTongue;
     }
@@ -252,19 +337,11 @@ public class Profile {
         this.maritalStatus = maritalStatus;
     }
 
-    public LocalDate getDateOfBirth() {
-        return dateOfBirth;
-    }
-
-    public void setDateOfBirth(LocalDate dateOfBirth) {
-        this.dateOfBirth = dateOfBirth;
-    }
-
-    public String getGender() {
+    public Gender getGender() {
         return gender;
     }
 
-    public void setGender(String gender) {
+    public void setGender(Gender gender) {
         this.gender = gender;
     }
 
@@ -300,12 +377,48 @@ public class Profile {
         this.weight = weight;
     }
 
+    public BodyType getBodyType() {
+        return bodyType;
+    }
+
+    public void setBodyType(BodyType bodyType) {
+        this.bodyType = bodyType;
+    }
+
+    public Complexion getComplexion() {
+        return complexion;
+    }
+
+    public void setComplexion(Complexion complexion) {
+        this.complexion = complexion;
+    }
+
+    public LocalDate getDateOfBirth() {
+        return dateOfBirth;
+    }
+
+    public void setDateOfBirth(LocalDate dateOfBirth) {
+        this.dateOfBirth = dateOfBirth;
+    }
+
+
+
+
+
     public String getAbout() {
         return about;
     }
 
     public void setAbout(String about) {
         this.about = about;
+    }
+
+    public String getAboutMe() {
+        return aboutMe;
+    }
+
+    public void setAboutMe(String aboutMe) {
+        this.aboutMe = aboutMe;
     }
 
     public String getImageUrl() {
@@ -316,85 +429,12 @@ public class Profile {
         this.imageUrl = imageUrl;
     }
 
-    public Boolean getActive() {
-        return isActive;
+    public Income getIncome() {
+        return income;
     }
 
-    public void setActive(Boolean active) {
-        isActive = active;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-
-    public Boolean getIsPremium() {
-        return isPremium;
-    }
-
-    public void setIsPremium(Boolean isPremium) {
-        this.isPremium = isPremium;
-    }
-
-    public Integer getBoostScore() {
-        return boostScore;
-    }
-
-    public void setBoostScore(Integer boostScore) {
-        this.boostScore = boostScore;
-    }
-
-    public Integer getCurrentStep() {
-        return currentStep;
-    }
-
-    public void setCurrentStep(Integer currentStep) {
-        this.currentStep = currentStep;
-    }
-
-    public Boolean getProfileCompleted() {
-        return profileCompleted;
-    }
-
-    public void setProfileCompleted(Boolean profileCompleted) {
-        this.profileCompleted = profileCompleted;
-    }
-
-    // Getters and setters for new fields
-    public String getComplexion() {
-        return complexion;
-    }
-
-    public void setComplexion(String complexion) {
-        this.complexion = complexion;
-    }
-
-    public String getBodyType() {
-        return bodyType;
-    }
-
-    public void setBodyType(String bodyType) {
-        this.bodyType = bodyType;
-    }
-
-    public String getAnnualIncome() {
-        return annualIncome;
-    }
-
-    public void setAnnualIncome(String annualIncome) {
-        this.annualIncome = annualIncome;
+    public void setIncome(Income income) {
+        this.income = income;
     }
 
     public String getCompanyName() {
@@ -405,22 +445,6 @@ public class Profile {
         this.companyName = companyName;
     }
 
-    public String getCountry() {
-        return country;
-    }
-
-    public void setCountry(String country) {
-        this.country = country;
-    }
-
-    public String getState() {
-        return state;
-    }
-
-    public void setState(String state) {
-        this.state = state;
-    }
-
     public String getAddress() {
         return address;
     }
@@ -428,28 +452,27 @@ public class Profile {
     public void setAddress(String address) {
         this.address = address;
     }
-
-    public String getDiet() {
+    public Diet getDiet() {
         return diet;
     }
 
-    public void setDiet(String diet) {
+    public void setDiet(Diet diet) {
         this.diet = diet;
     }
 
-    public String getSmoking() {
+    public Smoking getSmoking() {
         return smoking;
     }
 
-    public void setSmoking(String smoking) {
+    public void setSmoking(Smoking smoking) {
         this.smoking = smoking;
     }
 
-    public String getDrinking() {
+    public Drinking getDrinking() {
         return drinking;
     }
 
-    public void setDrinking(String drinking) {
+    public void setDrinking(Drinking drinking) {
         this.drinking = drinking;
     }
 
@@ -485,27 +508,27 @@ public class Profile {
         this.motherOccupation = motherOccupation;
     }
 
-    public String getSiblingsCount() {
+    public Integer getSiblingsCount() {
         return siblingsCount;
     }
 
-    public void setSiblingsCount(String siblingsCount) {
+    public void setSiblingsCount(Integer siblingsCount) {
         this.siblingsCount = siblingsCount;
     }
 
-    public String getPreferredAgeMin() {
+    public Integer getPreferredAgeMin() {
         return preferredAgeMin;
     }
 
-    public void setPreferredAgeMin(String preferredAgeMin) {
+    public void setPreferredAgeMin(Integer preferredAgeMin) {
         this.preferredAgeMin = preferredAgeMin;
     }
 
-    public String getPreferredAgeMax() {
+    public Integer getPreferredAgeMax() {
         return preferredAgeMax;
     }
 
-    public void setPreferredAgeMax(String preferredAgeMax) {
+    public void setPreferredAgeMax(Integer preferredAgeMax) {
         this.preferredAgeMax = preferredAgeMax;
     }
 
@@ -531,5 +554,53 @@ public class Profile {
 
     public void setOtherExpectations(String otherExpectations) {
         this.otherExpectations = otherExpectations;
+    }
+
+    public Boolean getIsActive() {
+        return isActive;
+    }
+
+    public void setIsActive(Boolean active) {
+        isActive = active;
+    }
+
+    public Integer getCurrentStep() {
+        return currentStep;
+    }
+
+    public void setCurrentStep(Integer currentStep) {
+        this.currentStep = currentStep;
+    }
+
+    public Boolean getProfileCompleted() {
+        return profileCompleted;
+    }
+
+    public void setProfileCompleted(Boolean profileCompleted) {
+        this.profileCompleted = profileCompleted;
+    }
+
+    public Boolean getIsPremium() {
+        return isPremium;
+    }
+
+    public void setIsPremium(Boolean premium) {
+        isPremium = premium;
+    }
+
+    public Integer getBoostScore() {
+        return boostScore;
+    }
+
+    public void setBoostScore(Integer boostScore) {
+        this.boostScore = boostScore;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
     }
 }

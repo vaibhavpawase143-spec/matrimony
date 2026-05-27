@@ -142,7 +142,7 @@ const Login = () => {
                 : "bg-secondary text-secondary-foreground"
             }`}
           >
-            {isAdmin ? "User Login" : "Admin Login"}
+            {isAdmin ? "User Login" : "User Login"}
           </button>
         </div>
         <div className="text-center mb-6">
