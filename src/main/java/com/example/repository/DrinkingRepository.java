@@ -10,16 +10,16 @@ import java.util.Optional;
 @Repository
 public interface DrinkingRepository extends JpaRepository<Drinking, Long> {
 
-    // 🔍 Find by name
-    Optional<Drinking> findByName(String name);
+    // 🔍 Find by value
+    Optional<Drinking> findByValue(String value);
 
     // 🔥 Case-insensitive
-    Optional<Drinking> findByNameIgnoreCase(String name);
+    Optional<Drinking> findByValueIgnoreCase(String value);
 
     // ✅ Duplicate check
-    boolean existsByName(String name);
+    boolean existsByValue(String value);
 
-    boolean existsByNameIgnoreCase(String name);
+    boolean existsByValueIgnoreCase(String value);
 
     // 🔍 Active / Inactive
     List<Drinking> findByIsActiveTrue();
@@ -32,8 +32,8 @@ public interface DrinkingRepository extends JpaRepository<Drinking, Long> {
     List<Drinking> findByAdminIdAndIsActiveTrue(Long adminId);
 
     // 🔍 Search (global)
-    List<Drinking> findByNameContainingIgnoreCase(String keyword);
+    List<Drinking> findByValueContainingIgnoreCase(String keyword);
 
     // 🔥 Search within admin
-    List<Drinking> findByAdminIdAndNameContainingIgnoreCase(Long adminId, String keyword);
+    List<Drinking> findByAdminIdAndValueContainingIgnoreCase(Long adminId, String keyword);
 }

@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 @Table(
         name = "complexions",
         uniqueConstraints = {
-                @UniqueConstraint(columnNames = {"admin_id", "name"})
+                @UniqueConstraint(columnNames = {"admin_id", "value"})
         },
         indexes = {
                 @Index(name = "idx_complexion_admin", columnList = "admin_id"),
@@ -24,8 +24,8 @@ public class Complexion {
     @JoinColumn(name = "admin_id") // add nullable=false if needed
     private Admin admin;
 
-    @Column(name = "name", nullable = false, length = 120)
-    private String name;
+    @Column(nullable = false, length = 120)
+    private String value;
 
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
@@ -63,12 +63,12 @@ public class Complexion {
         this.admin = admin;
     }
 
-    public String getName() {
-        return name;
+    public String getValue() {
+        return value;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setValue(String value) {
+        this.value = value;
     }
 
     public Boolean getIsActive() {

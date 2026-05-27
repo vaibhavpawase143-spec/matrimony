@@ -74,6 +74,10 @@ public class SecurityConfig {
                                 "/api/subscription-plans/**",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
+                                "/api/complexions/**",
+                                "/api/body-types/**",
+                                "/api/genders/**",
+                                "/api/countries/**",
                                 "/api/image/**"
 
                         ).permitAll()

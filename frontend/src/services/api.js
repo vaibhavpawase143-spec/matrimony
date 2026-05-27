@@ -3,120 +3,37 @@ import errorHandler from '@/utils/errorHandler';
 
 const API_BASE_URL = '/api'; // Will be proxied to backend
 
-// Helper function to parse validation errors from backend response
-// Backend can send validation errors in two formats:
-// 1. String format: "field1: message1, field2: message2"
-// 2. Object format: { "errors": { "email": "Invalid email", "phone": "Invalid phone" } }
-const parseValidationErrors = (errorData) => {
-  if (!errorData) return {};
-  
-  // Handle object format: { errors: { field: message } }
-  if (typeof errorData === 'object' && errorData.errors) {
-    return errorData.errors;
-  }
-  
-  // Handle string format: "field1: message1, field2: message2"
-  if (typeof errorData === 'string') {
-    const errors = {};
-    const fieldErrors = errorData.split(',').map(err => err.trim());
-    
-    fieldErrors.forEach(fieldError => {
-      const colonIndex = fieldError.indexOf(':');
-      if (colonIndex > -1) {
-        const field = fieldError.substring(0, colonIndex).trim();
-        const errorMsg = fieldError.substring(colonIndex + 1).trim();
-        if (field && errorMsg) {
-          errors[field] = errorMsg;
-        }
-      }
-    });
-    
-    return errors;
-  }
-  
-  return {};
-};
-
 // Token validation helper
 const validateToken = () => {
-
-  const token =
-    localStorage.getItem('token');
-
+  const token = localStorage.getItem('token');
   if (!token) {
-
-    console.warn(
-      '⚠️ No token found'
-    );
-
-    return null;
-
+    throw new Error('No authentication token found');
   }
 
   try {
-
-    const parts = token.split('.');
-
-    // Basic JWT structure check
-    if (parts.length !== 3) {
-
-      console.warn(
-        '⚠️ Invalid JWT format'
-      );
-
-      return token;
-
+    // Basic JWT token validation (you can enhance this)
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    const now = Date.now() / 1000;
+    if (payload.exp && payload.exp < now) {
+      throw new Error('Token expired');
     }
-
-    // Decode safely
-    const payload =
-      JSON.parse(atob(parts[1]));
-
-    const now =
-      Date.now() / 1000;
-
-    // Expiry check
-    if (
-      payload.exp &&
-      payload.exp < now
-    ) {
-
-      console.warn(
-        '⚠️ Token expired'
-      );
-
-      return token;
-
-    }
-
     return token;
-
   } catch (e) {
-
-    console.error(
-      '❌ Token validation failed:',
-      e
-    );
-
-    // IMPORTANT:
-    // DO NOT REMOVE TOKEN
-    // DO NOT THROW ERROR
-
-    return token;
-
+    localStorage.removeItem('token');
+    throw new Error('Invalid or expired token');
   }
-
 };
+
 // Centralized API client with proper auth and error handling
-export const apiClient = async (endpoint, options = {}) => {
+const apiClient = async (endpoint, options = {}) => {
   try {
     const token = localStorage.getItem('token');
-    
+
     // Don't attach Authorization header for public auth endpoints
-    const isPublicAuthEndpoint = endpoint.startsWith('/auth/') || 
-                              endpoint.startsWith('/users/login') || 
+    const isPublicAuthEndpoint = endpoint.startsWith('/auth/') ||
+                              endpoint.startsWith('/users/login') ||
                               endpoint.startsWith('/users/register');
-    
+
     const defaultOptions = {
       headers: {
         'Content-Type': 'application/json',
@@ -128,39 +45,20 @@ export const apiClient = async (endpoint, options = {}) => {
 
     const fullUrl = `${API_BASE_URL}${endpoint}`;
     console.log('🌐 API Request URL:', fullUrl);
-    console.log('🌐 API Request - Token in Authorization header:', token && typeof token === 'string' ? token.substring(0, Math.min(50, token.length)) + '...' : 'null');
     console.log('🌐 Request options:', defaultOptions);
-    
+
     const response = await fetch(fullUrl, defaultOptions);
-    
+
     console.log('🌐 Response status:', response.status, response.statusText);
     console.log('🌐 Response headers:', Object.fromEntries(response.headers.entries()));
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       console.error('❌ API Error Response:', errorData);
-      
-      // Extract error message from backend ErrorResponse structure
-      // Priority: message > error > generic fallback
-      const errorMessage = errorData.message || errorData.error || `API call failed: ${endpoint}`;
-      const errorCode = errorData.errorCode || errorData.error || `ERR_${response.status}`;
-      
-      // Create enhanced error object with backend data
-      const error = new Error(errorMessage);
+      const error = new Error(errorData.message || errorData.error || `API call failed: ${endpoint}`);
       error.status = response.status;
       error.endpoint = endpoint;
       error.url = fullUrl;
-      error.errorCode = errorCode;
-      error.backendError = errorData.error || null;
-      error.timestamp = errorData.timestamp || null;
-      
-      // Extract validation errors if present (for field-wise display)
-      // Handle both object format { errors: { field: message } } and string format
-      // Also handle direct validationErrors field from backend
-      if (response.status === 400) {
-        error.validationErrors = errorData.validationErrors || parseValidationErrors(errorData);
-      }
-      
       throw error;
     }
 
@@ -175,13 +73,11 @@ export const apiClient = async (endpoint, options = {}) => {
       url: `${API_BASE_URL}${endpoint}`,
       stack: error.stack
     });
-    
+
     // Handle network errors and other exceptions
-    if (error.name === 'TypeError' || error.message.includes('Failed to fetch') || error.message.includes('Network Error')) {
-      const networkError = new Error('No internet connection. Please check your internet connection.');
+    if (error.name === 'TypeError' || error.message.includes('Failed to fetch')) {
+      const networkError = new Error('Network connection error');
       networkError.type = 'NETWORK_ERROR';
-      networkError.status = null;
-      networkError.errorCode = 'ERR_NETWORK';
       throw networkError;
     }
     throw error;
@@ -191,38 +87,37 @@ export const apiClient = async (endpoint, options = {}) => {
 export const authAPI = {
   login: async (data, isAdmin = false) => {
     try {
-      console.log('🔐 Frontend Login - Email:', data.email);
-      console.log('🔐 Frontend Login - IsAdmin:', isAdmin);
-      
       const endpoint = isAdmin ? '/admin/auth/login' : '/auth/login';
       const result = await apiClient(endpoint, {
         method: 'POST',
         body: JSON.stringify(data),
       });
-      
-      console.log('🔐 Frontend Login - API Response:', result);
-      console.log('🔐 Frontend Login - Response structure:', JSON.stringify(result, null, 2));
-      
+
       // Handle different response formats
-      // Backend returns: { success: true, data: { accessToken, refreshToken, profile } }
-      const token = result.data?.accessToken || result.accessToken || result.token || result.data?.token;
-      const profileData = result.data?.profile || result.profile;
-      
-      console.log('🔐 Frontend Login - Extracted token:', token && typeof token === 'string' ? token.substring(0, Math.min(50, token.length)) + '...' : 'null');
-      console.log('🔐 Frontend Login - Profile data from login response:', profileData);
-      console.log('🔐 Frontend Login - Profile data keys:', profileData ? Object.keys(profileData) : 'null');
-      
-      // Don't store token here - let useAuth.login handle it to avoid duplication
-      // Don't store user data here either - use the profile data from backend response
-      
+      const token = result.accessToken || result.token || result.data?.accessToken || result.data?.token;
+      const userData = result.user || result.data || result;
+
+      if (token) {
+        localStorage.setItem('token', token);
+        localStorage.setItem('isAdmin', isAdmin);
+
+        // Store user data for immediate access
+        if (userData) {
+          localStorage.setItem('user', JSON.stringify(userData));
+        }
+      }
+
       return {
         success: true,
-        data: profileData || null,
+        data: userData,
         token: token
       };
     } catch (error) {
-      errorHandler.handleError(error, 'Login API', false); // Don't show toast here
-      throw error;
+      console.error('Login API Error:', error);
+
+      throw new Error(
+        error?.message || 'Something went wrong'
+      );
     }
   },
 
@@ -232,18 +127,21 @@ export const authAPI = {
         method: 'POST',
         body: JSON.stringify(data),
       });
-      
+
       // Registration should NOT return token - user needs to login separately
       const userData = result.data || result;
-      
+
       return {
         success: true,
         user: userData,
         token: null // Explicitly no token from registration
       };
     } catch (error) {
-      errorHandler.handleError(error, 'Registration API', false); // Don't show toast here
-      throw error;
+      console.error('Login API Error:', error);
+
+      throw new Error(
+        error?.message || 'Something went wrong'
+      );
     }
   },
 
@@ -268,49 +166,11 @@ export const authAPI = {
 
   getCurrentUser: async () => {
     try {
-      const token = localStorage.getItem('token');
-      console.log('👤 Frontend getCurrentUser - Token from localStorage:', token && typeof token === 'string' ? token.substring(0, Math.min(50, token.length)) + '...' : 'null');
-      
       validateToken(); // Validate token before making request
-      const profileData = await apiClient('/profiles/me');
-      console.log('👤 Frontend getCurrentUser - Profile data received:', profileData);
-      return profileData;
+      return await apiClient('/profiles/me');
     } catch (error) {
-      console.error('❌ Frontend getCurrentUser - Error:', error);
       // Return null instead of throwing for getCurrentUser
       return null;
-    }
-  },
-
-  forgotPassword: async (email) => {
-    try {
-      const result = await apiClient('/auth/forgot-password', {
-        method: 'POST',
-        body: JSON.stringify({ email }),
-      });
-      return {
-        success: true,
-        message: result.message || 'Password reset link sent to email'
-      };
-    } catch (error) {
-      errorHandler.handleError(error, 'Forgot Password API', false);
-      throw error;
-    }
-  },
-
-  resetPassword: async (token, newPassword) => {
-    try {
-      const result = await apiClient('/auth/reset-password', {
-        method: 'POST',
-        body: JSON.stringify({ token, newPassword }),
-      });
-      return {
-        success: true,
-        message: result.message || 'Password reset successfully'
-      };
-    } catch (error) {
-      errorHandler.handleError(error, 'Reset Password API', false);
-      throw error;
     }
   }
 };
@@ -321,8 +181,11 @@ export const profileAPI = {
       const endpoint = userId ? `/profiles/${userId}` : '/profiles/me';
       return await apiClient(endpoint);
     } catch (error) {
-      errorHandler.handleError(error, 'Get Profile API', false); // Don't show toast here
-      throw error;
+     console.error('Login API Error:', error);
+
+     throw new Error(
+       error?.message || 'Something went wrong'
+     );
     }
   },
 
@@ -334,8 +197,11 @@ export const profileAPI = {
         body: JSON.stringify(data),
       });
     } catch (error) {
-      errorHandler.handleError(error, 'Update Profile API', false); // Don't show toast here
-      throw error;
+      console.error('Login API Error:', error);
+
+      throw new Error(
+        error?.message || 'Something went wrong'
+      );
     }
   },
 
@@ -348,8 +214,11 @@ export const profileAPI = {
       });
       return await apiClient(`/profiles?${params}`);
     } catch (error) {
-      errorHandler.handleError(error, 'Get Profiles API', false); // Don't show toast here
-      throw error;
+      console.error('Login API Error:', error);
+
+      throw new Error(
+        error?.message || 'Something went wrong'
+      );
     }
   }
 };
@@ -360,13 +229,21 @@ export const searchAPI = {
       const params = new URLSearchParams(filters);
       return await apiClient(`/profiles/search?${params}`);
     } catch (error) {
-      errorHandler.handleError(error, 'Search Profiles API', false); // Don't show toast here
-      throw error;
+      console.error('Login API Error:', error);
+
+      throw new Error(
+        error?.message || 'Something went wrong'
+      );
     }
   }
 };
 
 export const masterDataAPI = {
+
+  // ==========================================
+  // RELIGIONS
+  // ==========================================
+
   getReligions: async () => {
     try {
 
@@ -376,16 +253,9 @@ export const masterDataAPI = {
 
       console.log('✅ MASTER API RESPONSE - Religions:', result);
 
-      console.log(
-        '📊 Religions data type:',
-        typeof result,
-        ' isArray:',
-        Array.isArray(result)
-      );
-
-      console.log('📋 First religion item:', result?.[0]);
-
-      return Array.isArray(result) ? result : [];
+      return Array.isArray(result)
+        ? result
+        : [];
 
     } catch (error) {
 
@@ -396,10 +266,284 @@ export const masterDataAPI = {
     }
   },
 
+  // ==========================================
+  // GENDERS
+  // ==========================================
 
+  getGenders: async () => {
+    try {
+
+      console.log('🔍 Fetching genders...');
+
+      const result = await apiClient('/genders');
+
+      console.log('✅ MASTER API RESPONSE - Genders:', result);
+
+      return Array.isArray(result)
+        ? result
+        : [];
+
+    } catch (error) {
+
+      console.error('❌ Get Genders API error:', error);
+
+      return [];
+
+    }
+  },
+
+  // ==========================================
+  // EDUCATION LEVELS
+  // ==========================================
+
+  getEducationLevels: async () => {
+    try {
+
+      console.log('🔍 Fetching education levels...');
+
+      const result =
+        await apiClient('/master/education-levels');
+
+      console.log(
+        '✅ MASTER API RESPONSE - Education Levels:',
+        result
+      );
+
+      return Array.isArray(result)
+        ? result
+        : [];
+
+    } catch (error) {
+
+      console.error(
+        '❌ Get Education Levels API error:',
+        error
+      );
+
+      return [];
+
+    }
+  },
+
+  // ==========================================
+  // OCCUPATIONS
+  // ==========================================
+
+  getOccupations: async () => {
+    try {
+
+      console.log('🔍 Fetching occupations...');
+
+      const result =
+        await apiClient('/occupations');
+
+      console.log(
+        '✅ MASTER API RESPONSE - Occupations:',
+        result
+      );
+
+      return Array.isArray(result)
+        ? result
+        : [];
+
+    } catch (error) {
+
+      console.error(
+        '❌ Get Occupations API error:',
+        error
+      );
+
+      return [];
+
+    }
+  },
+
+  // ==========================================
+  // MARITAL STATUS
+  // ==========================================
+
+  getMaritalStatuses: async () => {
+    try {
+
+      console.log('🔍 Fetching marital statuses...');
+
+      const result =
+        await apiClient('/marital-status');
+
+      console.log(
+        '✅ MASTER API RESPONSE - Marital Statuses:',
+        result
+      );
+
+      return Array.isArray(result)
+        ? result
+        : [];
+
+    } catch (error) {
+
+      console.error(
+        '❌ Get Marital Statuses API error:',
+        error
+      );
+
+      return [];
+
+    }
+  },
+
+  // ==========================================
+  // HEIGHTS
+  // ==========================================
+
+  getHeights: async () => {
+    try {
+
+      console.log('🔍 Fetching heights...');
+
+      const result =
+        await apiClient('/heights');
+
+      console.log(
+        '✅ MASTER API RESPONSE - Heights:',
+        result
+      );
+
+      return Array.isArray(result)
+        ? result
+        : [];
+
+    } catch (error) {
+
+      console.error(
+        '❌ Get Heights API error:',
+        error
+      );
+
+      return [];
+
+    }
+  },
+
+  // ==========================================
+  // WEIGHTS
+  // ==========================================
+
+  getWeights: async () => {
+    try {
+
+      console.log('🔍 Fetching weights...');
+
+      const result =
+        await apiClient('/master/weights');
+
+      console.log(
+        '✅ MASTER API RESPONSE - Weights:',
+        result
+      );
+
+      return Array.isArray(result)
+        ? result
+        : [];
+
+    } catch (error) {
+
+      console.error(
+        '❌ Get Weights API error:',
+        error
+      );
+
+      return [];
+
+    }
+  },
+
+  // ==========================================
+  // COMPLEXIONS
+  // ==========================================
+
+  getComplexions: async () => {
+    try {
+
+      const result =
+        await apiClient('/complexions');
+
+      return Array.isArray(result)
+        ? result
+        : [];
+
+    } catch (error) {
+
+      console.error(
+        '❌ Get Complexions API error:',
+        error
+      );
+
+      return [];
+
+    }
+  },
+
+  // ==========================================
+  // BODY TYPES
+  // ==========================================
+
+  getBodyTypes: async () => {
+    try {
+
+      const result =
+        await apiClient('/body-types');
+
+      return Array.isArray(result)
+        ? result
+        : [];
+
+    } catch (error) {
+
+      console.error(
+        '❌ Get Body Types API error:',
+        error
+      );
+
+      return [];
+
+    }
+  },
+
+  // ==========================================
+  // COUNTRIES
+  // ==========================================
+
+  getCountries: async () => {
+    try {
+
+      console.log('🔍 Fetching countries...');
+
+      const result =
+        await apiClient('/countries');
+
+      console.log('✅ Countries:', result);
+
+      return Array.isArray(result)
+        ? result
+        : [];
+
+    } catch (error) {
+
+      console.error(
+        '❌ Get Countries API error:',
+        error
+      );
+
+      return [];
+
+    }
+  },
+
+  // ==========================================
+  // STATES
+  // ==========================================
 
   getStates: async () => {
-
     try {
 
       console.log('🔍 Fetching states...');
@@ -407,22 +551,7 @@ export const masterDataAPI = {
       const result =
         await apiClient('/master/states');
 
-      console.log(
-        '✅ MASTER API RESPONSE - States:',
-        result
-      );
-
-      console.log(
-        '📊 States data type:',
-        typeof result,
-        ' isArray:',
-        Array.isArray(result)
-      );
-
-      console.log(
-        '📋 First state item:',
-        result?.[0]
-      );
+      console.log('✅ States:', result);
 
       return Array.isArray(result)
         ? result
@@ -438,303 +567,335 @@ export const masterDataAPI = {
       return [];
 
     }
-
   },
 
-  getCities: async (stateId) => {
+  // ==========================================
+  // CITIES
+  // ==========================================
+
+  getCities: async () => {
     try {
-      console.log('🔍 Fetching cities...', stateId);
-     const endpoint = stateId
-  ? `/cities/state/${stateId}`
-  : '/cities';
-      const result = await apiClient(endpoint);
-      console.log('✅ MASTER API RESPONSE - Cities:', result);
-      console.log('📊 Cities data type:', typeof result, ' isArray:', Array.isArray(result));
-      console.log('📋 First city item:', result?.[0]);
-      return result;
+
+      console.log('🔍 Fetching cities...');
+
+      const result =
+        await apiClient('/cities');
+
+      console.log(
+        '✅ MASTER API RESPONSE - Cities:',
+        result
+      );
+
+      return Array.isArray(result)
+        ? result
+        : [];
+
     } catch (error) {
-      console.error('❌ Get Cities API error:', error);
-      errorHandler.handleError(error, 'Get Cities API', false); // Don't show toast here
+
+      console.error(
+        '❌ Get Cities API error:',
+        error
+      );
+
       return [];
+
     }
   },
 
-  getEducationLevels: async () => {
+  // ==========================================
+  // CITIES BY STATE
+  // ==========================================
+
+  getCitiesByState: async (stateId) => {
     try {
-      console.log('🔍 Fetching education levels...');
-      const result = await apiClient('/master/education-levels');
-      console.log('✅ MASTER API RESPONSE - Education Levels:', result);
-      console.log('📊 Education Levels data type:', typeof result, ' isArray:', Array.isArray(result));
-      console.log('📋 First education level item:', result?.[0]);
-      return result;
+
+      console.log(
+        '🔍 Fetching cities by state...',
+        stateId
+      );
+
+      const result =
+        await apiClient(
+         `/cities/state/${stateId}`
+        );
+
+      console.log(
+        '✅ Cities By State:',
+        result
+      );
+
+      return Array.isArray(result)
+        ? result
+        : [];
+
     } catch (error) {
-      console.error('❌ Get Education Levels API error:', error);
-      errorHandler.handleError(error, 'Get Education Levels API', false); // Don't show toast here
+
+      console.error(
+        '❌ Get Cities By State API error:',
+        error
+      );
+
       return [];
+
     }
   },
 
-  getOccupations: async () => {
+  // ==========================================
+  // CASTES
+  // ==========================================
+
+  getCastes: async (religionId) => {
+
     try {
-      console.log('🔍 Fetching occupations...');
-      const result = await apiClient('/occupations');
-      console.log('✅ MASTER API RESPONSE - Occupations:', result);
-      console.log('📊 Occupations data type:', typeof result, ' isArray:', Array.isArray(result));
-      console.log('📋 First occupation item:', result?.[0]);
-      return result;
+
+      if (!religionId) {
+        return [];
+      }
+
+      console.log(
+        '🔍 Fetching castes...',
+        religionId
+      );
+
+      const adminId = 1;
+
+      const result =
+        await apiClient(
+          `/admins/${adminId}/castes/religion/${religionId}`
+        );
+
+      console.log(
+        '✅ MASTER API RESPONSE - Castes:',
+        result
+      );
+
+      return Array.isArray(result)
+        ? result
+        : [];
+
     } catch (error) {
-      console.error('❌ Get Occupations API error:', error);
-      errorHandler.handleError(error, 'Get Occupations API');
+
+      console.error(
+        '❌ Get Castes API error:',
+        error
+      );
+
       return [];
+
     }
   },
 
-  getMaritalStatuses: async () => {
+  // ==========================================
+  // SUB CASTES
+  // ==========================================
+
+  getSubCastes: async (casteId) => {
+
     try {
-      console.log('🔍 Fetching marital statuses...');
-      const result = await apiClient('/marital-status');
-      console.log('✅ MASTER API RESPONSE - Marital Statuses:', result);
-      console.log('📊 Marital Statuses data type:', typeof result, ' isArray:', Array.isArray(result));
-      console.log('📋 First marital status item:', result?.[0]);
-      return result;
+
+      if (!casteId) {
+        return [];
+      }
+
+      console.log(
+        '🔍 Fetching sub castes...',
+        casteId
+      );
+
+      const adminId = 1;
+
+      const result =
+        await apiClient(
+          `/master/sub-castes/caste/${casteId}/admin/${adminId}`
+        );
+
+      console.log(
+        '✅ MASTER API RESPONSE - Sub Castes:',
+        result
+      );
+
+      return Array.isArray(result)
+        ? result
+        : [];
+
     } catch (error) {
-      console.error('❌ Get Marital Statuses API error:', error);
-      errorHandler.handleError(error, 'Get Marital Statuses API');
+
+      console.error(
+        '❌ Get Sub Castes API error:',
+        error
+      );
+
       return [];
+
     }
   },
 
- getCastes: async (religionId) => {
-
-   try {
-
-     // If no religion selected
-     if (!religionId) {
-       return [];
-     }
-
-     console.log('🔍 Fetching castes...', religionId);
-
-     // Static admin id
-     const adminId = 1;
-
-     // API call
-     const result = await apiClient(
-       `/admins/${adminId}/castes/religion/${religionId}`
-     );
-
-     console.log('✅ MASTER API RESPONSE - Castes:', result);
-
-     console.log(
-       '📊 Castes data type:',
-       typeof result,
-       ' isArray:',
-       Array.isArray(result)
-     );
-
-     console.log('📋 First caste item:', result?.[0]);
-
-     // Safe return
-     return Array.isArray(result) ? result : [];
-
-   } catch (error) {
-
-     console.error('❌ Get Castes API error:', error);
-
-     return [];
-
-   }
- },
-
- getSubCastes: async (casteId) => {
-
-   try {
-
-     if (!casteId) {
-       return [];
-     }
-
-     console.log('🔍 Fetching sub castes...', casteId);
-
-     const adminId = 1;
-
-     const result = await apiClient(
-       `/master/sub-castes/caste/${casteId}/admin/${adminId}`
-     );
-
-     console.log('✅ MASTER API RESPONSE - Sub Castes:', result);
-
-     console.log(
-       '📊 Sub Castes data type:',
-       typeof result,
-       ' isArray:',
-       Array.isArray(result)
-     );
-
-     console.log('📋 First sub caste item:', result?.[0]);
-
-     return Array.isArray(result) ? result : [];
-
-   } catch (error) {
-
-     console.error('❌ Get Sub Castes API error:', error);
-
-     return [];
-
-   }
- },
-  getHeights: async () => {
-    try {
-      console.log('🔍 Fetching heights...');
-      const result = await apiClient('/heights');
-      console.log('✅ MASTER API RESPONSE - Heights:', result);
-      console.log('📊 Heights data type:', typeof result, ' isArray:', Array.isArray(result));
-      console.log('📋 First height item:', result?.[0]);
-      return Array.isArray(result) ? result : [];
-    } catch (error) {
-      console.error('❌ Get Heights API error:', error);
-      errorHandler.handleError(error, 'Get Heights API');
-      return [];
-    }
-  },
-
-  getWeights: async () => {
-    try {
-      console.log('🔍 Fetching weights...');
-      const result = await apiClient('/master/weights');
-      console.log('✅ MASTER API RESPONSE - Weights:', result);
-      console.log('📊 Weights data type:', typeof result, ' isArray:', Array.isArray(result));
-      console.log('📋 First weight item:', result?.[0]);
-      return Array.isArray(result) ? result : [];
-    } catch (error) {
-      console.error('❌ Get Weights API error:', error);
-      errorHandler.handleError(error, 'Get Weights API');
-      return [];
-    }
-  },
+  // ==========================================
+  // MOTHER TONGUES
+  // ==========================================
 
   getMotherTongues: async () => {
     try {
+
       console.log('🔍 Fetching mother tongues...');
-      const result = await apiClient('/mother-tongues');
-      console.log('✅ MASTER API RESPONSE - Mother Tongues:', result);
-      console.log('📊 Mother Tongues data type:', typeof result, ' isArray:', Array.isArray(result));
-      console.log('📋 First mother tongue item:', result?.[0]);
-      return Array.isArray(result) ? result : [];
+
+      const result =
+        await apiClient('/mother-tongues');
+
+      console.log(
+        '✅ MASTER API RESPONSE - Mother Tongues:',
+        result
+      );
+
+      return Array.isArray(result)
+        ? result
+        : [];
+
     } catch (error) {
-      console.error('❌ Get Mother Tongues API error:', error);
-      errorHandler.handleError(error, 'Get Mother Tongues API');
+
+      console.error(
+        '❌ Get Mother Tongues API error:',
+        error
+      );
+
       return [];
+
     }
   },
 
-  getBodyTypes: async () => {
-    try {
-      console.log('🔍 Fetching body types...');
-      const adminId = 1; // Static admin ID
-      const result = await apiClient(`/body-types`);
-      console.log('✅ MASTER API RESPONSE - Body Types:', result);
-      console.log('📊 Body Types data type:', typeof result, ' isArray:', Array.isArray(result));
-      console.log('📋 First body type item:', result?.[0]);
-      return Array.isArray(result) ? result : [];
-    } catch (error) {
-      console.error('❌ Get Body Types API error:', error);
-      errorHandler.handleError(error, 'Get Body Types API');
-      return [];
-    }
-  },
-
-  getComplexions: async () => {
-    try {
-      console.log('🔍 Fetching complexions...');
-      const result = await apiClient('/complexions');
-      console.log('✅ MASTER API RESPONSE - Complexions:', result);
-      console.log('📊 Complexions data type:', typeof result, ' isArray:', Array.isArray(result));
-      console.log('📋 First complexion item:', result?.[0]);
-      return Array.isArray(result) ? result : [];
-    } catch (error) {
-      console.error('❌ Get Complexions API error:', error);
-      errorHandler.handleError(error, 'Get Complexions API');
-      return [];
-    }
-  },
-
-  getCountries: async () => {
-    try {
-      console.log('🔍 Fetching countries...');
-      const result = await apiClient('/countries');
-      console.log('✅ MASTER API RESPONSE - Countries:', result);
-      console.log('📊 Countries data type:', typeof result, ' isArray:', Array.isArray(result));
-      console.log('📋 First country item:', result?.[0]);
-      return Array.isArray(result) ? result : [];
-    } catch (error) {
-      console.error('❌ Get Countries API error:', error);
-      errorHandler.handleError(error, 'Get Countries API');
-      return [];
-    }
-  },
-
-  getDiets: async () => {
-    try {
-      console.log('🔍 Fetching diets...');
-      const result = await apiClient('/diets');
-      console.log('✅ MASTER API RESPONSE - Diets:', result);
-      console.log('📊 Diets data type:', typeof result, ' isArray:', Array.isArray(result));
-      console.log('📋 First diet item:', result?.[0]);
-      return Array.isArray(result) ? result : [];
-    } catch (error) {
-      console.error('❌ Get Diets API error:', error);
-      errorHandler.handleError(error, 'Get Diets API');
-      return [];
-    }
-  },
-
-  getSmoking: async () => {
-    try {
-      console.log('🔍 Fetching smoking options...');
-      const result = await apiClient('/master/smoking');
-      console.log('✅ MASTER API RESPONSE - Smoking:', result);
-      console.log('📊 Smoking data type:', typeof result, ' isArray:', Array.isArray(result));
-      console.log('📋 First smoking item:', result?.[0]);
-      return Array.isArray(result) ? result : [];
-    } catch (error) {
-      console.error('❌ Get Smoking API error:', error);
-      errorHandler.handleError(error, 'Get Smoking API');
-      return [];
-    }
-  },
-
-  getDrinking: async () => {
-    try {
-      console.log('🔍 Fetching drinking options...');
-      const result = await apiClient('/master/drinking');
-      console.log('✅ MASTER API RESPONSE - Drinking:', result);
-      console.log('📊 Drinking data type:', typeof result, ' isArray:', Array.isArray(result));
-      console.log('📋 First drinking item:', result?.[0]);
-      return Array.isArray(result) ? result : [];
-    } catch (error) {
-      console.error('❌ Get Drinking API error:', error);
-      errorHandler.handleError(error, 'Get Drinking API');
-      return [];
-    }
-  },
+  // ==========================================
+  // INCOMES
+  // ==========================================
 
   getIncomes: async () => {
     try {
-      console.log('🔍 Fetching income options...');
-      const result = await apiClient('/incomes');
-      console.log('✅ MASTER API RESPONSE - Incomes:', result);
-      console.log('📊 Incomes data type:', typeof result, ' isArray:', Array.isArray(result));
-      console.log('📋 First income item:', result?.[0]);
-      return Array.isArray(result) ? result : [];
+
+      console.log('🔍 Fetching incomes...');
+
+      const result =
+        await apiClient('/incomes');
+
+      console.log(
+        '✅ MASTER API RESPONSE - Incomes:',
+        result
+      );
+
+      return Array.isArray(result)
+        ? result
+        : [];
+
     } catch (error) {
-      console.error('❌ Get Incomes API error:', error);
-      errorHandler.handleError(error, 'Get Incomes API');
+
+      console.error(
+        '❌ Get Incomes API error:',
+        error
+      );
+
       return [];
+
+    }
+  },
+
+  // ==========================================
+  // DIETS
+  // ==========================================
+
+  getDiets: async () => {
+    try {
+
+      console.log('🔍 Fetching diets...');
+
+      const result =
+        await apiClient('/diets');
+
+      console.log(
+        '✅ MASTER API RESPONSE - Diets:',
+        result
+      );
+
+      return Array.isArray(result)
+        ? result
+        : [];
+
+    } catch (error) {
+
+      console.error(
+        '❌ Get Diets API error:',
+        error
+      );
+
+      return [];
+
+    }
+  },
+
+  // ==========================================
+  // SMOKING
+  // ==========================================
+
+  getSmokingOptions: async () => {
+    try {
+
+      console.log('🔍 Fetching smoking options...');
+
+      const result =
+        await apiClient('/master/smoking');
+
+      console.log(
+        '✅ MASTER API RESPONSE - Smoking:',
+        result
+      );
+
+      return Array.isArray(result)
+        ? result
+        : [];
+
+    } catch (error) {
+
+      console.error(
+        '❌ Get Smoking API error:',
+        error
+      );
+
+      return [];
+
+    }
+  },
+
+  // ==========================================
+  // DRINKING
+  // ==========================================
+
+  getDrinkingOptions: async () => {
+    try {
+
+      console.log('🔍 Fetching drinking options...');
+
+      const result =
+        await apiClient('/master/drinking');
+
+      console.log(
+        '✅ MASTER API RESPONSE - Drinking:',
+        result
+      );
+
+      return Array.isArray(result)
+        ? result
+        : [];
+
+    } catch (error) {
+
+      console.error(
+        '❌ Get Drinking API error:',
+        error
+      );
+
+      return [];
+
     }
   }
-};
 
+};
 export default {
   authAPI,
   profileAPI,

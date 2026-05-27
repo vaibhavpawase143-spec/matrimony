@@ -13,6 +13,10 @@ public class DrinkingRequestDto {
     @Size(max = 100, message = "Name must not exceed 100 characters")
     private String name;
 
+    @NotBlank(message = "Value is required")
+    @Size(max = 100, message = "Value must not exceed 100 characters")
+    private String value;
+
     private Boolean isActive = true;
 
     // Getters & Setters
@@ -31,6 +35,14 @@ public class DrinkingRequestDto {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getValue() {
+        return value;
+    }
+
+    public void setValue(String value) {
+        this.value = value;
     }
 
     public Boolean getIsActive() {

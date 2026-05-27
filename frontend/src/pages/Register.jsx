@@ -111,49 +111,42 @@ const Register = () => {
         
       } catch (err) {
         stopLoading();
-        
-        // Use backend error message directly
         const errorMessage = err.message || t.register.messages.registerFailed;
         
-        // Handle specific error cases using error codes from backend
-        const fieldErrors = {};
-        
-        // Check for validation errors (field-specific)
-        if (err.validationErrors && typeof err.validationErrors === 'object') {
-          Object.keys(err.validationErrors).forEach(field => {
-            fieldErrors[field] = err.validationErrors[field];
-          });
-        }
-        
-        // Handle specific error codes from backend GlobalExceptionHandler
-        if (err.errorCode === 'ERR_EMAIL_EXISTS') {
-          error(errorMessage);
-          fieldErrors.email = errorMessage;
-        } else if (err.errorCode === 'ERR_PHONE_EXISTS') {
-          error(errorMessage);
-          fieldErrors.phone = errorMessage;
-        } else if (err.status === 400) {
-          // Validation error - use field-specific errors if available
-          if (Object.keys(fieldErrors).length > 0) {
-            error("Please fix the validation errors");
-          } else {
-            error(errorMessage);
-          }
-        } else if (err.status === 409) {
-          // Conflict error (duplicate)
-          error(errorMessage);
-        } else if (err.status === 401) {
-          error(errorMessage);
-        } else if (err.status === 500) {
-          error("Server error. Please try again later.");
+        // Handle specific error cases
+        if (errorMessage.includes("Email already exists") || errorMessage.includes("email already exists")) {
+          error("An account with this email already exists. Please use a different email or try logging in.");
+          setErrors({ email: "Email already exists" });
+        } else if (errorMessage.includes("Phone already exists") || errorMessage.includes("phone already exists")) {
+          error("An account with this phone number already exists. Please use a different phone number.");
+          setErrors({ phone: "Phone number already exists" });
+        } else if (errorMessage.includes("Invalid email format") || errorMessage.includes("Invalid email")) {
+          error("Please enter a valid email address");
+          setErrors({ email: "Invalid email format" });
+        } else if (errorMessage.includes("Invalid phone format") || errorMessage.includes("Invalid phone")) {
+          error("Please enter a valid phone number");
+          setErrors({ phone: "Invalid phone format" });
+        } else if (errorMessage.includes("Password too short") || errorMessage.includes("Password must be")) {
+          error("Password must be at least 6 characters long");
+          setErrors({ password: "Password must be at least 6 characters" });
+        } else if (errorMessage.includes("First name is required") || errorMessage.includes("firstName")) {
+          error("First name is required");
+          setErrors({ firstName: "First name is required" });
+        } else if (errorMessage.includes("Last name is required") || errorMessage.includes("lastName")) {
+          error("Last name is required");
+          setErrors({ lastName: "Last name is required" });
+        } else if (errorMessage.includes("Gender is required") || errorMessage.includes("gender")) {
+          error("Please select your gender");
+          setErrors({ gender: "Gender is required" });
+        } else if (errorMessage.includes("Date of birth is required") || errorMessage.includes("dob")) {
+          error("Please enter your date of birth");
+          setErrors({ dob: "Date of birth is required" });
         } else {
-          // Generic error - use backend message
           error(errorMessage);
         }
         
-        // Update errors state with field-specific errors
-        if (Object.keys(fieldErrors).length > 0) {
-          setErrors(fieldErrors);
+        if (err.errors) {
+          setErrors({ ...err.errors, ...errors });
         }
       }
     } else {

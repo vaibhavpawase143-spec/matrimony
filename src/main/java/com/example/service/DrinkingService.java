@@ -18,15 +18,15 @@ public interface DrinkingService {
 
     List<Drinking> getAll();
 
-    // 🔍 Find by name
-    Optional<Drinking> getByName(String name);
+    // 🔍 Find by value
+    Optional<Drinking> getByValue(String value);
 
-    Optional<Drinking> getByNameIgnoreCase(String name);
+    Optional<Drinking> getByValueIgnoreCase(String value);
 
     // ✅ Duplicate check
-    boolean existsByName(String name);
+    boolean existsByValue(String value);
 
-    boolean existsByNameIgnoreCase(String name);
+    boolean existsByValueIgnoreCase(String value);
 
     // 🔍 Active / Inactive
     List<Drinking> getActive();

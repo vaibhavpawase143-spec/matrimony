@@ -9,15 +9,24 @@ import ThemeToggle from "@/components/ThemeToggle";
 import ProfileCompletionBar from "@/components/ProfileCompletionBar";
 import DashboardStats from "@/components/DashboardStats";
 import LikeBookmarkButtons from "@/components/LikeBookmarkButtons";
-import { useProfileCompletion } from "@/hooks/useProfileCompletion";
+
 import { useLanguage } from "@/context/LanguageContext.jsx";
 import { useProfileData } from "@/hooks/useProfileData";
 import { profileAPI } from "@/services/api";
-// Removed static imports - using dynamic backend data only
+import profile1 from "@/assets/profile1.jpg";
+import success1 from "@/assets/success-couple1.jpg";
+import success2 from "@/assets/success-couple2.jpg";
+import success3 from "@/assets/success-couple3.jpg";
+
+const successStories = [
+  { image: success1, names: "Rahul & Priya", city: "Mumbai", date: "Dec 2025" },
+  { image: success2, names: "Vikram & Ananya", city: "Delhi", date: "Nov 2025" },
+  { image: success3, names: "Arjun & Meera", city: "Pune", date: "Oct 2025" },
+];
 
 const HomeFixed = () => {
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { userName, logout } = useAuth();
   const { startLoading, stopLoading } = useLoading();
   const { isLiked, isBookmarked, toggleLike, toggleBookmark } = useLikeBookmark();
   const { t } = useLanguage();
@@ -25,20 +34,6 @@ const HomeFixed = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [profiles, setProfiles] = useState([]);
   const [loadingProfiles, setLoadingProfiles] = useState(true);
-  const [profileImageErrors, setProfileImageErrors] = useState({});
-
-  // Helper function to calculate age from dateOfBirth
-  const calculateAge = (dateOfBirth) => {
-    if (!dateOfBirth) return null;
-    const birthDate = new Date(dateOfBirth);
-    const today = new Date();
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const monthDiff = today.getMonth() - birthDate.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-    }
-    return age;
-  };
 
   // Load real profiles from API
   useEffect(() => {
@@ -48,53 +43,10 @@ const HomeFixed = () => {
   const loadProfiles = async () => {
     try {
       setLoadingProfiles(true);
-      console.log('🏠 Home: Fetching profiles from backend...');
-      const response = await profileAPI.getProfiles();
-      console.log('🏠 Home: Profiles API Response:', response);
-      
-      const profilesData = response.content || response.data || response || [];
-      console.log('🏠 Home: Raw profiles data:', profilesData);
-      
-      // Get current user ID from auth or profileData
-      const currentUserId = profileData?.userId || profileData?.id;
-      console.log('🏠 Home: Current user ID:', currentUserId);
-      
-      // Filter out current logged-in user and map fields correctly based on ProfileResponseDTO
-      const mappedProfiles = profilesData
-        .filter(profile => {
-          const profileUserId = profile.userId;
-          const shouldExclude = profileUserId && currentUserId && profileUserId === currentUserId;
-          if (shouldExclude) {
-            console.log('🏠 Home: Excluding current user profile:', profileUserId);
-          }
-          return !shouldExclude;
-        })
-        .map(profile => {
-          console.log('🏠 Home: Processing profile object:', profile);
-          return {
-            id: profile.id,
-            imageUrl: profile.imageUrl,
-            userName: profile.userName,
-            firstName: profile.firstName,
-            lastName: profile.lastName,
-            fullName: (profile.firstName && profile.lastName) 
-              ? `${profile.firstName} ${profile.lastName}` 
-              : profile.userName || 'Unknown User',
-            dateOfBirth: profile.dateOfBirth,
-            age: calculateAge(profile.dateOfBirth),
-            cityName: profile.cityName,
-            city: profile.cityName || 'City not available',
-            occupationName: profile.occupationName,
-            educationLevelName: profile.educationLevelName,
-            gender: profile.gender,
-            about: profile.about
-          };
-        });
-      
-      console.log('🏠 Home: Mapped profiles:', mappedProfiles);
-      setProfiles(mappedProfiles);
+      const data = await profileAPI.getProfiles();
+      setProfiles(data.content || []);
     } catch (error) {
-      console.error('🏠 Home: Failed to load profiles:', error.message);
+      console.warn('Failed to load profiles:', error.message);
       setProfiles([]);
     } finally {
       setLoadingProfiles(false);
@@ -102,7 +54,15 @@ const HomeFixed = () => {
   };
 
   // Use real profile data for completion tracking
-  const profileCompletion = useProfileCompletion(profileData || {});
+const profileCompletion = {
+  completionPercentage:
+    profileData?.currentStep || 0,
+
+  message:
+    (profileData?.currentStep || 0) >= 100
+      ? "Profile completed"
+      : "Complete your profile"
+};
 
   const handleLogout = () => {
     logout();
@@ -177,7 +137,7 @@ const HomeFixed = () => {
               <h1 className="text-xl font-display font-bold text-foreground capitalize">
                 {profileData?.firstName && profileData?.lastName 
                   ? `${profileData.firstName} ${profileData.lastName}`
-                  : profileData?.fullName || user?.firstName || "User"}!
+                  : profileData?.fullName || userName || "User"}!
               </h1>
             </div>
           </div>
@@ -198,19 +158,17 @@ const HomeFixed = () => {
                   alt="Profile" 
                   className="h-9 w-9 rounded-full object-cover"
                   onError={(e) => {
-                    console.error('🏠 Home: Profile image load error:', e.target.src);
-                    e.target.onerror = null;
-                    e.target.src = '/default-profile.png';
+                    e.target.style.display = 'none';
+                    e.target.nextSibling.style.display = 'flex';
                   }}
                 />
-              ) : (
-                <span className="flex items-center justify-center">
-                  {profileData?.firstName && profileData?.lastName 
-                    ? `${profileData.firstName.charAt(0)}${profileData.lastName.charAt(0)}`
-                    : (profileData?.fullName || user?.firstName || "User").charAt(0).toUpperCase()
-                  }
-                </span>
-              )}
+              ) : null}
+              <span style={{ display: (profileData?.imageUrl || profileData?.profilePhotoUrl) ? 'none' : 'flex' }}>
+                {profileData?.firstName && profileData?.lastName 
+                  ? `${profileData.firstName.charAt(0)}${profileData.lastName.charAt(0)}`
+                  : (profileData?.fullName || userName || "User").charAt(0).toUpperCase()
+                }
+              </span>
             </button>
           </div>
         </header>
@@ -261,129 +219,51 @@ const HomeFixed = () => {
                 </div>
               ) : profiles.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {profiles.map((profile, i) => {
-                    console.log('🏠 Home: Rendering profile card:', profile);
-                    return (
+                  {profiles.map((profile, i) => (
                     <motion.div
                       key={profile.id || i}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: i * 0.1 }}
                       whileHover={{ scale: 1.02 }}
-                      className="bg-card rounded-xl shadow-lg overflow-hidden"
+                      className="bg-card rounded-xl shadow-lg overflow-hidden cursor-pointer"
+                      onClick={() => navigate(`/profile/${profile.id}`)}
                     >
-                   <div className="aspect-[3/4] overflow-hidden relative">
-
-                     {!profileImageErrors[profile.id] ? (
-
-                       <img
-                         src={
-                           profile.imageUrl
-                             ? (
-                                 profile.imageUrl.startsWith('http')
-                                   ? profile.imageUrl
-                                   : `http://localhost:9090${profile.imageUrl}`
-                               )
-                             : "/default-profile.png"
-                         }
-
-                         alt={profile.fullName || "Profile"}
-
-                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-
-                         onError={(e) => {
-
-                           console.error(
-                             '🏠 Home: Image load failed:',
-                             profile.id
-                           );
-
-                           e.currentTarget.onerror = null;
-
-                           e.currentTarget.src =
-                             "/default-profile.png";
-
-                         }}
-
-                       />
-
-                     ) : (
-
-                       <div className="w-full h-full flex items-center justify-center bg-muted">
-
-                         <div className="text-center">
-
-                           <div className="w-16 h-16 bg-muted-foreground/20 rounded-full mx-auto mb-2 flex items-center justify-center">
-
-                             <span className="text-muted-foreground text-xl">
-
-                               {profile.fullName
-                                 ?.charAt(0)
-                                 ?.toUpperCase() || '?'}
-
-                             </span>
-
-                           </div>
-
-                           <p className="text-xs text-muted-foreground">
-                             No Photo
-                           </p>
-
-                         </div>
-
-                       </div>
-
-                     )}
-                   </div>
-                      <div className="p-4">
-                        <p className="text-sm font-semibold text-foreground mb-1">
-                          <span className="text-primary">{profile?.fullName || 'Unknown'}</span>, {profile?.age || 'Age'}
+                      <div className="aspect-[3/4] overflow-hidden relative">
+                        <img 
+                          src={profile.profilePhotoUrl || profile.imageUrl || profile1} 
+                          alt={profile.fullName || profile.name} 
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+                          onError={(e) => {
+                            e.target.src = profile1;
+                          }}
+                        />
+                      </div>
+                      <div className="p-3">
+                        <p className="text-sm font-semibold text-foreground">
+                          <span className="text-primary">{profile.fullName}</span>, {profile.age || 'Age'}, {profile.city || 'City'}
                         </p>
-                        <p className="text-xs text-muted-foreground mb-3">
-                          {profile?.city || 'City not available'} {profile?.occupationName ? `· ${profile.occupationName}` : ''}
-                        </p>
-                        <div className="flex gap-2">
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigate(`/profile/${profile?.id}`);
-                            }}
-                            className="flex-1 bg-primary text-primary-foreground text-xs font-semibold py-2 rounded-lg hover:bg-primary/90 transition-colors"
-                          >
-                            View Profile
-                          </button>
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              console.log('🏠 Home: Send Interest clicked for profile:', profile?.id);
-                              // TODO: Implement send interest API call
-                            }}
-                            className="flex-1 bg-orange-cta/10 text-orange-cta text-xs font-semibold py-2 rounded-lg hover:bg-orange-cta/20 transition-colors"
-                          >
-                            Send Interest
-                          </button>
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleBookmark(profile?.id || i);
-                            }}
-                            className={`flex-1 text-xs font-semibold py-2 rounded-lg transition-colors ${
-                              isBookmarked(profile.id || i) 
-                                ? 'bg-accent text-accent-foreground' 
-                                : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                            }`}
-                          >
-                            {isBookmarked(profile?.id || i) ? 'Saved' : 'Save'}
-                          </button>
-                        </div>
+                        <LikeBookmarkButtons
+                          profileId={profile.id || i}
+                          isLiked={isLiked(profile.id || i)}
+                          isBookmarked={isBookmarked(profile.id || i)}
+                          onLike={toggleLike}
+                          onBookmark={toggleBookmark}
+                          size="sm"
+                        />
                       </div>
                     </motion.div>
-                  );
-                  })}
+                  ))}
                 </div>
               ) : (
                 <div className="text-center py-8">
-                  <p className="text-muted-foreground">No profiles found</p>
+                  <p className="text-muted-foreground">No profiles found. Be the first to create one!</p>
+                  <button
+                    onClick={() => navigate('/profile/create')}
+                    className="mt-4 bg-primary text-white px-6 py-2 rounded-lg hover:opacity-90 transition"
+                  >
+                    Create Profile
+                  </button>
                 </div>
               )}
             </div>
@@ -391,8 +271,23 @@ const HomeFixed = () => {
             {/* Success Stories - vertical */}
             <div>
               <h3 className="text-lg font-display font-bold text-foreground mb-4">{t?.home?.successStoriesTitle || "Success Stories"}</h3>
-              <div className="bg-card rounded-xl border border-border p-6 text-center">
-                <p className="text-muted-foreground text-sm">Success stories coming soon!</p>
+              <div className="space-y-3">
+                {successStories.map((s, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.1 }}
+                    className="bg-card rounded-xl border border-border p-4 flex items-center gap-4 hover:shadow-md transition-shadow"
+                  >
+                    <img src={s.image} alt={s.names} className="h-16 w-16 rounded-lg object-cover flex-shrink-0" />
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">{s.names}</p>
+                      <p className="text-xs text-muted-foreground">{s.city} · {s.date}</p>
+                    </div>
+                    <Heart className="h-4 w-4 text-primary fill-primary ml-auto flex-shrink-0" />
+                  </motion.div>
+                ))}
               </div>
             </div>
           </div>

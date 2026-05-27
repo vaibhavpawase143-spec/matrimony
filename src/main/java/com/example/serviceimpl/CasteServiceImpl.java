@@ -16,20 +16,22 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-@Transactional   // 🔥 IMPORTANT FIX
+@Transactional
 public class CasteServiceImpl implements CasteService {
 
     private final CasteRepository repo;
     private final AdminRepository adminRepository;
     private final ReligionRepository religionRepository;
 
-    // ================= GET ALL =================
+    // =========================================
+    // GET ALL
+    // =========================================
+
     @Override
     public List<Caste> getAll(Long adminId) {
 
-        List<Caste> list = repo.findByAdminId(adminId);
+        List<Caste> list = repo.findAllAvailable(adminId);
 
-        // 🔥 FIX: initialize lazy relation
         list.forEach(c -> {
             if (c.getReligion() != null) {
                 c.getReligion().getName();
@@ -39,11 +41,14 @@ public class CasteServiceImpl implements CasteService {
         return list;
     }
 
-    // ================= GET ACTIVE =================
+    // =========================================
+    // GET ACTIVE
+    // =========================================
+
     @Override
     public List<Caste> getActive(Long adminId) {
 
-        List<Caste> list = repo.findByAdminIdAndIsActiveTrue(adminId);
+        List<Caste> list = repo.findAllActiveAvailable(adminId);
 
         list.forEach(c -> {
             if (c.getReligion() != null) {
@@ -54,14 +59,16 @@ public class CasteServiceImpl implements CasteService {
         return list;
     }
 
-    // ================= GET BY ID =================
+    // =========================================
+    // GET BY ID
+    // =========================================
+
     @Override
     public Caste getById(Long id, Long adminId) {
 
-        Caste caste = repo.findByIdAndAdminId(id, adminId)
+        Caste caste = repo.findAccessibleById(id, adminId)
                 .orElseThrow(() -> new RuntimeException("Caste not found"));
 
-        // 🔥 FIX
         if (caste.getReligion() != null) {
             caste.getReligion().getName();
         }
@@ -69,18 +76,25 @@ public class CasteServiceImpl implements CasteService {
         return caste;
     }
 
-    // ================= CREATE =================
+    // =========================================
+    // CREATE
+    // =========================================
+
     @Override
     public Caste create(Caste caste, Long adminId) {
 
         Admin admin = adminRepository.findById(adminId)
                 .orElseThrow(() -> new RuntimeException("Admin not found"));
 
-        Religion religion = religionRepository.findById(caste.getReligion().getId())
+        Religion religion = religionRepository
+                .findById(caste.getReligion().getId())
                 .orElseThrow(() -> new RuntimeException("Religion not found"));
 
-        if (repo.existsByNameIgnoreCaseAndReligionIdAndAdminId(
-                caste.getName(), religion.getId(), adminId)) {
+        if (repo.existsAvailableCaste(
+                caste.getName(),
+                religion.getId(),
+                adminId
+        )) {
             throw new RuntimeException("Caste already exists");
         }
 
@@ -91,19 +105,27 @@ public class CasteServiceImpl implements CasteService {
         return repo.save(caste);
     }
 
-    // ================= UPDATE =================
+    // =========================================
+    // UPDATE
+    // =========================================
+
     @Override
     public Caste update(Long id, Caste updated, Long adminId) {
 
-        Caste existing = repo.findByIdAndAdminId(id, adminId)
+        Caste existing = repo.findAccessibleById(id, adminId)
                 .orElseThrow(() -> new RuntimeException("Caste not found"));
 
-        Religion religion = religionRepository.findById(updated.getReligion().getId())
+        Religion religion = religionRepository
+                .findById(updated.getReligion().getId())
                 .orElseThrow(() -> new RuntimeException("Religion not found"));
 
-        if (!existing.getName().equalsIgnoreCase(updated.getName()) &&
-                repo.existsByNameIgnoreCaseAndReligionIdAndAdminId(
-                        updated.getName(), religion.getId(), adminId)) {
+        if (!existing.getName().equalsIgnoreCase(updated.getName())
+                && repo.existsAvailableCaste(
+                updated.getName(),
+                religion.getId(),
+                adminId
+        )) {
+
             throw new RuntimeException("Caste already exists");
         }
 
@@ -114,21 +136,30 @@ public class CasteServiceImpl implements CasteService {
         return repo.save(existing);
     }
 
-    // ================= DELETE =================
+    // =========================================
+    // DELETE
+    // =========================================
+
     @Override
     public void delete(Long id, Long adminId) {
 
-        Caste existing = repo.findByIdAndAdminId(id, adminId)
+        Caste existing = repo.findAccessibleById(id, adminId)
                 .orElseThrow(() -> new RuntimeException("Caste not found"));
 
         repo.delete(existing);
     }
 
-    // ================= GET BY RELIGION =================
+    // =========================================
+    // GET BY RELIGION
+    // =========================================
+
     @Override
     public List<Caste> getByReligion(Long religionId, Long adminId) {
 
-        List<Caste> list = repo.findByReligionIdAndAdminId(religionId, adminId);
+        List<Caste> list = repo.findAvailableByReligion(
+                religionId,
+                adminId
+        );
 
         list.forEach(c -> {
             if (c.getReligion() != null) {
@@ -139,11 +170,20 @@ public class CasteServiceImpl implements CasteService {
         return list;
     }
 
-    // ================= GET ACTIVE BY RELIGION =================
+    // =========================================
+    // GET ACTIVE BY RELIGION
+    // =========================================
+
     @Override
-    public List<Caste> getActiveByReligion(Long religionId, Long adminId) {
+    public List<Caste> getActiveByReligion(
+            Long religionId,
+            Long adminId
+    ) {
 
-        List<Caste> list = repo.findByReligionIdAndAdminIdAndIsActiveTrue(religionId, adminId);
+        List<Caste> list = repo.findActiveAvailableByReligion(
+                religionId,
+                adminId
+        );
 
         list.forEach(c -> {
             if (c.getReligion() != null) {
@@ -154,11 +194,17 @@ public class CasteServiceImpl implements CasteService {
         return list;
     }
 
-    // ================= SEARCH =================
+    // =========================================
+    // SEARCH
+    // =========================================
+
     @Override
     public List<Caste> search(String keyword, Long adminId) {
 
-        List<Caste> list = repo.findByNameContainingIgnoreCaseAndAdminId(keyword, adminId);
+        List<Caste> list = repo.searchAvailable(
+                keyword,
+                adminId
+        );
 
         list.forEach(c -> {
             if (c.getReligion() != null) {

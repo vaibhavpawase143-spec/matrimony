@@ -126,6 +126,7 @@ public class DrinkingController {
 
         return Drinking.builder()
                 .name(dto.getName())
+                .value(dto.getValue())
                 .isActive(dto.getIsActive())
                 .admin(admin)
                 .build();
@@ -136,6 +137,7 @@ public class DrinkingController {
 
         dto.setId(entity.getId());
         dto.setName(entity.getName());
+        dto.setValue(entity.getValue());
         dto.setIsActive(entity.getIsActive());
         dto.setCreatedAt(entity.getCreatedAt());
         dto.setUpdatedAt(entity.getUpdatedAt());

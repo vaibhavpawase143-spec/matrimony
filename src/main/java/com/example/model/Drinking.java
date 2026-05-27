@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 @Table(
         name = "drinking",
         uniqueConstraints = {
-                @UniqueConstraint(columnNames = {"name", "admin_id"})
+                @UniqueConstraint(columnNames = {"value", "admin_id"})
         }
 )
 @Getter
@@ -23,8 +23,11 @@ public class Drinking {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "name", nullable = false, length = 100)
+    @Column(nullable = false, length = 100)
     private String name;
+
+    @Column(nullable = false, length = 100)
+    private String value;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "admin_id")

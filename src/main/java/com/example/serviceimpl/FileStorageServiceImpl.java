@@ -11,7 +11,7 @@ import java.util.UUID;
 @Service
 public class FileStorageServiceImpl implements FileStorageService {
 
-    private static final String UPLOAD_DIR = "uploads/";
+    private static final String UPLOAD_DIR = "static/uploads/";
     private static final long MAX_SIZE = 5 * 1024 * 1024; // 5MB
 
     @Override

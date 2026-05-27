@@ -1,12 +1,6 @@
 -- Insert default income ranges (annual)
 
-INSERT INTO incomes (
-    admin_id,
-    range,
-    is_active,
-    created_at,
-    updated_at
-) VALUES
+INSERT INTO incomes (admin_id, range, is_active, created_at, updated_at)VALUES
 (NULL, 'Below 1 Lakh', TRUE, CURRENT_TIMESTAMP, NULL),
 (NULL, '1 - 3 Lakhs', TRUE, CURRENT_TIMESTAMP, NULL),
 (NULL, '3 - 5 Lakhs', TRUE, CURRENT_TIMESTAMP, NULL),

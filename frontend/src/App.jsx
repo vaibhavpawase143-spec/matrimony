@@ -1,4 +1,3 @@
-import { LanguageProvider } from "@/context/LanguageContext";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -7,7 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/useAuth";
 import { LoadingProvider } from "@/hooks/useLoading";
 import { ToastProvider } from "@/components/Toast";
-
+import { LanguageProvider } from "@/context/LanguageContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import AdminRoute from "@/routes/AdminRoute";
 import LoadingSpinner from "./components/LoadingSpinner";

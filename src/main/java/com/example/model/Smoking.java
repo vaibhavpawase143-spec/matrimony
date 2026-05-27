@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(
         name = "smoking",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"admin_id", "name"}),
+        uniqueConstraints = @UniqueConstraint(columnNames = {"admin_id", "value"}),
         indexes = {
                 @Index(name = "idx_smoking_value", columnList = "value")
         }
@@ -18,12 +18,12 @@ public class Smoking {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "name", nullable = false, length = 50)
-    private String name;
+    @Column(nullable = false, length = 50)
+    private String value;
 
     // ✅ SAFE LAZY
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "admin_id", nullable = false)
+    @JoinColumn(name = "admin_id")
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Admin admin;
 
@@ -60,8 +60,8 @@ public class Smoking {
         return id;
     }
 
-    public String getName() {
-        return name;
+    public String getValue() {
+        return value;
     }
 
     public Admin getAdmin() {
@@ -82,8 +82,8 @@ public class Smoking {
 
     // ===== Setters =====
 
-    public void setName(String name) {
-        this.name = name;
+    public void setValue(String value) {
+        this.value = value;
     }
 
     public void setAdmin(Admin admin) {

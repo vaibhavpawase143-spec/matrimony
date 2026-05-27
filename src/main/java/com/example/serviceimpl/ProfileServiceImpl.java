@@ -28,487 +28,1409 @@ import java.util.Optional;
 public class ProfileServiceImpl implements ProfileService {
 
     private final ProfileRepository repository;
+
     private final UserRepository userRepository;
+
     private final MatchAsyncService asyncService;
+
     private final ReligionRepository religionRepository;
+
     private final CasteRepository casteRepository;
+
     private final SubCasteRepository subCasteRepository;
+
     private final EducationLevelRepository educationRepository;
+
     private final OccupationRepository occupationRepository;
+
     private final HeightRepository heightRepository;
+
     private final WeightRepository weightRepository;
+
     private final CityRepository cityRepository;
+
     private final MotherTongueRepository motherTongueRepository;
+
     private final MaritalStatusRepository maritalStatusRepository;
+
+    private final GenderRepository genderRepository;
+
+    private final BodyTypeRepository bodyTypeRepository;
+
+    private final ComplexionRepository complexionRepository;
+
+    private final CountryRepository countryRepository;
+
+    private final StateRepository stateRepository;
+    private final IncomeRepository incomeRepository;
+
+    private final DietRepository dietRepository;
+
+    private final SmokingRepository smokingRepository;
+
+    private final DrinkingRepository drinkingRepository;
     private final CacheService cacheService;
 
-    // ================= CURRENT USER =================
-    private User getCurrentUser() {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        System.out.println("👤 getCurrentUser - Email from SecurityContext: " + email);
-        System.out.println("👤 getCurrentUser - Full Authentication: " + SecurityContextHolder.getContext().getAuthentication());
+    // =====================================================
+    // CURRENT USER
+    // =====================================================
 
-        User user = userRepository.findByEmailIgnoreCase(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        
-        System.out.println("👤 getCurrentUser - Found User ID: " + user.getId() + ", Email: " + user.getEmail());
-        return user;
+    private User getCurrentUser() {
+
+        String email =
+                SecurityContextHolder
+                        .getContext()
+                        .getAuthentication()
+                        .getName();
+
+        return userRepository
+                .findByEmailIgnoreCase(email)
+                .orElseThrow(() ->
+                        new RuntimeException("User not found")
+                );
     }
 
-    // ================= CREATE =================
-    public ProfileResponseDTO createProfile(ProfileRequestDTO dto) {
+    // =====================================================
+    // CREATE PROFILE
+    // =====================================================
 
-        User user = getCurrentUser(); // ✅ FIXED
+    public ProfileResponseDTO createProfile(
+            ProfileRequestDTO dto
+    ) {
+
+        User user = getCurrentUser();
 
         if (repository.existsByUserId(user.getId())) {
-            throw new RuntimeException("Profile already exists!");
+
+            throw new RuntimeException(
+                    "Profile already exists!"
+            );
         }
 
         Profile profile = new Profile();
+
         profile.setUser(user);
 
         mapDtoToEntity(dto, profile);
 
-        // Save user if firstName/lastName were updated
+        // PROFILE COMPLETION
+        updateProfileCompletion(profile);
+
         userRepository.save(user);
 
-        Profile saved = repository.save(profile);
+        Profile saved =
+                repository.save(profile);
 
         safeRedis(user.getId());
 
         return mapToDTO(saved);
     }
+    // =====================================================
+    // UPDATE PROFILE
+    // =====================================================
 
-    // ================= UPDATE =================
-    public ProfileResponseDTO updateMyProfile(UpdateProfileRequestDTO dto) {
+    public ProfileResponseDTO updateMyProfile(
+            UpdateProfileRequestDTO dto
+    ) {
 
-        User user = getCurrentUser(); // ✅ FIXED
+        User user = getCurrentUser();
 
-        Profile profile = repository.findByUserIdWithRelations(user.getId())
-                .orElseThrow(() -> new RuntimeException("Profile not found"));
+        Profile profile =
+                repository
+                        .findByUserIdWithRelations(user.getId())
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Profile not found"
+                                )
+                        );
 
         mapUpdateDto(dto, profile);
 
-        // Save user if firstName/lastName were updated
+        // PROFILE COMPLETION
+        updateProfileCompletion(profile);
+
         userRepository.save(user);
 
-        Profile saved = repository.save(profile);
+        Profile saved =
+                repository.save(profile);
 
         safeRedis(user.getId());
 
         return mapToDTO(saved);
     }
+    // =====================================================
+    // GET MY PROFILE
+    // =====================================================
 
-    // ================= GET =================
     @Transactional(readOnly = true)
     public ProfileResponseDTO getMyProfile() {
-        User currentUser = getCurrentUser();
-        System.out.println("📄 getMyProfile - Fetching profile for User ID: " + currentUser.getId());
-        
-        Profile profile = repository.findByUserIdWithRelations(currentUser.getId())
-                .orElseThrow(() -> new RuntimeException("Profile not found"));
-        
-        System.out.println("📄 getMyProfile - Found Profile ID: " + profile.getId() + " for User ID: " + profile.getUser().getId());
-        return mapToDTO(profile);
+
+        return mapToDTO(
+                repository
+                        .findByUserIdWithRelations(
+                                getCurrentUser().getId()
+                        )
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Profile not found"
+                                )
+                        )
+        );
     }
+
+    // =====================================================
+    // GET PROFILE BY ID
+    // =====================================================
 
     @Transactional(readOnly = true)
-    public ProfileResponseDTO getProfileById(Long id) {
-        return mapToDTO(repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Profile not found")));
+    public ProfileResponseDTO getProfileById(
+            Long id
+    ) {
+
+        return mapToDTO(
+                repository
+                        .findById(id)
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Profile not found"
+                                )
+                        )
+        );
     }
 
-    // ================= DELETE =================
+    // =====================================================
+    // DELETE
+    // =====================================================
+
     @Override
     public void delete(Long id) {
-        Profile profile = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Profile not found"));
 
-        if (!profile.getUser().getId().equals(getCurrentUser().getId())) {
-            throw new RuntimeException("Access Denied");
+        Profile profile =
+                repository
+                        .findById(id)
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Profile not found"
+                                )
+                        );
+
+        if (!profile.getUser().getId()
+                .equals(getCurrentUser().getId())) {
+
+            throw new RuntimeException(
+                    "Access Denied"
+            );
         }
 
         repository.delete(profile);
     }
 
-    // ================= SAVE =================
+    // =====================================================
+    // SAVE PROFILE
+    // =====================================================
+
     @Override
     public Profile saveProfile(Profile profile) {
 
         User user = getCurrentUser();
 
-        Optional<Profile> existing = repository.findByUserId(user.getId());
+        Optional<Profile> existing =
+                repository.findByUserId(user.getId());
 
         if (existing.isPresent()) {
+
             Profile p = existing.get();
 
-            if (profile.getImageUrl() != null) p.setImageUrl(profile.getImageUrl());
-            if (profile.getAbout() != null) p.setAbout(profile.getAbout());
+            if (profile.getImageUrl() != null) {
+                p.setImageUrl(profile.getImageUrl());
+            }
+
+            if (profile.getAbout() != null) {
+                p.setAbout(profile.getAbout());
+            }
 
             return repository.save(p);
         }
 
         profile.setUser(user);
+
         profile.setIsActive(true);
 
         return repository.save(profile);
     }
 
-    // ================= SAVE WITH USER =================
-    public Profile saveProfile(Profile profile, User user) {
+    // =====================================================
+    // GET ALL
+    // =====================================================
 
-        Optional<Profile> existing = repository.findByUserId(user.getId());
+    @Override
+    @Transactional(readOnly = true)
+    public List<Profile> getAll() {
 
-        if (existing.isPresent()) {
-            Profile p = existing.get();
-
-            if (profile.getImageUrl() != null) p.setImageUrl(profile.getImageUrl());
-            if (profile.getAbout() != null) p.setAbout(profile.getAbout());
-
-            return repository.save(p);
-        }
-
-        profile.setUser(user);
-        profile.setIsActive(true);
-
-        return repository.save(profile);
+        return repository.findAllWithUser();
     }
 
-    // ================= READ =================
-    @Override public Optional<Profile> getById(Long id) { return repository.findById(id); }
-    @Override public Optional<Profile> getByUserId(Long userId) { return repository.findByUserIdWithRelations(userId); }
-    @Override @Transactional(readOnly = true) public List<Profile> getAll() { return repository.findAllWithUser(); }
-    @Override @Transactional(readOnly = true) public List<Profile> getActiveProfiles() { return repository.findActiveProfilesWithUser(); }
+    // =====================================================
+    // DTO → ENTITY
+    // =====================================================
 
-    // ================= FILTER =================
-    @Override public List<Profile> getByReligion(Long id) { return repository.findByReligionId(id); }
-    @Override public List<Profile> getByCaste(Long id) { return repository.findByCasteId(id); }
-    @Override public List<Profile> getByCity(Long id) { return repository.findByCityId(id); }
-    @Override public List<Profile> getByEducation(Long id) { return repository.findByEducationLevelId(id); }
-    @Override public List<Profile> getByOccupation(Long id) { return repository.findByOccupationId(id); }
+    private void mapDtoToEntity(
+            ProfileRequestDTO dto,
+            Profile p
+    ) {
 
-    // ================= COMBINATIONS =================
-    @Override public List<Profile> getByReligionAndCaste(Long r, Long c) { return repository.findByReligionIdAndCasteId(r, c); }
-    @Override public List<Profile> getByCityAndEducation(Long c, Long e) { return repository.findByCityIdAndEducationLevelId(c, e); }
-    @Override public List<Profile> getByOccupationAndCity(Long o, Long c) { return repository.findByOccupationIdAndCityId(o, c); }
-    @Override public List<Profile> getActiveByReligionAndCity(Long r, Long c) { return repository.findByReligionIdAndCityIdAndIsActiveTrue(r, c); }
+        // =====================================================
+        // BASIC
+        // =====================================================
 
-    // ================= FIXED MAPPER =================
-    private void mapDtoToEntity(ProfileRequestDTO dto, Profile p) {
-        // Map basic profile fields
-        p.setGender(dto.getGender());
         p.setDateOfBirth(dto.getDateOfBirth());
-        p.setAbout(dto.getAbout());
+
+
+        p.setAboutMe(dto.getAboutMe());
+
         p.setImageUrl(dto.getImageUrl());
 
-        // Update user's first name and last name if provided
-        if (dto.getFirstName() != null || dto.getLastName() != null) {
-            User user = p.getUser();
-            if (dto.getFirstName() != null) {
-                user.setFirstName(dto.getFirstName());
-            }
-            if (dto.getLastName() != null) {
-                user.setLastName(dto.getLastName());
-            }
+        p.setAbout(dto.getAbout());
+
+        if (dto.getIncomeId() != null) {
+
+            p.setIncome(
+                    incomeRepository
+                            .findById(dto.getIncomeId())
+                            .orElse(null)
+            );
         }
 
-        // Map religion fields
-        if (dto.getReligionId() != null)
-            p.setReligion(religionRepository.findById(dto.getReligionId()).orElse(null));
 
-        // Map caste fields
-        if (dto.getCasteId() != null)
-            p.setCaste(casteRepository.findById(dto.getCasteId()).orElse(null));
+        p.setCompanyName(dto.getCompanyName());
 
-        // Map education level fields
-        if (dto.getEducationLevelId() != null)
-            p.setEducationLevel(educationRepository.findById(dto.getEducationLevelId()).orElse(null));
+        p.setAddress(dto.getAddress());
 
-        // Map occupation fields
-        if (dto.getOccupationId() != null)
-            p.setOccupation(occupationRepository.findById(dto.getOccupationId()).orElse(null));
+        if (dto.getDietId() != null) {
 
-        // Map height fields
-        if (dto.getHeightId() != null)
-            p.setHeight(heightRepository.findById(dto.getHeightId()).orElse(null));
-
-        // Map weight fields
-        if (dto.getWeightId() != null)
-            p.setWeight(weightRepository.findById(dto.getWeightId()).orElse(null));
-
-        // Map city fields
-        if (dto.getCityId() != null)
-            p.setCity(cityRepository.findById(dto.getCityId()).orElse(null));
-
-        // Map mother tongue fields
-        if (dto.getMotherTongueId() != null)
-            p.setMotherTongue(motherTongueRepository.findById(dto.getMotherTongueId()).orElse(null));
-
-        // Map marital status fields
-        if (dto.getMaritalStatusId() != null)
-            p.setMaritalStatus(maritalStatusRepository.findById(dto.getMaritalStatusId()).orElse(null));
-    }
-
-    private void mapUpdateDto(UpdateProfileRequestDTO dto, Profile p) {
-        // Map basic profile fields
-        if (dto.getGender() != null)
-            p.setGender(dto.getGender());
-
-        if (dto.getDateOfBirth() != null)
-            p.setDateOfBirth(dto.getDateOfBirth());
-
-        // Handle both about and aboutMe for frontend compatibility
-        if (dto.getAbout() != null)
-            p.setAbout(dto.getAbout());
-        if (dto.getAboutMe() != null)
-            p.setAbout(dto.getAboutMe());
-
-        if (dto.getImageUrl() != null)
-            p.setImageUrl(dto.getImageUrl());
-
-        // Update user's first name and last name if provided
-        if (dto.getFirstName() != null || dto.getLastName() != null) {
-            User user = p.getUser();
-            if (dto.getFirstName() != null) {
-                user.setFirstName(dto.getFirstName());
-            }
-            if (dto.getLastName() != null) {
-                user.setLastName(dto.getLastName());
-            }
+            p.setDiet(
+                    dietRepository
+                            .findById(dto.getDietId())
+                            .orElse(null)
+            );
         }
 
-        // Map religion fields
-        if (dto.getReligionId() != null)
-            p.setReligion(religionRepository.findById(dto.getReligionId()).orElse(null));
+// =====================================================
+// SMOKING
+// =====================================================
 
-        // Map caste fields
-        if (dto.getCasteId() != null)
-            p.setCaste(casteRepository.findById(dto.getCasteId()).orElse(null));
+        if (dto.getSmokingId() != null) {
 
-        // Map sub caste fields
+            p.setSmoking(
+                    smokingRepository
+                            .findById(dto.getSmokingId())
+                            .orElse(null)
+            );
+        }
+
+// =====================================================
+// DRINKING
+// =====================================================
+
+        if (dto.getDrinkingId() != null) {
+
+            p.setDrinking(
+                    drinkingRepository
+                            .findById(dto.getDrinkingId())
+                            .orElse(null)
+            );
+        }
+
+        p.setFatherName(dto.getFatherName());
+
+        p.setFatherOccupation(dto.getFatherOccupation());
+
+        p.setMotherName(dto.getMotherName());
+
+        p.setMotherOccupation(dto.getMotherOccupation());
+
+        p.setSiblingsCount(dto.getSiblingsCount());
+
+        p.setPreferredAgeMin(dto.getPreferredAgeMin());
+
+        p.setPreferredAgeMax(dto.getPreferredAgeMax());
+
+        p.setPreferredLocation(dto.getPreferredLocation());
+
+        p.setPreferredEducation(dto.getPreferredEducation());
+
+        p.setOtherExpectations(dto.getOtherExpectations());
+
+        // =====================================================
+        // UPDATE USER
+        // =====================================================
+
+        User user = p.getUser();
+
+        if (dto.getFirstName() != null) {
+            user.setFirstName(dto.getFirstName());
+        }
+
+        if (dto.getLastName() != null) {
+            user.setLastName(dto.getLastName());
+        }
+
+        if (dto.getEmail() != null) {
+            user.setEmail(dto.getEmail());
+        }
+
+        if (dto.getPhone() != null) {
+            user.setPhone(dto.getPhone());
+        }
+
+        // =====================================================
+        // RELIGION
+        // =====================================================
+
+        if (dto.getReligionId() != null) {
+
+            p.setReligion(
+                    religionRepository
+                            .findById(dto.getReligionId())
+                            .orElse(null)
+            );
+        }
+
+        // =====================================================
+        // CASTE
+        // =====================================================
+
+        if (dto.getCasteId() != null) {
+
+            p.setCaste(
+                    casteRepository
+                            .findById(dto.getCasteId())
+                            .orElse(null)
+            );
+        }
+
+        // =====================================================
+        // SUB CASTE
+        // =====================================================
+
         if (dto.getSubCasteId() != null) {
-            p.setSubCaste(subCasteRepository.findById(dto.getSubCasteId()).orElse(null));
+
+            p.setSubCaste(
+                    subCasteRepository
+                            .findById(dto.getSubCasteId())
+                            .orElse(null)
+            );
         }
 
-        // Map education level fields
-        if (dto.getEducationLevelId() != null)
-            p.setEducationLevel(educationRepository.findById(dto.getEducationLevelId()).orElse(null));
+        // =====================================================
+        // MOTHER TONGUE
+        // =====================================================
 
-        // Map occupation fields
-        if (dto.getOccupationId() != null)
-            p.setOccupation(occupationRepository.findById(dto.getOccupationId()).orElse(null));
+        if (dto.getMotherTongueId() != null) {
 
-        // Map height fields
-        if (dto.getHeightId() != null)
-            p.setHeight(heightRepository.findById(dto.getHeightId()).orElse(null));
+            p.setMotherTongue(
+                    motherTongueRepository
+                            .findById(dto.getMotherTongueId())
+                            .orElse(null)
+            );
+        }
 
-        // Map weight fields
-        if (dto.getWeightId() != null)
-            p.setWeight(weightRepository.findById(dto.getWeightId()).orElse(null));
+        // =====================================================
+        // MARITAL STATUS
+        // =====================================================
 
-        // Map city fields
-        if (dto.getCityId() != null)
-            p.setCity(cityRepository.findById(dto.getCityId()).orElse(null));
+        if (dto.getMaritalStatusId() != null) {
 
-        // Map mother tongue fields
-        if (dto.getMotherTongueId() != null)
-            p.setMotherTongue(motherTongueRepository.findById(dto.getMotherTongueId()).orElse(null));
+            p.setMaritalStatus(
+                    maritalStatusRepository
+                            .findById(dto.getMaritalStatusId())
+                            .orElse(null)
+            );
+        }
 
-        // Map marital status fields
-        if (dto.getMaritalStatusId() != null)
-            p.setMaritalStatus(maritalStatusRepository.findById(dto.getMaritalStatusId()).orElse(null));
+        // =====================================================
+        // GENDER
+        // =====================================================
 
-        // Map physical details
-        if (dto.getComplexion() != null)
-            p.setComplexion(dto.getComplexion());
-        if (dto.getBodyType() != null)
-            p.setBodyType(dto.getBodyType());
+        if (dto.getGenderId() != null) {
 
-        // Map education & career
-        if (dto.getAnnualIncome() != null)
-            p.setAnnualIncome(dto.getAnnualIncome());
-        if (dto.getCompanyName() != null)
-            p.setCompanyName(dto.getCompanyName());
+            p.setGender(
+                    genderRepository
+                            .findById(dto.getGenderId())
+                            .orElse(null)
+            );
+        }
 
-        // Map location
-        if (dto.getCountry() != null)
-            p.setCountry(dto.getCountry());
-        if (dto.getState() != null)
-            p.setState(dto.getState());
-        if (dto.getAddress() != null)
-            p.setAddress(dto.getAddress());
+        // =====================================================
+        // EDUCATION
+        // =====================================================
 
-        // Map lifestyle
-        if (dto.getDiet() != null)
-            p.setDiet(dto.getDiet());
-        if (dto.getSmoking() != null)
-            p.setSmoking(dto.getSmoking());
-        if (dto.getDrinking() != null)
-            p.setDrinking(dto.getDrinking());
+        if (dto.getEducationLevelId() != null) {
 
-        // Map family details
-        if (dto.getFatherName() != null)
-            p.setFatherName(dto.getFatherName());
-        if (dto.getFatherOccupation() != null)
-            p.setFatherOccupation(dto.getFatherOccupation());
-        if (dto.getMotherName() != null)
-            p.setMotherName(dto.getMotherName());
-        if (dto.getMotherOccupation() != null)
-            p.setMotherOccupation(dto.getMotherOccupation());
-        if (dto.getSiblingsCount() != null)
-            p.setSiblingsCount(dto.getSiblingsCount());
+            p.setEducationLevel(
+                    educationRepository
+                            .findById(dto.getEducationLevelId())
+                            .orElse(null)
+            );
+        }
 
-        // Map partner preferences
-        if (dto.getPreferredAgeMin() != null)
-            p.setPreferredAgeMin(dto.getPreferredAgeMin());
-        if (dto.getPreferredAgeMax() != null)
-            p.setPreferredAgeMax(dto.getPreferredAgeMax());
-        if (dto.getPreferredLocation() != null)
-            p.setPreferredLocation(dto.getPreferredLocation());
-        if (dto.getPreferredEducation() != null)
-            p.setPreferredEducation(dto.getPreferredEducation());
-        if (dto.getOtherExpectations() != null)
-            p.setOtherExpectations(dto.getOtherExpectations());
+        // =====================================================
+        // OCCUPATION
+        // =====================================================
+
+        if (dto.getOccupationId() != null) {
+
+            p.setOccupation(
+                    occupationRepository
+                            .findById(dto.getOccupationId())
+                            .orElse(null)
+            );
+        }
+
+        // =====================================================
+        // HEIGHT
+        // =====================================================
+
+        if (dto.getHeightId() != null) {
+
+            p.setHeight(
+                    heightRepository
+                            .findById(dto.getHeightId())
+                            .orElse(null)
+            );
+        }
+
+        // =====================================================
+        // WEIGHT
+        // =====================================================
+
+        if (dto.getWeightId() != null) {
+
+            p.setWeight(
+                    weightRepository
+                            .findById(dto.getWeightId())
+                            .orElse(null)
+            );
+        }
+
+        // =====================================================
+        // BODY TYPE
+        // =====================================================
+
+        if (dto.getBodyTypeId() != null) {
+
+            p.setBodyType(
+                    bodyTypeRepository
+                            .findById(dto.getBodyTypeId())
+                            .orElse(null)
+            );
+        }
+
+        // =====================================================
+        // COMPLEXION
+        // =====================================================
+
+        if (dto.getComplexionId() != null) {
+
+            p.setComplexion(
+                    complexionRepository
+                            .findById(dto.getComplexionId())
+                            .orElse(null)
+            );
+        }
+
+        // =====================================================
+        // COUNTRY
+        // =====================================================
+
+        if (dto.getCountryId() != null) {
+
+            p.setCountry(
+                    countryRepository
+                            .findById(dto.getCountryId())
+                            .orElse(null)
+            );
+        }
+
+        // =====================================================
+        // STATE
+        // =====================================================
+
+        if (dto.getStateId() != null) {
+
+            p.setState(
+                    stateRepository
+                            .findById(dto.getStateId())
+                            .orElse(null)
+            );
+        }
+
+        // =====================================================
+        // CITY
+        // =====================================================
+
+        if (dto.getCityId() != null) {
+
+            p.setCity(
+                    cityRepository
+                            .findById(dto.getCityId())
+                            .orElse(null)
+            );
+        }
     }
 
-    public ProfileResponseDTO mapToDTO(Profile p) {
-        System.out.println("🔄 Mapping Profile to DTO - Profile ID: " + p.getId());
-        ProfileResponseDTO dto = new ProfileResponseDTO();
+    // =====================================================
+    // UPDATE DTO → ENTITY
+    // =====================================================
+
+    private void mapUpdateDto(
+            UpdateProfileRequestDTO dto,
+            Profile p
+    ) {
+
+        mapDtoToEntity(
+                convertUpdateDto(dto),
+                p
+        );
+    }
+
+    // =====================================================
+    // UPDATE DTO CONVERTER
+    // =====================================================
+
+    private ProfileRequestDTO convertUpdateDto(
+            UpdateProfileRequestDTO dto
+    ) {
+
+        ProfileRequestDTO r =
+                new ProfileRequestDTO();
+
+        // =====================================================
+        // BASIC
+        // =====================================================
+
+        r.setFirstName(
+                dto.getFirstName()
+        );
+
+        r.setLastName(
+                dto.getLastName()
+        );
+
+
+
+        r.setEmail(
+                dto.getEmail()
+        );
+
+        r.setPhone(
+                dto.getPhone()
+        );
+
+        r.setDateOfBirth(
+                dto.getDateOfBirth()
+        );
+
+        r.setImageUrl(
+                dto.getImageUrl()
+        );
+
+        r.setAbout(
+                dto.getAbout()
+        );
+
+        r.setAboutMe(
+                dto.getAboutMe()
+        );
+
+        // =====================================================
+        // CAREER
+        // =====================================================
+
+        r.setIncomeId(
+                dto.getIncomeId()
+        );
+
+        r.setCompanyName(
+                dto.getCompanyName()
+        );
+
+        // =====================================================
+        // LOCATION
+        // =====================================================
+
+        r.setAddress(
+                dto.getAddress()
+        );
+
+        // =====================================================
+        // LIFESTYLE
+        // =====================================================
+
+        r.setDietId(
+                dto.getDietId()
+        );
+
+        r.setSmokingId(
+                dto.getSmokingId()
+        );
+
+        r.setDrinkingId(
+                dto.getDrinkingId()
+        );
+
+        // =====================================================
+        // FAMILY
+        // =====================================================
+
+        r.setFatherName(
+                dto.getFatherName()
+        );
+
+        r.setFatherOccupation(
+                dto.getFatherOccupation()
+        );
+
+        r.setMotherName(
+                dto.getMotherName()
+        );
+
+        r.setMotherOccupation(
+                dto.getMotherOccupation()
+        );
+
+        r.setSiblingsCount(
+                dto.getSiblingsCount()
+        );
+
+        // =====================================================
+        // PARTNER PREFERENCE
+        // =====================================================
+
+        r.setPreferredAgeMin(
+                dto.getPreferredAgeMin()
+        );
+
+        r.setPreferredAgeMax(
+                dto.getPreferredAgeMax()
+        );
+
+        r.setPreferredLocation(
+                dto.getPreferredLocation()
+        );
+
+        r.setPreferredEducation(
+                dto.getPreferredEducation()
+        );
+
+        r.setOtherExpectations(
+                dto.getOtherExpectations()
+        );
+
+        // =====================================================
+        // MASTER IDS
+        // =====================================================
+
+        r.setReligionId(
+                dto.getReligionId()
+        );
+
+        r.setCasteId(
+                dto.getCasteId()
+        );
+
+        r.setSubCasteId(
+                dto.getSubCasteId()
+        );
+
+        r.setMotherTongueId(
+                dto.getMotherTongueId()
+        );
+
+        r.setMaritalStatusId(
+                dto.getMaritalStatusId()
+        );
+
+        r.setGenderId(
+                dto.getGenderId()
+        );
+
+        r.setEducationLevelId(
+                dto.getEducationLevelId()
+        );
+
+        r.setOccupationId(
+                dto.getOccupationId()
+        );
+
+        r.setHeightId(
+                dto.getHeightId()
+        );
+
+        r.setWeightId(
+                dto.getWeightId()
+        );
+
+        r.setBodyTypeId(
+                dto.getBodyTypeId()
+        );
+
+        r.setComplexionId(
+                dto.getComplexionId()
+        );
+
+        r.setCountryId(
+                dto.getCountryId()
+        );
+
+        r.setStateId(
+                dto.getStateId()
+        );
+
+        r.setCityId(
+                dto.getCityId()
+        );
+
+        return r;
+    }
+
+    // =====================================================
+    // ENTITY → DTO
+    // =====================================================
+
+    public ProfileResponseDTO mapToDTO(
+            Profile p
+    ) {
+
+        ProfileResponseDTO dto =
+                new ProfileResponseDTO();
 
         dto.setId(p.getId());
-        
-        // Safely map user fields
+
+        dto.setDateOfBirth(
+                p.getDateOfBirth()
+        );
+
+        dto.setImageUrl(
+                p.getImageUrl()
+        );
+        dto.setAbout(
+                p.getAbout()
+        );
+
+
+
+        dto.setAboutMe(
+                p.getAboutMe()
+        );
+
+        // =====================================================
+        // USER
+        // =====================================================
+
         if (p.getUser() != null) {
-            dto.setUserId(p.getUser().getId());
-            dto.setUserName(p.getUser().getFullName());
-            dto.setFirstName(p.getUser().getFirstName());
-            dto.setLastName(p.getUser().getLastName());
-            dto.setMiddleName(p.getUser().getMiddleName());
-            dto.setEmail(p.getUser().getEmail());
-            dto.setPhone(p.getUser().getPhone());
-            System.out.println("   - User fields mapped: " + p.getUser().getFullName());
-        }
-        
-        dto.setGender(p.getGender());
-        dto.setDateOfBirth(p.getDateOfBirth());
-        dto.setImageUrl(p.getImageUrl());
-        dto.setAbout(p.getAbout());
-        dto.setAboutMe(p.getAbout()); // Map about to aboutMe for frontend compatibility
-        dto.setIsActive(p.getIsActive());
-        dto.setCurrentStep(p.getCurrentStep());
-        dto.setProfileCompleted(p.getProfileCompleted());
-        dto.setCreatedAt(p.getCreatedAt());
-        dto.setUpdatedAt(p.getUpdatedAt());
 
-        // Map religion fields
+            dto.setUserId(
+                    p.getUser().getId()
+            );
+
+            dto.setUserName(
+                    p.getUser().getFullName()
+            );
+
+            dto.setFirstName(
+                    p.getUser().getFirstName()
+            );
+
+            dto.setLastName(
+                    p.getUser().getLastName()
+            );
+
+            dto.setEmail(
+                    p.getUser().getEmail()
+            );
+
+            dto.setPhone(
+                    p.getUser().getPhone()
+            );
+        }
+
+        // =====================================================
+        // GENDER
+        // =====================================================
+
+        if (p.getGender() != null) {
+
+            dto.setGenderId(
+                    p.getGender().getId()
+            );
+
+            dto.setGenderName(
+                    p.getGender().getName()
+            );
+        }
+
+        // =====================================================
+        // RELIGION
+        // =====================================================
+
         if (p.getReligion() != null) {
-            dto.setReligionId(p.getReligion().getId());
-            dto.setReligionName(p.getReligion().getName());
+
+            dto.setReligionId(
+                    p.getReligion().getId()
+            );
+
+            dto.setReligionName(
+                    p.getReligion().getName()
+            );
         }
 
-        // Map caste fields
+        // =====================================================
+        // CASTE
+        // =====================================================
+
         if (p.getCaste() != null) {
-            dto.setCasteId(p.getCaste().getId());
-            dto.setCasteName(p.getCaste().getName());
+
+            dto.setCasteId(
+                    p.getCaste().getId()
+            );
+
+            dto.setCasteName(
+                    p.getCaste().getName()
+            );
         }
 
-        // Map sub caste fields
-        if (p.getSubCaste() != null) {
-            dto.setSubCasteId(p.getSubCaste().getId());
-            dto.setSubCasteName(p.getSubCaste().getName());
-        }
+        // =====================================================
+        // WEIGHT
+        // =====================================================
 
-        // Map education level fields
-        if (p.getEducationLevel() != null) {
-            dto.setEducationLevelId(p.getEducationLevel().getId());
-            dto.setEducationLevelName(p.getEducationLevel().getName());
-        }
-
-        // Map occupation fields
-        if (p.getOccupation() != null) {
-            dto.setOccupationId(p.getOccupation().getId());
-            dto.setOccupationName(p.getOccupation().getName());
-        }
-
-        // Map height fields
-        if (p.getHeight() != null) {
-            dto.setHeightId(p.getHeight().getId());
-            dto.setHeightValue(p.getHeight().getHeight());
-        }
-
-        // Map weight fields
         if (p.getWeight() != null) {
-            dto.setWeightId(p.getWeight().getId());
-            dto.setWeightValue(p.getWeight().getValue());
+
+            dto.setWeightId(
+                    p.getWeight().getId()
+            );
+
+            dto.setWeightValue(
+                    p.getWeight().getValue()
+            );
         }
 
-        // Map city fields
+        // =====================================================
+        // HEIGHT
+        // =====================================================
+
+        if (p.getHeight() != null) {
+
+            dto.setHeightId(
+                    p.getHeight().getId()
+            );
+
+            dto.setHeightValue(
+                    p.getHeight().getHeight()
+            );
+        }
+
+        // =====================================================
+        // BODY TYPE
+        // =====================================================
+
+        if (p.getBodyType() != null) {
+
+            dto.setBodyTypeId(
+                    p.getBodyType().getId()
+            );
+
+            dto.setBodyTypeName(
+                    p.getBodyType().getValue()
+            );
+        }
+
+        // =====================================================
+        // COMPLEXION
+        // =====================================================
+
+        if (p.getComplexion() != null) {
+
+            dto.setComplexionId(
+                    p.getComplexion().getId()
+            );
+
+            dto.setComplexionName(
+                    p.getComplexion().getValue()
+            );
+        }
+
+        // =====================================================
+        // COUNTRY
+        // =====================================================
+
+        if (p.getCountry() != null) {
+
+            dto.setCountryId(
+                    p.getCountry().getId()
+            );
+
+            dto.setCountryName(
+                    p.getCountry().getName()
+            );
+        }
+
+        // =====================================================
+        // STATE
+        // =====================================================
+
+        if (p.getState() != null) {
+
+            dto.setStateId(
+                    p.getState().getId()
+            );
+
+            dto.setStateName(
+                    p.getState().getName()
+            );
+        }
+
+        // =====================================================
+        // CITY
+        // =====================================================
+
         if (p.getCity() != null) {
-            dto.setCityId(p.getCity().getId());
-            dto.setCityName(p.getCity().getName());
+
+            dto.setCityId(
+                    p.getCity().getId()
+            );
+
+            dto.setCityName(
+                    p.getCity().getName()
+            );
+        }
+// =====================================================
+// INCOME
+// =====================================================
+
+        if (p.getIncome() != null) {
+
+            dto.setIncomeId(
+                    p.getIncome().getId()
+            );
+
+            dto.setIncomeValue(
+                    p.getIncome().getRange()
+            );
         }
 
-        // Map mother tongue fields
+// =====================================================
+// DIET
+// =====================================================
+
+        if (p.getDiet() != null) {
+
+            dto.setDietId(
+                    p.getDiet().getId()
+            );
+
+            dto.setDietValue(
+                    p.getDiet().getName()
+            );
+        }
+
+// =====================================================
+// SMOKING
+// =====================================================
+
+        if (p.getSmoking() != null) {
+
+            dto.setSmokingId(
+                    p.getSmoking().getId()
+            );
+
+            dto.setSmokingValue(
+                    p.getSmoking().getValue()
+            );
+        }
+
+// =====================================================
+// DRINKING
+// =====================================================
+
+        if (p.getDrinking() != null) {
+
+            dto.setDrinkingId(
+                    p.getDrinking().getId()
+            );
+
+            dto.setDrinkingValue(
+                    p.getDrinking().getValue()
+            );
+        }
+        // =====================================================
+// SUB CASTE
+// =====================================================
+
+        if (p.getSubCaste() != null) {
+
+            dto.setSubCasteId(
+                    p.getSubCaste().getId()
+            );
+
+            dto.setSubCasteName(
+                    p.getSubCaste().getName()
+            );
+        }
+
+// =====================================================
+// EDUCATION
+// =====================================================
+
+        if (p.getEducationLevel() != null) {
+
+            dto.setEducationLevelId(
+                    p.getEducationLevel().getId()
+            );
+
+            dto.setEducationLevelName(
+                    p.getEducationLevel().getName()
+            );
+        }
+
+// =====================================================
+// OCCUPATION
+// =====================================================
+
+        if (p.getOccupation() != null) {
+
+            dto.setOccupationId(
+                    p.getOccupation().getId()
+            );
+
+            dto.setOccupationName(
+                    p.getOccupation().getName()
+            );
+        }
+
+// =====================================================
+// MOTHER TONGUE
+// =====================================================
+
         if (p.getMotherTongue() != null) {
-            dto.setMotherTongueId(p.getMotherTongue().getId());
-            dto.setMotherTongueName(p.getMotherTongue().getName());
+
+            dto.setMotherTongueId(
+                    p.getMotherTongue().getId()
+            );
+
+            dto.setMotherTongueName(
+                    p.getMotherTongue().getName()
+            );
         }
 
-        // Map marital status fields
+// =====================================================
+// MARITAL STATUS
+// =====================================================
+
         if (p.getMaritalStatus() != null) {
-            dto.setMaritalStatusId(p.getMaritalStatus().getId());
-            dto.setMaritalStatusName(p.getMaritalStatus().getName());
+
+            dto.setMaritalStatusId(
+                    p.getMaritalStatus().getId()
+            );
+
+            dto.setMaritalStatusName(
+                    p.getMaritalStatus().getName()
+            );
         }
 
-        // Map physical details
-        dto.setComplexion(p.getComplexion());
-        dto.setBodyType(p.getBodyType());
+// =====================================================
+// COMPANY
+// =====================================================
 
-        // Map education & career
-        dto.setAnnualIncome(p.getAnnualIncome());
-        dto.setCompanyName(p.getCompanyName());
+        dto.setCompanyName(
+                p.getCompanyName()
+        );
 
-        // Map location
-        dto.setCountry(p.getCountry());
-        dto.setState(p.getState());
-        dto.setAddress(p.getAddress());
+// =====================================================
+// ADDRESS
+// =====================================================
 
-        // Map lifestyle
-        dto.setDiet(p.getDiet());
-        dto.setSmoking(p.getSmoking());
-        dto.setDrinking(p.getDrinking());
+        dto.setAddress(
+                p.getAddress()
+        );
 
-        // Map family details
-        dto.setFatherName(p.getFatherName());
-        dto.setFatherOccupation(p.getFatherOccupation());
-        dto.setMotherName(p.getMotherName());
-        dto.setMotherOccupation(p.getMotherOccupation());
-        dto.setSiblingsCount(p.getSiblingsCount());
+// =====================================================
+// FAMILY
+// =====================================================
 
-        // Map partner preferences
-        dto.setPreferredAgeMin(p.getPreferredAgeMin());
-        dto.setPreferredAgeMax(p.getPreferredAgeMax());
-        dto.setPreferredLocation(p.getPreferredLocation());
-        dto.setPreferredEducation(p.getPreferredEducation());
-        dto.setOtherExpectations(p.getOtherExpectations());
+        dto.setFatherName(
+                p.getFatherName()
+        );
 
+        dto.setFatherOccupation(
+                p.getFatherOccupation()
+        );
+
+        dto.setMotherName(
+                p.getMotherName()
+        );
+
+        dto.setMotherOccupation(
+                p.getMotherOccupation()
+        );
+
+        dto.setSiblingsCount(
+                p.getSiblingsCount()
+        );
+
+// =====================================================
+// PARTNER PREFERENCE
+// =====================================================
+
+        dto.setPreferredAgeMin(
+                p.getPreferredAgeMin()
+        );
+
+        dto.setPreferredAgeMax(
+                p.getPreferredAgeMax()
+        );
+
+        dto.setPreferredLocation(
+                p.getPreferredLocation()
+        );
+
+        dto.setPreferredEducation(
+                p.getPreferredEducation()
+        );
+
+        dto.setOtherExpectations(
+                p.getOtherExpectations()
+        );
+
+// =====================================================
+// ABOUT ME
+// =====================================================
+
+        dto.setAboutMe(
+                p.getAboutMe()
+        );
+        dto.setCurrentStep(
+                p.getCurrentStep()
+        );
+
+        dto.setProfileCompleted(
+                p.getProfileCompleted()
+        );
+
+        dto.setIsActive(
+                p.getIsActive()
+        );
         return dto;
     }
 
-    // ================= SEARCH =================
-    public Page<ProfileResponseDTO> searchProfiles(PartnerPreference pref, Pageable pageable) {
-        Specification<Profile> spec = ProfileSpecification.matchPreferences(pref);
-        return repository.findAll(spec, pageable).map(this::mapToDTO);
+
+    // =====================================================
+    // SEARCH
+    // =====================================================
+
+    public Page<ProfileResponseDTO> searchProfiles(
+            PartnerPreference pref,
+            Pageable pageable
+    ) {
+
+        Specification<Profile> spec =
+                ProfileSpecification
+                        .matchPreferences(pref);
+
+        return repository
+                .findAll(spec, pageable)
+                .map(this::mapToDTO);
     }
 
-    // ================= REDIS SAFE =================
+    // =====================================================
+    // REDIS
+    // =====================================================
+
     private void safeRedis(Long userId) {
+
         try {
+
             cacheService.evictUserMatches(userId);
+
         } catch (Exception e) {
+
             System.out.println("Redis skipped");
         }
 
         asyncService.preloadMatches(userId);
+    }
+    private void updateProfileCompletion(Profile p) {
+
+        int total = 0;
+        int filled = 0;
+
+        // ===== BASIC =====
+        total++;
+        if (p.getReligion() != null) filled++;
+
+        total++;
+        if (p.getCaste() != null) filled++;
+
+        total++;
+        if (p.getSubCaste() != null) filled++;
+
+        total++;
+        if (p.getMotherTongue() != null) filled++;
+
+        total++;
+        if (p.getMaritalStatus() != null) filled++;
+
+        total++;
+        if (p.getEducationLevel() != null) filled++;
+
+        total++;
+        if (p.getOccupation() != null) filled++;
+
+        total++;
+        if (p.getIncome() != null) filled++;
+
+        total++;
+        if (p.getCountry() != null) filled++;
+
+        total++;
+        if (p.getState() != null) filled++;
+
+        total++;
+        if (p.getCity() != null) filled++;
+
+        total++;
+        if (p.getHeight() != null) filled++;
+
+        total++;
+        if (p.getWeight() != null) filled++;
+
+        total++;
+        if (p.getAboutMe() != null && !p.getAboutMe().isBlank()) filled++;
+
+        total++;
+        if (p.getImageUrl() != null && !p.getImageUrl().isBlank()) filled++;
+
+        int percentage = (filled * 100) / total;
+
+        p.setCurrentStep(percentage);
+
+        System.out.println("Filled = " + filled);
+        System.out.println("Total = " + total);
+        System.out.println("PROFILE % = " + percentage);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<Profile> getById(Long id) {
+
+        return repository.findById(id);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<Profile> getByUserId(Long userId) {
+
+        return repository.findByUserId(userId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Profile> getActiveProfiles() {
+
+        return repository.findByIsActiveTrue();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Profile> getByReligion(Long religionId) {
+
+        return repository.findByReligionId(religionId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Profile> getByCaste(Long casteId) {
+
+        return repository.findByCasteId(casteId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Profile> getByCity(Long cityId) {
+
+        return repository.findByCityId(cityId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Profile> getByEducation(Long educationLevelId) {
+
+        return repository.findByEducationLevelId(
+                educationLevelId
+        );
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Profile> getByOccupation(Long occupationId) {
+
+        return repository.findByOccupationId(
+                occupationId
+        );
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Profile> getByReligionAndCaste(
+            Long religionId,
+            Long casteId
+    ) {
+
+        return repository.findByReligionIdAndCasteId(
+                religionId,
+                casteId
+        );
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Profile> getByCityAndEducation(
+            Long cityId,
+            Long educationLevelId
+    ) {
+
+        return repository
+                .findByCityIdAndEducationLevelId(
+                        cityId,
+                        educationLevelId
+                );
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Profile> getByOccupationAndCity(
+            Long occupationId,
+            Long cityId
+    ) {
+
+        return repository
+                .findByOccupationIdAndCityId(
+                        occupationId,
+                        cityId
+                );
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Profile> getActiveByReligionAndCity(
+            Long religionId,
+            Long cityId
+    ) {
+
+        return repository
+                .findByReligionIdAndCityIdAndIsActiveTrue(
+                        religionId,
+                        cityId
+                );
     }
 }

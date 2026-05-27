@@ -1,35 +1,52 @@
 package com.example.dto.request;
 
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
 import lombok.Data;
+
 import java.time.LocalDate;
 
 @Data
 public class UserRegisterRequestDTO {
 
-    @NotBlank
+    // =====================================================
+    // BASIC DETAILS
+    // =====================================================
+
+    @NotBlank(message = "First name is required")
     @Size(max = 100)
     private String firstName;
 
-    @NotBlank
+    @NotBlank(message = "Last name is required")
     @Size(max = 100)
     private String lastName;
 
-    @Email
-    @NotBlank
+    @Email(message = "Invalid email format")
+    @NotBlank(message = "Email is required")
     private String email;
 
-    @NotBlank
-    @Size(max = 10)
+    @NotBlank(message = "Phone number is required")
+    @Size(max = 10, message = "Phone must be 10 digits")
     private String phone;
 
-    @NotBlank
-    @Size(min = 6, message = "Password must be at least 6 characters")
+    @NotBlank(message = "Password is required")
+    @Size(
+            min = 6,
+            message = "Password must be at least 6 characters"
+    )
     private String password;
 
-    // Basic profile fields from registration
-    @Size(max = 10)
-    private String gender;
+    // =====================================================
+    // BASIC PROFILE
+    // =====================================================
 
+    // Gender Master Table ID
+    private Long genderId;
+
+    // DOB
     private LocalDate dateOfBirth;
+
+
 }
