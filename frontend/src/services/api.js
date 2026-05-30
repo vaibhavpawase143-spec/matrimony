@@ -291,36 +291,6 @@ export const masterDataAPI = {
 
     }
   },
-  getAnnualIncomes: async () => {
-
-    try {
-
-      console.log('🔍 Fetching annual incomes...');
-
-      const result =
-        await apiClient('/annual-incomes');
-
-      console.log(
-        '✅ MASTER API RESPONSE - Annual Incomes:',
-        result
-      );
-
-      return Array.isArray(result)
-        ? result
-        : [];
-
-    } catch (error) {
-
-      console.error(
-        '❌ Get Annual Incomes API error:',
-        error
-      );
-
-      return [];
-
-    }
-
-  },
 
   // ==========================================
   // EDUCATION LEVELS
