@@ -28,8 +28,10 @@ public class Profile {
     // USER
     // =====================================================
 
-    @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "user_id", nullable = false)
+    @ManyToOne(fetch = FetchType.EAGER)
+
+    @JoinColumn(name="user_id")
+
     private User user;
 
     // =====================================================

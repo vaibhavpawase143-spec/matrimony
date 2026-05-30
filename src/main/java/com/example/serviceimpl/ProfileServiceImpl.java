@@ -268,8 +268,8 @@ public class ProfileServiceImpl implements ProfileService {
     public List<Profile> getAll() {
 
         return repository.findAllWithUser();
-    }
 
+    }
     // =====================================================
     // DTO → ENTITY
     // =====================================================

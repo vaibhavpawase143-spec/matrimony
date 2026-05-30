@@ -508,10 +508,7 @@ stateId:
   savedProfileData.state?.id ||
   null,
 
-cityId:
-  savedProfileData.cityId ||
-  savedProfileData.city?.id ||
-  null,      cityId: savedProfileData.cityId || null,
+    cityId: savedProfileData.cityId || null,
       city: savedProfileData.cityName || savedProfileData.city || '',
        address: savedProfileData.address || '',
 
@@ -1187,7 +1184,13 @@ else if (key === "drinkingId") {
           ))}
         </div>
 
-        <motion.div key={activeTab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-xl border border-border p-6">
+        <motion.div key={activeTab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="
+bg-card
+rounded-2xl
+border
+border-border
+p-8
+">
           {activeTab === "profile" && (
             <div className="space-y-6">
               <h2 className="text-lg font-display font-bold text-foreground mb-4">Update Profile</h2>
