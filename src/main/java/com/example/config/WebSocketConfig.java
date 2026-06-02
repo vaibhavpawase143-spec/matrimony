@@ -2,45 +2,117 @@ package com.example.config;
 
 import com.example.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.context.annotation.Configuration;
+
 import org.springframework.messaging.simp.config.ChannelRegistration;
+
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
+
 import org.springframework.web.socket.config.annotation.*;
 
 @Configuration
+
 @EnableWebSocketMessageBroker
+
 @RequiredArgsConstructor
-public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
+
+public class WebSocketConfig
+
+        implements WebSocketMessageBrokerConfigurer {
 
     private final JwtUtil jwtUtil;
-    private final WebSocketUserInterceptor webSocketUserInterceptor;
+
+    private final WebSocketUserInterceptor
+            webSocketUserInterceptor;
 
     @Override
-    public void configureMessageBroker(MessageBrokerRegistry config) {
+    public void configureMessageBroker(
 
-        // 🔥 Broker (topics + private queues)
-        config.enableSimpleBroker("/topic", "/queue");
+            MessageBrokerRegistry config
 
-        // 🔥 For sending from client → server
-        config.setApplicationDestinationPrefixes("/app");
+    ){
 
-        // 🔥 For sending to specific user (VERY IMPORTANT)
-        config.setUserDestinationPrefix("/user");
+        config.enableSimpleBroker(
+
+                "/topic",
+
+                "/queue"
+
+        );
+
+        config.setApplicationDestinationPrefixes(
+
+                "/app"
+
+        );
+
+        config.setUserDestinationPrefix(
+
+                "/user"
+
+        );
+
     }
 
     @Override
-    public void registerStompEndpoints(StompEndpointRegistry registry) {
+    public void registerStompEndpoints(
 
-        registry.addEndpoint("/ws")
-                .addInterceptors(new WebSocketAuthInterceptor(jwtUtil)) // JWT check
-                .setAllowedOriginPatterns("*")
-                .withSockJS();
+            StompEndpointRegistry registry
+
+    ){
+
+        registry.addEndpoint(
+
+                        "/ws"
+
+                )
+
+                .setAllowedOriginPatterns(
+
+                        "*"
+
+                )
+
+                .addInterceptors(
+
+                        new WebSocketAuthInterceptor(
+
+                                jwtUtil
+
+                        )
+
+                )
+
+                .withSockJS()
+
+                .setWebSocketEnabled(
+
+                        true
+
+                )
+
+                .setSessionCookieNeeded(
+
+                        false
+
+                );
+
     }
 
     @Override
-    public void configureClientInboundChannel(ChannelRegistration registration) {
+    public void configureClientInboundChannel(
 
-        // 🔥 Attach user to WebSocket session
-        registration.interceptors(webSocketUserInterceptor);
+            ChannelRegistration registration
+
+    ){
+
+        registration.interceptors(
+
+                webSocketUserInterceptor
+
+        );
+
     }
+
 }

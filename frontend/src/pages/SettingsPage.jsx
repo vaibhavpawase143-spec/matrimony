@@ -5,7 +5,13 @@ import Navbar from "@/components/Navbar";
 import { useToast } from "@/components/Toast";
 import { useProfileData } from "@/hooks/useProfileData";
 
-import { masterDataAPI } from "@/services/api";
+import {
+
+ masterDataAPI,
+
+ partnerPreferenceAPI
+
+} from "@/services/api";
 
 const tabs = [
   { id: "profile", label: "Profile", icon: <User className="h-4 w-4" /> },
@@ -17,94 +23,219 @@ const SettingsPage = () => {
   const [activeTab, setActiveTab] = useState("profile");
   const { success, error, info } = useToast();
   const { profileData: savedProfileData, saveProfileData } = useProfileData();
-
+const [masterDataLoaded, setMasterDataLoaded] = useState(false)
   const [masterOptions, setMasterOptions] = useState({
+
     religions: [],
+
     genders: [],
+
     cities: [],
+ allCities: [],
     educationLevels: [],
+
     occupations: [],
+
     heights: [],
+
     weights: [],
+
     maritalStatuses: [],
+
     castes: [],
+
     subCastes: [],
+
     complexions: [],
+
     bodyTypes: [],
-   motherTongues: [],
-   countries: [],
-   incomes: [],
-   diets: [],
-   smokingOptions: [],
-   drinkingOptions: [],
-   states: []
+
+    motherTongues: [],
+
+    countries: [],
+
+    states: [],
+
+    incomes: [],
+
+    diets: [],
+
+    smokingOptions: [],
+
+    drinkingOptions: [],
+
+    // ==========================
+    // NEW MASTER TABLES
+    // ==========================
+qualifications: [],
+fieldOfStudies: [],
+employedStatuses: [],
+disabilityStatuses: [],
+bloodGroups: [],
+    profileTypes: [],
+
+    manglikStatuses: [],
+
+    familyTypes: [],
+
+    familyStatuses: [],
+
+    familyValues: []
+
   });
-  
+
   // Profile form state - matching backend DTO structure
   const [formData, setFormData] = useState({
+
     // Basic fields from User entity
+
     firstName: "",
+
     lastName: "",
-    fullName: "", // Combined field for UI
+
+    fullName: "",
+
     email: "",
+
     phone: "",
-    
-    // Profile fields matching backend DTO
+
+    // Profile fields
 
     dateOfBirth: "",
+
     about: "",
+
     imageUrl: "",
-    
-    // Relational field IDs
+
+    // ==========================
+    // MASTER TABLE IDS
+    // ==========================
+
     religionId: null,
+
     casteId: null,
+
     subCasteId: null,
+
     motherTongueId: null,
+
     maritalStatusId: null,
+
+    profileTypeId: null,
+
+    manglikStatusId: null,
+
+    familyTypeId: null,
+
+    familyStatusId: null,
+
+    familyValueId: null,
+
     educationLevelId: null,
+
     occupationId: null,
+
+    genderId: null,
+
     heightId: null,
-   genderId: null,
-   complexionId: null,
-   bodyTypeId: null,
-   countryId: null,
-   stateId: null,
+
     weightId: null,
+
+    complexionId: null,
+
+    bodyTypeId: null,
+
+    countryId: null,
+
+    stateId: null,
+
     cityId: null,
+
     incomeId: null,
+
     dietId: null,
+
     smokingId: null,
+
     drinkingId: null,
+qualificationId: null,
+fieldOfStudyId: null,
+employedId: null,
+disabilityStatusId: null,
+bloodGroupId: null,
+    // ==========================
+    // FAMILY
+    // ==========================
 
     fatherName: "",
+
     fatherOccupation: "",
 
     motherName: "",
+
     motherOccupation: "",
 
     siblingsCount: "",
 
+    // ==========================
+    // CAREER
+    // ==========================
+
     companyName: "",
+
+    // ==========================
+    // LOCATION
+    // ==========================
 
     address: "",
 
+    // ==========================
+    // PARTNER PREFERENCES
+    // ==========================
+
+
+
     preferredAgeMin: "",
+
     preferredAgeMax: "",
 
-    preferredLocation: "",
-    preferredEducation: "",
+    preferredReligionId: null,
+preferredMinHeightId:null,
+
+preferredMaxHeightId:null,
+    preferredCasteId: null,
+
+    preferredCityId: null,
+
+    preferredEducationLevelId: null,
+
+    preferredOccupationId: null,
+
+    preferredMaritalStatusId: null,
+
+    preferredSmokingId: null,
+
+    preferredDrinkingId: null,
+
+    preferredDietId: null,
 
     otherExpectations: "",
+    // ==========================
+    // OTHER
+    // ==========================
 
     aboutMe: "",
 
     age: "",
-    
-    // For UI purposes
+
+    // UI ONLY
+
     profilePhoto: null,
+
     profilePhotoUrl: ""
+
   });
-  
+
   const [passwordData, setPasswordData] = useState({
     currentPassword: "",
     newPassword: "",
@@ -114,49 +245,80 @@ const SettingsPage = () => {
   // Load master data options from backend
   useEffect(() => {
     const loadMasterData = async () => {
+        setMasterDataLoaded(false)
       try {
         console.log('🔍 Loading master data from APIs...');
-        
-   const [
-     incomes,
-     diets,
-     smokingOptions,
-     drinkingOptions,
-     religions,
-     genders,
-     cities,
-     educationLevels,
-     occupations,
-     maritalStatuses,
-     heights,
-     complexions,
-     bodyTypes,
-     weights,
-     motherTongues,
-     countries,
-     states
-   ] = await Promise.all([
+const responses = await Promise.allSettled([
 
-     masterDataAPI.getIncomes(),
-     masterDataAPI.getDiets(),
-     masterDataAPI.getSmokingOptions(),
-     masterDataAPI.getDrinkingOptions(),
+ masterDataAPI.getIncomes(),
+ masterDataAPI.getDiets(),
+ masterDataAPI.getSmokingOptions(),
+ masterDataAPI.getDrinkingOptions(),
 
-     masterDataAPI.getReligions(),
-     masterDataAPI.getGenders(),
-     masterDataAPI.getCities(),
-     masterDataAPI.getEducationLevels(),
-     masterDataAPI.getOccupations(),
-     masterDataAPI.getMaritalStatuses(),
-     masterDataAPI.getHeights(),
-     masterDataAPI.getComplexions(),
-     masterDataAPI.getBodyTypes(),
-     masterDataAPI.getWeights(),
-     masterDataAPI.getMotherTongues(),
-     masterDataAPI.getCountries(),
-     masterDataAPI.getStates()
+ masterDataAPI.getProfileTypes(),
+ masterDataAPI.getManglikStatuses(),
+ masterDataAPI.getFamilyTypes(),
+ masterDataAPI.getFamilyStatuses(),
+ masterDataAPI.getFamilyValues(),
 
-   ]);
+ masterDataAPI.getQualifications(),
+ masterDataAPI.getFieldOfStudies(),
+ masterDataAPI.getEmployedStatuses(),
+ masterDataAPI.getDisabilityStatuses(),
+ masterDataAPI.getBloodGroups(),
+
+ masterDataAPI.getReligions(),
+ masterDataAPI.getGenders(),
+ masterDataAPI.getCities(),
+ masterDataAPI.getEducationLevels(),
+ masterDataAPI.getOccupations(),
+ masterDataAPI.getMaritalStatuses(),
+ masterDataAPI.getHeights(),
+ masterDataAPI.getComplexions(),
+ masterDataAPI.getBodyTypes(),
+ masterDataAPI.getWeights(),
+ masterDataAPI.getMotherTongues(),
+ masterDataAPI.getCountries(),
+ masterDataAPI.getStates()
+
+]);
+
+const getData = (index)=>
+responses[index]?.status==="fulfilled"
+? responses[index].value
+:[];
+
+const incomes=getData(0);
+const diets=getData(1);
+const smokingOptions=getData(2);
+const drinkingOptions=getData(3);
+
+const profileTypes=getData(4);
+const manglikStatuses=getData(5);
+const familyTypes=getData(6);
+const familyStatuses=getData(7);
+const familyValues=getData(8);
+
+const qualifications=getData(9);
+const fieldOfStudies=getData(10);
+const employedStatuses=getData(11);
+const disabilityStatuses=getData(12);
+const bloodGroups=getData(13);
+
+const religions=getData(14);
+const genders=getData(15);
+const cities=getData(16);
+const educationLevels=getData(17);
+const occupations=getData(18);
+const maritalStatuses=getData(19);
+const heights=getData(20);
+const complexions=getData(21);
+const bodyTypes=getData(22);
+const weights=getData(23);
+const motherTongues=getData(24);
+const countries=getData(25);
+const states=getData(26);
+
         
         console.log('📊 Master data loaded:', {
           religions: religions?.length || 0,
@@ -177,10 +339,16 @@ const SettingsPage = () => {
           religions: Array.isArray(religions) ? religions : [],
           genders: Array.isArray(genders) ? genders : [],
 cities: Array.isArray(cities?.data)
-  ? cities.data
-  : Array.isArray(cities)
-  ? cities
-  : [],
+ ? cities.data
+ : Array.isArray(cities)
+ ? cities
+ : [],
+
+allCities: Array.isArray(cities?.data)
+ ? cities.data
+ : Array.isArray(cities)
+ ? cities
+ : [],
           educationLevels: Array.isArray(educationLevels) ? educationLevels : [],
           occupations: Array.isArray(occupations) ? occupations : [],
           maritalStatuses: Array.isArray(maritalStatuses) ? maritalStatuses : [],
@@ -192,6 +360,53 @@ cities: Array.isArray(cities?.data)
 motherTongues: Array.isArray(motherTongues) ? motherTongues : [],
 countries: Array.isArray(countries) ? countries : [],
 incomes: Array.isArray(incomes) ? incomes : [],
+profileTypes:
+Array.isArray(profileTypes)
+? profileTypes
+: [],
+qualifications:
+Array.isArray(qualifications)
+? qualifications
+: [],
+
+fieldOfStudies:
+Array.isArray(fieldOfStudies)
+? fieldOfStudies
+: [],
+
+employedStatuses:
+Array.isArray(employedStatuses)
+? employedStatuses
+: [],
+
+disabilityStatuses:
+Array.isArray(disabilityStatuses)
+? disabilityStatuses
+: [],
+
+bloodGroups:
+Array.isArray(bloodGroups)
+? bloodGroups
+: [],
+manglikStatuses:
+Array.isArray(manglikStatuses)
+? manglikStatuses
+: [],
+
+familyTypes:
+Array.isArray(familyTypes)
+? familyTypes
+: [],
+
+familyStatuses:
+Array.isArray(familyStatuses)
+? familyStatuses
+: [],
+
+familyValues:
+Array.isArray(familyValues)
+? familyValues
+: [],
 smokingOptions: Array.isArray(smokingOptions?.data)
   ? smokingOptions.data
   : Array.isArray(smokingOptions)
@@ -213,35 +428,53 @@ drinkingOptions: Array.isArray(drinkingOptions?.data)
 states: Array.isArray(states) ? states : []
         };
         
-        setMasterOptions(safeData);
+       setMasterOptions(safeData);
+
+       setMasterDataLoaded(true);
         
       } catch (error) {
         console.error('❌ Failed to load master data:', error);
         // Set empty arrays on error to prevent UI crashes
-    setMasterOptions({
-      religions: [],
-      genders: [],
-      cities: [],
-      educationLevels: [],
-      occupations: [],
-      maritalStatuses: [],
-      heights: [],
-      weights: [],
-      castes: [],
-      subCastes: [],
-      complexions: [],
-      bodyTypes: [],
-      motherTongues: [],
-      countries: [],
-      incomes: [],
-      diets: [],
-      smokingOptions: [],
-      drinkingOptions: [],
-      states: []
-    });
+  setMasterOptions({
+
+   religions: [],
+   genders: [],
+  cities: [],
+
+  allCities: [],
+   educationLevels: [],
+   occupations: [],
+   maritalStatuses: [],
+   heights: [],
+   weights: [],
+   castes: [],
+   subCastes: [],
+   complexions: [],
+   bodyTypes: [],
+   motherTongues: [],
+   countries: [],
+   incomes: [],
+   diets: [],
+   smokingOptions: [],
+   drinkingOptions: [],
+
+   qualifications: [],
+   fieldOfStudies: [],
+   employedStatuses: [],
+   disabilityStatuses: [],
+   bloodGroups: [],
+
+   profileTypes: [],
+   manglikStatuses: [],
+   familyTypes: [],
+   familyStatuses: [],
+   familyValues: [],
+   states: []
+
+  });
       }
     };
-    
+
     loadMasterData();
   }, []);
 
@@ -323,58 +556,99 @@ useEffect(() => {
 // Load cities when state changes
 useEffect(() => {
 
-  const loadCities = async () => {
+ const loadCities = async () => {
 
-    if (formData.stateId) {
+  if (formData.stateId) {
 
-      try {
+   try {
 
-        const cities =
-          await masterDataAPI.getCitiesByState(
-            formData.stateId
-          );
-      console.log("🏙 Cities API Response:", cities);
+    const cities =
+     await masterDataAPI.getCitiesByState(
+      formData.stateId
+     );
 
-        setMasterOptions(prev => ({
-          ...prev,
-         cities: Array.isArray(cities?.data)
-           ? cities.data
-           : Array.isArray(cities)
-           ? cities
-           : []
-        }));
+    console.log(
+     "🏙 Cities API Response:",
+     cities
+    );
 
-      } catch (error) {
+    setMasterOptions(prev => ({
 
-        console.error(
-          "Failed to load cities",
-          error
-        );
+     ...prev,
 
-        setMasterOptions(prev => ({
-          ...prev,
-          cities: []
-        }));
+     cities:
+      Array.isArray(cities?.data)
+       ? cities.data
+       : Array.isArray(cities)
+       ? cities
+       : []
 
-      }
+    }));
 
-    } else {
+   } catch (error) {
 
-      setMasterOptions(prev => ({
-        ...prev,
-        cities: []
-      }));
+    console.error(
+     "Failed to load cities",
+     error
+    );
 
-    }
+    setMasterOptions(prev => ({
 
-  };
+     ...prev,
 
-  loadCities();
+     cities: []
 
-}, [formData.stateId]);
-  // Load saved profile data on mount
-  useEffect(() => {
-    if (savedProfileData && Object.keys(savedProfileData).length > 0) {
+    }));
+
+   }
+
+  } else {
+
+   setMasterOptions(prev => ({
+
+    ...prev,
+
+    cities: []
+
+   }));
+
+  }
+
+ };
+
+ loadCities();
+
+}, [formData.stateId]); useEffect(() => {
+
+ if(
+ savedProfileData &&
+ Object.keys(savedProfileData).length>0 &&
+ masterDataLoaded
+ ){
+const loadProfile = async () => {
+
+let partnerPreference = null;
+
+try{
+
+ partnerPreference =
+ await partnerPreferenceAPI.getByUserId(
+ savedProfileData.userId
+ );
+
+ console.log(
+ "Partner Preference:",
+ partnerPreference
+ );
+
+}catch(err){
+
+ console.log(
+ "No partner preference found"
+ );
+
+}
+
       console.log('🔧 Loading profile data into settings:', savedProfileData);
     console.log('🔧 Checking specific fields:', {
       address: savedProfileData.address,
@@ -419,6 +693,7 @@ useEffect(() => {
       phone:
         savedProfileData.phone
     });
+console.log(savedProfileData)
       // Map backend API fields to frontend form fields
      const mappedData = {
 
@@ -459,7 +734,32 @@ useEffect(() => {
        // PERSONAL
        maritalStatusId:
          savedProfileData.maritalStatusId || null,
+profileTypeId:
 
+savedProfileData.profileTypeId ||
+
+savedProfileData.profileType?.id ||
+
+null,
+manglikStatusId:
+savedProfileData.manglikStatusId ||
+savedProfileData.manglikStatus?.id ||
+null,
+
+familyTypeId:
+savedProfileData.familyTypeId ||
+savedProfileData.familyType?.id ||
+null,
+
+familyStatusId:
+savedProfileData.familyStatusId ||
+savedProfileData.familyStatus?.id ||
+null,
+
+familyValueId:
+savedProfileData.familyValueId ||
+savedProfileData.familyValue?.id ||
+null,
       heightId:
         savedProfileData.heightId ||
         savedProfileData.height?.id ||
@@ -535,27 +835,102 @@ stateId:
        drinkingId: savedProfileData.drinkingId || '',
 
        // PARTNER PREFERENCE
-       preferredAgeMin:
-         savedProfileData.preferredAgeMin || '',
+      // PARTNER PREFERENCE
 
-       preferredAgeMax:
-         savedProfileData.preferredAgeMax || '',
+     // PARTNER PREFERENCE
 
-       preferredLocation:
-         savedProfileData.preferredLocation || '',
+     preferredAgeMin:
+     partnerPreference?.minAge || '',
 
-       preferredEducation:
-         savedProfileData.preferredEducation || '',
+     preferredAgeMax:
+     partnerPreference?.maxAge || '',
 
-       otherExpectations:
-         savedProfileData.otherExpectations || ''
+     preferredMinHeightId:
+     partnerPreference?.minHeight || '',
+
+     preferredMaxHeightId:
+     partnerPreference?.maxHeight || '',
+
+     preferredReligionId:
+     partnerPreference?.religionId || null,
+
+     preferredCasteId:
+     partnerPreference?.casteId || null,
+
+     preferredCityId:
+     partnerPreference?.cityId || null,
+
+     preferredEducationLevelId:
+     partnerPreference?.educationLevelId || null,
+
+     preferredOccupationId:
+     partnerPreference?.occupationId || null,
+
+     preferredMaritalStatusId:
+     partnerPreference?.maritalStatusId || null,
+
+     preferredSmokingId:
+     partnerPreference?.smokingId || null,
+
+     preferredDrinkingId:
+     partnerPreference?.drinkingId || null,
+
+     preferredDietId:
+     partnerPreference?.dietId || null,
+otherExpectations:
+savedProfileData.otherExpectations || '',
+
+
+
+otherExpectations:
+
+savedProfileData.otherExpectations ||
+
+savedProfileData.otherExpectation ||
+
+"",
+
+
+qualificationId:
+savedProfileData.qualificationId ||
+savedProfileData.qualification?.id ||
+savedProfileData.qualification_id ||
+null,
+
+fieldOfStudyId:
+savedProfileData.fieldOfStudyId ||
+savedProfileData.fieldOfStudy?.id ||
+savedProfileData.field_of_study_id ||
+null,
+
+employedId:
+savedProfileData.employedId ||
+savedProfileData.employedStatusId ||
+savedProfileData.employed?.id ||
+null,
+disabilityStatusId:
+savedProfileData.disabilityStatusId ||
+savedProfileData.disability?.id ||
+savedProfileData.disabilityStatus?.id ||
+null,
+bloodGroupId:
+savedProfileData.bloodGroupId ||
+savedProfileData.bloodGroup?.id ||
+savedProfileData.blood_group?.id ||
+null,
+
 
      };
       
       console.log('🔧 Mapped data for form:', mappedData);
             setFormData(prev => ({ ...prev, ...mappedData }));
+            };
+
+            loadProfile();
     }
-  }, [savedProfileData]);
+
+
+}, [savedProfileData, masterDataLoaded]);
 
   // Auto-calculate age from DOB
   const calculateAge = (dob) => {
@@ -588,6 +963,17 @@ stateId:
       'maritalStatusId',
       'educationLevelId',
       'occupationId',
+      'manglikStatusId',
+'qualificationId',
+'fieldOfStudyId',
+'employedId',
+'disabilityStatusId',
+'bloodGroupId',
+      'familyTypeId',
+
+      'familyStatusId',
+
+      'familyValueId',
       'heightId',
       'weightId',
       'cityId',
@@ -600,7 +986,20 @@ stateId:
       'incomeId',
       'dietId',
       'smokingId',
-      'drinkingId'
+      'drinkingId',
+      'profileTypeId',
+      'preferredReligionId',
+      'preferredCasteId',
+      'preferredCityId',
+      'preferredEducationLevelId',
+      'preferredOccupationId',
+      'preferredMaritalStatusId',
+      'preferredSmokingId',
+      'preferredDrinkingId',
+      'preferredMinHeightId',
+
+      'preferredMaxHeightId',
+      'preferredDietId',
     ];
       const finalValue = idFields.includes(field) && value !== '' 
         ? (typeof value === 'string' ? parseInt(value, 10) : value)
@@ -687,7 +1086,64 @@ stateId:
       const nameParts = (formData.fullName || '').trim().split(' ');
       const firstNameFromFull = nameParts[0] || formData.firstName;
       const lastNameFromFull = nameParts.slice(1).join(' ') || formData.lastName;
-      
+      const partnerPreferenceData = {
+
+       minAge:
+       formData.preferredAgeMin,
+
+       maxAge:
+       formData.preferredAgeMax,
+
+     minHeight:
+     Number(formData.preferredMinHeightId) || null,
+
+     maxHeight:
+     Number(formData.preferredMaxHeightId) || null,
+
+       religionId:
+       formData.preferredReligionId,
+
+       casteId:
+       formData.preferredCasteId,
+
+       cityId:
+       formData.preferredCityId,
+
+       educationLevelId:
+       formData.preferredEducationLevelId,
+
+       occupationId:
+       formData.preferredOccupationId,
+
+       maritalStatusId:
+       formData.preferredMaritalStatusId,
+
+       smokingId:
+       formData.preferredSmokingId,
+
+       drinkingId:
+       formData.preferredDrinkingId,
+
+       dietId:
+       formData.preferredDietId,
+
+       isActive:true
+
+      };
+
+      console.log(
+      "PARTNER PREF FINAL",
+      JSON.stringify(
+      partnerPreferenceData,
+      null,
+      2
+      )
+      );
+
+  console.log(
+  "PARTNER PREF DATA:",
+  partnerPreferenceData
+  )
      const dataToSave = {
 
        // BASIC
@@ -700,11 +1156,22 @@ stateId:
 
      genderId: formData.genderId,
        dateOfBirth: formData.dateOfBirth,
+manglikStatusId:
+formData.manglikStatusId,
 
+familyTypeId:
+formData.familyTypeId,
+
+familyStatusId:
+formData.familyStatusId,
+
+familyValueId:
+formData.familyValueId,
        // ABOUT
        aboutMe: formData.aboutMe || formData.about,
        about: formData.aboutMe || formData.about,
-
+otherExpectations:
+formData.otherExpectations,
  imageUrl: formData.profilePhotoUrl,
 
 
@@ -716,6 +1183,9 @@ stateId:
 
        // PERSONAL
        maritalStatusId: formData.maritalStatusId,
+       profileTypeId:
+
+       formData.profileTypeId,
        heightId: formData.heightId,
        weightId: formData.weightId,
 
@@ -749,22 +1219,60 @@ stateId:
 
        siblingsCount: formData.siblingsCount,
 
-       // PARTNER PREFERENCE
-       preferredAgeMin: formData.preferredAgeMin,
-       preferredAgeMax: formData.preferredAgeMax,
 
-       preferredLocation: formData.preferredLocation,
-       preferredEducation: formData.preferredEducation,
+qualificationId:
+formData.qualificationId,
 
-       otherExpectations: formData.otherExpectations
+fieldOfStudyId:
+formData.fieldOfStudyId,
+
+employedId: formData.employedId,
+
+disabilityStatusId:
+formData.disabilityStatusId,
+// PARTNER PREFERENCE
+
 
      };
       console.log('📤 Data to save to backend:', dataToSave);
       
-      const result = await saveProfileData(dataToSave);
-      
+const result =
+await saveProfileData(dataToSave);
       if (result) {
-        success("Profile updated successfully!");
+         if(result){
+
+          const userId =
+          result.id ||
+          savedProfileData?.id;
+
+         try{
+
+          const existingPreference=
+          await partnerPreferenceAPI.getByUserId(
+          userId
+          );
+
+          if(existingPreference){
+
+           await partnerPreferenceAPI.update(
+            userId,
+            partnerPreferenceData
+           );
+
+          }
+
+         }catch{
+
+          await partnerPreferenceAPI.save({
+
+           userId:userId,
+
+           ...partnerPreferenceData
+
+          });
+
+         }
+         }        success("Profile updated successfully!");
         console.log('✅ Profile saved successfully');
       } else {
         error("Failed to update profile. Please try again.");
@@ -856,7 +1364,32 @@ if (key === "genderId") {
         masterOptions.occupations || [];
 
     }
+else if(key==="qualificationId"){
+ fieldOptions=
+ masterOptions.qualifications||[]
+}
 
+else if(key==="fieldOfStudyId"){
+ fieldOptions=
+ masterOptions.fieldOfStudies||[]
+}
+
+else if(key==="employedId"){
+
+ fieldOptions=
+ masterOptions.employedStatuses || []
+
+}
+
+else if(key==="disabilityStatusId"){
+ fieldOptions=
+ masterOptions.disabilityStatuses||[]
+}
+
+else if(key==="bloodGroupId"){
+ fieldOptions=
+ masterOptions.bloodGroups||[]
+}
     else if (key === "maritalStatusId") {
 
       fieldOptions =
@@ -955,6 +1488,119 @@ else if (key === "drinkingId") {
 
   fieldOptions =
     masterOptions.drinkingOptions || [];
+
+}
+else if (key === "profileTypeId") {
+
+fieldOptions =
+
+masterOptions.profileTypes || [];
+
+}
+else if (key === "manglikStatusId") {
+
+fieldOptions =
+
+masterOptions.manglikStatuses || [];
+
+}
+
+else if (key === "familyTypeId") {
+
+fieldOptions =
+
+masterOptions.familyTypes || [];
+
+}
+
+else if (key === "familyStatusId") {
+
+fieldOptions =
+
+masterOptions.familyStatuses || [];
+
+}
+
+else if (key === "familyValueId") {
+
+fieldOptions =
+
+masterOptions.familyValues || [];
+
+}
+else if(key==="preferredReligionId"){
+
+ fieldOptions=
+ masterOptions.religions || []
+
+}
+
+else if(key==="preferredCasteId"){
+
+ fieldOptions=
+ masterOptions.castes || []
+
+}
+
+else if(key==="preferredCityId"){
+
+ fieldOptions=
+ masterOptions.allCities || []
+
+}
+
+else if(key==="preferredEducationLevelId"){
+
+ fieldOptions=
+ masterOptions.educationLevels || []
+
+}
+
+else if(key==="preferredOccupationId"){
+
+ fieldOptions=
+ masterOptions.occupations || []
+
+}
+
+else if(key==="preferredMaritalStatusId"){
+
+ fieldOptions=
+ masterOptions.maritalStatuses || []
+
+}
+
+else if(key==="preferredSmokingId"){
+
+ fieldOptions=
+ masterOptions.smokingOptions || []
+
+}
+
+else if(key==="preferredDrinkingId"){
+
+ fieldOptions=
+ masterOptions.drinkingOptions || []
+
+}
+
+else if(key==="preferredDietId"){
+
+ fieldOptions=
+ masterOptions.diets || []
+
+}
+else if(key==="preferredMinHeightId"){
+
+ fieldOptions =
+ masterOptions.heights || []
+
+}
+
+else if(key==="preferredMaxHeightId"){
+
+ fieldOptions =
+ masterOptions.heights || []
 
 }
     else {
@@ -1068,27 +1714,34 @@ else if (key === "drinkingId") {
             opt?.value ??
             opt;
 
-        const optionLabel =
+     const optionLabel =
 
-          key === "drinkingId"
-            ? opt?.value
+     key === "bloodGroupId"
+     ? opt?.type
 
-          : key === "smokingId"
-            ? opt?.value
+     : key === "disabilityStatusId"
+     ? opt?.value
 
-          : key === "dietId"
-            ? opt?.name ?? opt?.value
+    : key === "drinkingId" || key==="preferredDrinkingId"
+    ? opt?.value ?? opt?.name
 
-          : opt?.name ??
-            opt?.cityName ??
-            opt?.stateName ??
-            opt?.countryName ??
-            opt?.casteName ??
-            opt?.subCasteName ??
-            opt?.value ??
-            opt?.range ??
-            opt?.label ??
-            "Select Option";
+  : key === "smokingId" || key==="preferredSmokingId"
+  ? opt?.value ?? opt?.name
+
+     : key === "dietId"
+     ? opt?.name ?? opt?.value
+
+     : opt?.name ??
+     opt?.type ??
+     opt?.cityName ??
+     opt?.stateName ??
+     opt?.countryName ??
+     opt?.casteName ??
+     opt?.subCasteName ??
+     opt?.value ??
+     opt?.range ??
+     opt?.label ??
+     "Select Option";
             return (
 
               <option
@@ -1233,7 +1886,68 @@ p-8
                     key: "maritalStatusId", 
                     type: "select" 
                   })}
-                  {renderField({ 
+            {renderField({
+
+            label:"Profile Type",
+
+            key:"profileTypeId",
+
+            type:"select"
+
+            })}
+{renderField({
+label:"Qualification",
+key:"qualificationId",
+type:"select"
+})}
+
+{renderField({
+label:"Field Of Study",
+key:"fieldOfStudyId",
+type:"select"
+})}
+
+{renderField({
+label:"Employment Status",
+key:"employedId",
+type:"select"
+})}
+
+{renderField({
+label:"Disability Status",
+key:"disabilityStatusId",
+type:"select"
+})}
+
+{renderField({
+label:"Blood Group",
+key:"bloodGroupId",
+type:"select"
+})}        {renderField({
+        label:"Manglik Status",
+        key:"manglikStatusId",
+        type:"select"
+        })}
+
+        {renderField({
+        label:"Family Type",
+        key:"familyTypeId",
+        type:"select"
+        })}
+
+        {renderField({
+        label:"Family Status",
+        key:"familyStatusId",
+        type:"select"
+        })}
+
+        {renderField({
+        label:"Family Values",
+        key:"familyValueId",
+        type:"select"
+        })}
+
+        {renderField({
                     label: "Religion", 
                     key: "religionId", 
                     type: "select" 
@@ -1351,18 +2065,98 @@ p-8
 })}
                 </div>
               </div>
+{/* Partner Preferences Section */}
 
-              {/* Partner Preferences Section */}
-              <div>
-                <h3 className="text-sm font-semibold text-foreground mb-3 pb-2 border-b border-border">Partner Preferences</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {renderField({ label: "Preferred Age (Min)", type: "number", key: "preferredAgeMin" })}
-                  {renderField({ label: "Preferred Age (Max)", type: "number", key: "preferredAgeMax" })}
-                  {renderField({ label: "Preferred Location", placeholder: "Preferred location", key: "preferredLocation" })}
-                  {renderField({ label: "Preferred Education", placeholder: "Preferred education", key: "preferredEducation" })}
-                </div>
-              </div>
 
+
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+            {renderField({
+            label:"Preferred Age (Min)",
+            type:"number",
+            key:"preferredAgeMin"
+            })}
+
+            {renderField({
+            label:"Preferred Age (Max)",
+            type:"number",
+            key:"preferredAgeMax"
+            })}
+{renderField({
+
+label:"Preferred Height (Min)",
+
+key:"preferredMinHeightId",
+
+type:"select"
+
+})}
+
+{renderField({
+
+label:"Preferred Height (Max)",
+
+key:"preferredMaxHeightId",
+
+type:"select"
+
+})}
+            {renderField({
+            label:"Preferred Religion",
+            key:"preferredReligionId",
+            type:"select"
+            })}
+
+            {renderField({
+            label:"Preferred Caste",
+            key:"preferredCasteId",
+            type:"select"
+            })}
+
+            {renderField({
+            label:"Preferred City",
+            key:"preferredCityId",
+            type:"select"
+            })}
+
+            {renderField({
+            label:"Preferred Education",
+            key:"preferredEducationLevelId",
+            type:"select"
+            })}
+
+            {renderField({
+            label:"Preferred Occupation",
+            key:"preferredOccupationId",
+            type:"select"
+            })}
+
+            {renderField({
+            label:"Preferred Marital Status",
+            key:"preferredMaritalStatusId",
+            type:"select"
+            })}
+
+            {renderField({
+            label:"Smoking Preference",
+            key:"preferredSmokingId",
+            type:"select"
+            })}
+
+            {renderField({
+            label:"Drinking Preference",
+            key:"preferredDrinkingId",
+            type:"select"
+            })}
+
+            {renderField({
+            label:"Diet Preference",
+            key:"preferredDietId",
+            type:"select"
+            })}
+
+            </div>
               {/* Contact Information Section */}
               <div>
                 <h3 className="text-sm font-semibold text-foreground mb-3 pb-2 border-b border-border">Contact Information</h3>

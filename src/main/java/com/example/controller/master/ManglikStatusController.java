@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/manglik-status")
+@RequestMapping("/api/manglik-statuses")
 @RequiredArgsConstructor
 public class ManglikStatusController {
 

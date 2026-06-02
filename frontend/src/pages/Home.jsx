@@ -17,6 +17,16 @@ profileAPI,
 interestAPI
 }
 from "@/services/api";
+import {
+
+connectNotifications,
+
+disconnectNotifications
+
+}
+
+from "@/services/websocket";
+
 
 const HomeFixed = () => {
 
@@ -77,11 +87,65 @@ profileViews:0,
 messages:0
 
 });
+const [
+
+notificationCount,
+
+setNotificationCount
+
+] = useState(0);
 
 
 useEffect(()=>{
 
 loadSentInterests();
+
+const currentUser =
+
+JSON.parse(
+
+localStorage.getItem(
+"user"
+)
+
+);
+
+connectNotifications(
+
+currentUser.id,
+
+(notification)=>{
+
+console.log(
+
+"NOTIFICATION ARRIVED:",
+
+notification
+
+);
+
+toast.success(
+
+notification.message ||
+
+"New Notification 🔔"
+
+);
+
+setNotificationCount(
+
+prev => prev + 1
+
+);
+
+}
+);
+
+return ()=>{
+
+disconnectNotifications();
+
+};
 
 },[]);
 
@@ -93,12 +157,20 @@ const currentUser =
 JSON.parse(
 localStorage.getItem("user")
 );
-
+console.log(
+"CURRENT USER:",
+currentUser
+);
 const sent =
 await interestAPI.getSentInterests(
 currentUser.id
 );
+const received =
 
+await interestAPI
+.getReceivedInterests(
+currentUser.id
+);
 setSentInterests(
 
 sent.map(
@@ -109,18 +181,31 @@ item=>item.receiverId
 
 );
 
-setDashboardStats(
+setDashboardStats({
 
-prev=>({
+totalMatches:0,
 
-...prev,
+interestsSent:
 
-interestsSent:sent.length
+sent.length,
 
-})
+interestsReceived:
 
-);
+received.filter(
 
+item=>
+
+item.status==="PENDING"
+
+).length,
+
+bookmarkedProfiles:0,
+
+profileViews:0,
+
+messages:0
+
+});
 
 }catch(err){
 
@@ -373,7 +458,7 @@ toast.error(
             <ThemeToggle />
             <button className="relative text-muted-foreground hover:text-foreground transition-colors">
               <Bell className="h-5 w-5" />
-              <span className="absolute -top-1 -right-1 h-4 w-4 bg-primary text-primary-foreground text-[10px] font-bold rounded-full flex items-center justify-center">3</span>
+              <span className="absolute -top-1 -right-1 h-4 w-4 bg-primary text-primary-foreground text-[10px] font-bold rounded-full flex items-center justify-center">{notificationCount}</span>
             </button>
             <button
               onClick={() => navigate("/account")}

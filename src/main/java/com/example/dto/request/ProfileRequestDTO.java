@@ -114,6 +114,16 @@ public class ProfileRequestDTO {
     // =====================================================
 
     private String companyName;
+    private Long profileTypeId;
+    private Long manglikStatusId;
+    private Long familyTypeId;
+    private Long familyStatusId;
+    private Long familyValueId;
+    private Long qualificationId;
+    private Long fieldOfStudyId;
+    private Long employedId;
+    private Long disabilityStatusId;
+    private Long bloodGroupId;
 
     // =====================================================
     // LOCATION
@@ -134,12 +144,4 @@ public class ProfileRequestDTO {
     private String motherOccupation;
 
     private Integer siblingsCount;
-    private Integer preferredAgeMin;
-    private Integer preferredAgeMax;
-
-    private String preferredLocation;
-
-    private String preferredEducation;
-
-    private String otherExpectations;
-}
+   }

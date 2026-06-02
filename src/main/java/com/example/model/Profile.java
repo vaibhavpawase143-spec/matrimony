@@ -1,10 +1,13 @@
 package com.example.model;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-
+@Getter
+@Setter
 @Entity
 @Table(
         name = "profiles",
@@ -37,7 +40,25 @@ public class Profile {
     // =====================================================
     // MASTER TABLE RELATIONS
     // =====================================================
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name="profile_type_id")
+    private ProfileType profileType;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name="manglik_status_id")
+    private ManglikStatus manglikStatus;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name="family_type_id")
+    private FamilyType familyType;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name="family_status_id")
+    private FamilyStatus familyStatus;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name="family_value_id")
+    private FamilyValue familyValue;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "religion_id")
     private Religion religion;
@@ -65,6 +86,28 @@ public class Profile {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "mother_tongue_id")
     private MotherTongue motherTongue;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name="qualification_id")
+    private Qualification qualification;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name="field_of_study_id")
+    private FieldOfStudy fieldOfStudy;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "employed_id")
+    private Employed employed;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name="disability_status_id")
+    private DisabilityStatus disabilityStatus;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name="blood_group_id")
+    private BloodGroup bloodGroup;
+
+
+
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "marital_status_id")

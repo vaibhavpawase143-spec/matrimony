@@ -2,57 +2,137 @@ package com.example.config;
 
 import com.example.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.server.*;
-import org.springframework.web.socket.*;
+import org.springframework.http.server.ServerHttpRequest;
+import org.springframework.http.server.ServerHttpResponse;
+import org.springframework.web.socket.WebSocketHandler;
 import org.springframework.web.socket.server.HandshakeInterceptor;
 
 import java.util.Map;
 
 @RequiredArgsConstructor
-public class WebSocketAuthInterceptor implements HandshakeInterceptor {
+public class WebSocketAuthInterceptor
+        implements HandshakeInterceptor {
 
     private final JwtUtil jwtUtil;
 
     @Override
-    public boolean beforeHandshake(ServerHttpRequest request,
-                                   ServerHttpResponse response,
-                                   WebSocketHandler wsHandler,
-                                   Map<String, Object> attributes) {
+    public boolean beforeHandshake(
 
-        String authHeader = request.getHeaders().getFirst("Authorization");
+            ServerHttpRequest request,
+            ServerHttpResponse response,
+            WebSocketHandler wsHandler,
+            Map<String,Object> attributes
 
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            System.out.println("❌ Missing Authorization header");
-            return false; // ❌ reject connection
-        }
+    ){
 
-        String token = authHeader.substring(7);
+        try{
 
-        try {
-            String username = jwtUtil.extractUsername(token);
+            // GET TOKEN FROM URL
+            String token =
+                    request.getURI()
+                            .getQuery();
 
-            if (!jwtUtil.isValid(token, username)) {
-                System.out.println("❌ Invalid JWT token");
+            if(
+
+                    token==null ||
+
+                            !token.startsWith(
+                                    "token="
+                            )
+
+            ){
+
+                System.out.println(
+                        "❌ Missing Token"
+                );
+
                 return false;
+
             }
 
-            // ✅ store user info
-            attributes.put("username", username);
+            token =
+                    token.replace(
+                            "token=",
+                            ""
+                    );
+            System.out.println(
 
-            System.out.println("✅ WebSocket Auth Success: " + username);
+                    "TOKEN RECEIVED: " +
 
-        } catch (Exception e) {
-            System.out.println("❌ JWT Error: " + e.getMessage());
-            return false;
+                            token
+
+            );
+            String username =
+                    jwtUtil.extractUsername(
+                            token
+                    );
+
+            if(
+
+                    !jwtUtil.isValid(
+                            token,
+                            username
+                    )
+
+            ){
+
+                System.out.println(
+                        "❌ Invalid JWT"
+                );
+
+                return false;
+
+            }
+
+            attributes.put(
+
+                    "username",
+
+                    username
+
+            );
+
+            System.out.println(
+
+                    "✅ WebSocket Connected: "
+
+                            + username
+
+            );
+
+            return true;
+
         }
 
-        return true;
+        catch(Exception e){
+
+            System.out.println(
+
+                    "❌ WebSocket Error: "
+
+                            + e.getMessage()
+
+            );
+
+            return false;
+
+        }
+
     }
 
     @Override
-    public void afterHandshake(ServerHttpRequest request,
-                               ServerHttpResponse response,
-                               WebSocketHandler wsHandler,
-                               Exception exception) {
+    public void afterHandshake(
+
+            ServerHttpRequest request,
+
+            ServerHttpResponse response,
+
+            WebSocketHandler wsHandler,
+
+            Exception exception
+
+    ){
+
     }
+
 }

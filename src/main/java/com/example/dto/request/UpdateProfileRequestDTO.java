@@ -44,7 +44,8 @@ public class UpdateProfileRequestDTO {
 
     // Marital Status
     private Long maritalStatusId;
-
+    // Profile Type
+    private Long profileTypeId;
     // Gender
     private Long genderId;
 
@@ -136,4 +137,22 @@ public class UpdateProfileRequestDTO {
     private String preferredEducation;
 
     private String otherExpectations;
+
+    private Long manglikStatusId;
+
+    private Long familyTypeId;
+    private Long qualificationId;
+
+    private Long fieldOfStudyId;
+
+    private Long employedId;
+
+    private Long disabilityStatusId;
+
+    private Long bloodGroupId;
+
+
+    private Long familyStatusId;
+
+    private Long familyValueId;
 }
