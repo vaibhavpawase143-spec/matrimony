@@ -4,7 +4,6 @@ import { motion } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import { useToast } from "@/components/Toast";
 import { useProfileData } from "@/hooks/useProfileData";
-import { useMatrimonyOptions } from "@/hooks/useMatrimonyOptions";
 import { masterDataAPI } from "@/services/api";
 
 const tabs = [
@@ -17,7 +16,6 @@ const SettingsPage = () => {
   const [activeTab, setActiveTab] = useState("profile");
   const { success, error, info } = useToast();
   const { profileData: savedProfileData, saveProfileData } = useProfileData();
-  const { getOptions } = useMatrimonyOptions();
   const [masterOptions, setMasterOptions] = useState({
     religions: [],
     genders: [],
@@ -30,7 +28,8 @@ const SettingsPage = () => {
     castes: [],
     complexions: [],
     bodyTypes: [],
-    motherTongues: []
+    motherTongues: [],
+    annualIncomes: [],
   });
   
   // Profile form state - matching backend DTO structure
@@ -47,6 +46,7 @@ const SettingsPage = () => {
     dateOfBirth: "",
     about: "",
     imageUrl: "",
+
     
     // Relational field IDs
     religionId: null,
@@ -57,8 +57,8 @@ const SettingsPage = () => {
     educationLevelId: null,
     occupationId: null,
     heightId: null,
-    complexions: null,
-    bodyTypes: null,
+    complexion: "",
+    bodyType: "",
     weightId: null,
     cityId: null,
     
@@ -87,10 +87,11 @@ const SettingsPage = () => {
           occupations,
           maritalStatuses,
           heights,
-          weights,
           complexions,
           bodyTypes,
-          motherTongues
+          weights,
+          motherTongues,
+          annualIncomes,
         ] = await Promise.all([
           masterDataAPI.getReligions(),
           masterDataAPI.getGenders(),
@@ -102,7 +103,8 @@ const SettingsPage = () => {
           masterDataAPI.getComplexions(),
           masterDataAPI.getBodyTypes(),
           masterDataAPI.getWeights(),
-          masterDataAPI.getMotherTongues()
+          masterDataAPI.getMotherTongues(),
+          masterDataAPI.getAnnualIncomes()
         ]);
         
         console.log('📊 Master data loaded:', {
@@ -116,7 +118,8 @@ const SettingsPage = () => {
           weights: weights?.length || 0,
           complexions: complexions?.length || 0,
           bodyTypes: bodyTypes?.length || 0,
-          motherTongues: motherTongues?.length || 0
+          motherTongues: motherTongues?.length || 0,
+          annualIncomes: annualIncomes?.length || 0
         });
         
         // Ensure all data are arrays
@@ -132,7 +135,8 @@ const SettingsPage = () => {
           complexions: Array.isArray(complexions) ? complexions : [],
           bodyTypes: Array.isArray(bodyTypes) ? bodyTypes : [],
           castes: [], // Will be loaded based on selected religion
-          motherTongues: Array.isArray(motherTongues) ? motherTongues : []
+          motherTongues: Array.isArray(motherTongues) ? motherTongues : [],
+          annualIncomes: Array.isArray(annualIncomes) ? annualIncomes : [],
         };
         
         setMasterOptions(safeData);
@@ -153,7 +157,8 @@ const SettingsPage = () => {
          complexions: [],
          bodyTypes: [],
          subCastes: [],
-         motherTongues: []
+         motherTongues: [],
+         annualIncomes: [],
         });
       }
     };
@@ -179,7 +184,7 @@ const SettingsPage = () => {
         setMasterOptions(prev => ({ ...prev, castes: [] }));
       }
     };
-    
+
     loadCastes();
   }, [formData.religionId]);
 // Load sub castes when caste changes
@@ -693,25 +698,31 @@ const renderField = (field) => {
         masterOptions.weights || [];
 
     }
+    else if (key === "annualIncome") {
+
+      fieldOptions =
+        masterOptions.annualIncomes || [];
+
+    }
 
     // =========================================
     // STATIC OPTIONS
     // =========================================
 
-    else if (key === "city") {
+   else if (key === "state") {
 
-      fieldOptions =
-        getOptions(key, formData.state) || [];
+     fieldOptions = [];
 
-    }
-else if (key === "complexionId") {
+   }
+
+else if (key === "complexion") {
 
   fieldOptions =
     masterOptions.complexions || [];
 
 }
 
-else if (key === "bodyTypeId") {
+else if (key === "bodyType") {
 
   fieldOptions =
     masterOptions.bodyTypes || [];
@@ -721,7 +732,7 @@ else if (key === "bodyTypeId") {
     else {
 
       fieldOptions =
-        options || getOptions(key) || [];
+        options || [];
 
     }
 
@@ -814,29 +825,38 @@ else if (key === "bodyTypeId") {
             Select {label.toLowerCase()}
           </option>
 
-          {fieldOptions &&
-            fieldOptions.length > 0 &&
-            fieldOptions.map((opt) => {
+         {fieldOptions &&
+           fieldOptions.length > 0 &&
+           fieldOptions.map((opt) => {
 
-              const optionValue =
-                opt?.id || opt;
+             const optionValue =
+               opt?.id ||
+               opt?.value ||
+               opt;
 
-              const optionLabel =
-                opt?.name || opt;
+             const optionLabel =
 
-              return (
+               opt?.name ??
+               opt?.value ??
+               opt?.cityName ??
+               opt?.stateName ??
+               opt?.countryName ??
+               opt?.casteName ??
+               opt?.subCasteName ??
+               opt;
 
-                <option
-                  key={optionValue}
-                  value={optionValue}
-                >
-                  {optionLabel}
-                </option>
+             return (
 
-              );
+               <option
+                 key={optionValue}
+                 value={optionValue}
+               >
+                 {optionLabel}
+               </option>
 
-            })}
+             );
 
+           })}
         </select>
 
       </div>
