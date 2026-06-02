@@ -25,7 +25,17 @@ public class PartnerPreferenceRequestDTO {
     private Long religionId;
     private Long casteId;
     private Long cityId;
+    private Long educationLevelId;
 
+    private Long occupationId;
+
+    private Long maritalStatusId;
+
+    private Long smokingId;
+
+    private Long drinkingId;
+
+    private Long dietId;
     @NotNull(message = "isActive is required")
     private Boolean isActive;
 }

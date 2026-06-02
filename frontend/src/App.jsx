@@ -12,6 +12,8 @@ import AdminRoute from "@/routes/AdminRoute";
 import LoadingSpinner from "./components/LoadingSpinner";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import AuthenticatedLayout from "@/components/AuthenticatedLayout";
+import SentInterests from "./pages/SentInterests";
+import ReceivedInterests from "./pages/ReceivedInterests";
 
 // NORMAL PAGES
 import Index from "./pages/Index";
@@ -118,6 +120,38 @@ const App = () => (
                         </AuthenticatedLayout>
                       }
                     />
+<Route
+
+path="/sent-interests"
+
+element={
+
+<AuthenticatedLayout>
+
+<SentInterests/>
+
+</AuthenticatedLayout>
+
+}
+
+/>
+
+<Route
+
+path="/received-interests"
+
+element={
+
+<AuthenticatedLayout>
+
+<ReceivedInterests/>
+
+</AuthenticatedLayout>
+
+}
+
+/>
+
                     <Route
                       path="/messages"
                       element={

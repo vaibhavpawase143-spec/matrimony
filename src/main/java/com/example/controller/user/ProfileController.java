@@ -83,7 +83,25 @@ public class ProfileController {
     ) {
         return ResponseEntity.ok(service.updateMyProfile(dto));
     }
+    @GetMapping("/user/{userId}")
 
+    public ResponseEntity<ProfileResponseDTO>
+
+    getByUserId(
+
+            @PathVariable Long userId
+
+    ){
+
+        return ResponseEntity.ok(
+
+                service.getProfileByUserId(
+                        userId
+                )
+
+        );
+
+    }
     // ================= GET BY ID (FIXED 🔥) =================
     @GetMapping("/{id}")
     public ResponseEntity<ProfileResponseDTO> getById(@PathVariable Long id) {

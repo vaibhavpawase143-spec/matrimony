@@ -91,14 +91,46 @@ public class InterestServiceImpl implements InterestService {
         interest.setIsActive(true);
 
         Interest saved = interestRepository.save(interest);
+        System.out.println(
 
+                "RECEIVER ID = " +
+
+                        receiverId
+
+        );
+
+        System.out.println(
+
+                "SENDING WS"
+
+        );
+
+        notificationService.create(
+
+                senderId,
+
+                receiverId,
+
+                NotificationType.REQUEST
+
+        );
+
+        System.out.println(
+
+                "NOTIFICATION SERVICE CALLED"
+
+        );
         // 🔥 NOTIFICATION (REQUEST)
         notificationService.create(
                 senderId,
                 receiverId,
                 NotificationType.REQUEST
         );
+        System.out.println(
 
+                "NOTIFICATION CREATE CALLED"
+
+        );
         return mapToDTO(saved);
     }
 

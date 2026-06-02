@@ -21,9 +21,18 @@ public class BloodGroupServiceImpl implements BloodGroupService {
     @Override
     public BloodGroup create(BloodGroup bloodGroup, Long adminId) {
 
-        Admin admin = adminRepository.findById(adminId)
-                .orElseThrow(() -> new RuntimeException("Admin not found"));
+        Admin admin = null;
 
+        if(adminId != null){
+
+            admin = adminRepository.findById(adminId)
+                    .orElseThrow(
+                            () -> new RuntimeException(
+                                    "Admin not found"
+                            )
+                    );
+
+        }
         // 🔍 Duplicate check
         boolean exists = bloodGroupRepository.findAll().stream()
                 .anyMatch(bg -> bg.getType().equalsIgnoreCase(bloodGroup.getType())
@@ -45,8 +54,16 @@ public class BloodGroupServiceImpl implements BloodGroupService {
         BloodGroup bg = bloodGroupRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Blood group not found"));
 
-        if (!bg.getAdmin().getId().equals(adminId)) {
-            throw new RuntimeException("Unauthorized access");
+        if(
+                adminId != null &&
+                        bg.getAdmin()!=null &&
+                        !bg.getAdmin().getId().equals(adminId)
+        ){
+
+            throw new RuntimeException(
+                    "Unauthorized access"
+            );
+
         }
 
         return bg;
@@ -56,9 +73,21 @@ public class BloodGroupServiceImpl implements BloodGroupService {
     @Override
     public List<BloodGroup> getAll(Long adminId) {
 
+        if(adminId == null){
+
+            return bloodGroupRepository.findAll();
+
+        }
+
         return bloodGroupRepository.findAll()
                 .stream()
-                .filter(bg -> bg.getAdmin().getId().equals(adminId))
+                .filter(
+                        bg ->
+                                bg.getAdmin()!=null &&
+                                        bg.getAdmin()
+                                                .getId()
+                                                .equals(adminId)
+                )
                 .toList();
     }
 
@@ -66,10 +95,33 @@ public class BloodGroupServiceImpl implements BloodGroupService {
     @Override
     public List<BloodGroup> getActive(Long adminId) {
 
+        if(adminId == null){
+
+            return bloodGroupRepository.findAll()
+                    .stream()
+                    .filter(
+                            bg ->
+                                    Boolean.TRUE.equals(
+                                            bg.getIsActive()
+                                    )
+                    )
+                    .toList();
+
+        }
+
         return bloodGroupRepository.findAll()
                 .stream()
-                .filter(bg -> bg.getAdmin().getId().equals(adminId)
-                        && Boolean.TRUE.equals(bg.getIsActive()))
+                .filter(
+                        bg ->
+                                bg.getAdmin()!=null &&
+                                        bg.getAdmin()
+                                                .getId()
+                                                .equals(adminId)
+                                        &&
+                                        Boolean.TRUE.equals(
+                                                bg.getIsActive()
+                                        )
+                )
                 .toList();
     }
 

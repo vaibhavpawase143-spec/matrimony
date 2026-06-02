@@ -229,7 +229,71 @@ public class MatchServiceImpl implements MatchService {
 
             if (pref.getCaste() != null && p2.getCaste() != null &&
                     pref.getCaste().getId().equals(p2.getCaste().getId())) score += 10;
+            if (
+                    pref.getEducationLevel()!=null &&
+                            p2.getEducationLevel()!=null &&
+                            pref.getEducationLevel().getId()
+                                    .equals(
+                                            p2.getEducationLevel().getId()
+                                    )
+            ){
+                score += 10;
+            }
 
+            if (
+                    pref.getOccupation()!=null &&
+                            p2.getOccupation()!=null &&
+                            pref.getOccupation().getId()
+                                    .equals(
+                                            p2.getOccupation().getId()
+                                    )
+            ){
+                score += 10;
+            }
+
+            if (
+                    pref.getMaritalStatus()!=null &&
+                            p2.getMaritalStatus()!=null &&
+                            pref.getMaritalStatus().getId()
+                                    .equals(
+                                            p2.getMaritalStatus().getId()
+                                    )
+            ){
+                score += 10;
+            }
+
+            if (
+                    pref.getSmoking()!=null &&
+                            p2.getSmoking()!=null &&
+                            pref.getSmoking().getId()
+                                    .equals(
+                                            p2.getSmoking().getId()
+                                    )
+            ){
+                score += 5;
+            }
+
+            if (
+                    pref.getDrinking()!=null &&
+                            p2.getDrinking()!=null &&
+                            pref.getDrinking().getId()
+                                    .equals(
+                                            p2.getDrinking().getId()
+                                    )
+            ){
+                score += 5;
+            }
+
+            if (
+                    pref.getDiet()!=null &&
+                            p2.getDiet()!=null &&
+                            pref.getDiet().getId()
+                                    .equals(
+                                            p2.getDiet().getId()
+                                    )
+            ){
+                score += 5;
+            }
             if (pref.getMinAge() != null && pref.getMaxAge() != null &&
                     p2.getDateOfBirth() != null) {
 

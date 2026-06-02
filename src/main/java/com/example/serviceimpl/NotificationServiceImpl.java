@@ -38,10 +38,101 @@ public class NotificationServiceImpl implements NotificationService {
         Notification saved = repo.save(n);
 
         // 🔥🔥 REAL-TIME (PRIVATE USER NOTIFICATION)
-        messagingTemplate.convertAndSendToUser(
-                receiverId.toString(),              // user
-                "/queue/notifications",             // destination
-                saved                              // payload
+        System.out.println(
+
+                "========== PUSHING =========="
+
+        );
+
+        System.out.println(
+
+                "Receiver: " + receiverId
+
+        );
+
+        System.out.println(
+
+                "Destination: " +
+
+                        "/topic/notifications/" +
+
+                        receiverId
+
+        );
+
+        System.out.println(
+
+                "SENDING PAYLOAD: " +
+
+                        saved.getMessage()
+
+        );
+
+        System.out.println(
+
+                "RECEIVER ID: " +
+
+                        receiverId
+
+        );
+
+        System.out.println(
+                "SENDING WEBSOCKET MESSAGE"
+        );
+
+        System.out.println(
+
+                "======= NOTIFICATION DEBUG ======="
+
+        );
+
+        System.out.println(
+
+                "Receiver ID: " +
+
+                        receiverId
+
+        );
+
+        System.out.println(
+
+                "Destination: /topic/notifications/" +
+
+                        receiverId
+
+        );
+
+        System.out.println(
+
+                "Notification Message: " +
+
+                        saved.getMessage()
+
+        );
+
+        System.out.println(
+
+                "================================="
+
+        );
+
+        messagingTemplate.convertAndSend(
+
+                "/topic/notifications/" +
+
+                        receiverId,
+
+                "HELLO_NOTIFICATION"
+
+        );
+        System.out.println(
+                "WEBSOCKET MESSAGE SENT"
+        );
+
+        System.out.println(
+
+                "========== SENT =========="
+
         );
     }
 

@@ -12,7 +12,17 @@ public class PartnerPreferenceResponseDTO {
 
     private Integer minAge;
     private Integer maxAge;
+    private Long educationLevelId;
 
+    private Long occupationId;
+
+    private Long maritalStatusId;
+
+    private Long smokingId;
+
+    private Long drinkingId;
+
+    private Long dietId;
     private Double minHeight;
     private Double maxHeight;
 
