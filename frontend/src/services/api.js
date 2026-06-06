@@ -361,7 +361,7 @@ method:"PUT"
 );
 
 },
-sendInterest: async(
+sendInterest: async (
 senderId,
 receiverId
 )=>{
@@ -378,8 +378,9 @@ method:'POST',
 
 body:JSON.stringify({
 
-senderId,
-receiverId
+senderId: senderId,
+
+receiverId: receiverId
 
 })
 
@@ -394,13 +395,7 @@ console.error(
 error
 );
 
-throw new Error(
-
-error?.message ||
-
-'Failed to send interest'
-
-);
+throw error;
 
 }
 
@@ -432,7 +427,6 @@ return [];
 }
 
 };
-
 export const searchAPI = {
 
   searchProfiles: async (filters = {}) => {
@@ -1267,7 +1261,7 @@ getQualifications: async () => {
 // FIELD OF STUDIES
 // ==========================================
 
-getFieldOfStudies: async () => {
+getFieldsOfStudy: async () => {
 
  try {
 
@@ -1286,13 +1280,11 @@ getFieldOfStudies: async () => {
 
  }
 
-},
-
-// ==========================================
+},// ==========================================
 // EMPLOYED
 // ==========================================
 
-getEmployedStatuses: async () => {
+getEmploymentStatuses: async () => {
 
  try {
 
@@ -1302,17 +1294,18 @@ getEmployedStatuses: async () => {
      );
 
    return Array.isArray(result)
-     ? result
-     : [];
+   ? result
+   : [];
 
  } catch(error){
+
+   console.log(error);
 
    return [];
 
  }
 
 },
-
 // ==========================================
 // DISABILITY STATUS
 // ==========================================
@@ -1388,51 +1381,61 @@ getBloodGroups: async () => {
 
   };
 
-  export const partnerPreferenceAPI = {
+ export const partnerPreferenceAPI = {
 
-   save: async (data) => {
+getMyPreference: async(userId)=>{
 
-    return await apiClient(
+return await apiClient(
 
-     '/partner-preferences',
+`/partner-preferences/user/${userId}`
 
-     {
+);
 
-      method:'POST',
-
-      body:JSON.stringify(data)
-
-     }
-
-    );
-
-   },
-update: async(userId,data)=>{
+},
+ save: async (data) => {
 
  return await apiClient(
 
-  `/partner-preferences/${userId}`,
+ '/partner-preferences',
 
-  {
+ {
 
-   method:"PUT",
+ method:'POST',
 
-   body:JSON.stringify(data)
+ body:JSON.stringify(data)
 
-  }
+ }
 
  );
 
-},
-   getByUserId: async(userId)=>{
+ },
 
-    return await apiClient(
+ update: async(userId,data)=>{
 
-     `/partner-preferences/user/${userId}`
+ return await apiClient(
 
-    );
+ `/partner-preferences/${userId}`,
 
-   }
+ {
 
-  };
+ method:"PUT",
 
+ body:JSON.stringify(data)
+
+ }
+
+ );
+
+ },
+
+ getByUserId: async(userId)=>{
+
+ return await apiClient(
+
+ `/partner-preferences/user/${userId}`
+
+ );
+
+ }
+
+ };

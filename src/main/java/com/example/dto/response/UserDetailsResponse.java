@@ -38,8 +38,8 @@ public class UserDetailsResponse {
     // ===== PREFERENCES =====
     private Integer minAge;
     private Integer maxAge;
-    private Double minHeight;
-    private Double maxHeight;
+    private Long minHeight;
+    private Long maxHeight;
     private String preferredReligion;
     private String preferredCaste;
     private String preferredCity;
@@ -84,8 +84,8 @@ public class UserDetailsResponse {
             String motherOccupation,
             Integer minAge,
             Integer maxAge,
-            Double minHeight,
-            Double maxHeight,
+            Long minHeight,
+            Long maxHeight,
             String preferredReligion,
             String preferredCaste,
             String preferredCity,

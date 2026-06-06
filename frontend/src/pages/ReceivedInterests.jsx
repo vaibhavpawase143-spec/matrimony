@@ -27,11 +27,26 @@ JSON.parse(
 localStorage.getItem("user")
 );
 
+const receiverId =
+Number(
+currentUser.profile.userId
+);
+
+console.log(
+"RECEIVER ID:",
+receiverId
+);
+
 const interests =
 
 await interestAPI
 .getReceivedInterests(
-currentUser.id
+receiverId
+);
+
+console.log(
+"RECEIVED INTERESTS:",
+interests
 );
 
 console.log(
@@ -147,6 +162,16 @@ item =>
 
 item.interestId !== interestId
 
+)
+
+);
+
+// refresh dashboard values
+
+window.dispatchEvent(
+
+new Event(
+"interestUpdated"
 )
 
 );

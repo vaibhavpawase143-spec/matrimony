@@ -36,7 +36,8 @@ public class PartnerPreference {
     @ManyToOne
     @JoinColumn(name="education_level_id")
     private EducationLevel educationLevel;
-
+    @Column(length=1000)
+    private String otherExpectations;
     @ManyToOne
     @JoinColumn(name="occupation_id")
     private Occupation occupation;
@@ -56,9 +57,11 @@ public class PartnerPreference {
     @ManyToOne
     @JoinColumn(name="diet_id")
     private Diet diet;
-    private Double minHeight;
-    private Double maxHeight;
+    private Long minHeight;
+    private Long maxHeight;
+    private Long minWeight;
 
+    private Long maxWeight;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "religion_id")
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
@@ -176,9 +179,9 @@ public class PartnerPreference {
 
     public Integer getMaxAge() { return maxAge; }
 
-    public Double getMinHeight() { return minHeight; }
+    public Long getMinHeight() { return minHeight; }
 
-    public Double getMaxHeight() { return maxHeight; }
+    public Long getMaxHeight() { return maxHeight; }
 
     public Religion getReligion() { return religion; }
 
@@ -200,9 +203,9 @@ public class PartnerPreference {
 
     public void setMaxAge(Integer maxAge) { this.maxAge = maxAge; }
 
-    public void setMinHeight(Double minHeight) { this.minHeight = minHeight; }
+    public void setMinHeight(Long minHeight) { this.minHeight = minHeight; }
 
-    public void setMaxHeight(Double maxHeight) { this.maxHeight = maxHeight; }
+    public void setMaxHeight(Long maxHeight) { this.maxHeight = maxHeight; }
 
     public void setReligion(Religion religion) { this.religion = religion; }
 
@@ -211,6 +214,31 @@ public class PartnerPreference {
     public void setCity(City city) { this.city = city; }
 
     public void setIsActive(Boolean isActive) { this.isActive = isActive; }
+    public Long getMinWeight() {
 
+        return minWeight;
+
+    }
+
+    public Long getMaxWeight() {
+
+        return maxWeight;
+
+    }
+    public void setMinWeight(
+            Long minWeight
+    ) {
+
+        this.minWeight = minWeight;
+
+    }
+
+    public void setMaxWeight(
+            Long maxWeight
+    ) {
+
+        this.maxWeight = maxWeight;
+
+    }
 
 }

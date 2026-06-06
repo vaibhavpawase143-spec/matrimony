@@ -8,11 +8,31 @@ import java.time.LocalDateTime;
 public class PartnerPreferenceResponseDTO {
 
     private Long id;
+
     private Long userId;
 
     private Integer minAge;
+
     private Integer maxAge;
+
+    private Long minHeight;
+
+    private Long maxHeight;
+
+    // NEW
+    private Long minWeight;
+
+    private Long maxWeight;
+
+    private Long religionId;
+
+    private Long casteId;
+
+    private Long cityId;
+
     private Long educationLevelId;
+
+    private String otherExpectations;
 
     private Long occupationId;
 
@@ -23,14 +43,10 @@ public class PartnerPreferenceResponseDTO {
     private Long drinkingId;
 
     private Long dietId;
-    private Double minHeight;
-    private Double maxHeight;
-
-    private Long religionId;
-    private Long casteId;
-    private Long cityId;
 
     private Boolean isActive;
+
     private LocalDateTime createdAt;
+
     private LocalDateTime updatedAt;
 }

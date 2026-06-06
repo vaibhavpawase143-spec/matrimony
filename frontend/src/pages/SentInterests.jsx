@@ -14,6 +14,20 @@ useEffect(()=>{
 
 loadSentInterests();
 
+window.addEventListener(
+"interestUpdated",
+loadSentInterests
+);
+
+return ()=>{
+
+window.removeEventListener(
+"interestUpdated",
+loadSentInterests
+);
+
+};
+
 },[]);
 
 const loadSentInterests = async()=>{
@@ -25,15 +39,36 @@ JSON.parse(
 localStorage.getItem("user")
 );
 
+const senderId =
+Number(
+currentUser.profile.userId
+);
+
+console.log(
+"SENDER ID:",
+senderId
+);
+
 const interests =
 await interestAPI.getSentInterests(
-currentUser.id
+senderId
 );
 
 console.log(
 "INTERESTS:",
 interests
 );
+
+if(
+!interests ||
+interests.length===0
+){
+
+setProfiles([]);
+
+return;
+
+}
 
 const loadedProfiles =
 await Promise.all(
@@ -63,6 +98,7 @@ item.status
 )
 
 );
+
 console.log(
 "PROFILES:",
 loadedProfiles
@@ -74,12 +110,14 @@ loadedProfiles
 
 }catch(err){
 
-console.log(err);
+console.log(
+"LOAD ERROR:",
+err
+);
 
 }
 
 };
-
 return(
 
 <div className="min-h-screen bg-muted/30">

@@ -74,14 +74,26 @@ public class ProfileSpecification {
                 ));
             }
 
-            // 🎯 HEIGHT FILTER (OPTIONAL 🔥)
-            if (pref.getMinHeight() != null && pref.getMaxHeight() != null) {
-                // NOTE: works only if height is numeric string like "170"
-                predicates.add(cb.between(
-                        cb.function("CAST", Double.class, root.get("height").get("height")),
-                        pref.getMinHeight(),
-                        pref.getMaxHeight()
-                ));
+            // HEIGHT FILTER
+
+            if (
+                    pref.getMinHeight() != null &&
+                            pref.getMaxHeight() != null
+            ) {
+
+                predicates.add(
+
+                        cb.between(
+
+                                root.get("height").get("id"),
+
+                                pref.getMinHeight(),
+
+                                pref.getMaxHeight()
+
+                        )
+
+                );
             }
 
             // 🚫 EXCLUDE NULL USERS (SAFETY)

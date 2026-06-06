@@ -59,11 +59,29 @@ export const useProfileData = () => {
         });
         
         // If profile not found (404), that's expected for new users
-        if (error.status === 404) {
-          console.log('ℹ️ Profile not found - user needs to create profile');
-        } else {
-          console.warn('⚠️ Unexpected profile loading error');
-        }
+       if(
+
+       error.message?.includes(
+       "Profile not found"
+       )
+
+       ){
+
+       console.log(
+       "No profile exists yet"
+       );
+
+       setProfileData(
+       defaultProfileData
+       );
+
+       return;
+
+       }
+
+       console.warn(
+       "Profile loading failed"
+       );
       } finally {
         setIsLoading(false);
       }

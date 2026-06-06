@@ -210,20 +210,6 @@ public class Profile {
     // PARTNER PREFERENCE
     // =====================================================
 
-    @Column(name = "preferred_age_min")
-    private Integer preferredAgeMin;
-
-    @Column(name = "preferred_age_max")
-    private Integer preferredAgeMax;
-
-    @Column(length = 200)
-    private String preferredLocation;
-
-    @Column(length = 200)
-    private String preferredEducation;
-
-    @Column(length = 1000)
-    private String otherExpectations;
 
     // =====================================================
     // SYSTEM
@@ -561,45 +547,6 @@ public class Profile {
         this.siblingsCount = siblingsCount;
     }
 
-    public Integer getPreferredAgeMin() {
-        return preferredAgeMin;
-    }
-
-    public void setPreferredAgeMin(Integer preferredAgeMin) {
-        this.preferredAgeMin = preferredAgeMin;
-    }
-
-    public Integer getPreferredAgeMax() {
-        return preferredAgeMax;
-    }
-
-    public void setPreferredAgeMax(Integer preferredAgeMax) {
-        this.preferredAgeMax = preferredAgeMax;
-    }
-
-    public String getPreferredLocation() {
-        return preferredLocation;
-    }
-
-    public void setPreferredLocation(String preferredLocation) {
-        this.preferredLocation = preferredLocation;
-    }
-
-    public String getPreferredEducation() {
-        return preferredEducation;
-    }
-
-    public void setPreferredEducation(String preferredEducation) {
-        this.preferredEducation = preferredEducation;
-    }
-
-    public String getOtherExpectations() {
-        return otherExpectations;
-    }
-
-    public void setOtherExpectations(String otherExpectations) {
-        this.otherExpectations = otherExpectations;
-    }
 
     public Boolean getIsActive() {
         return isActive;

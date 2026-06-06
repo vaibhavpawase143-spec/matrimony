@@ -54,36 +54,81 @@ public class InterestServiceImpl implements InterestService {
         }
 
         Interest existing = interestRepository
-                .findBySender_IdAndReceiver_Id(senderId, receiverId)
+                .findBySender_IdAndReceiver_Id(
+                        senderId,
+                        receiverId
+                )
                 .orElse(null);
 
-        if (existing != null) {
+        if(existing != null){
 
-            if (existing.getStatus().equalsIgnoreCase("PENDING")) {
-                throw new RuntimeException("Interest already sent and pending");
-            }
+            // Already pending and active
+            if(
 
-            if (existing.getStatus().equalsIgnoreCase("ACCEPTED")) {
-                throw new RuntimeException("You are already connected");
-            }
+                    existing.getStatus()
+                            .equalsIgnoreCase(
+                                    "PENDING"
+                            )
 
-            if (existing.getStatus().equalsIgnoreCase("REJECTED")) {
-                existing.setStatus("PENDING");
-                existing.setIsActive(true);
+                            &&
 
-                Interest updated = interestRepository.save(existing);
+                            Boolean.TRUE.equals(
+                                    existing.getIsActive()
+                            )
 
-                // 🔥 NOTIFICATION (REQUEST AGAIN)
-                notificationService.create(
-                        senderId,
-                        receiverId,
-                        NotificationType.REQUEST
+            ){
+
+                throw new RuntimeException(
+                        "Interest already sent"
                 );
 
-                return mapToDTO(updated);
             }
-        }
 
+            // Already matched / accepted
+            if(
+
+                    existing.getStatus()
+                            .equalsIgnoreCase(
+                                    "ACCEPTED"
+                            )
+
+            ){
+
+                throw new RuntimeException(
+                        "You are already connected"
+                );
+
+            }
+
+            // Reuse old record
+            existing.setStatus(
+                    "PENDING"
+            );
+
+            existing.setIsActive(
+                    true
+            );
+
+            Interest updated =
+                    interestRepository.save(
+                            existing
+                    );
+
+            notificationService.create(
+
+                    senderId,
+
+                    receiverId,
+
+                    NotificationType.REQUEST
+
+            );
+
+            return mapToDTO(
+                    updated
+            );
+
+        }
         Interest interest = new Interest();
         interest.setSender(sender);
         interest.setReceiver(receiver);
@@ -192,13 +237,31 @@ public class InterestServiceImpl implements InterestService {
 
     // ❌ Delete
     @Override
+    @Transactional
     public void delete(Long id) {
-        Interest existing = interestRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Interest not found"));
 
-        interestRepository.delete(existing);
+        Interest existing =
+                interestRepository
+                        .findById(id)
+                        .orElseThrow(
+                                () -> new RuntimeException(
+                                        "Interest not found"
+                                )
+                        );
+
+        existing.setStatus(
+                "DELETED"
+        );
+
+        existing.setIsActive(
+                false
+        );
+
+        interestRepository.save(
+                existing
+        );
+
     }
-
     // 📥 Get By ID
     @Override
     public InterestResponseDTO getById(Long id) {
