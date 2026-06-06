@@ -44,8 +44,50 @@ const ShortlistButton = ({ profileId, size = 'md', showLabel = true }) => {
   return (
     <button
       onClick={handleClick}
-      className={`${sizeClasses[size]} inline-flex items-center justify-center rounded-lg font-medium transition-all duration-200 ${shortlisted ? 'bg-rose-100 text-rose-600' : 'bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary'}`}
-      title={shortlisted ? 'Remove from shortlists' : 'Add to shortlists'}
+className="
+
+w-12
+
+h-12
+
+rounded-xl
+
+bg-gradient-to-br
+
+from-purple-500
+
+to-indigo-600
+
+shadow-md
+
+hover:scale-110
+
+transition-all
+
+duration-300
+
+inline-flex
+
+items-center
+
+justify-center
+
+text-white
+
+"
+      title={
+
+      shortlisted
+
+      ?
+
+      "Shortlisted"
+
+      :
+
+      "Shortlist"
+
+      }
     >
       <Star className={`${iconSizes[size]} ${shortlisted ? 'fill-current' : ''}`} />
       {showLabel && <span>{shortlisted ? 'Shortlisted' : 'Shortlist'}</span>}

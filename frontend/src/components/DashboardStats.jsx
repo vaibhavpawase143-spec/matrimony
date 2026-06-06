@@ -24,8 +24,8 @@ stats.interestsSent || 0,
 interestsReceived:
 stats.interestsReceived || 0,
 
-bookmarkedProfiles:
-stats.bookmarkedProfiles || 0,
+shortlists:
+stats.shortlists || 0,
 
 profileViews:
 stats.profileViews || 0,
@@ -34,7 +34,6 @@ messages:
 stats.messages || 0,
 
 };
-
 const statItems = [
 
 {
@@ -95,10 +94,10 @@ textColor:
 },
 {
 
-label:'Bookmarked',
+label:'Shortlists',
 
 value:
-defaultStats.bookmarkedProfiles,
+defaultStats.shortlists,
 
 icon:Bookmark,
 
@@ -106,16 +105,33 @@ color:
 'bg-amber-100 dark:bg-amber-900/30',
 
 textColor:
-'text-amber-600 dark:text-amber-400'
+'text-amber-600 dark:text-amber-400',
+
+route:'/shortlists'
 
 },
-
 {
 
 label:'Profile Views',
 
 value:
 defaultStats.profileViews,
+
+icon:Eye,
+
+color:
+'bg-green-100 dark:bg-green-900/30',
+
+textColor:
+'text-green-600 dark:text-green-400'
+
+},
+{
+
+label:'Profile Views',
+
+value:
+defaultStats.shortlists,
 
 icon:Eye,
 

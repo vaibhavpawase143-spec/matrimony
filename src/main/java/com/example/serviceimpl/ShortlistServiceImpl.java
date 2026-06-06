@@ -44,6 +44,23 @@ public class ShortlistServiceImpl implements ShortlistService {
             );
 
         }
+        System.out.println(
+                "USER = " + userId +
+                        " PROFILE = " + profileId
+        );
+
+        System.out.println(
+                "EXISTS = " +
+
+                        repository
+                                .findByUser_IdAndProfile_Id(
+                                        userId,
+                                        profileId
+                                )
+
+                                .isPresent()
+
+        );
         Optional<Shortlist> existing =
                 repository.findByUser_IdAndProfile_Id(userId, profileId);
 
