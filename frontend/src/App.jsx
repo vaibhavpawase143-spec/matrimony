@@ -38,6 +38,7 @@ import TermsConditions from "./pages/TermsConditions";
 import FAQ from "./pages/FAQ";
 import HelpSupport from "./pages/HelpSupport";
 import RefundPolicy from "./pages/RefundPolicy";
+import ChatPage from "./pages/ChatPage";
 
 // ADMIN PAGES
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -78,6 +79,7 @@ const App = () => (
                     <Route path="/faq" element={<FAQ />} />
                     <Route path="/help" element={<HelpSupport />} />
                     <Route path="/refund-policy" element={<RefundPolicy />} />
+                    <Route path="/chat/:conversationId/:receiverId" element={<ChatPage/>} />
 
                     {/* PROTECTED USER ROUTES */}
                     <Route

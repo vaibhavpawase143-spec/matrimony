@@ -13,6 +13,7 @@ import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.List;
@@ -104,11 +105,43 @@ public class ChatServiceImpl implements ChatService {
         Conversation c = getOrCreateConversation(sender, receiver);
 
         Message m = new Message();
+
         m.setSender(sender);
+
+        m.setReceiver(receiver);
+
         m.setConversation(c);
-        m.setContent(encrypt(content));
+
+        System.out.println(
+
+                "ORIGINAL = " + content
+
+        );
+
+        String encrypted =
+
+                encrypt(content);
+
+        System.out.println(
+
+                "ENCRYPTED = " + encrypted
+
+        );
+
+        m.setContent(
+
+                encrypted
+
+        );
+
         m.setMessageType("TEXT");
-        m.setCreatedAt(LocalDateTime.now());
+
+        m.setCreatedAt(
+
+                LocalDateTime.now()
+
+        );
+
         m.setReplyTo(replyTo);
 
         Message saved = messageRepository.save(m);
@@ -184,15 +217,105 @@ public class ChatServiceImpl implements ChatService {
     // ================= GET =================
 
     @Override
-    public List<Message> getMessages(Long userId, Long otherUserId) {
+    public List<Message> getMessages(
+            Long userId,
+            Long otherUserId
+    ) {
 
-        Conversation c = getConversation(getUser(userId), getUser(otherUserId));
+        User u1 = getUser(userId);
 
-        List<Message> list = messageRepository.findByConversationOrderByCreatedAtAsc(c);
+        User u2 = getUser(otherUserId);
 
-        list.forEach(m -> m.setContent(decrypt(m.getContent())));
+        Conversation conversation =
 
+                conversationRepository
+
+                        .findByUser1AndUser2(
+                                u1,
+                                u2
+                        )
+
+                        .or(() ->
+
+                                conversationRepository
+
+                                        .findByUser1AndUser2(
+                                                u2,
+                                                u1
+                                        )
+
+                        )
+
+                        .orElse(null);
+
+        if(conversation==null){
+
+            return List.of();
+
+        }
+
+        List<Message> list =
+
+                messageRepository
+
+                        .findByConversationOrderByCreatedAtAsc(
+                                conversation
+                        );
+
+        list.forEach(m -> {
+
+            System.out.println(
+
+                    "DB VALUE = "
+
+                            + m.getContent()
+
+            );
+
+            String decrypted =
+
+                    decrypt(
+
+                            m.getContent()
+
+                    );
+
+            System.out.println(
+
+                    "DECRYPTED = "
+
+                            + decrypted
+
+            );
+
+            m.setContent(
+
+                    decrypted
+
+            );
+
+        });
         return list;
+
+    }
+
+    @Override
+    public List<Message> getMessagesForChat(
+
+            Long senderId,
+
+            Long receiverId
+
+    ){
+
+        return getMessages(
+
+                senderId,
+
+                receiverId
+
+        );
+
     }
 
     @Override
@@ -206,7 +329,7 @@ public class ChatServiceImpl implements ChatService {
         Conversation c = getConversation(getUser(userId), getUser(otherUserId));
 
         Page<Message> p = messageRepository.findByConversation(
-                c, PageRequest.of(page, size, Sort.by("createdAt").descending())
+                c, PageRequest.of(page, size, Sort.by("createdAt").ascending())
         );
 
         p.getContent().forEach(m -> m.setContent(decrypt(m.getContent())));
@@ -337,18 +460,16 @@ public class ChatServiceImpl implements ChatService {
 
     // ================= ENCRYPT =================
 
-    private String encrypt(String data) {
-        return data == null ? null : Base64.getEncoder().encodeToString(data.getBytes());
+    private String encrypt(String data){
+
+        return data;
+
     }
 
-    private String decrypt(String data) {
-        if (data == null) return null;
+    private String decrypt(String data){
 
-        try {
-            return new String(Base64.getDecoder().decode(data));
-        } catch (Exception e) {
-            return data;
-        }
+        return data;
+
     }
 
     private String getMediaContent(String type) {

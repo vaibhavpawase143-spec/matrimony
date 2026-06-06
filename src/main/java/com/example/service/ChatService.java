@@ -43,7 +43,15 @@ public interface ChatService {
     // ✅ Without pagination
     List<Message> getMessages(Long userId, Long otherUserId);
 
-    List<Message> getMessagesByEmail(String email, Long otherUserId);
+    List<Message> getMessagesForChat(
+            Long senderId,
+            Long receiverId
+    );
+
+    List<Message> getMessagesByEmail(
+            String email,
+            Long otherUserId
+    );
 
     // ✅ With pagination
     Page<Message> getMessages(Long userId, Long otherUserId, int page, int size);
@@ -95,4 +103,6 @@ public interface ChatService {
     // ================= ✏️ EDIT =================
 
     void editMessage(Long messageId, String content);
+
+
 }

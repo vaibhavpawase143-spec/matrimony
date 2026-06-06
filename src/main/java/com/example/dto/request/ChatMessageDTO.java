@@ -13,7 +13,8 @@ public class ChatMessageDTO {
     private String sender;      // email (from JWT)
     private String receiver;    // email (for WebSocket routing)
 
-    private Long receiverId;    // 🔥 IMPORTANT for DB operations
+    private Long receiverId;
+    private Long senderId;      // 🔥 IMPORTANT for DB operations
 
     private String content;
     private String type;        // TEXT / MEDIA / FORWARD

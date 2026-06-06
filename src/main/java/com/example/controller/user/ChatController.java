@@ -199,44 +199,175 @@ public class ChatController {
 
     // ================= 🔥 FINAL MAPPER =================
     private ChatMessageDTO mapToDTO(Message message) {
-        return ChatMessageDTO.builder()
-                .sender(message.getSender().getEmail())
-                .receiver(message.getReceiver().getEmail())
 
-                // ✅ FIXED
+        return ChatMessageDTO.builder()
+
+                .sender(
+
+                        message.getSender()!=null
+
+                                ?
+
+                                message.getSender().getEmail()
+
+                                :
+
+                                null
+
+                )
+
+                .receiver(
+
+                        message.getReceiver()!=null
+
+                                ?
+
+                                message.getReceiver().getEmail()
+
+                                :
+
+                                null
+
+                )
+
+                .senderId(
+
+                        message.getSender()!=null
+
+                                ?
+
+                                message.getSender().getId()
+
+                                :
+
+                                null
+
+                )
+
                 .receiverId(
-                        message.getReceiver() != null
-                                ? message.getReceiver().getId()
-                                : null
+
+                        message.getReceiver()!=null
+
+                                ?
+
+                                message.getReceiver().getId()
+
+                                :
+
+                                null
+
                 )
 
                 .content(
-                        message.getContent() != null
-                                ? message.getContent()
-                                : "[Media]"
+
+                        message.getContent()!=null
+
+                                ?
+
+                                message.getContent()
+
+                                :
+
+                                "[Media]"
+
                 )
 
-                .type(message.getMessageType())
-                .conversationId(message.getConversation().getId())
-                .messageId(message.getId())
-                .status(message.getStatus().name())
+                .type(
+
+                        message.getMessageType()
+
+                )
+
+                .conversationId(
+
+                        message.getConversation()!=null
+
+                                ?
+
+                                message.getConversation().getId()
+
+                                :
+
+                                null
+
+                )
+
+                .messageId(
+
+                        message.getId()
+
+                )
+
+                .status(
+
+                        message.getStatus()!=null
+
+                                ?
+
+                                message.getStatus().name()
+
+                                :
+
+                                null
+
+                )
 
                 .timestamp(
-                        message.getCreatedAt() != null
-                                ? message.getCreatedAt().toString()
-                                : null
+
+                        message.getCreatedAt()!=null
+
+                                ?
+
+                                message.getCreatedAt().toString()
+
+                                :
+
+                                null
+
                 )
 
                 .replyToMessageId(
-                        message.getReplyTo() != null ? message.getReplyTo().getId() : null
-                )
-                .replyToContent(
-                        message.getReplyTo() != null ? message.getReplyTo().getContent() : null
+
+                        message.getReplyTo()!=null
+
+                                ?
+
+                                message.getReplyTo().getId()
+
+                                :
+
+                                null
+
                 )
 
-                .mediaUrl(message.getMediaUrl())
-                .mediaType(message.getMediaType())
+                .replyToContent(
+
+                        message.getReplyTo()!=null
+
+                                ?
+
+                                message.getReplyTo().getContent()
+
+                                :
+
+                                null
+
+                )
+
+                .mediaUrl(
+
+                        message.getMediaUrl()
+
+                )
+
+                .mediaType(
+
+                        message.getMediaType()
+
+                )
+
                 .build();
+
     }
     // ================= 📋 CONVERSATIONS =================
     @GetMapping("/conversations")

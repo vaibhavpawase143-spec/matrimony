@@ -105,4 +105,7 @@ public class Message {
     }
 
 
+    public void setReceiver(User receiver) {
+
+    }
 }
