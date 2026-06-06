@@ -1,370 +1,347 @@
-import { useEffect, useState } from "react";
+import { useEffect,useState } from "react";
 import Navbar from "@/components/Navbar";
 import { useNavigate } from "react-router-dom";
-import { interestAPI, profileAPI } from "@/services/api";
+import { interestAPI,profileAPI } from "@/services/api";
+
 import toast from "react-hot-toast";
 
-const ReceivedInterests = () => {
+const ReceivedInterests = ()=>{
 
-    const navigate = useNavigate();
+const navigate = useNavigate();
 
-    const [profiles, setProfiles] = useState([]);
+const [profiles,setProfiles] =
+useState([]);
 
-    useEffect(() => {
+useEffect(()=>{
 
-        loadReceived();
+loadReceived();
 
-    }, []);
+},[]);
 
-    const loadReceived = async () => {
+const loadReceived = async()=>{
 
-        try {
+try{
 
-            const currentUser =
-                JSON.parse(
-                    localStorage.getItem("user")
-                );
+const currentUser =
+JSON.parse(
+localStorage.getItem("user")
+);
 
-            const interests =
-                await interestAPI
-                    .getReceivedInterests(
-                        currentUser.id
-                    );
+const interests =
 
-            console.log(
-                "RECEIVED INTERESTS:",
-                interests
-            );
+await interestAPI
+.getReceivedInterests(
+currentUser.id
+);
 
-            const loaded =
-                await Promise.all(
+console.log(
 
-                    interests.map(
+"RECEIVED INTERESTS:",
 
-                        async (item) => {
+interests
 
-                            const profile =
-                                await profileAPI
-                                    .getProfileByUserId(
-                                        item.senderId
-                                    );
+);
 
-                            return {
 
-                                ...profile,
+const pending =
 
-                                interestId:
-                                    item.id,
+interests.filter(
 
-                                senderId:
-                                    item.senderId,
+item=>
 
-                                status:
-                                    item.status
+item.status==="PENDING"
 
-                            };
+);
 
-                        }
+const loaded =
+await Promise.all(
 
-                    )
+pending.map(
 
-                );
+async(item)=>{
 
-            setProfiles(
-                loaded
-            );
+const profile =
+await profileAPI
+.getProfileByUserId(
+item.senderId
+);
 
-        }
+return{
 
-        catch (err) {
+...profile,
 
-            console.log(err);
+interestId:
+item.id,
 
-        }
+status:
+item.status
 
-    };
+};
 
-    const updateStatus = async (
+}
 
-        interestId,
+)
 
-        action
+);
 
-    ) => {
+setProfiles(
+loaded
+);
 
-        try {
+}catch(err){
 
-            if (
+console.log(err);
 
-                action === "accept"
+}
 
-            ) {
+};
+const updateStatus = async(
 
-                await interestAPI
-                    .acceptInterest(
-                        interestId
-                    );
+interestId,
 
-            }
+action
 
-            else {
+)=>{
 
-                await interestAPI
-                    .rejectInterest(
-                        interestId
-                    );
+try{
 
-            }
+if(
 
-            toast.success(
-                `Interest ${action}ed`
-            );
+action==="accept"
 
-            loadReceived();
+){
 
-        }
+await interestAPI
+.acceptInterest(
 
-        catch (err) {
+interestId
 
-            console.log(err);
+);
 
-            toast.error(
-                "Failed"
-            );
+}
 
-        }
+else{
 
-    };
+await interestAPI
+.rejectInterest(
 
-    return (
+interestId
 
-        <div className="min-h-screen bg-muted/30">
+);
 
-            <Navbar />
+}
 
-            <div className="container mx-auto p-6">
+toast.success(
 
-                <div className="flex items-center gap-4 mb-6">
+`Interest ${action}ed`
 
-                    <button
+);
 
-                        onClick={() => {
+setProfiles(
 
-                            window.location.href =
-                                "/home";
+prev =>
 
-                        }}
+prev.filter(
 
-                        className="
-                        px-4
-                        py-2
-                        border
-                        rounded-lg
-                        "
+item =>
 
-                    >
+item.interestId !== interestId
 
-                        ← Back
+)
 
-                    </button>
+);
 
-                    <h1 className="text-3xl font-bold">
+}
 
-                        Received Interests
+catch(err){
 
-                    </h1>
+console.log(err);
 
-                </div>
+toast.error(
 
-                <div className="grid gap-4">
+"Failed"
 
-                    {
+);
 
-                        profiles.map(
+}
 
-                            profile => (
+};
 
-                                <div
+return(
 
-                                    key={profile.id}
+<div className="min-h-screen bg-muted/30">
 
-                                    className="
-                                    bg-card
-                                    rounded-xl
-                                    border
-                                    p-5
-                                    flex
-                                    justify-between
-                                    items-center
-                                    "
+<Navbar/>
 
-                                >
+<div className="container mx-auto p-6">
 
-                                    <div>
+<div className="
+flex
+items-center
+gap-4
+mb-6
+">
 
-                                        <h2 className="font-bold">
+<button
 
-                                            {profile.firstName}
+onClick={()=>{
 
-                                            {" "}
+window.location.href =
 
-                                            {profile.lastName}
+"/home";
 
-                                        </h2>
+}}
+className="
+px-4
+py-2
+border
+rounded-lg
+"
 
-                                        <p>
+>
 
-                                            Status:
+← Back
 
-                                            {profile.status}
+</button>
 
-                                        </p>
+<h1 className="text-3xl font-bold">
 
-                                    </div>
+Received Interests
 
-                                    <div className="flex gap-3">
+</h1>
 
-                                        <button
+</div>
 
-                                            onClick={() =>
-                                                navigate(
-                                                    `/profile/${profile.id}`
-                                                )
-                                            }
+<div className="grid gap-4">
 
-                                            className="
-                                            px-4
-                                            py-2
-                                            bg-blue-600
-                                            text-white
-                                            rounded-lg
-                                            "
+{
 
-                                        >
+profiles.map(profile=>(
 
-                                            View Profile
+<div
 
-                                        </button>
+key={profile.id}
 
-                                        {
+className="
+bg-card
+rounded-xl
+border
+p-5
+flex
+justify-between
+items-center
+"
 
-                                            profile.status === "PENDING"
+>
 
-                                            &&
+<div>
 
-                                            <>
+<h2 className="font-bold">
 
-                                                <button
+{profile.firstName}
 
-                                                    onClick={() =>
+{" "}
 
-                                                        updateStatus(
+{profile.lastName}
 
-                                                            profile.interestId,
+</h2>
 
-                                                            "accept"
+<p>
 
-                                                        )
+Status:
 
-                                                    }
+{profile.status}
 
-                                                    className="
-                                                    px-4
-                                                    py-2
-                                                    bg-green-600
-                                                    text-white
-                                                    rounded-lg
-                                                    "
+</p>
 
-                                                >
+</div>
 
-                                                    Accept
+<div className="flex gap-3">
 
-                                                </button>
+<button
 
-                                                <button
+onClick={()=>navigate(
 
-                                                    onClick={() =>
+`/profile/${profile.id}`
 
-                                                        updateStatus(
+)}
 
-                                                            profile.interestId,
+className="
+px-4
+py-2
+bg-blue-600
+text-white
+rounded-lg
+"
 
-                                                            "reject"
+>
 
-                                                        )
+View Profile
 
-                                                    }
+</button>
 
-                                                    className="
-                                                    px-4
-                                                    py-2
-                                                    bg-red-600
-                                                    text-white
-                                                    rounded-lg
-                                                    "
+<button
 
-                                                >
+onClick={()=>updateStatus(
 
-                                                    Reject
+profile.interestId,
 
-                                                </button>
+"accept"
 
-                                            </>
+)}
 
-                                        }
+className="
+px-4
+py-2
+bg-green-600
+text-white
+rounded-lg
+"
 
-                                        {
+>
 
-                                            profile.status === "ACCEPTED"
+Accept
 
-                                            &&
+</button>
 
-                                            <button
+<button
 
-                                                onClick={() => {
+onClick={()=>updateStatus(
 
-                                                    navigate(
+profile.interestId,
 
-                                                        `/chat/${profile.interestId}/${profile.senderId}`
+"reject"
 
-                                                    );
+)}
 
-                                                }}
+className="
+px-4
+py-2
+bg-red-600
+text-white
+rounded-lg
+"
 
-                                                className="
-                                                px-4
-                                                py-2
-                                                bg-purple-600
-                                                text-white
-                                                rounded-lg
-                                                "
+>
 
-                                            >
+Reject
 
-                                                Chat
+</button>
 
-                                            </button>
+</div>
+</div>
 
-                                        }
+))
 
-                                    </div>
+}
 
-                                </div>
+</div>
 
-                            )
+</div>
 
-                        )
+</div>
 
-                    }
-
-                </div>
-
-            </div>
-
-        </div>
-
-    );
+);
 
 };
 

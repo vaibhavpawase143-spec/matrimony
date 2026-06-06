@@ -1,322 +1,300 @@
-import { useEffect, useState } from "react";
+import { useEffect,useState } from "react";
 import Navbar from "@/components/Navbar";
 import { interestAPI, profileAPI } from "@/services/api";
 import { useNavigate } from "react-router-dom";
 
-const SentInterests = () => {
+const SentInterests = ()=>{
 
-    const navigate = useNavigate();
+const navigate = useNavigate();
 
-    const [profiles, setProfiles] = useState([]);
+const [profiles,setProfiles] =
+useState([]);
 
-    useEffect(() => {
+useEffect(()=>{
 
-        loadSentInterests();
+loadSentInterests();
 
-    }, []);
+},[]);
 
-    const loadSentInterests = async () => {
+const loadSentInterests = async()=>{
 
-        try {
+try{
 
-            const currentUser =
-                JSON.parse(
-                    localStorage.getItem("user")
-                );
+const currentUser =
+JSON.parse(
+localStorage.getItem("user")
+);
 
-            const interests =
-                await interestAPI.getSentInterests(
-                    currentUser.id
-                );
+const interests =
+await interestAPI.getSentInterests(
+currentUser.id
+);
 
-            const loadedProfiles =
-                await Promise.all(
+console.log(
+"INTERESTS:",
+interests
+);
 
-                    interests.map(
+const loadedProfiles =
+await Promise.all(
 
-                        async (item) => {
+interests.map(
 
-                            const profile =
-                                await profileAPI
-                                    .getProfileByUserId(
-                                        item.receiverId
-                                    );
+async(item)=>{
 
-                            return {
+const profile =
 
-                                ...profile,
+await profileAPI
+.getProfileByUserId(
+item.receiverId
+);
 
-                                interestStatus:
-                                    item.status,
+return{
 
-                                chatUserId:
-                                    item.receiverId
+...profile,
 
-                            };
+interestStatus:
+item.status
 
-                        }
+};
 
-                    )
+}
 
-                );
+)
 
-            setProfiles(
-                loadedProfiles
-            );
+);
+console.log(
+"PROFILES:",
+loadedProfiles
+);
 
-        }
+setProfiles(
+loadedProfiles
+);
 
-        catch (err) {
+}catch(err){
 
-            console.log(err);
+console.log(err);
 
-        }
+}
 
-    };
+};
 
-    return (
+return(
 
-        <div className="min-h-screen bg-muted/30">
+<div className="min-h-screen bg-muted/30">
 
-            <Navbar />
+<Navbar/>
 
-            <div className="container mx-auto p-6">
+<div className="container mx-auto p-6">
 
-                <div className="flex items-center gap-4 mb-6">
+<div className="
+flex
+items-center
+gap-4
+mb-6
+">
 
-                    <button
+<button
 
-                        onClick={() => {
+onClick={()=>{
 
-                            window.location.href =
-                                "/home";
+window.location.href =
 
-                        }}
+"/home";
 
-                        className="
-                        px-4
-                        py-2
-                        rounded-lg
-                        border
-                        hover:bg-muted
-                        transition
-                        "
+}}
 
-                    >
+className="
+px-4
+py-2
+rounded-lg
+border
+hover:bg-muted
+transition
+"
 
-                        ← Back
+>
 
-                    </button>
+← Back
 
-                    <h1 className="text-3xl font-bold">
+</button>
 
-                        Sent Interests
+<h1 className="
+text-3xl
+font-bold
+">
 
-                    </h1>
+Sent Interests
 
-                </div>
+</h1>
 
-                <div className="grid gap-4">
+</div>
 
-                    {
+<div className="grid gap-4">
 
-                        profiles.length === 0 && (
+{
 
-                            <div className="
-                            bg-card
-                            border
-                            rounded-xl
-                            p-10
-                            text-center
-                            ">
+profiles.length===0 && (
 
-                                <h2 className="text-xl font-bold">
+<div className="
 
-                                    No Sent Interests Yet
+bg-card
+border
+rounded-xl
+p-10
+text-center
 
-                                </h2>
+">
 
-                                <p className="text-muted-foreground mt-2">
+<h2 className="text-xl font-bold">
 
-                                    Start sending interests ❤️
+No Sent Interests Yet
 
-                                </p>
+</h2>
 
-                            </div>
+<p className="text-muted-foreground mt-2">
 
-                        )
+Start sending interests to discover matches ❤️
 
-                    }
+</p>
 
-                    {
+</div>
 
-                        profiles.map(profile => (
+)
 
-                            <div
+}
 
-                                key={profile.id}
+{
 
-                                className="
-                                bg-card
-                                rounded-xl
-                                p-5
-                                border
-                                flex
-                                justify-between
-                                items-center
-                                "
+profiles.map(profile=>(
 
-                            >
+<div
 
-                                <div>
+key={profile.id}
 
-                                    <h2 className="font-bold">
+className="
+bg-card
+rounded-xl
+p-5
+border
+flex
+justify-between
+items-center
+"
 
-                                        {profile.firstName}
-                                        {" "}
-                                        {profile.lastName}
+>
 
-                                    </h2>
+<div>
 
-                                    <div className="mt-2">
+<h2 className="font-bold">
 
-                                        <span
+{profile.firstName}
+{" "}
+{profile.lastName}
 
-                                            className={`
+</h2>
 
-                                            px-3
-                                            py-1
-                                            rounded-full
-                                            text-sm
-                                            font-semibold
+<div className="mt-2">
 
-                                            ${
+<span
 
-                                                profile.interestStatus === "PENDING"
+className={`
 
-                                                    ?
+px-3
+py-1
+rounded-full
+text-sm
+font-semibold
 
-                                                    'bg-yellow-500/20 text-yellow-400'
+${
 
-                                                    :
+profile.interestStatus==="PENDING"
 
-                                                    profile.interestStatus === "ACCEPTED"
+?
 
-                                                        ?
+'bg-yellow-500/20 text-yellow-400'
 
-                                                        'bg-green-500/20 text-green-400'
+:
 
-                                                        :
+profile.interestStatus==="ACCEPTED"
 
-                                                        'bg-red-500/20 text-red-400'
+?
 
-                                            }
+'bg-green-500/20 text-green-400'
 
-                                            `}
+:
 
-                                        >
+'bg-red-500/20 text-red-400'
 
-                                            {
+}
 
-                                                profile.interestStatus === "PENDING"
+`}
 
-                                                    ?
+>
 
-                                                    "🟡 Pending"
+{
 
-                                                    :
+profile.interestStatus==="PENDING"
 
-                                                    profile.interestStatus === "ACCEPTED"
+?
 
-                                                        ?
+"🟡 Pending"
 
-                                                        "🟢 Accepted"
+:
 
-                                                        :
+profile.interestStatus==="ACCEPTED"
 
-                                                        "🔴 Rejected"
+?
 
-                                            }
+"🟢 Accepted"
 
-                                        </span>
+:
 
-                                    </div>
+"🔴 Rejected"
 
-                                </div>
+}
 
-                                <div className="flex gap-3">
+</span>
 
-                                    <button
+</div>
+</div>
 
-                                        onClick={() => navigate(
+<button
 
-                                            `/profile/${profile.id}`
+onClick={()=>navigate(
 
-                                        )}
+`/profile/${profile.id}`
 
-                                        className="
-                                        px-4
-                                        py-2
-                                        rounded-lg
-                                        bg-primary
-                                        text-white
-                                        "
+)}
 
-                                    >
+className="
+px-4
+py-2
+rounded-lg
+bg-primary
+text-white
+"
 
-                                        View Profile
+>
 
-                                    </button>
+View Profile
 
-                                    {
+</button>
 
-                                        profile.interestStatus === "ACCEPTED"
+</div>
 
-                                        &&
+))
 
-                                        <button
+}
 
-                                            onClick={() => {
+</div>
 
-                                                navigate(
+</div>
 
-                                                    `/chat/1/${profile.chatUserId}`
+</div>
 
-                                                );
-
-                                            }}
-
-                                            className="
-                                            px-4
-                                            py-2
-                                            rounded-lg
-                                            bg-purple-600
-                                            text-white
-                                            "
-
-                                        >
-
-                                            Chat
-
-                                        </button>
-
-                                    }
-
-                                </div>
-
-                            </div>
-
-                        ))
-
-                    }
-
-                </div>
-
-            </div>
-
-        </div>
-
-    );
+);
 
 };
 

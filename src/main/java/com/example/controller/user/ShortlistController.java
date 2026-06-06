@@ -1,6 +1,12 @@
 package com.example.controller.user;
 
 import com.example.dto.response.ShortlistResponseDTO;
+import com.example.dto.request.ShortlistRequestDTO;
+import com.example.security.SecurityUtils;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import jakarta.validation.Valid;
 import com.example.model.Shortlist;
 import com.example.model.User;
 import com.example.model.Profile;
@@ -62,6 +68,94 @@ public class ShortlistController {
         Shortlist saved = shortlistService.addToShortlist(shortlist);
 
         return ResponseEntity.ok(mapToDTO(saved));
+    }
+
+    // ==========================
+    // New APIs that use authenticated user (JWT)
+    // POST /api/shortlists  { profileId OR userId }
+    @PostMapping
+    public ResponseEntity<ShortlistResponseDTO> addToShortlistAuth(@Valid @RequestBody ShortlistRequestDTO dto) {
+
+        String email = SecurityUtils.getCurrentUsername();
+        User user = userRepository.findByEmailWithRoles(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Determine profile to shortlist
+        Profile profile = null;
+        if (dto.getProfileId() != null) {
+            profile = profileRepository.findById(dto.getProfileId())
+                    .orElseThrow(() -> new RuntimeException("Profile not found"));
+        } else if (dto.getUserId() != null) {
+            profile = profileRepository.findByUserId(dto.getUserId())
+                    .orElseThrow(() -> new RuntimeException("Profile not found for user"));
+        } else {
+            throw new IllegalArgumentException("profileId or userId is required");
+        }
+
+        // Rule: cannot shortlist self
+        if (profile.getUser().getId().equals(user.getId())) {
+            throw new IllegalArgumentException("You cannot shortlist yourself");
+        }
+
+        Shortlist s = new Shortlist();
+        s.setUser(user);
+        s.setProfile(profile);
+
+        Shortlist saved = shortlistService.addToShortlist(s);
+
+        return ResponseEntity.ok(mapToDTO(saved));
+    }
+
+    // DELETE /api/shortlists/{shortlistedUserId}
+    @DeleteMapping("/{shortlistedUserId}")
+    public ResponseEntity<Void> removeFromShortlistAuth(@PathVariable Long shortlistedUserId) {
+        String email = SecurityUtils.getCurrentUsername();
+        User user = userRepository.findByEmailWithRoles(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Profile profile = profileRepository.findByUserId(shortlistedUserId)
+                .orElseThrow(() -> new RuntimeException("Profile not found for user"));
+
+        shortlistService.removeFromShortlist(user.getId(), profile.getId());
+        return ResponseEntity.noContent().build();
+    }
+
+    // GET /api/shortlists/me?page=0&size=20
+    @GetMapping("/me")
+    public ResponseEntity<?> getMyShortlist(@RequestParam(defaultValue = "0") int page,
+                                            @RequestParam(defaultValue = "20") int size) {
+        String email = SecurityUtils.getCurrentUsername();
+        User user = userRepository.findByEmailWithRoles(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Pageable pageable = PageRequest.of(Math.max(0, page), Math.max(1, size));
+        Page<Shortlist> p = shortlistService.getByUser(user.getId(), pageable);
+
+        var content = p.getContent().stream().map(this::mapToDTO).collect(Collectors.toList());
+
+        return ResponseEntity.ok(
+                java.util.Map.of(
+                        "content", content,
+                        "page", p.getNumber(),
+                        "size", p.getSize(),
+                        "totalElements", p.getTotalElements(),
+                        "totalPages", p.getTotalPages()
+                )
+        );
+    }
+
+    // GET /api/shortlists/check/{shortlistedUserId}
+    @GetMapping("/check/{shortlistedUserId}")
+    public ResponseEntity<Boolean> checkIsShortlisted(@PathVariable Long shortlistedUserId) {
+        String email = SecurityUtils.getCurrentUsername();
+        User user = userRepository.findByEmailWithRoles(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Profile profile = profileRepository.findByUserId(shortlistedUserId)
+                .orElseThrow(() -> new RuntimeException("Profile not found for user"));
+
+        boolean exists = shortlistService.getByUserAndProfile(user.getId(), profile.getId()).isPresent();
+        return ResponseEntity.ok(exists);
     }
 
     // ✅ Remove from shortlist

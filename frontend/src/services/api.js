@@ -1436,22 +1436,3 @@ update: async(userId,data)=>{
 
   };
 
-export default {
-
-    get: async (url) => {
-
-        return await apiClient(
-
-            url,
-
-            {
-
-                method: "GET"
-
-            }
-
-        );
-
-    }
-
-};

@@ -231,15 +231,6 @@ public class ProfileResponseDTO {
 
     private Integer siblingsCount;
 
-    private Integer preferredAgeMin;
-
-    private Integer preferredAgeMax;
-
-    private String preferredLocation;
-
-    private String preferredEducation;
-
-    private String otherExpectations;
 
     // =====================================================
     // ABOUT

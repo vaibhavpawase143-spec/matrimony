@@ -25,12 +25,73 @@ public interface ProfileRepository
 
     List<Profile> findByIsActiveTrue();
 
+    // =====================================================
+    // PROFILE BY PROFILE ID WITH RELATIONS
+    // =====================================================
+
+    @Query("""
+
+SELECT DISTINCT p FROM Profile p
+
+JOIN FETCH p.user
+
+LEFT JOIN FETCH p.city
+LEFT JOIN FETCH p.state
+LEFT JOIN FETCH p.country
+
+LEFT JOIN FETCH p.religion
+LEFT JOIN FETCH p.caste
+LEFT JOIN FETCH p.subCaste
+
+LEFT JOIN FETCH p.educationLevel
+LEFT JOIN FETCH p.occupation
+
+LEFT JOIN FETCH p.height
+LEFT JOIN FETCH p.weight
+LEFT JOIN FETCH p.gender
+
+LEFT JOIN FETCH p.bodyType
+LEFT JOIN FETCH p.complexion
+
+LEFT JOIN FETCH p.motherTongue
+LEFT JOIN FETCH p.maritalStatus
+
+LEFT JOIN FETCH p.income
+LEFT JOIN FETCH p.diet
+LEFT JOIN FETCH p.smoking
+LEFT JOIN FETCH p.drinking
+
+LEFT JOIN FETCH p.profileType
+LEFT JOIN FETCH p.manglikStatus
+LEFT JOIN FETCH p.familyType
+LEFT JOIN FETCH p.familyStatus
+LEFT JOIN FETCH p.familyValue
+
+LEFT JOIN FETCH p.qualification
+LEFT JOIN FETCH p.fieldOfStudy
+LEFT JOIN FETCH p.employed
+
+LEFT JOIN FETCH p.disabilityStatus
+LEFT JOIN FETCH p.bloodGroup
+
+WHERE p.id=:profileId
+AND p.isActive=true
+
+""")
+
+    Optional<Profile> findByProfileIdWithRelations(
+            Long profileId
+    );
+
 
     // =====================================================
-    // SINGLE PROFILE WITH RELATIONS
+    // PROFILE BY USER ID WITH RELATIONS
     // =====================================================
+
     @Query("""
-SELECT p FROM Profile p
+
+SELECT DISTINCT p FROM Profile p
+
 JOIN FETCH p.user
 
 LEFT JOIN FETCH p.city
@@ -74,7 +135,9 @@ LEFT JOIN FETCH p.bloodGroup
 
 WHERE p.user.id=:userId
 AND p.isActive=true
+
 """)
+
     Optional<Profile> findByUserIdWithRelations(
             Long userId
     );
@@ -85,7 +148,9 @@ AND p.isActive=true
     // =====================================================
 
     @Query("""
-SELECT p FROM Profile p
+
+SELECT DISTINCT p FROM Profile p
+
 JOIN FETCH p.user
 
 LEFT JOIN FETCH p.city
@@ -126,14 +191,20 @@ LEFT JOIN FETCH p.employed
 
 LEFT JOIN FETCH p.disabilityStatus
 LEFT JOIN FETCH p.bloodGroup
+
 """)
+
     List<Profile> findAllWithUser();
+
+
     // =====================================================
     // ACTIVE PROFILES
     // =====================================================
 
     @Query("""
-SELECT p FROM Profile p
+
+SELECT DISTINCT p FROM Profile p
+
 JOIN FETCH p.user
 
 LEFT JOIN FETCH p.city
@@ -176,23 +247,18 @@ LEFT JOIN FETCH p.disabilityStatus
 LEFT JOIN FETCH p.bloodGroup
 
 WHERE p.isActive=true
+
 """)
+
     List<Profile> findActiveProfilesWithUser();
-    // =====================================================
-// FILTER METHODS
-// =====================================================
 
-    List<Profile> findByReligionId(
-            Long religionId
-    );
+    // FILTER METHODS
 
-    List<Profile> findByCasteId(
-            Long casteId
-    );
+    List<Profile> findByReligionId(Long religionId);
 
-    List<Profile> findByCityId(
-            Long cityId
-    );
+    List<Profile> findByCasteId(Long casteId);
+
+    List<Profile> findByCityId(Long cityId);
 
     List<Profile> findByEducationLevelId(
             Long educationLevelId
@@ -217,12 +283,9 @@ WHERE p.isActive=true
             Long cityId
     );
 
-    List<Profile>
-    findByReligionIdAndCityIdAndIsActiveTrue(
-
+    List<Profile> findByReligionIdAndCityIdAndIsActiveTrue(
             Long religionId,
-
             Long cityId
-
     );
+
 }

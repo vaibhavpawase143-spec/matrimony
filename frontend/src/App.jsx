@@ -33,6 +33,7 @@ import Messages from "./pages/Messages";
 import SettingsPage from "./pages/SettingsPage";
 import Account from "./pages/Account";
 import UpgradePremium from "./pages/UpgradePremium";
+import MyShortlists from "./pages/MyShortlists";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsConditions from "./pages/TermsConditions";
 import FAQ from "./pages/FAQ";
@@ -167,6 +168,14 @@ element={
                       element={
                         <AuthenticatedLayout>
                           <SettingsPage />
+                        </AuthenticatedLayout>
+                      }
+                    />
+                    <Route
+                      path="/shortlists"
+                      element={
+                        <AuthenticatedLayout>
+                          <MyShortlists />
                         </AuthenticatedLayout>
                       }
                     />

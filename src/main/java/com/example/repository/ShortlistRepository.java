@@ -1,6 +1,8 @@
 package com.example.repository;
 
 import com.example.model.Shortlist;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -27,6 +29,15 @@ public interface ShortlistRepository extends JpaRepository<Shortlist, Long> {
         AND s.isActive = true
     """)
     List<Shortlist> findByUser_IdAndIsActiveTrue(@Param("userId") Long userId);
+
+    @Query(value = """
+        SELECT s FROM Shortlist s
+        JOIN FETCH s.user
+        JOIN FETCH s.profile
+        WHERE s.user.id = :userId
+        AND s.isActive = true
+    """, countQuery = "SELECT count(s) FROM Shortlist s WHERE s.user.id = :userId AND s.isActive = true")
+    Page<Shortlist> findByUser_IdAndIsActiveTrue(@Param("userId") Long userId, Pageable pageable);
 
     // ✅ Get who shortlisted a profile (ACTIVE only)
     @Query("""

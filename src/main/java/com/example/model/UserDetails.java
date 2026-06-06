@@ -1,7 +1,6 @@
 package com.example.model;
 
 import jakarta.persistence.*;
-import lombok.Builder;
 
 import java.time.LocalDateTime;
 import java.util.Set;
@@ -56,8 +55,8 @@ public class UserDetails {
     // ===== PREFERENCE =====
     private Integer minAge;
     private Integer maxAge;
-    private Double minHeight;
-    private Double maxHeight;
+    private Long minHeight;
+    private Long maxHeight;
     private String preferredReligion;
     private String preferredCaste;
     private String preferredCity;
@@ -151,11 +150,11 @@ public class UserDetails {
     public Integer getMaxAge() { return maxAge; }
     public void setMaxAge(Integer maxAge) { this.maxAge = maxAge; }
 
-    public Double getMinHeight() { return minHeight; }
-    public void setMinHeight(Double minHeight) { this.minHeight = minHeight; }
+    public Long getMinHeight() { return minHeight; }
+    public void setMinHeight(Long minHeight) { this.minHeight = minHeight; }
 
-    public Double getMaxHeight() { return maxHeight; }
-    public void setMaxHeight(Double maxHeight) { this.maxHeight = maxHeight; }
+    public Long getMaxHeight() { return maxHeight; }
+    public void setMaxHeight(Long maxHeight) { this.maxHeight = maxHeight; }
 
     public String getPreferredReligion() { return preferredReligion; }
     public void setPreferredReligion(String preferredReligion) { this.preferredReligion = preferredReligion; }

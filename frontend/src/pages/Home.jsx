@@ -1,31 +1,48 @@
 import { Heart, User, Search, Settings, LogOut, ChevronDown, Bell, MessageSquare, Star, Menu } from "lucide-react";
+
 import { Link, useNavigate } from "react-router-dom";
+
 import { motion } from "framer-motion";
+
 import { useState, useEffect } from "react";
+
 import { useAuth } from "@/hooks/useAuth";
+
 import { useLoading } from "@/hooks/useLoading";
+
 import { useLikeBookmark } from "@/hooks/useLikeBookmark";
+
 import ThemeToggle from "@/components/ThemeToggle";
+
 import ProfileCompletionBar from "@/components/ProfileCompletionBar";
+
 import DashboardStats from "@/components/DashboardStats";
+
 import LikeBookmarkButtons from "@/components/LikeBookmarkButtons";
+
+import ShortlistButton from "@/components/ShortlistButton";
+
 import toast from "react-hot-toast";
+
 import { useLanguage } from "@/context/LanguageContext.jsx";
+
 import { useProfileData } from "@/hooks/useProfileData";
+
 import {
+
 profileAPI,
+
 interestAPI
-}
-from "@/services/api";
+
+} from "@/services/api";
+
 import {
 
 connectNotifications,
 
 disconnectNotifications
 
-}
-
-from "@/services/websocket";
+} from "@/services/websocket";
 
 
 const HomeFixed = () => {
@@ -87,6 +104,69 @@ profileViews:0,
 messages:0
 
 });
+
+const loadDashboard = async()=>{
+
+try{
+
+const currentUser =
+JSON.parse(
+localStorage.getItem("user")
+);
+
+const senderId =
+currentUser.profile.userId;
+
+const sentInterests =
+await interestAPI.getSentInterests(
+senderId
+);
+
+const receivedInterests =
+await interestAPI
+.getReceivedPendingInterests(
+senderId
+);
+
+setDashboardStats(prev=>({
+
+...prev,
+
+interestsSent:
+sentInterests.length,
+
+interestsReceived:
+receivedInterests.length
+
+}));
+
+}catch(err){
+
+console.log(err);
+
+}
+
+};
+
+useEffect(()=>{
+
+loadDashboard();
+
+window.addEventListener(
+"interestUpdated",
+loadDashboard
+);
+
+return ()=>{
+
+window.removeEventListener(
+"interestUpdated",
+loadDashboard
+);
+
+};
+
+},[]);
 const [
 
 notificationCount,
@@ -96,124 +176,8 @@ setNotificationCount
 ] = useState(0);
 
 
-useEffect(()=>{
 
-loadSentInterests();
 
-const currentUser =
-
-JSON.parse(
-
-localStorage.getItem(
-"user"
-)
-
-);
-
-connectNotifications(
-
-currentUser.id,
-
-(notification)=>{
-
-console.log(
-
-"NOTIFICATION ARRIVED:",
-
-notification
-
-);
-
-toast.success(
-
-notification.message ||
-
-"New Notification 🔔"
-
-);
-
-setNotificationCount(
-
-prev => prev + 1
-
-);
-
-}
-);
-
-return ()=>{
-
-disconnectNotifications();
-
-};
-
-},[]);
-
-const loadSentInterests = async()=>{
-
-try{
-
-const currentUser =
-JSON.parse(
-localStorage.getItem("user")
-);
-console.log(
-"CURRENT USER:",
-currentUser
-);
-const sent =
-await interestAPI.getSentInterests(
-currentUser.id
-);
-const received =
-
-await interestAPI
-.getReceivedInterests(
-currentUser.id
-);
-setSentInterests(
-
-sent.map(
-
-item=>item.receiverId
-
-)
-
-);
-
-setDashboardStats({
-
-totalMatches:0,
-
-interestsSent:
-
-sent.length,
-
-interestsReceived:
-
-received.filter(
-
-item=>
-
-item.status==="PENDING"
-
-).length,
-
-bookmarkedProfiles:0,
-
-profileViews:0,
-
-messages:0
-
-});
-
-}catch(err){
-
-console.log(err);
-
-}
-
-};
 
 const [loadingProfiles,setLoadingProfiles] =
 useState(true);
@@ -273,23 +237,48 @@ const calculateAge = (dob) => {
   "Profiles API Response:",
  JSON.stringify(data,null,2)
   );
- const currentUserEmail =
- profileData?.email;
-
+ const currentUser =
+ JSON.parse(
+ localStorage.getItem("user")
+ );
 
  const filteredProfiles =
  Array.isArray(data)
 
- ? data.filter(
- (profile)=>
+ ?
 
- profile.email !==
- currentUserEmail
+ data.filter(profile =>
+
+ String(profile.email)
+ .toLowerCase()
+
+ !==
+
+ String(currentUser.email)
+ .toLowerCase()
 
  )
 
  : [];
 
+ console.log(
+ "CURRENT USER:",
+ currentUser.email
+ );
+
+ console.log(
+ "FILTERED PROFILES:",
+ filteredProfiles
+ );
+ console.log(
+ "CURRENT USER EMAIL:",
+ currentUser.email
+ );
+
+ console.log(
+ "FILTERED:",
+ filteredProfiles
+ );
  setProfiles(
  filteredProfiles
  );
@@ -318,79 +307,118 @@ const profileCompletion = {
     navigate('/login');
   };
 const handleSendInterest =
-async(receiverId)=>{
+async(profile)=>{
 
 try{
 
 const currentUser =
 JSON.parse(
-localStorage.getItem("user")
+localStorage.getItem(
+"user"
+)
 );
 
-await interestAPI.sendInterest(
+const senderId =
+Number(
+currentUser.profile.userId
+);
 
-currentUser.id,
+const receiverId =
+Number(
+profile.userId
+);
 
+console.log(
+"SENDER:",
+senderId
+);
+
+console.log(
+"RECEIVER:",
 receiverId
-
 );
-
-setSentInterests(
-
-prev=>[
-...prev,
-receiverId
-]
-
-);
-toast.success(
-"Interest sent successfully ❤️"
-);
-}
-catch(error){
 
 if(
-
-error.message
-.toLowerCase()
-.includes("already")
-
+senderId === receiverId
 ){
 
-setSentInterests(
-
-prev=>[
-...prev,
-receiverId
-]
-
-);
-
 toast.error(
-"Interest already sent ❤️"
-
+"You cannot send interest to yourself"
 );
 
 return;
 
 }
+
+await interestAPI.sendInterest(
+
+senderId,
+
+receiverId
+
+);
+
+setSentInterests(
+prev => [
+
+...prev,
+
+receiverId
+
+]
+);
+
+setDashboardStats(
+prev => ({
+
+...prev,
+
+interestsSent:
+
+prev.interestsSent + 1
+
+})
+);
+
+toast.success(
+"Interest Sent Successfully ❤️"
+);
+}catch(err){
+
+console.log(err);
+
 toast.error(
-"Interest already sent ❤️"
+
+err?.message ||
+
+"Failed"
 
 );
 
 }
 
 };
-  useEffect(() => {
-    startLoading('Loading dashboard...');
-    const timer = setTimeout(() => {
-      stopLoading();
-    }, 1000);
-    return () => clearTimeout(timer);
-  }, []);
 
-  return (
+useEffect(() => {
+
+startLoading(
+"Loading dashboard..."
+);
+
+const timer =
+setTimeout(()=>{
+
+stopLoading();
+
+},1000);
+
+return ()=>clearTimeout(
+timer
+);
+
+},[]);
+
+return (
     <div className="min-h-screen bg-muted/30 flex">
       {/* Sidebar */}
       <aside className={`hidden md:flex flex-col bg-card border-r border-border min-h-screen sticky top-0 transition-all duration-300 ${isSidebarOpen ? 'w-64' : 'w-20'}`}>
@@ -740,29 +768,36 @@ p-8
 
                   <button
 
-       className="
-       w-full
-       bg-[#E94057]
-       hover:bg-[#D6334C]
-       text-white
-       py-3
-       rounded-xl
-       font-semibold
-       shadow-md
-       transition
-       "
+                  disabled={
+                  sentInterests.includes(
+                  profile.userId
+                  )
+                  }
 
-          onClick={(e)=>{
+                  className="
+                  w-full
+                  bg-[#E94057]
+                  disabled:opacity-70
+                  text-white
+                  py-3
+                  rounded-xl
+                  font-semibold
+                  shadow-md
+                  transition
+                  "
+        onClick={()=>{
 
-          e.stopPropagation();
-
-        handleSendInterest(
-
-        profile.userId
-
+        console.log(
+        "PROFILE CLICKED:",
+        profile
         );
 
-          }}
+        handleSendInterest(
+        profile
+        );
+
+        }}
+
 
                   >
 
@@ -816,22 +851,18 @@ p-8
 
                   </button>
 
-                  </div>
-<div className="
-mt-4
-flex
-justify-center
-gap-4
-">
-                 <LikeBookmarkButtons
-                 profileId={profile.id || i}
-                 isLiked={isLiked(profile.id || i)}
-                 isBookmarked={isBookmarked(profile.id || i)}
-                 onLike={toggleLike}
-                 onBookmark={toggleBookmark}
-                 size="sm"
-                 />
                    </div>
+<div className="mt-4 flex justify-center gap-2">
+                  <LikeBookmarkButtons
+                    profileId={profile.id || i}
+                    isLiked={isLiked(profile.id || i)}
+                    isBookmarked={isBookmarked(profile.id || i)}
+                    onLike={toggleLike}
+                    onBookmark={toggleBookmark}
+                    size="sm"
+                  />
+                  <ShortlistButton profileId={profile.id || i} size="sm" showLabel={false} />
+                </div>
 
                    </div>
                     </motion.div>

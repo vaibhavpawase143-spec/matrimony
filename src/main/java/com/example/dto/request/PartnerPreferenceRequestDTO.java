@@ -10,6 +10,8 @@ public class PartnerPreferenceRequestDTO {
     @NotNull(message = "User ID is required")
     private Long userId;
 
+    private String otherExpectations;
+
     @Positive(message = "Min age must be positive")
     private Integer minAge;
 
@@ -17,14 +19,22 @@ public class PartnerPreferenceRequestDTO {
     private Integer maxAge;
 
     @Positive(message = "Min height must be positive")
-    private Double minHeight;
+    private Long minHeight;
 
     @Positive(message = "Max height must be positive")
-    private Double maxHeight;
+    private Long maxHeight;
+
+    // NEW
+    private Long minWeight;
+
+    private Long maxWeight;
 
     private Long religionId;
+
     private Long casteId;
+
     private Long cityId;
+
     private Long educationLevelId;
 
     private Long occupationId;
@@ -36,6 +46,7 @@ public class PartnerPreferenceRequestDTO {
     private Long drinkingId;
 
     private Long dietId;
+
     @NotNull(message = "isActive is required")
     private Boolean isActive;
 }

@@ -387,7 +387,6 @@ public class ProfileServiceImpl implements ProfileService {
                             .orElse(null)
             );
         }
-
         p.setFatherName(dto.getFatherName());
 
         p.setFatherOccupation(dto.getFatherOccupation());
@@ -397,6 +396,7 @@ public class ProfileServiceImpl implements ProfileService {
         p.setMotherOccupation(dto.getMotherOccupation());
 
         p.setSiblingsCount(dto.getSiblingsCount());
+
 
 
         // =====================================================
@@ -856,7 +856,6 @@ public class ProfileServiceImpl implements ProfileService {
         r.setSiblingsCount(
                 dto.getSiblingsCount()
         );
-
         // =====================================================
         // PARTNER PREFERENCE
         // =====================================================
@@ -988,7 +987,17 @@ public class ProfileServiceImpl implements ProfileService {
         dto.setAbout(
                 p.getAbout()
         );
+        if(p.getBloodGroup()!=null){
 
+            dto.setBloodGroupId(
+                    p.getBloodGroup().getId()
+            );
+
+            dto.setBloodGroupName(
+                    p.getBloodGroup().getType()
+            );
+
+        }
 
 
         dto.setAboutMe(
@@ -1491,25 +1500,7 @@ public class ProfileServiceImpl implements ProfileService {
 // PARTNER PREFERENCE
 // =====================================================
 
-        dto.setPreferredAgeMin(
-                p.getPreferredAgeMin()
-        );
 
-        dto.setPreferredAgeMax(
-                p.getPreferredAgeMax()
-        );
-
-        dto.setPreferredLocation(
-                p.getPreferredLocation()
-        );
-
-        dto.setPreferredEducation(
-                p.getPreferredEducation()
-        );
-
-        dto.setOtherExpectations(
-                p.getOtherExpectations()
-        );
 
 // =====================================================
 // ABOUT ME
@@ -1717,19 +1708,6 @@ public class ProfileServiceImpl implements ProfileService {
 
         // ================= PARTNER PREF =================
 
-        total++;
-        if (p.getPreferredAgeMin() != null) filled++;
-
-        total++;
-        if (p.getPreferredAgeMax() != null) filled++;
-
-        total++;
-        if (p.getPreferredLocation() != null &&
-                !p.getPreferredLocation().isBlank()) filled++;
-
-        total++;
-        if (p.getPreferredEducation() != null &&
-                !p.getPreferredEducation().isBlank()) filled++;
 
         int percentage =
                 (filled * 100) / total;
@@ -1868,4 +1846,5 @@ public class ProfileServiceImpl implements ProfileService {
                         cityId
                 );
     }
+
 }

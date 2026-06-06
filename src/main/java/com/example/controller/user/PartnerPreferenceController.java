@@ -115,7 +115,9 @@ public class PartnerPreferenceController {
                 preference,
                 dto
         );
-
+        preference.setOtherExpectations(
+                dto.getOtherExpectations()
+        );
         PartnerPreference saved=
                 preferenceService.savePreference(
                         preference
@@ -124,6 +126,7 @@ public class PartnerPreferenceController {
         return ResponseEntity.ok(
                 mapToResponse(saved)
         );
+
 
     }
 
@@ -151,6 +154,10 @@ public class PartnerPreferenceController {
                 dto
         );
 
+        existing.setOtherExpectations(
+                dto.getOtherExpectations()
+        );
+
         PartnerPreference updated=
                 preferenceService.savePreference(
                         existing
@@ -161,7 +168,6 @@ public class PartnerPreferenceController {
         );
 
     }
-
 
     private void applyFields(
 
@@ -178,7 +184,16 @@ public class PartnerPreferenceController {
         preference.setMaxAge(
                 dto.getMaxAge()
         );
+        preference.setMaxHeight(
+                dto.getMaxHeight()
+        );
+        preference.setMinWeight(
+                dto.getMinWeight()
+        );
 
+        preference.setMaxWeight(
+                dto.getMaxWeight()
+        );
         preference.setMinHeight(
                 dto.getMinHeight()
         );
@@ -372,6 +387,15 @@ public class PartnerPreferenceController {
                 p.getMaxHeight()
         );
 
+// ADD THESE
+
+        dto.setMinWeight(
+                p.getMinWeight()
+        );
+
+        dto.setMaxWeight(
+                p.getMaxWeight()
+        );
         dto.setIsActive(
                 p.getIsActive()
         );
@@ -420,7 +444,9 @@ public class PartnerPreferenceController {
             dto.setDietId(
                     p.getDiet().getId()
             );
-
+        dto.setOtherExpectations(
+                p.getOtherExpectations()
+        );
         dto.setCreatedAt(
                 p.getCreatedAt()
         );

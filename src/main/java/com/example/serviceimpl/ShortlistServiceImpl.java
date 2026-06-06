@@ -1,11 +1,12 @@
 package com.example.serviceimpl;
 
-import com.example.model.Shortlist;
 import com.example.model.NotificationType;
+import com.example.model.Shortlist;
 import com.example.repository.ShortlistRepository;
-import com.example.service.ShortlistService;
 import com.example.service.NotificationService;
-
+import com.example.service.ShortlistService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,7 +32,18 @@ public class ShortlistServiceImpl implements ShortlistService {
 
         Long userId = shortlist.getUser().getId();
         Long profileId = shortlist.getProfile().getId();
+        if(
+                shortlist.getProfile()
+                        .getUser()
+                        .getId()
+                        .equals(userId)
+        ){
 
+            throw new RuntimeException(
+                    "You cannot shortlist yourself"
+            );
+
+        }
         Optional<Shortlist> existing =
                 repository.findByUser_IdAndProfile_Id(userId, profileId);
 
@@ -58,7 +70,7 @@ public class ShortlistServiceImpl implements ShortlistService {
         notificationService.create(
                 userId,
                 profileId,
-                NotificationType.REQUEST // later you can change to SHORTLIST
+                NotificationType.SHORTLIST
         );
 
         return saved;
@@ -83,6 +95,12 @@ public class ShortlistServiceImpl implements ShortlistService {
     @Override
     public List<Shortlist> getByUser(Long userId) {
         return repository.findByUser_IdAndIsActiveTrue(userId);
+    }
+
+    // 🔍 Get paginated shortlisted profiles by user
+    @Override
+    public Page<Shortlist> getByUser(Long userId, Pageable pageable) {
+        return repository.findByUser_IdAndIsActiveTrue(userId, pageable);
     }
 
     // 🔥 Who shortlisted a profile

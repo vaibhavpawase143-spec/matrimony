@@ -140,12 +140,28 @@ public class NotificationServiceImpl implements NotificationService {
     private String generateMessage(Long senderId, NotificationType type) {
 
         return switch (type) {
-            case REQUEST -> "User " + senderId + " sent you a request";
-            case VIEW -> "User " + senderId + " viewed your profile";
-            case MESSAGE -> "User " + senderId + " sent you a message";
-            case ACCEPT -> "User " + senderId + " accepted your request";
-            case REJECT -> "User " + senderId + " rejected your request";
-            case MATCH -> "🎉 You have a new match with User " + senderId;
+
+            case REQUEST ->
+                    "User " + senderId + " sent you a request";
+
+            case VIEW ->
+                    "User " + senderId + " viewed your profile";
+
+            case MESSAGE ->
+                    "User " + senderId + " sent you a message";
+
+            case SHORTLIST ->
+                    "User " + senderId + " shortlisted your profile";
+
+            case ACCEPT ->
+                    "User " + senderId + " accepted your request";
+
+            case REJECT ->
+                    "User " + senderId + " rejected your request";
+
+            case MATCH ->
+                    "🎉 You have a new match with User " + senderId;
+
         };
     }
 
