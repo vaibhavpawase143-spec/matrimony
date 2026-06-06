@@ -107,19 +107,41 @@ public class ShortlistController {
     }
 
     // DELETE /api/shortlists/{shortlistedUserId}
-    @DeleteMapping("/{shortlistedUserId}")
-    public ResponseEntity<Void> removeFromShortlistAuth(@PathVariable Long shortlistedUserId) {
-        String email = SecurityUtils.getCurrentUsername();
-        User user = userRepository.findByEmailWithRoles(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+    // DELETE /api/shortlists/{profileId}
 
-        Profile profile = profileRepository.findByUserId(shortlistedUserId)
-                .orElseThrow(() -> new RuntimeException("Profile not found for user"));
+    @DeleteMapping("/{profileId}")
 
-        shortlistService.removeFromShortlist(user.getId(), profile.getId());
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<Void>
+    removeFromShortlistAuth(
+
+            @PathVariable Long profileId
+
+    ){
+
+        String email =
+                SecurityUtils.getCurrentUsername();
+
+        User user =
+                userRepository
+                        .findByEmailWithRoles(email)
+                        .orElseThrow(
+                                ()->new RuntimeException(
+                                        "User not found"
+                                ));
+
+        shortlistService.removeFromShortlist(
+
+                user.getId(),
+
+                profileId
+
+        );
+
+        return ResponseEntity
+                .noContent()
+                .build();
+
     }
-
     // GET /api/shortlists/me?page=0&size=20
     @GetMapping("/me")
     public ResponseEntity<?> getMyShortlist(@RequestParam(defaultValue = "0") int page,

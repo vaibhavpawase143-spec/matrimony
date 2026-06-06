@@ -38,6 +38,14 @@ interestAPI
 
 import {
 
+shortlistAPI
+
+}
+
+from "@/services/shortlistAPI";
+
+import {
+
 connectNotifications,
 
 disconnectNotifications
@@ -97,7 +105,7 @@ interestsSent:0,
 
 interestsReceived:0,
 
-bookmarkedProfiles:0,
+shortlists:0,
 
 profileViews:0,
 
@@ -128,6 +136,13 @@ await interestAPI
 senderId
 );
 
+const shortlistData =
+await shortlistAPI
+.getMyShortlists(
+0,
+100
+);
+
 setDashboardStats(prev=>({
 
 ...prev,
@@ -136,7 +151,13 @@ interestsSent:
 sentInterests.length,
 
 interestsReceived:
-receivedInterests.length
+receivedInterests.length,
+
+shortlists:
+(
+shortlistData.content ||
+[]
+).length
 
 }));
 
@@ -152,22 +173,49 @@ useEffect(()=>{
 
 loadDashboard();
 
+const refreshDashboard=()=>{
+
+loadDashboard();
+
+};
+
 window.addEventListener(
+
 "interestUpdated",
-loadDashboard
+
+refreshDashboard
+
+);
+
+window.addEventListener(
+
+"shortlist:updated",
+
+refreshDashboard
+
 );
 
 return ()=>{
 
 window.removeEventListener(
+
 "interestUpdated",
-loadDashboard
+
+refreshDashboard
+
+);
+
+window.removeEventListener(
+
+"shortlist:updated",
+
+refreshDashboard
+
 );
 
 };
 
-},[]);
-const [
+},[]);const [
 
 notificationCount,
 
@@ -852,18 +900,79 @@ p-8
                   </button>
 
                    </div>
-<div className="mt-4 flex justify-center gap-2">
-                  <LikeBookmarkButtons
-                    profileId={profile.id || i}
-                    isLiked={isLiked(profile.id || i)}
-                    isBookmarked={isBookmarked(profile.id || i)}
-                    onLike={toggleLike}
-                    onBookmark={toggleBookmark}
-                    size="sm"
-                  />
-                  <ShortlistButton profileId={profile.id || i} size="sm" showLabel={false} />
-                </div>
+<div className="mt-5 flex justify-center gap-3">
 
+<button
+
+title="Like"
+
+onClick={(e)=>{
+
+e.stopPropagation();
+
+toggleLike(
+profile.id || i
+);
+
+}}
+
+className="
+group
+w-12
+h-12
+rounded-xl
+bg-gradient-to-br
+from-pink-500
+to-rose-600
+shadow-md
+hover:scale-110
+transition-all
+duration-300
+flex
+items-center
+justify-center
+text-white
+"
+
+>
+
+<span className="text-xl">
+
+{
+
+isLiked(
+profile.id || i
+)
+
+?
+
+"❤️"
+
+:
+
+"🤍"
+
+}
+
+</span>
+
+</button>
+
+<div title="Shortlist">
+
+<ShortlistButton
+
+profileId={profile.id || i}
+
+size="md"
+
+showLabel={false}
+
+/>
+
+</div>
+
+</div>
                    </div>
                     </motion.div>
                   ))}

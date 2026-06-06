@@ -60,11 +60,15 @@ list;
 
 window[CACHE_KEY].profileIds =
 new Set(
+
 list.map(
+
 s=>Number(
 s.profileId
 )
+
 )
+
 );
 
 window[CACHE_KEY].loaded =
@@ -73,9 +77,11 @@ true;
 setItems(list);
 
 window.dispatchEvent(
+
 new CustomEvent(
 "shortlist:updated"
 )
+
 );
 
 }catch(err){
@@ -104,23 +110,36 @@ useEffect(()=>{
 const handler=()=>{
 
 setItems(
-window[CACHE_KEY].items || []
+[...window[CACHE_KEY].items]
 );
 
 };
 
 window.addEventListener(
+
 "shortlist:updated",
+
 handler
+
 );
 
+if(
+!window[CACHE_KEY]
+.loaded
+){
+
 load();
+
+}
 
 return ()=>{
 
 window.removeEventListener(
+
 "shortlist:updated",
+
 handler
+
 );
 
 };
@@ -129,45 +148,98 @@ handler
 
 const isShortlisted=(profileId)=>{
 
-return (
-window[CACHE_KEY]
+return window[CACHE_KEY]
+
 .profileIds
+
 .has(
+
 Number(profileId)
-)
+
 );
 
 };
 
-const add=async(profileId)=>{
+const add = async(profileId)=>{
+
+if(
+
+window[CACHE_KEY]
+
+.profileIds
+
+.has(
+
+Number(profileId)
+
+)
+
+){
+
+return;
+
+}
 
 setLoading(true);
 
 try{
 
-const res=
-await shortlistAPI
-.add(profileId);
+const res =
+
+await shortlistAPI.add(
+
+profileId
+
+);
 
 window[CACHE_KEY]
+
+.profileIds
+
+.add(
+
+Number(profileId)
+
+);
+
+window[CACHE_KEY]
+
 .items = [
 
 res,
 
-...(window[CACHE_KEY].items)
+...window[CACHE_KEY]
+
+.items.filter(
+
+s=>
+
+Number(
+s.profileId
+)
+
+!==
+
+Number(
+profileId
+)
+
+)
 
 ];
 
-window[CACHE_KEY]
-.profileIds
-.add(
-Number(profileId)
+setItems(
+[...window[CACHE_KEY].items]
 );
 
 window.dispatchEvent(
+
 new CustomEvent(
+
 "shortlist:updated"
+
 )
+
 );
 
 return res;
@@ -189,16 +261,24 @@ try{
 await shortlistAPI
 .remove(profileId);
 
-window[CACHE_KEY].items =
 window[CACHE_KEY]
+
+.items =
+
+window[CACHE_KEY]
+
 .items
+
 .filter(
 
 s=>
 
 Number(
 s.profileId
-)!==
+)
+
+!==
+
 Number(
 profileId
 )
@@ -206,15 +286,29 @@ profileId
 );
 
 window[CACHE_KEY]
+
 .profileIds
+
 .delete(
-Number(profileId)
+
+Number(
+profileId
+)
+
+);
+
+setItems(
+[...window[CACHE_KEY].items]
 );
 
 window.dispatchEvent(
+
 new CustomEvent(
+
 "shortlist:updated"
+
 )
+
 );
 
 }finally{
@@ -246,8 +340,11 @@ remove,
 refresh:load,
 
 count:
+
 (window[CACHE_KEY]
+
 .items || [])
+
 .length
 
 };

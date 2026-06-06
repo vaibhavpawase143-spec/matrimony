@@ -14,7 +14,7 @@ import MobileBottomNav from "@/components/MobileBottomNav";
 import AuthenticatedLayout from "@/components/AuthenticatedLayout";
 import SentInterests from "./pages/SentInterests";
 import ReceivedInterests from "./pages/ReceivedInterests";
-
+import MyShortlists from "@/pages/MyShortlists";
 // NORMAL PAGES
 import Index from "./pages/Index";
 import Home from "./pages/Home";
@@ -33,7 +33,7 @@ import Messages from "./pages/Messages";
 import SettingsPage from "./pages/SettingsPage";
 import Account from "./pages/Account";
 import UpgradePremium from "./pages/UpgradePremium";
-import MyShortlists from "./pages/MyShortlists";
+
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsConditions from "./pages/TermsConditions";
 import FAQ from "./pages/FAQ";
@@ -71,7 +71,7 @@ const App = () => (
                     <Route path="/register" element={<Register />} />
                     <Route path="/verify-email" element={<VerifyEmail />} />
                     <Route path="/request-verification" element={<RequestVerification />} />
-                    <Route path="/profile/create" element={<CreateProfile />} />
+                    <Route path="/profie/create" element={<CreateProfile />} />
                     <Route path="/about" element={<About />} />
                     <Route path="/contact" element={<Contact />} />
                     <Route path="/privacy-policy" element={<PrivacyPolicy />} />
