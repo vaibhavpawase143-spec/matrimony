@@ -1,100 +1,780 @@
 import { useParams, Link } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { Heart, MapPin, GraduationCap, Briefcase, Calendar, ArrowLeft, Star, MessageSquare } from "lucide-react";
+import {
+Heart,
+MapPin,
+GraduationCap,
+Briefcase,
+Calendar,
+ArrowLeft,
+Star,
+MessageSquare
+} from "lucide-react";
+
 import Navbar from "@/components/Navbar";
 import { useLanguage } from "@/context/LanguageContext";
+import { profileAPI,interestAPI } from "@/services/api";
+import toast from "react-hot-toast";
 
-const InfoRow = ({ label, value }) => (
-  <div className="flex justify-between py-2.5 border-b border-border last:border-0">
-    <span className="text-xs text-muted-foreground">{label}</span>
-    <span className="text-xs font-medium text-foreground">{value}</span>
-  </div>
+const InfoRow = ({label,value}) => (
+
+<div className="
+flex
+justify-between
+py-2.5
+border-b
+border-border
+last:border-0
+">
+
+<span className="
+text-xs
+text-muted-foreground
+">
+
+{label}
+
+</span>
+
+<span className="
+text-xs
+font-medium
+text-foreground
+text-right
+">
+
+{value || "-"}
+
+</span>
+
+</div>
+
 );
 
-const ProfileDetails = () => {
-  const { t } = useLanguage();
-  const { id } = useParams();
-  const [profile, setProfile] = useState(null);
+const ProfileDetails=()=>{
 
-  useEffect(() => {
-    // TODO: fetch profile by ID from backend
-  }, [id]);
+const {t}=useLanguage();
 
-  if (!profile) {
-    return (
-      <div className="min-h-screen bg-muted/30 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-muted-foreground">Loading profile...</p>
-        </div>
-      </div>
-    );
-  }
+const calculateAge=(dob)=>{
 
-  return (
-    <div className="min-h-screen bg-muted/30">
-      <Navbar />
+if(!dob) return "-";
 
-      <div className="container mx-auto px-4 py-8">
-        <Link to="/search" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6">
-          <ArrowLeft className="h-4 w-4" /> {t.profileDetails.backToSearch}
-        </Link>
+const birth=new Date(dob);
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left - Photo & quick actions */}
-          <div className="lg:col-span-1 space-y-4">
-            <div className="bg-card rounded-xl overflow-hidden border border-border">
-              <div className="aspect-[3/4] overflow-hidden">
-                <img src={profile.image} alt={profile.name} className="w-full h-full object-cover" />
-              </div>
-              <div className="p-4 space-y-2">
-                <button className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-2.5 rounded-lg text-sm transition-colors">
-                  <Heart className="h-4 w-4" /> {t.profileDetails.sendInterest}
-                </button>
-                <button className="w-full flex items-center justify-center gap-2 bg-accent/10 text-accent font-semibold py-2.5 rounded-lg text-sm hover:bg-accent/20 transition-colors">
-                  <MessageSquare className="h-4 w-4" /> {t.profileDetails.message}
-                </button>
-                <button className="w-full flex items-center justify-center gap-2 bg-gold/10 text-gold font-semibold py-2.5 rounded-lg text-sm hover:bg-gold/20 transition-colors">
-                  <Star className="h-4 w-4" /> {t.profileDetails.shortlist}
-                </button>
-              </div>
-            </div>
-          </div>
+const today=new Date();
 
-          {/* Right - Details */}
-          <div className="lg:col-span-2 space-y-5">
-            <div className="bg-card rounded-xl border border-border p-6">
-              <h1 className="text-2xl font-display font-bold text-foreground">{profile.name}</h1>
-              <div className="flex flex-wrap gap-4 mt-2 text-xs text-muted-foreground">
-                <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" /> {profile.age} yrs</span>
-                <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" /> {profile.city}</span>
-                <span className="flex items-center gap-1"><GraduationCap className="h-3.5 w-3.5" /> {profile.education}</span>
-                <span className="flex items-center gap-1"><Briefcase className="h-3.5 w-3.5" /> {profile.profession}</span>
-              </div>
-              <p className="mt-4 text-sm text-muted-foreground leading-relaxed">{profile.about}</p>
-            </div>
+let age=
+today.getFullYear()-
+birth.getFullYear();
 
-            <div className="bg-card rounded-xl border border-border p-6">
-              <h2 className="text-sm font-semibold text-foreground mb-3">{t.profileDetails.personalDetails}</h2>
-              <InfoRow label={t.profileDetails.height} value={profile.height} />
-              <InfoRow label={t.profileDetails.religion} value={profile.religion} />
-              <InfoRow label={t.profileDetails.caste} value={profile.caste} />
-              <InfoRow label={t.profileDetails.motherTongue} value={profile.motherTongue} />
-              <InfoRow label={t.profileDetails.education} value={profile.education} />
-              <InfoRow label={t.profileDetails.profession} value={profile.profession} />
-              <InfoRow label={t.profileDetails.location} value={profile.city} />
-            </div>
+const month=
+today.getMonth()-
+birth.getMonth();
 
-            <div className="bg-card rounded-xl border border-border p-6">
-              <h2 className="text-sm font-semibold text-foreground mb-3">{t.profileDetails.familyDetails}</h2>
-              <InfoRow label={t.profileDetails.familyType} value={profile.familyType} />
-              <InfoRow label={t.profileDetails.fatherOccupation} value={profile.fatherOccupation} />
-              <InfoRow label={t.profileDetails.siblings} value={profile.siblings} />
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+if(
+month<0 ||
+(
+month===0 &&
+today.getDate()<birth.getDate()
+)
+){
+
+age--;
+
+}
+
+return age;
+
+};
+
+const {id}=useParams();
+
+const [profile,setProfile]=
+useState(null);
+const [interestSent,
+setInterestSent]=
+useState(false);
+useEffect(()=>{
+
+const loadProfile =
+async()=>{
+
+try{
+
+const data =
+await profileAPI
+.getProfileById(id);
+
+setProfile(data);
+
+const currentUser =
+JSON.parse(
+localStorage.getItem(
+"user"
+)
+);
+
+const sentInterests =
+await interestAPI
+.getSentInterests(
+
+currentUser.profile.userId
+
+);
+
+const alreadySent =
+sentInterests.some(
+
+item =>
+
+Number(
+item.receiverId
+)
+
+===
+
+Number(
+data.userId
+)
+
+);
+
+setInterestSent(
+alreadySent
+);
+
+}catch(err){
+
+console.log(err);
+
+}
+
+};
+
+if(id){
+
+loadProfile();
+
+}
+
+},[id]);
+const handleSendInterest =
+async()=>{
+
+try{
+
+const currentUser =
+JSON.parse(
+localStorage.getItem(
+"user"
+)
+);
+
+if(
+!currentUser ||
+!profile
+){
+
+toast.error(
+"User not found"
+);
+
+return;
+
+}
+
+const senderId =
+Number(
+currentUser.profile.userId
+);
+
+const receiverId =
+Number(
+profile.userId
+);
+
+console.log(
+"SENDER:",
+senderId
+);
+
+console.log(
+"RECEIVER:",
+receiverId
+);
+
+if(
+senderId === receiverId
+){
+
+toast.error(
+"You cannot send interest to yourself"
+);
+
+return;
+
+}
+
+await interestAPI.sendInterest(
+
+senderId,
+
+receiverId
+
+);
+
+setInterestSent(
+true
+);
+
+toast.success(
+"Interest Sent Successfully ❤️"
+);
+
+}catch(err){
+
+console.log(err);
+
+toast.error(
+
+err?.message ||
+
+"Failed"
+
+);
+
+}
+
+};
+
+if(!profile){
+
+return(
+
+<div className="
+min-h-screen
+flex
+items-center
+justify-center
+">
+
+Loading Profile...
+
+</div>
+
+);
+
+}
+
+return(
+
+<div className="
+min-h-screen
+bg-muted/30
+">
+
+<Navbar/>
+
+<div className="
+container
+mx-auto
+px-4
+py-8
+">
+
+<Link
+
+to="/search"
+
+className="
+inline-flex
+items-center
+gap-2
+mb-6
+"
+
+>
+
+<ArrowLeft size={16}/>
+
+Back
+
+</Link>
+
+<div className="
+grid
+grid-cols-1
+lg:grid-cols-3
+gap-6
+">
+
+{/* LEFT */}
+
+<div>
+
+<div className="
+bg-card
+rounded-xl
+overflow-hidden
+border
+border-border
+">
+
+<img
+
+src={
+profile.imageUrl ||
+"/default-profile.png"
+}
+
+className="
+w-full
+aspect-[3/4]
+object-cover
+"
+
+/>
+
+<div className="p-4 space-y-2">
+<button
+
+onClick={handleSendInterest}
+
+disabled={interestSent}
+
+className={`
+w-full
+text-white
+rounded-lg
+py-3
+flex
+justify-center
+gap-2
+
+${interestSent
+? "bg-green-600"
+: "bg-red-600"}
+
+`}
+
+>
+
+<Heart size={18}/>
+
+{
+
+interestSent
+
+? "Interest Sent"
+
+: "Send Interest"
+
+}
+
+</button>
+<button className="
+w-full
+bg-purple-700
+rounded-lg
+py-3
+flex
+justify-center
+gap-2
+">
+
+<MessageSquare size={18}/>
+
+Message
+
+</button>
+
+<button className="
+w-full
+bg-yellow-600
+rounded-lg
+py-3
+flex
+justify-center
+gap-2
+">
+
+<Star size={18}/>
+
+Shortlist
+
+</button>
+
+</div>
+
+</div>
+
+</div>
+
+{/* RIGHT */}
+
+<div className="
+lg:col-span-2
+space-y-5
+">
+
+<div className="
+bg-card
+rounded-xl
+p-6
+border
+border-border
+">
+
+<h1 className="
+text-3xl
+font-bold
+">
+
+{profile.firstName}
+
+{" "}
+
+{profile.lastName}
+
+</h1>
+
+{/* TOP SECTION */}
+
+<div className="
+flex
+flex-wrap
+gap-4
+mt-3
+text-sm
+text-muted-foreground
+">
+
+<span className="flex gap-1">
+
+<Calendar size={15}/>
+
+{calculateAge(profile.dateOfBirth)}
+
+yrs
+
+</span>
+
+<span className="flex gap-1">
+
+<MapPin size={15}/>
+
+{profile.cityName}
+
+</span>
+
+<span className="flex gap-1">
+
+<GraduationCap size={15}/>
+
+{profile.educationLevelName}
+
+</span>
+
+<span className="flex gap-1">
+
+<Briefcase size={15}/>
+
+{profile.occupationName}
+
+</span>
+
+</div>
+<p className="mt-5">
+
+{profile.aboutMe}
+
+</p>
+
+</div>
+
+
+{/* PERSONAL */}
+
+<div className="
+bg-card
+rounded-xl
+border
+border-border
+p-6
+">
+
+<h2 className="
+font-bold
+mb-4
+">
+
+Personal Details
+
+</h2>
+
+<InfoRow
+label="Gender"
+value={profile.genderName}
+/>
+
+<InfoRow
+label="Religion"
+value={profile.religionName}
+/>
+
+<InfoRow
+label="Caste"
+value={profile.casteName}
+/>
+
+<InfoRow
+label="Sub Caste"
+value={profile.subCasteName}
+/>
+
+<InfoRow
+label="Mother Tongue"
+value={profile.motherTongueName}
+/>
+
+<InfoRow
+label="Marital Status"
+value={profile.maritalStatusName}
+/>
+
+<InfoRow
+label="Height"
+value={profile.heightValue}
+/>
+
+<InfoRow
+label="Weight"
+value={profile.weightValue}
+/>
+
+<InfoRow
+label="Blood Group"
+value={profile.bloodGroupName}
+/>
+
+<InfoRow
+label="Manglik"
+value={profile.manglikStatusName}
+/>
+
+<InfoRow
+label="Disability"
+value={profile.disabilityStatusName}
+/>
+</div>
+
+
+{/* EDUCATION */}
+
+<div className="
+bg-card
+rounded-xl
+border
+border-border
+p-6
+">
+
+<h2 className="
+font-bold
+mb-4
+">
+
+Education & Career
+
+</h2>
+
+<InfoRow
+label="Qualification"
+value={profile.qualificationName}
+/>
+
+<InfoRow
+label="Field Of Study"
+value={profile.fieldOfStudyName}
+/>
+
+<InfoRow
+label="Education"
+value={profile.educationLevelName}
+/>
+<InfoRow
+label="Occupation"
+value={profile.occupationName}
+/>
+
+<InfoRow
+label="Employment"
+value={profile.employedStatusName}
+/>
+
+<InfoRow
+label="Income"
+value={profile.incomeValue}
+/>
+
+<InfoRow
+label="Company"
+value={profile.companyName}
+/>
+
+</div>
+
+
+{/* FAMILY */}
+
+<div className="
+bg-card
+rounded-xl
+border
+border-border
+p-6
+">
+
+<h2 className="
+font-bold
+mb-4
+">
+
+Family Details
+
+</h2>
+
+<InfoRow
+label="Father Name"
+value={profile.fatherName}
+/>
+
+<InfoRow
+label="Father Occupation"
+value={profile.fatherOccupation}
+/>
+
+<InfoRow
+label="Mother Name"
+value={profile.motherName}
+/>
+
+<InfoRow
+label="Mother Occupation"
+value={profile.motherOccupation}
+/>
+
+<InfoRow
+label="Siblings"
+value={profile.siblingsCount}
+/>
+
+<InfoRow
+label="Family Type"
+value={profile.familyTypeName}
+/>
+
+<InfoRow
+label="Family Status"
+value={profile.familyStatusName}
+/>
+
+<InfoRow
+label="Family Value"
+value={profile.familyValueName}
+/>
+
+</div>
+
+
+{/* LOCATION */}
+
+<div className="
+bg-card
+rounded-xl
+border
+border-border
+p-6
+">
+
+<h2 className="
+font-bold
+mb-4
+">
+
+Location
+
+</h2>
+
+<InfoRow
+label="Country"
+value={profile.countryName}
+/>
+
+<InfoRow
+label="State"
+value={profile.stateName}
+/>
+
+<InfoRow
+label="City"
+value={profile.cityName}
+/>
+
+<InfoRow
+label="Address"
+value={profile.address}
+/>
+
+</div>
+
+
+{/* LIFESTYLE */}
+
+<div className="
+bg-card
+rounded-xl
+border
+border-border
+p-6
+">
+
+<h2 className="
+font-bold
+mb-4
+">
+
+Lifestyle
+
+</h2>
+
+<InfoRow
+label="Diet"
+value={profile.dietValue}
+/>
+
+<InfoRow
+label="Smoking"
+value={profile.smokingValue}
+/>
+
+<InfoRow
+label="Drinking"
+value={profile.drinkingValue}
+/>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+);
+
 };
 
 export default ProfileDetails;

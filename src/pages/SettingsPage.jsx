@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import { useToast } from "@/components/Toast";
 import { useProfileData } from "@/hooks/useProfileData";
-
+import { partnerPreferenceAPI } from "@/services/api";
 import { masterDataAPI } from "@/services/api";
 
 const tabs = [
@@ -27,8 +27,11 @@ const SettingsPage = () => {
     heights: [],
     weights: [],
     maritalStatuses: [],
-    castes: [],
-    subCastes: [],
+   castes: [],
+
+   partnerCastes: [],
+
+   subCastes: [],
     complexions: [],
     bodyTypes: [],
    motherTongues: [],
@@ -37,7 +40,26 @@ const SettingsPage = () => {
    diets: [],
    smokingOptions: [],
    drinkingOptions: [],
-   states: []
+   states: [],
+   profileTypes:[],
+
+   manglikStatuses:[],
+
+   familyTypes:[],
+
+   familyStatuses:[],
+
+   familyValues:[],
+
+   qualifications:[],
+
+   fieldsOfStudy:[],
+
+   employmentStatuses:[],
+
+   disabilityStatuses:[],
+
+   bloodGroups:[]
   });
   
   // Profile form state - matching backend DTO structure
@@ -88,16 +110,27 @@ const SettingsPage = () => {
 
     address: "",
 
-    preferredAgeMin: "",
-    preferredAgeMax: "",
-
-    preferredLocation: "",
-    preferredEducation: "",
-
-    otherExpectations: "",
 
     aboutMe: "",
+profileTypeId:null,
 
+manglikStatusId:null,
+
+familyTypeId:null,
+
+familyStatusId:null,
+
+familyValueId:null,
+
+qualificationId:null,
+
+fieldOfStudyId:null,
+
+employedId:null,
+
+disabilityStatusId:null,
+
+bloodGroupId:null,
     age: "",
     
     // For UI purposes
@@ -110,8 +143,169 @@ const SettingsPage = () => {
     newPassword: "",
     confirmPassword: ""
   });
+const [partnerPreference,setPartnerPreference]=
+useState({
 
-  // Load master data options from backend
+minAge:"",
+maxAge:"",
+
+minHeight:"",
+maxHeight:"",
+
+minWeight:"",
+maxWeight:"",
+
+religionId:null,
+casteId:null,
+
+cityId:null,
+
+educationLevelId:null,
+
+occupationId:null,
+
+maritalStatusId:null,
+
+smokingId:null,
+
+drinkingId:null,
+
+dietId:null,
+
+otherExpectations:""
+
+});
+useEffect(()=>{
+
+const loadPartnerPreference =
+async()=>{
+
+try{
+
+const userId =
+
+savedProfileData?.userId ||
+savedProfileData?.id;
+
+if(!userId){
+
+console.log(
+"No user id yet"
+);
+
+return;
+
+}
+
+const pref =
+
+await partnerPreferenceAPI
+.getMyPreference(
+userId
+);
+
+console.log(
+"Partner Preference:",
+pref
+);
+
+setPartnerPreference({
+
+minAge:
+pref?.minAge ?? "",
+
+maxAge:
+pref?.maxAge ?? "",
+
+minHeight:
+pref?.minHeight ?? "",
+
+maxHeight:
+pref?.maxHeight ?? "",
+
+minWeight:
+pref?.minWeight ?? "",
+
+maxWeight:
+pref?.maxWeight ?? "",
+religionId:
+pref?.religionId
+? Number(pref.religionId)
+: null,
+
+casteId:
+pref?.casteId
+? Number(pref.casteId)
+: null,
+
+cityId:
+pref?.cityId
+? Number(pref.cityId)
+: null,
+
+educationLevelId:
+pref?.educationLevelId
+? Number(pref.educationLevelId)
+: null,
+
+occupationId:
+pref?.occupationId
+? Number(pref.occupationId)
+: null,
+
+maritalStatusId:
+pref?.maritalStatusId
+? Number(pref.maritalStatusId)
+: null,
+
+smokingId:
+pref?.smokingId
+? Number(pref.smokingId)
+: null,
+
+drinkingId:
+pref?.drinkingId
+? Number(pref.drinkingId)
+: null,
+
+dietId:
+pref?.dietId
+? Number(pref.dietId)
+: null,
+
+otherExpectations:
+pref?.otherExpectations ?? ""
+
+});
+
+}catch(err){
+
+console.log(
+"Partner Preference Error:",
+err
+);
+
+}
+
+};
+
+const userId =
+savedProfileData?.userId ||
+savedProfileData?.id;
+
+if(userId){
+
+loadPartnerPreference();
+
+}
+
+},[
+
+savedProfileData,
+
+]);
+
+// Load master data options from backend
   useEffect(() => {
     const loadMasterData = async () => {
       try {
@@ -122,6 +316,25 @@ const SettingsPage = () => {
      diets,
      smokingOptions,
      drinkingOptions,
+     profileTypes,
+
+     manglikStatuses,
+
+     familyTypes,
+
+     familyStatuses,
+
+     familyValues,
+
+     qualifications,
+
+     fieldsOfStudy,
+
+     employmentStatuses,
+
+     disabilityStatuses,
+
+     bloodGroups,
      religions,
      genders,
      cities,
@@ -141,7 +354,25 @@ const SettingsPage = () => {
      masterDataAPI.getDiets(),
      masterDataAPI.getSmokingOptions(),
      masterDataAPI.getDrinkingOptions(),
+masterDataAPI.getProfileTypes(),
 
+masterDataAPI.getManglikStatuses(),
+
+masterDataAPI.getFamilyTypes(),
+
+masterDataAPI.getFamilyStatuses(),
+
+masterDataAPI.getFamilyValues(),
+
+masterDataAPI.getQualifications(),
+
+masterDataAPI.getFieldsOfStudy(),
+
+masterDataAPI.getEmploymentStatuses(),
+
+masterDataAPI.getDisabilityStatuses(),
+
+masterDataAPI.getBloodGroups(),
      masterDataAPI.getReligions(),
      masterDataAPI.getGenders(),
      masterDataAPI.getCities(),
@@ -172,100 +403,315 @@ const SettingsPage = () => {
           motherTongues: motherTongues?.length || 0
         });
         
-        // Ensure all data are arrays
+        // Ensure all data are arra
         const safeData = {
-          religions: Array.isArray(religions) ? religions : [],
-          genders: Array.isArray(genders) ? genders : [],
-cities: Array.isArray(cities?.data)
-  ? cities.data
-  : Array.isArray(cities)
-  ? cities
-  : [],
-          educationLevels: Array.isArray(educationLevels) ? educationLevels : [],
-          occupations: Array.isArray(occupations) ? occupations : [],
-          maritalStatuses: Array.isArray(maritalStatuses) ? maritalStatuses : [],
-          heights: Array.isArray(heights) ? heights : [],
-          weights: Array.isArray(weights) ? weights : [],
-          complexions: Array.isArray(complexions) ? complexions : [],
-          bodyTypes: Array.isArray(bodyTypes) ? bodyTypes : [],
-          castes: [], // Will be loaded based on selected religion
-motherTongues: Array.isArray(motherTongues) ? motherTongues : [],
-countries: Array.isArray(countries) ? countries : [],
-incomes: Array.isArray(incomes) ? incomes : [],
-smokingOptions: Array.isArray(smokingOptions?.data)
-  ? smokingOptions.data
-  : Array.isArray(smokingOptions)
-  ? smokingOptions
-  : [],
 
-diets: Array.isArray(diets?.data)
-  ? diets.data
-  : Array.isArray(diets)
-  ? diets
-  : [],
+                                   profileTypes:
+                                   Array.isArray(profileTypes?.data)
+                                   ? profileTypes.data
+                                   : Array.isArray(profileTypes)
+                                   ? profileTypes
+                                   : [],
 
+                                   manglikStatuses:
+                                   Array.isArray(manglikStatuses?.data)
+                                   ? manglikStatuses.data
+                                   : Array.isArray(manglikStatuses)
+                                   ? manglikStatuses
+                                   : [],
 
-drinkingOptions: Array.isArray(drinkingOptions?.data)
-  ? drinkingOptions.data
-  : Array.isArray(drinkingOptions)
-  ? drinkingOptions
-  : [],
-states: Array.isArray(states) ? states : []
-        };
-        
-        setMasterOptions(safeData);
+                                   familyTypes:
+                                   Array.isArray(familyTypes?.data)
+                                   ? familyTypes.data
+                                   : Array.isArray(familyTypes)
+                                   ? familyTypes
+                                   : [],
+
+                                   familyStatuses:
+                                   Array.isArray(familyStatuses?.data)
+                                   ? familyStatuses.data
+                                   : Array.isArray(familyStatuses)
+                                   ? familyStatuses
+                                   : [],
+
+                                   familyValues:
+                                   Array.isArray(familyValues?.data)
+                                   ? familyValues.data
+                                   : Array.isArray(familyValues)
+                                   ? familyValues
+                                   : [],
+
+                                   qualifications:
+                                   Array.isArray(qualifications?.data)
+                                   ? qualifications.data
+                                   : Array.isArray(qualifications)
+                                   ? qualifications
+                                   : [],
+
+                                   fieldsOfStudy:
+                                   Array.isArray(fieldsOfStudy?.data)
+                                   ? fieldsOfStudy.data
+                                   : Array.isArray(fieldsOfStudy)
+                                   ? fieldsOfStudy
+                                   : [],
+
+                                   employmentStatuses:
+                                   Array.isArray(employmentStatuses?.data)
+                                   ? employmentStatuses.data
+                                   : Array.isArray(employmentStatuses)
+                                   ? employmentStatuses
+                                   : [],
+
+                                   disabilityStatuses:
+                                   Array.isArray(disabilityStatuses?.data)
+                                   ? disabilityStatuses.data
+                                   : Array.isArray(disabilityStatuses)
+                                   ? disabilityStatuses
+                                   : [],
+
+                                   bloodGroups:
+                                   Array.isArray(bloodGroups?.data)
+                                   ? bloodGroups.data
+                                   : Array.isArray(bloodGroups)
+                                   ? bloodGroups
+                                   : [],
+
+                                   religions:
+                                   Array.isArray(religions?.data)
+                                   ? religions.data
+                                   : Array.isArray(religions)
+                                   ? religions
+                                   : [],
+
+                                   genders:
+                                   Array.isArray(genders?.data)
+                                   ? genders.data
+                                   : Array.isArray(genders)
+                                   ? genders
+                                   : [],
+
+                                   partnerCastes: [],
+
+                                   cities:
+                                   Array.isArray(cities?.data)
+                                   ? cities.data
+                                   : Array.isArray(cities)
+                                   ? cities
+                                   : [],
+
+                                   educationLevels:
+                                   Array.isArray(educationLevels?.data)
+                                   ? educationLevels.data
+                                   : Array.isArray(educationLevels)
+                                   ? educationLevels
+                                   : [],
+
+                                   occupations:
+                                   Array.isArray(occupations?.data)
+                                   ? occupations.data
+                                   : Array.isArray(occupations)
+                                   ? occupations
+                                   : [],
+
+                                   maritalStatuses:
+                                   Array.isArray(maritalStatuses?.data)
+                                   ? maritalStatuses.data
+                                   : Array.isArray(maritalStatuses)
+                                   ? maritalStatuses
+                                   : [],
+
+                                   heights:
+                                   Array.isArray(heights?.data)
+                                   ? heights.data
+                                   : Array.isArray(heights)
+                                   ? heights
+                                   : [],
+
+                                   weights:
+                                   Array.isArray(weights?.data)
+                                   ? weights.data
+                                   : Array.isArray(weights)
+                                   ? weights
+                                   : [],
+
+                                   complexions:
+                                   Array.isArray(complexions?.data)
+                                   ? complexions.data
+                                   : Array.isArray(complexions)
+                                   ? complexions
+                                   : [],
+
+                                   bodyTypes:
+                                   Array.isArray(bodyTypes?.data)
+                                   ? bodyTypes.data
+                                   : Array.isArray(bodyTypes)
+                                   ? bodyTypes
+                                   : [],
+
+                                   castes: [],
+
+                                   subCastes: [],
+
+                                   motherTongues:
+                                   Array.isArray(motherTongues?.data)
+                                   ? motherTongues.data
+                                   : Array.isArray(motherTongues)
+                                   ? motherTongues
+                                   : [],
+
+                                   countries:
+                                   Array.isArray(countries?.data)
+                                   ? countries.data
+                                   : Array.isArray(countries)
+                                   ? countries
+                                   : [],
+
+                                   states:
+                                   Array.isArray(states?.data)
+                                   ? states.data
+                                   : Array.isArray(states)
+                                   ? states
+                                   : [],
+
+                                   incomes:
+                                   Array.isArray(incomes?.data)
+                                   ? incomes.data
+                                   : Array.isArray(incomes)
+                                   ? incomes
+                                   : [],
+
+                                   diets:
+                                   Array.isArray(diets?.data)
+                                   ? diets.data
+                                   : Array.isArray(diets)
+                                   ? diets
+                                   : [],
+
+                                   smokingOptions:
+                                   Array.isArray(smokingOptions?.data)
+                                   ? smokingOptions.data
+                                   : Array.isArray(smokingOptions)
+                                   ? smokingOptions
+                                   : [],
+
+                                   drinkingOptions:
+                                   Array.isArray(drinkingOptions?.data)
+                                   ? drinkingOptions.data
+                                   : Array.isArray(drinkingOptions)
+                                   ? drinkingOptions
+                                   : []
+
+                                   };
+
+                                   setMasterOptions(safeData);
+console.log(
+"Disability:",
+safeData.disabilityStatuses
+);
+                                   console.log("Blood Groups:", safeData.bloodGroups);
+                                   console.log("Family Types:", safeData.familyTypes);
+                                   console.log("Employment:", safeData.employmentStatuses);
         
       } catch (error) {
         console.error('❌ Failed to load master data:', error);
         // Set empty arrays on error to prevent UI crashes
-    setMasterOptions({
-      religions: [],
-      genders: [],
-      cities: [],
-      educationLevels: [],
-      occupations: [],
-      maritalStatuses: [],
-      heights: [],
-      weights: [],
-      castes: [],
-      subCastes: [],
-      complexions: [],
-      bodyTypes: [],
-      motherTongues: [],
-      countries: [],
-      incomes: [],
-      diets: [],
-      smokingOptions: [],
-      drinkingOptions: [],
-      states: []
-    });
-      }
+  setMasterOptions({
+
+  religions: [],
+  genders: [],
+  cities: [],
+  educationLevels: [],
+  occupations: [],
+  maritalStatuses: [],
+  heights: [],
+  weights: [],
+  castes: [],
+  partnerCastes: [],
+  subCastes: [],
+  complexions: [],
+  bodyTypes: [],
+  motherTongues: [],
+  countries: [],
+  incomes: [],
+  diets: [],
+  smokingOptions: [],
+  drinkingOptions: [],
+  states: []
+
+  });    }
     };
     
     loadMasterData();
   }, []);
 
-  // Load castes when religion changes
-  useEffect(() => {
-    const loadCastes = async () => {
-      if (formData.religionId) {
-        try {
-          console.log('🔍 Loading castes for religion:', formData.religionId);
-          const castes = await masterDataAPI.getCastes(formData.religionId);
-          console.log('✅ Castes loaded:', castes);
-          const safeCastes = Array.isArray(castes) ? castes : [];
-          setMasterOptions(prev => ({ ...prev, castes: safeCastes }));
-        } catch (error) {
-          console.error('❌ Failed to load castes:', error);
-          setMasterOptions(prev => ({ ...prev, castes: [] }));
-        }
-      } else {
-        setMasterOptions(prev => ({ ...prev, castes: [] }));
-      }
-    };
-    
-    loadCastes();
-  }, [formData.religionId]);
+ // Load castes when partner religion changes
+
+ useEffect(() => {
+
+ const loadCastes = async () => {
+
+ if (partnerPreference.religionId) {
+
+ try {
+
+ console.log(
+ "Loading castes:",
+ partnerPreference.religionId
+ );
+
+ const castes =
+ await masterDataAPI.getCastes(
+
+ partnerPreference.religionId
+
+ );
+
+ setMasterOptions(prev=>({
+
+ ...prev,
+
+partnerCastes:
+Array.isArray(castes)
+? castes
+: []
+
+ }));
+
+ }catch(error){
+
+ console.log(error);
+
+ setMasterOptions(prev=>({
+
+ ...prev,
+
+partnerCastes:[]
+
+ }));
+
+ }
+
+ }else{
+
+ setMasterOptions(prev=>({
+
+ ...prev,
+
+ partnerCastes:[]
+
+ }));
+
+ }
+
+ };
+
+ loadCastes();
+
+ }, [
+
+ partnerPreference.religionId
+
+ ]);
 // Load sub castes when caste changes
 useEffect(() => {
 
@@ -320,59 +766,94 @@ useEffect(() => {
   loadSubCastes();
 
 }, [formData.casteId]);
+
+// Load castes when profile religion changes
+
+useEffect(()=>{
+
+const loadProfileCastes=
+async()=>{
+
+if(formData.religionId){
+
+try{
+
+const castes=
+await masterDataAPI.getCastes(
+formData.religionId
+);
+
+setMasterOptions(prev=>({
+
+...prev,
+
+castes:
+Array.isArray(castes)
+? castes
+: []
+
+}));
+
+}catch(err){
+
+console.log(err);
+
+}
+
+}else{
+
+setMasterOptions(prev=>({
+
+...prev,
+
+castes:[]
+
+}));
+
+}
+
+};
+
+loadProfileCastes();
+
+},[
+formData.religionId
+]);
 // Load cities when state changes
-useEffect(() => {
+useEffect(()=>{
 
-  const loadCities = async () => {
+const loadCities=async()=>{
 
-    if (formData.stateId) {
+try{
 
-      try {
+const cities=
+await masterDataAPI
+.getCities();
 
-        const cities =
-          await masterDataAPI.getCitiesByState(
-            formData.stateId
-          );
-      console.log("🏙 Cities API Response:", cities);
+setMasterOptions(prev=>({
 
-        setMasterOptions(prev => ({
-          ...prev,
-         cities: Array.isArray(cities?.data)
-           ? cities.data
-           : Array.isArray(cities)
-           ? cities
-           : []
-        }));
+...prev,
 
-      } catch (error) {
+cities:
+Array.isArray(cities?.data)
+? cities.data
+: Array.isArray(cities)
+? cities
+: []
 
-        console.error(
-          "Failed to load cities",
-          error
-        );
+}));
 
-        setMasterOptions(prev => ({
-          ...prev,
-          cities: []
-        }));
+}catch(err){
 
-      }
+console.log(err);
 
-    } else {
+}
 
-      setMasterOptions(prev => ({
-        ...prev,
-        cities: []
-      }));
+};
 
-    }
+loadCities();
 
-  };
-
-  loadCities();
-
-}, [formData.stateId]);
-  // Load saved profile data on mount
+},[]); // Load saved profile data on mount
   useEffect(() => {
     if (savedProfileData && Object.keys(savedProfileData).length > 0) {
       console.log('🔧 Loading profile data into settings:', savedProfileData);
@@ -413,6 +894,7 @@ useEffect(() => {
       companyName:
         savedProfileData.companyName,
 
+
       email:
         savedProfileData.email,
 
@@ -430,7 +912,10 @@ useEffect(() => {
          `${savedProfileData.firstName || ''} ${savedProfileData.lastName || ''}`.trim(),
        email: savedProfileData.email || '',
        phone: savedProfileData.phone || '',
-      genderId: savedProfileData.genderId || null,
+     genderId:
+     savedProfileData.genderId
+     ? Number(savedProfileData.genderId)
+     : null,
        dateOfBirth: savedProfileData.dateOfBirth || '',
        age: savedProfileData.age || calculateAge(savedProfileData.dateOfBirth),
        profilePhotoUrl:
@@ -439,42 +924,78 @@ useEffect(() => {
          '',
 
        // RELIGION
-       religionId:
-         savedProfileData.religionId ||
-         savedProfileData.religion?.id ||
-         null,
-      casteId:
-        savedProfileData.casteId ||
-        savedProfileData.caste?.id ||
-        null,
+   religionId:
+   savedProfileData.religionId
+   ? Number(savedProfileData.religionId)
+   : savedProfileData.religion?.id
+   ? Number(savedProfileData.religion.id)
+   : null,
+     casteId:
+
+     savedProfileData.casteId
+     ? Number(savedProfileData.casteId)
+
+     : savedProfileData.caste?.id
+     ? Number(savedProfileData.caste.id)
+
+     : null,
        subCasteId:
-         savedProfileData.subCasteId ||
-         savedProfileData.subCaste?.id ||
-         null,
+
+       savedProfileData.subCasteId
+       ? Number(savedProfileData.subCasteId)
+
+       : savedProfileData.subCaste?.id
+       ? Number(savedProfileData.subCaste.id)
+
+       : null,
        motherTongueId:
-         savedProfileData.motherTongueId ||
-         savedProfileData.motherTongue?.id ||
-         null,
+
+       savedProfileData.motherTongueId
+       ? Number(savedProfileData.motherTongueId)
+
+       : savedProfileData.motherTongue?.id
+       ? Number(savedProfileData.motherTongue.id)
+
+       : null,
 
        // PERSONAL
-       maritalStatusId:
-         savedProfileData.maritalStatusId || null,
+     maritalStatusId:
 
-      heightId:
-        savedProfileData.heightId ||
-        savedProfileData.height?.id ||
-        null,
+     savedProfileData.maritalStatusId
+     ? Number(savedProfileData.maritalStatusId)
 
-       weightId:
-         savedProfileData.weightId ||
-         savedProfileData.weight?.id ||
-         null,
+     : savedProfileData.maritalStatus?.id
+     ? Number(savedProfileData.maritalStatus.id)
 
-     complexionId:
-       savedProfileData.complexionId || null,
+     : null,
+    heightId:
 
-     bodyTypeId:
-       savedProfileData.bodyTypeId || null,
+    savedProfileData.heightId
+    ? Number(savedProfileData.heightId)
+
+    : savedProfileData.height?.id
+    ? Number(savedProfileData.height.id)
+
+    : null,
+    weightId:
+
+    savedProfileData.weightId
+    ? Number(savedProfileData.weightId)
+
+    : savedProfileData.weight?.id
+    ? Number(savedProfileData.weight.id)
+
+    : null,
+
+complexionId:
+savedProfileData.complexionId
+? Number(savedProfileData.complexionId)
+: null,
+
+bodyTypeId:
+savedProfileData.bodyTypeId
+? Number(savedProfileData.bodyTypeId)
+: null,
 
 aboutMe:
   savedProfileData.aboutMe ||
@@ -485,34 +1006,102 @@ aboutMe:
     savedProfileData.about || '',
 
        // EDUCATION
-       educationLevelId:
-         savedProfileData.educationLevelId || null,
+      educationLevelId:
 
-       occupationId:
-         savedProfileData.occupationId || null,
+      savedProfileData.educationLevelId
+      ? Number(savedProfileData.educationLevelId)
 
+      : null,
+     occupationId:
+
+     savedProfileData.occupationId
+     ? Number(savedProfileData.occupationId)
+
+     : null,
        incomeId:
-         savedProfileData.incomeId || '',
+       savedProfileData.incomeId
+       ? Number(savedProfileData.incomeId)
+       : null,
 
        companyName:
          savedProfileData.companyName || '',
+profileTypeId:
+savedProfileData.profileTypeId
+? Number(savedProfileData.profileTypeId)
+: null,
 
+manglikStatusId:
+savedProfileData.manglikStatusId
+? Number(savedProfileData.manglikStatusId)
+: null,
+
+familyTypeId:
+savedProfileData.familyTypeId
+? Number(savedProfileData.familyTypeId)
+: null,
+
+familyStatusId:
+savedProfileData.familyStatusId
+? Number(savedProfileData.familyStatusId)
+: null,
+
+familyValueId:
+savedProfileData.familyValueId
+? Number(savedProfileData.familyValueId)
+: null,
+
+qualificationId:
+savedProfileData.qualificationId
+? Number(savedProfileData.qualificationId)
+: null,
+
+fieldOfStudyId:
+savedProfileData.fieldOfStudyId
+? Number(savedProfileData.fieldOfStudyId)
+: null,
+
+employedId:
+savedProfileData.employedStatusId
+? Number(savedProfileData.employedStatusId)
+: null,
+
+disabilityStatusId:
+savedProfileData.disabilityStatusId
+? Number(savedProfileData.disabilityStatusId)
+: null,
+
+bloodGroupId:
+savedProfileData.bloodGroupId
+? Number(savedProfileData.bloodGroupId)
+: null,
        // LOCATION
 countryId:
-  savedProfileData.countryId ||
-  savedProfileData.country?.id ||
-  null,
 
+savedProfileData.countryId
+? Number(savedProfileData.countryId)
+
+: savedProfileData.country?.id
+? Number(savedProfileData.country.id)
+
+: null,
 stateId:
-  savedProfileData.stateId ||
-  savedProfileData.state?.id ||
-  null,
 
+savedProfileData.stateId
+? Number(savedProfileData.stateId)
+
+: savedProfileData.state?.id
+? Number(savedProfileData.state.id)
+
+: null,
 cityId:
-  savedProfileData.cityId ||
-  savedProfileData.city?.id ||
-  null,      cityId: savedProfileData.cityId || null,
-      city: savedProfileData.cityName || savedProfileData.city || '',
+
+savedProfileData.cityId
+? Number(savedProfileData.cityId)
+
+: savedProfileData.city?.id
+? Number(savedProfileData.city.id)
+
+: null,
        address: savedProfileData.address || '',
 
        // FAMILY
@@ -533,32 +1122,39 @@ cityId:
          savedProfileData.siblings ||
          '',
        // dietId
-       dietId: savedProfileData.dietId || '',
-       smokingId: savedProfileData.smokingId || '',
-       drinkingId: savedProfileData.drinkingId || '',
+     dietId:
+     savedProfileData.dietId
+     ? Number(savedProfileData.dietId)
+     : null,
 
-       // PARTNER PREFERENCE
-       preferredAgeMin:
-         savedProfileData.preferredAgeMin || '',
+     smokingId:
+     savedProfileData.smokingId
+     ? Number(savedProfileData.smokingId)
+     : null,
 
-       preferredAgeMax:
-         savedProfileData.preferredAgeMax || '',
+     drinkingId:
+     savedProfileData.drinkingId
+     ? Number(savedProfileData.drinkingId)
+     : null,
+ // PARTNER PREFERENCE
 
-       preferredLocation:
-         savedProfileData.preferredLocation || '',
 
-       preferredEducation:
-         savedProfileData.preferredEducation || '',
-
-       otherExpectations:
-         savedProfileData.otherExpectations || ''
-
-     };
+ };
       
-      console.log('🔧 Mapped data for form:', mappedData);
+    console.log(
+    "Mapped Data:",
+    mappedData
+    );
+
+    console.log(
+    "Master Options:",
+    masterOptions
+    );
             setFormData(prev => ({ ...prev, ...mappedData }));
     }
-  }, [savedProfileData]);
+}, [
+savedProfileData
+]);
 
   // Auto-calculate age from DOB
   const calculateAge = (dob) => {
@@ -603,6 +1199,16 @@ cityId:
       'incomeId',
       'dietId',
       'smokingId',
+      'profileTypeId',
+      'manglikStatusId',
+      'familyTypeId',
+      'familyStatusId',
+      'familyValueId',
+      'qualificationId',
+      'fieldOfStudyId',
+      'employedId',
+      'disabilityStatusId',
+      'bloodGroupId',
       'drinkingId'
     ];
       const finalValue = idFields.includes(field) && value !== '' 
@@ -612,8 +1218,64 @@ cityId:
       setFormData(prev => ({ ...prev, [field]: finalValue }));
     }
   };
+const handlePartnerPreferenceChange =
+(field,value)=>{
 
-  const handleProfilePhotoUpload = (e) => {
+const numericFields=[
+
+ "minAge",
+ "maxAge",
+
+ "minHeight",
+ "maxHeight",
+"minWeight",
+"maxWeight",
+ "religionId",
+
+ "casteId",
+
+ "cityId",
+
+ "educationLevelId",
+
+ "occupationId",
+
+ "maritalStatusId",
+
+ "smokingId",
+
+ "drinkingId",
+
+ "dietId"
+
+ ];
+setPartnerPreference(prev=>{
+
+const updated={
+
+...prev,
+
+[field]:
+numericFields.includes(field)
+? (
+value === "" ||
+value === null
+? null
+: Number(value)
+)
+: value
+};
+
+if(field==="religionId"){
+
+updated.casteId=null;
+
+}
+
+return updated;
+
+});
+};  const handleProfilePhotoUpload = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -675,7 +1337,21 @@ cityId:
       error("Please enter a valid email address");
       return false;
     }
+if(
+partnerPreference.minAge &&
+partnerPreference.maxAge &&
+Number(partnerPreference.minAge)
+>
+Number(partnerPreference.maxAge)
+){
 
+error(
+"Minimum age cannot be greater than maximum age"
+);
+
+return false;
+
+}
     return true;
   };
 
@@ -731,7 +1407,25 @@ cityId:
 
        incomeId: formData.incomeId,
        companyName: formData.companyName,
+profileTypeId: formData.profileTypeId,
 
+manglikStatusId: formData.manglikStatusId,
+
+familyTypeId: formData.familyTypeId,
+
+familyStatusId: formData.familyStatusId,
+
+familyValueId: formData.familyValueId,
+
+qualificationId: formData.qualificationId,
+
+fieldOfStudyId: formData.fieldOfStudyId,
+
+employedId: formData.employedId,
+
+disabilityStatusId: formData.disabilityStatusId,
+
+bloodGroupId: formData.bloodGroupId,
        // LOCATION
       countryId: formData.countryId,
       stateId: formData.stateId,
@@ -752,19 +1446,113 @@ cityId:
 
        siblingsCount: formData.siblingsCount,
 
-       // PARTNER PREFERENCE
-       preferredAgeMin: formData.preferredAgeMin,
-       preferredAgeMax: formData.preferredAgeMax,
-
-       preferredLocation: formData.preferredLocation,
-       preferredEducation: formData.preferredEducation,
-
-       otherExpectations: formData.otherExpectations
 
      };
-      console.log('📤 Data to save to backend:', dataToSave);
-      
-      const result = await saveProfileData(dataToSave);
+     console.log(
+     '📤 Data to save to backend:',
+     dataToSave
+     );
+
+     console.log(
+     "BLOOD GROUP:",
+     dataToSave.bloodGroupId
+     );
+
+     console.log(
+     "DISABILITY:",
+     dataToSave.disabilityStatusId
+     );
+
+     console.log(
+     "FULL PAYLOAD:",
+     JSON.stringify(
+     dataToSave,
+     null,
+     2
+     )
+     );
+
+     const result =
+     await saveProfileData(
+     dataToSave
+     );
+   const partnerData={
+
+   userId:
+   savedProfileData?.userId ||
+   savedProfileData?.id,
+
+   minAge:
+   partnerPreference.minAge,
+
+   maxAge:
+   partnerPreference.maxAge,
+minWeight:
+partnerPreference.minWeight,
+
+maxWeight:
+partnerPreference.maxWeight,
+   minHeight:
+   partnerPreference.minHeight,
+
+   maxHeight:
+   partnerPreference.maxHeight,
+
+   religionId:
+   Number(partnerPreference.religionId)||null,
+
+   casteId:
+   Number(partnerPreference.casteId)||null,
+
+   cityId:
+   Number(partnerPreference.cityId)||null,
+
+   educationLevelId:
+   Number(partnerPreference.educationLevelId)||null,
+
+   occupationId:
+   Number(partnerPreference.occupationId)||null,
+
+   maritalStatusId:
+   Number(partnerPreference.maritalStatusId)||null,
+
+   dietId:
+   Number(partnerPreference.dietId)||null,
+
+   smokingId:
+   Number(partnerPreference.smokingId)||null,
+
+   drinkingId:
+   Number(partnerPreference.drinkingId)||null,
+   otherExpectations:
+   partnerPreference.otherExpectations,
+
+   isActive:true
+
+   };
+console.log(
+"PARTNER DATA:",
+partnerData
+);
+    try{
+
+    await partnerPreferenceAPI
+    .update(
+
+    partnerData.userId,
+
+    partnerData
+
+    );
+
+    }catch{
+
+    await partnerPreferenceAPI
+    .save(
+    partnerData
+    );
+
+    }
       
       if (result) {
         success("Profile updated successfully!");
@@ -960,6 +1748,46 @@ else if (key === "drinkingId") {
     masterOptions.drinkingOptions || [];
 
 }
+
+else if (key === "profileTypeId") {
+fieldOptions = masterOptions.profileTypes || [];
+}
+
+else if (key === "manglikStatusId") {
+fieldOptions = masterOptions.manglikStatuses || [];
+}
+
+else if (key === "familyTypeId") {
+fieldOptions = masterOptions.familyTypes || [];
+}
+
+else if (key === "familyStatusId") {
+fieldOptions = masterOptions.familyStatuses || [];
+}
+
+else if (key === "familyValueId") {
+fieldOptions = masterOptions.familyValues || [];
+}
+
+else if (key === "qualificationId") {
+fieldOptions = masterOptions.qualifications || [];
+}
+
+else if (key === "fieldOfStudyId") {
+fieldOptions = masterOptions.fieldsOfStudy || [];
+}
+
+else if (key === "employedId") {
+fieldOptions = masterOptions.employmentStatuses || [];
+}
+
+else if (key === "disabilityStatusId") {
+fieldOptions = masterOptions.disabilityStatuses || [];
+}
+
+else if (key === "bloodGroupId") {
+fieldOptions = masterOptions.bloodGroups || [];
+}
     else {
 
 
@@ -981,131 +1809,153 @@ else if (key === "drinkingId") {
           {label}
         </label>
 
-        <select
-          value={formData[key] || ""}
+      <select
+      value={formData[key] ?? ""}
 
-          onChange={(e) => {
+      onChange={(e) => {
 
-            const value = e.target.value;
+      const value = e.target.value;
 
-            console.log(
-              `🔄 Changed ${key}:`,
-              value
-            );
+      console.log(
+      `Changed ${key}:`,
+      value
+      );
 
-            handleInputChange(
-              key,
-              value
-            );
+      handleInputChange(
+      key,
+      value
+      );
 
-            // =========================================
-            // RESET DEPENDENT DROPDOWNS
-            // =========================================
+      // reset dependent dropdowns
 
-            if (key === "religionId") {
+      if (key === "religionId") {
 
-              handleInputChange(
-                "casteId",
-                ""
-              );
+      handleInputChange(
+      "casteId",
+      ""
+      );
 
-              handleInputChange(
-                "subCasteId",
-                ""
-              );
+      handleInputChange(
+      "subCasteId",
+      ""
+      );
 
-            }
+      }
 
-            if (key === "casteId") {
+      if (key === "casteId") {
 
-              handleInputChange(
-                "subCasteId",
-                ""
-              );
+      handleInputChange(
+      "subCasteId",
+      ""
+      );
 
-            }
+      }
 
-           if (key === "stateId") {
+      if (key === "stateId") {
 
-         handleInputChange(
-           "cityId",
-           ""
-         );
+      handleInputChange(
+      "cityId",
+      ""
+      );
 
-            }
+      }
 
-          }}
+      }}
 
-          className="
-            w-full
-            bg-background
-            border
-            border-border
-            rounded-lg
-            px-4
-            py-2.5
-            text-sm
-            text-foreground
-            focus:outline-none
-            focus:ring-2
-            focus:ring-primary/20
-            focus:border-primary
-          "
-        >
+      className="
+      w-full
+      bg-background
+      border
+      border-border
+      rounded-lg
+      px-4
+      py-2.5
+      text-sm
+      text-foreground
+      focus:outline-none
+      focus:ring-2
+      focus:ring-primary/20
+      focus:border-primary
+      "
+      >
 
-          <option value="">
-            Select {label.toLowerCase()}
-          </option>
+      <option value="">
+      Select {label.toLowerCase()}
+      </option>
 
-        {fieldOptions &&
-          fieldOptions.length > 0 &&
-          fieldOptions.map((opt) => {
+      {fieldOptions?.map((opt)=>{
 
-          const optionValue =
-            opt?.id ??
-            opt?.cityId ??
-            opt?.stateId ??
-            opt?.countryId ??
-            opt?.casteId ??
-            opt?.subCasteId ??
-            opt?.value ??
-            opt;
+      const optionValue =
+      opt?.id ??
+      opt?.cityId ??
+      opt?.stateId ??
+      opt?.countryId ??
+      opt?.casteId ??
+      opt?.subCasteId ??
+      opt?.name ??
+      opt;
 
-        const optionLabel =
+   const optionLabel =
 
-          key === "drinkingId"
-            ? opt?.value
+   opt?.type ||
 
-          : key === "smokingId"
-            ? opt?.value
+   opt?.bloodGroup ||
 
-          : key === "dietId"
-            ? opt?.name ?? opt?.value
+   opt?.bloodGroupName ||
 
-          : opt?.name ??
-            opt?.cityName ??
-            opt?.stateName ??
-            opt?.countryName ??
-            opt?.casteName ??
-            opt?.subCasteName ??
-            opt?.value ??
-            opt?.range ??
-            opt?.label ??
-            "Select Option";
-            return (
+   opt?.groupName ||
 
-              <option
-                key={optionValue}
-                value={optionValue}
-              >
-                {optionLabel}
-              </option>
+   opt?.disabilityName ||
 
-            );
+   opt?.familyTypeName ||
 
-          })}
-        </select>
+   opt?.familyStatusName ||
 
+   opt?.familyValueName ||
+
+   opt?.qualificationName ||
+
+   opt?.fieldOfStudyName ||
+
+   opt?.employedStatusName ||
+
+   opt?.value ||
+
+   opt?.name ||
+
+   opt?.status ||
+
+   opt?.cityName ||
+
+   opt?.stateName ||
+
+   opt?.countryName ||
+
+   opt?.casteName ||
+
+   opt?.subCasteName ||
+
+   opt?.range ||
+
+   opt?.label ||
+
+   String(opt);
+      return(
+
+      <option
+      key={optionValue}
+      value={optionValue}
+      >
+
+      {optionLabel}
+
+      </option>
+
+      );
+
+      })}
+
+      </select>
       </div>
 
     );
@@ -1127,7 +1977,7 @@ else if (key === "drinkingId") {
       <input
         type={type}
 
-        value={formData[key] || ""}
+     value={formData[key] ?? ""}
 
         onChange={(e) =>
           handleInputChange(
@@ -1238,6 +2088,24 @@ else if (key === "drinkingId") {
                   {renderField({ label: "Caste", key: "casteId", type: "select" })}
                   {renderField({ label: "Sub-caste", key: "subCasteId", type: "select" })}
                   {renderField({ label: "Mother Tongue", key: "motherTongueId", type: "select" })}
+
+                  {renderField({
+                  label:"Manglik Status",
+                  key:"manglikStatusId",
+                  type:"select"
+                  })}
+
+                  {renderField({
+                  label:"Blood Group",
+                  key:"bloodGroupId",
+                  type:"select"
+                  })}
+
+                  {renderField({
+                  label:"Disability Status",
+                  key:"disabilityStatusId",
+                  type:"select"
+                  })}
                 </div>
               </div>
 
@@ -1261,7 +2129,10 @@ else if (key === "drinkingId") {
               </div>
 
               {/* Education & Career Section */}
+
+
               <div>
+
                 <h3 className="text-sm font-semibold text-foreground mb-3 pb-2 border-b border-border">Education & Career</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {renderField({ 
@@ -1272,6 +2143,30 @@ else if (key === "drinkingId") {
                   {renderField({ label: "Profession/Occupation", key: "occupationId", type: "select" })}
                   {renderField({ label: "Annual Income", key: "incomeId", type: "select" })}
                   {renderField({ label: "Company Name", placeholder: "Your company", key: "companyName" })}
+
+                  {renderField({
+                  label:"Profile Type",
+                  key:"profileTypeId",
+                  type:"select"
+                  })}
+
+                  {renderField({
+                  label:"Qualification",
+                  key:"qualificationId",
+                  type:"select"
+                  })}
+
+                  {renderField({
+                  label:"Field Of Study",
+                  key:"fieldOfStudyId",
+                  type:"select"
+                  })}
+
+                  {renderField({
+                  label:"Employment Status",
+                  key:"employedId",
+                  type:"select"
+                  })}
                 </div>
               </div>
 
@@ -1346,20 +2241,885 @@ else if (key === "drinkingId") {
   key: "siblingsCount",
   placeholder: "Enter siblings count"
 })}
+
+{renderField({
+label:"Family Type",
+key:"familyTypeId",
+type:"select"
+})}
+
+{renderField({
+label:"Family Status",
+key:"familyStatusId",
+type:"select"
+})}
+
+{renderField({
+label:"Family Value",
+key:"familyValueId",
+type:"select"
+})}
                 </div>
               </div>
 
               {/* Partner Preferences Section */}
               <div>
-                <h3 className="text-sm font-semibold text-foreground mb-3 pb-2 border-b border-border">Partner Preferences</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {renderField({ label: "Preferred Age (Min)", type: "number", key: "preferredAgeMin" })}
-                  {renderField({ label: "Preferred Age (Max)", type: "number", key: "preferredAgeMax" })}
-                  {renderField({ label: "Preferred Location", placeholder: "Preferred location", key: "preferredLocation" })}
-                  {renderField({ label: "Preferred Education", placeholder: "Preferred education", key: "preferredEducation" })}
-                </div>
-              </div>
+               <h3 className="text-sm font-semibold mb-3">
 
+               Partner Preferences
+
+               </h3>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+            {/* MIN AGE */}
+
+          <div>
+
+          <label className="text-xs font-medium mb-1 block">
+          Preferred Age Min
+          </label>
+
+          <input
+          className="
+          w-full
+          bg-background
+          border
+          border-border
+          rounded-lg
+          px-4
+          py-2.5
+          text-sm
+          text-foreground
+          "
+          value={partnerPreference.minAge ?? ""}
+          onChange={(e)=>
+          handlePartnerPreferenceChange(
+          "minAge",
+          e.target.value
+          )}
+          placeholder="Enter minimum age"
+          />
+
+          </div>
+
+
+          <div>
+
+          <label className="text-xs font-medium mb-1 block">
+          Preferred Age Max
+          </label>
+
+          <input
+          className="
+          w-full
+          bg-background
+          border
+          border-border
+          rounded-lg
+          px-4
+          py-2.5
+          text-sm
+          text-foreground
+          "
+          value={partnerPreference.maxAge ?? ""}
+          onChange={(e)=>
+          handlePartnerPreferenceChange(
+          "maxAge",
+          e.target.value
+          )}
+          placeholder="Enter maximum age"
+          />
+
+          </div>
+           {/* HEIGHT MIN */}
+
+           <div>
+
+           <label className="text-xs font-medium mb-1 block">
+           Preferred Height Min
+           </label>
+
+           <select
+           className="
+           w-full
+           bg-background
+           border
+           border-border
+           rounded-lg
+           px-4
+           py-2.5
+           text-sm
+           text-foreground
+           "
+           value={partnerPreference.minHeight ?? ""}
+           onChange={(e)=>
+           handlePartnerPreferenceChange(
+           "minHeight",
+           e.target.value
+           )
+           }
+           >
+
+           <option value="">
+           Select Minimum Height
+           </option>
+
+           {masterOptions.heights.map((h)=>(
+
+           <option
+           key={h.id}
+           value={h.id}
+           >
+
+           {h.name || h.value || h.height}
+
+           </option>
+
+           ))}
+
+           </select>
+
+           </div>
+
+
+           {/* HEIGHT MAX */}
+
+           <div>
+
+           <label className="text-xs font-medium mb-1 block">
+           Preferred Height Max
+           </label>
+
+           <select
+           className="
+           w-full
+           bg-background
+           border
+           border-border
+           rounded-lg
+           px-4
+           py-2.5
+           text-sm
+           text-foreground
+           "
+           value={partnerPreference.maxHeight ?? ""}
+           onChange={(e)=>
+           handlePartnerPreferenceChange(
+           "maxHeight",
+           e.target.value
+           )
+           }
+           >
+
+           <option value="">
+           Select Maximum Height
+           </option>
+
+           {masterOptions.heights.map((h)=>(
+
+           <option
+           key={h.id}
+           value={h.id}
+           >
+
+           {h.name || h.value || h.height}
+
+           </option>
+
+           ))}
+
+           </select>
+
+           </div>
+<div>
+
+<label className="text-xs font-medium mb-1 block">
+Preferred Weight Min
+</label>
+
+<select
+
+value={partnerPreference.minWeight ?? ""}
+
+onChange={(e)=>
+
+handlePartnerPreferenceChange(
+"minWeight",
+e.target.value
+)
+
+}
+
+className="
+w-full
+bg-background
+border
+border-border
+rounded-lg
+px-4
+py-2.5
+"
+
+>
+
+<option value="">
+Select Minimum Weight
+</option>
+
+{
+
+masterOptions.weights.map((w)=>(
+
+<option
+
+key={w.id}
+
+value={w.id}
+
+>
+
+{w.name || w.value || w.weight}
+
+</option>
+
+))
+
+}
+
+</select>
+
+</div>
+
+<div>
+
+<label className="text-xs font-medium mb-1 block">
+Preferred Weight Max
+</label>
+
+<select
+
+value={partnerPreference.maxWeight ?? ""}
+
+onChange={(e)=>
+
+handlePartnerPreferenceChange(
+"maxWeight",
+e.target.value
+)
+
+}
+
+className="
+w-full
+bg-background
+border
+border-border
+rounded-lg
+px-4
+py-2.5
+"
+
+>
+
+<option value="">
+Select Maximum Weight
+</option>
+
+{
+
+masterOptions.weights.map((w)=>(
+
+<option
+
+key={w.id}
+
+value={w.id}
+
+>
+
+{w.name || w.value || w.weight}
+
+</option>
+
+))
+
+}
+
+</select>
+
+</div>
+
+
+
+           {/* RELIGION */}
+
+           <div>
+
+           <label className="text-xs font-medium mb-1 block">
+
+           Preferred Religion
+
+           </label>
+
+
+              <select
+              className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-sm text-foreground"
+              value={partnerPreference.religionId || ""}
+              onChange={(e)=>
+              handlePartnerPreferenceChange(
+              "religionId",
+              e.target.value
+              )}
+              >
+
+              <option value="">
+              Select Religion
+              </option>
+
+              {
+              masterOptions.religions.map(r=>(
+              <option
+              key={r.id}
+              value={r.id}
+              >
+              {r.name}
+              </option>
+              ))
+              }
+
+              </select>
+
+
+</div>
+
+
+
+
+            <div>
+
+            <label className="text-xs font-medium mb-1 block">
+
+            Preferred Caste
+
+            </label>
+
+            <select
+
+            className="
+            w-full
+            bg-background
+            border
+            border-border
+            rounded-lg
+            px-4
+            py-2.5
+            text-sm
+            text-foreground
+            "
+
+            value={partnerPreference.casteId || ""}
+
+            onChange={(e)=>
+
+            handlePartnerPreferenceChange(
+            "casteId",
+            e.target.value
+            )
+
+            }
+
+            >
+
+            <option value="">
+            Select Caste
+            </option>
+
+            {
+
+            masterOptions.partnerCastes.map((c)=>(
+
+            <option
+            key={c.id}
+            value={c.id}
+            >
+
+            {c.name}
+
+            </option>
+
+            ))
+
+            }
+
+            </select>
+
+            </div>
+<div>
+
+<label className="text-xs font-medium mb-1 block">
+Preferred City
+</label>
+
+<select
+className="w-full bg-background border border-border rounded-lg px-4 py-2.5"
+value={partnerPreference.cityId || ""}
+onChange={(e)=>
+handlePartnerPreferenceChange(
+"cityId",
+e.target.value
+)}
+>
+
+<option value="">
+Select City
+</option>
+
+{masterOptions.cities.map((city)=>(
+<option
+key={city.id || city.cityId}
+value={city.id || city.cityId}
+>
+{city.name || city.cityName}
+</option>
+))}
+
+</select>
+
+</div>
+
+            <div>
+
+            <label className="text-xs font-medium mb-1 block">
+
+            Preferred Education
+
+            </label>
+
+            <select
+
+            className="
+            w-full
+            bg-background
+            border
+            border-border
+            rounded-lg
+            px-4
+            py-2.5
+            text-sm
+            text-foreground
+            "
+
+            value={partnerPreference.educationLevelId || ""}
+
+            onChange={(e)=>
+
+            handlePartnerPreferenceChange(
+            "educationLevelId",
+            e.target.value
+            )
+
+            }
+
+            >
+
+            <option value="">
+            Select Education
+            </option>
+
+            {
+
+            masterOptions.educationLevels.map((ed)=>(
+
+            <option
+            key={ed.id}
+            value={ed.id}
+            >
+
+            {ed.name}
+
+            </option>
+
+            ))
+
+            }
+
+            </select>
+
+            </div>
+
+           <div>
+
+           <label className="text-xs font-medium mb-1 block">
+
+           Preferred Occupation
+
+           </label>
+
+           <select
+
+           className="
+           w-full
+           bg-background
+           border
+           border-border
+           rounded-lg
+           px-4
+           py-2.5
+           text-sm
+           text-foreground
+           "
+
+           value={partnerPreference.occupationId || ""}
+
+           onChange={(e)=>
+
+           handlePartnerPreferenceChange(
+           "occupationId",
+           e.target.value
+           )
+
+           }
+
+           >
+
+           <option value="">
+           Select Occupation
+           </option>
+
+           {
+
+           masterOptions.occupations.map((op)=>(
+
+           <option
+           key={op.id}
+           value={op.id}
+           >
+
+           {op.name}
+
+           </option>
+
+           ))
+
+           }
+
+           </select>
+
+           </div>
+
+           <div>
+
+           <label className="text-xs font-medium mb-1 block">
+
+           Preferred Marital Status
+
+           </label>
+
+           <select
+
+           className="
+           w-full
+           bg-background
+           border
+           border-border
+           rounded-lg
+           px-4
+           py-2.5
+           "
+
+           value={partnerPreference.maritalStatusId || ""}
+
+           onChange={(e)=>
+
+           handlePartnerPreferenceChange(
+           "maritalStatusId",
+           e.target.value
+           )
+
+           }
+
+           >
+
+           <option value="">
+           Select Marital Status
+           </option>
+
+           {
+
+           masterOptions.maritalStatuses.map((ms)=>(
+
+           <option
+           key={ms.id}
+           value={ms.id}
+           >
+
+           {ms.name}
+
+           </option>
+
+           ))
+
+           }
+
+           </select>
+
+           </div>
+
+           <div>
+
+           <label className="text-xs font-medium mb-1 block">
+
+           Smoking Preference
+
+           </label>
+
+           <select
+
+           className="
+           w-full
+           bg-background
+           border
+           border-border
+           rounded-lg
+           px-4
+           py-2.5
+           "
+
+           value={partnerPreference.smokingId || ""}
+
+           onChange={(e)=>
+
+           handlePartnerPreferenceChange(
+           "smokingId",
+           e.target.value
+           )
+
+           }
+
+           >
+
+           <option value="">
+           Select Smoking Preference
+           </option>
+
+          {
+
+          masterOptions.smokingOptions.map((sm)=>{
+
+          return(
+
+          <option
+          key={sm.id}
+          value={sm.id}
+          >
+
+          {
+
+          sm.smokingType ||
+
+          sm.smokingStatus ||
+
+          sm.smokingPreference ||
+
+          sm.type ||
+
+          sm.name ||
+
+          sm.value ||
+
+          JSON.stringify(sm)
+
+          }
+
+          </option>
+
+          );
+
+          })
+
+          }
+
+           </select>
+
+           </div>
+
+         <div>
+
+         <label className="text-xs font-medium mb-1 block">
+         Drinking Preference
+         </label>
+
+         <select
+
+         className="
+         w-full
+         bg-background
+         border
+         border-border
+         rounded-lg
+         px-4
+         py-2.5
+         "
+
+         value={partnerPreference.drinkingId || ""}
+
+         onChange={(e)=>
+         handlePartnerPreferenceChange(
+         "drinkingId",
+         e.target.value
+         )
+         }
+
+         >
+
+         <option value="">
+         Select Drinking
+         </option>
+
+         {
+         masterOptions.drinkingOptions?.map((dr)=>(
+         <option
+         key={dr.id}
+         value={dr.id}
+         >
+
+         {dr.value}
+
+         </option>
+         ))
+         }
+
+         </select>
+
+         </div>
+            <div>
+
+            <label className="text-xs font-medium mb-1 block">
+
+            Diet Preference
+
+            </label>
+
+            <select
+
+            className="
+            w-full
+            bg-background
+            border
+            border-border
+            rounded-lg
+            px-4
+            py-2.5
+            "
+
+            value={partnerPreference.dietId || ""}
+
+            onChange={(e)=>
+
+            handlePartnerPreferenceChange(
+            "dietId",
+            e.target.value
+            )
+
+            }
+
+            >
+
+            <option value="">
+            Select Diet Preference
+            </option>
+
+           {
+
+           masterOptions.diets.map((d)=>{
+
+           return(
+
+           <option
+           key={d.id}
+           value={d.id}
+           >
+
+           {
+
+           d.dietType ||
+
+           d.dietName ||
+
+           d.name ||
+
+           d.value ||
+
+           JSON.stringify(d)
+
+           }
+
+           </option>
+
+           );
+
+           })
+
+           }
+            </select>
+
+            </div>
+<div className="sm:col-span-2">
+
+<label className="
+text-xs
+font-medium
+mb-1
+block
+">
+
+Other Expectations
+
+</label>
+
+<textarea
+
+rows={4}
+
+value={
+partnerPreference.otherExpectations
+}
+
+onChange={(e)=>
+
+handlePartnerPreferenceChange(
+"otherExpectations",
+e.target.value
+)
+
+}
+
+placeholder="
+Any other expectations...
+"
+
+className="
+w-full
+bg-background
+border
+border-border
+rounded-lg
+px-4
+py-2.5
+text-sm
+text-foreground
+"
+
+/>
+
+</div>
+
+</div>
+</div>
+
+
+{/* Contact Information Section */}
               {/* Contact Information Section */}
               <div>
                 <h3 className="text-sm font-semibold text-foreground mb-3 pb-2 border-b border-border">Contact Information</h3>
@@ -1384,22 +3144,13 @@ else if (key === "drinkingId") {
                 </div>
               </div>
 
-              {/* Other Expectations */}
-              <div>
-                <label className="text-xs font-medium text-foreground mb-1 block">Other Expectations</label>
-                <textarea 
-                  rows={3} 
-                  value={formData.otherExpectations}
-                  onChange={(e) => handleInputChange("otherExpectations", e.target.value)}
-                  placeholder="Any other expectations or preferences..." 
-                  className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none" 
-                />
-              </div>
 
               <button onClick={handleProfileUpdate} className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-6 py-2.5 rounded-lg text-sm transition-colors">
                 <Save className="h-4 w-4" /> Save Changes
               </button>
+
             </div>
+
           )}
 
           {activeTab === "password" && (
@@ -1455,7 +3206,7 @@ else if (key === "drinkingId") {
               ))}
             </div>
           )}
-        </motion.div>
+          </motion.div>
       </div>
     </div>
   );

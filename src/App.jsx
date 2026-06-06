@@ -12,6 +12,8 @@ import AdminRoute from "@/routes/AdminRoute";
 import LoadingSpinner from "./components/LoadingSpinner";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import AuthenticatedLayout from "@/components/AuthenticatedLayout";
+import SentInterests from "./pages/SentInterests";
+import ReceivedInterests from "./pages/ReceivedInterests";
 
 // NORMAL PAGES
 import Index from "./pages/Index";
@@ -31,6 +33,7 @@ import Messages from "./pages/Messages";
 import SettingsPage from "./pages/SettingsPage";
 import Account from "./pages/Account";
 import UpgradePremium from "./pages/UpgradePremium";
+import MyShortlists from "./pages/MyShortlists";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsConditions from "./pages/TermsConditions";
 import FAQ from "./pages/FAQ";
@@ -118,6 +121,38 @@ const App = () => (
                         </AuthenticatedLayout>
                       }
                     />
+<Route
+
+path="/sent-interests"
+
+element={
+
+<AuthenticatedLayout>
+
+<SentInterests/>
+
+</AuthenticatedLayout>
+
+}
+
+/>
+
+<Route
+
+path="/received-interests"
+
+element={
+
+<AuthenticatedLayout>
+
+<ReceivedInterests/>
+
+</AuthenticatedLayout>
+
+}
+
+/>
+
                     <Route
                       path="/messages"
                       element={
@@ -131,6 +166,14 @@ const App = () => (
                       element={
                         <AuthenticatedLayout>
                           <SettingsPage />
+                        </AuthenticatedLayout>
+                      }
+                    />
+                    <Route
+                      path="/shortlists"
+                      element={
+                        <AuthenticatedLayout>
+                          <MyShortlists />
                         </AuthenticatedLayout>
                       }
                     />

@@ -176,122 +176,369 @@ export const authAPI = {
 };
 
 export const profileAPI = {
-  getProfile: async (userId) => {
-    try {
-      const endpoint = userId ? `/profiles/${userId}` : '/profiles/me';
-      return await apiClient(endpoint);
-    } catch (error) {
-     console.error('Login API Error:', error);
 
-     throw new Error(
-       error?.message || 'Something went wrong'
-     );
-    }
-  },
+getProfileByUserId:
 
-  updateProfile: async (userId, data) => {
-    try {
-      const endpoint = userId ? `/profiles/${userId}` : '/profiles/me';
-      return await apiClient(endpoint, {
-        method: 'PUT',
-        body: JSON.stringify(data),
-      });
-    } catch (error) {
-      console.error('Login API Error:', error);
+async(userId)=>{
 
-      throw new Error(
-        error?.message || 'Something went wrong'
-      );
-    }
-  },
+return await apiClient(
 
-  getProfiles: async (page = 0, size = 10, filters = {}) => {
-    try {
-      const params = new URLSearchParams({
-        page: page.toString(),
-        size: size.toString(),
-        ...filters
-      });
-      return await apiClient(`/profiles?${params}`);
-    } catch (error) {
-      console.error('Login API Error:', error);
+`/profiles/user/${userId}`
 
-      throw new Error(
-        error?.message || 'Something went wrong'
-      );
-    }
-  }
+);
+
+},
+
+getProfile: async (userId) => {
+
+try {
+
+const endpoint =
+userId
+? `/profiles/${userId}`
+: '/profiles/me';
+
+return await apiClient(endpoint);
+
+} catch(error){
+
+console.error(
+'Profile API Error:',
+error
+);
+
+throw new Error(
+error?.message ||
+'Something went wrong'
+);
+
+}
+
+},
+
+getProfileById: async(id)=>{
+
+try{
+
+return await apiClient(
+
+`/profiles/${id}`
+
+);
+
+}catch(error){
+
+console.error(
+'Profile API Error:',
+error
+);
+
+throw error;
+
+}
+
+},
+
+updateProfile: async(
+userId,
+data
+)=>{
+
+try{
+
+const endpoint =
+userId
+? `/profiles/${userId}`
+: '/profiles/me';
+
+return await apiClient(
+endpoint,
+{
+method:'PUT',
+body:JSON.stringify(data)
+}
+);
+
+}catch(error){
+
+console.error(
+'Profile API Error:',
+error
+);
+
+throw new Error(
+error?.message ||
+'Something went wrong'
+);
+
+}
+
+},
+
+getProfiles: async()=>{
+
+try{
+
+return await apiClient(
+'/profiles'
+);
+
+}catch(error){
+
+console.error(
+'Profile API Error:',
+error
+);
+
+throw new Error(
+error?.message ||
+'Something went wrong'
+);
+
+}
+
+}
+
 };
 
+export const interestAPI = {
+
+getReceivedPendingInterests:
+
+async(receiverId)=>{
+
+return await apiClient(
+
+`/interests/received/${receiverId}/pending`
+
+);
+
+},
+getReceivedInterests:
+
+async(receiverId)=>{
+
+return await apiClient(
+
+`/interests/received/${receiverId}`
+
+);
+
+},
+
+acceptInterest:
+
+async(id)=>{
+
+return await apiClient(
+
+`/interests/accept/${id}`,
+
+{
+
+method:"PUT"
+
+}
+
+);
+
+},
+
+rejectInterest:
+
+async(id)=>{
+
+return await apiClient(
+
+`/interests/reject/${id}`,
+
+{
+
+method:"PUT"
+
+}
+
+);
+
+},
+sendInterest: async (
+senderId,
+receiverId
+)=>{
+
+try{
+
+return await apiClient(
+
+'/interests/send',
+
+{
+
+method:'POST',
+
+body:JSON.stringify({
+
+senderId: senderId,
+
+receiverId: receiverId
+
+})
+
+}
+
+);
+
+}catch(error){
+
+console.error(
+'Interest API Error:',
+error
+);
+
+throw error;
+
+}
+
+},
+
+getSentInterests: async(
+senderId
+)=>{
+
+try{
+
+return await apiClient(
+
+`/interests/sent/${senderId}`
+
+);
+
+}catch(error){
+
+console.error(
+'Interest API Error:',
+error
+);
+
+return [];
+
+}
+
+}
+
+};
 export const searchAPI = {
-  searchProfiles: async (filters) => {
+
+  searchProfiles: async (filters = {}) => {
+
     try {
-      const params = new URLSearchParams(filters);
-      return await apiClient(`/profiles/search?${params}`);
+
+      return await apiClient(
+        '/profiles/search',
+        {
+          method: 'POST',
+          body: JSON.stringify(filters)
+        }
+      );
+
     } catch (error) {
-      console.error('Login API Error:', error);
+
+      console.error(
+        'Search API Error:',
+        error
+      );
 
       throw new Error(
-        error?.message || 'Something went wrong'
+        error?.message ||
+        'Something went wrong'
       );
-    }
-  }
-};
 
+    }
+
+  }
+
+};
 export const masterDataAPI = {
 
   // ==========================================
   // RELIGIONS
   // ==========================================
 
-  getReligions: async () => {
-    try {
+getReligions: async () => {
 
-      console.log('🔍 Fetching religions...');
+  try {
 
-      const result = await apiClient('/religions');
+    console.log(
+      '🔍 Fetching religions...'
+    );
 
-      console.log('✅ MASTER API RESPONSE - Religions:', result);
+    const result =
+      await apiClient(
+        '/religions'
+      );
 
-      return Array.isArray(result)
-        ? result
-        : [];
+    console.log(
+      '✅ MASTER API RESPONSE - Religions:',
+      result
+    );
 
-    } catch (error) {
+    return Array.isArray(result)
+      ? result
+      : [];
 
-      console.error('❌ Get Religions API error:', error);
+   } catch(error){
 
-      return [];
+     console.error(
+       '❌ Get Religions API error:',
+       error
+     );
 
-    }
-  },
+     return [];
 
-  // ==========================================
-  // GENDERS
-  // ==========================================
+   }
 
-  getGenders: async () => {
-    try {
+ },
 
-      console.log('🔍 Fetching genders...');
 
-      const result = await apiClient('/genders');
 
-      console.log('✅ MASTER API RESPONSE - Genders:', result);
+// ==========================================
+// GENDERS
+// ==========================================
 
-      return Array.isArray(result)
-        ? result
-        : [];
+getGenders: async () => {
 
-    } catch (error) {
+  try {
 
-      console.error('❌ Get Genders API error:', error);
+    console.log(
+      '🔍 Fetching genders...'
+    );
 
-      return [];
+    const result =
+      await apiClient(
+        '/genders'
+      );
 
-    }
-  },
+    console.log(
+      '✅ MASTER API RESPONSE - Genders:',
+      result
+    );
 
+    return Array.isArray(result)
+      ? result
+      : [];
+
+  } catch(error){
+
+    console.error(
+      '❌ Get Genders API error:',
+      error
+    );
+
+    return [];
+
+  }
+
+},
   // ==========================================
   // EDUCATION LEVELS
   // ==========================================
@@ -356,6 +603,39 @@ export const masterDataAPI = {
       return [];
 
     }
+  },
+  getProfileTypes: async () => {
+
+  try {
+
+  const result =
+
+  await apiClient(
+
+  '/profile-types'
+
+  );
+
+  return Array.isArray(result)
+
+  ? result
+
+  : [];
+
+  }catch(error){
+
+  console.error(
+
+  '❌ Get Profile Types API error:',
+
+  error
+
+  );
+
+  return [];
+
+  }
+
   },
 
   // ==========================================
@@ -861,44 +1141,301 @@ export const masterDataAPI = {
 
     }
   },
+// ==========================================
+// MANGLIK STATUS
+// ==========================================
 
+getManglikStatuses: async () => {
+
+ try{
+
+   console.log("Fetching Manglik Statuses");
+
+  const result =
+   await apiClient(
+     '/manglik-statuses'
+   );
+
+   return Array.isArray(result)
+      ? result
+      : [];
+
+ }catch(error){
+
+   console.error(error);
+
+   return [];
+
+ }
+
+},
+getFamilyTypes: async()=>{
+
+ try{
+
+   const result =
+      await apiClient(
+        '/master/family-types'
+      );
+
+   return Array.isArray(result)
+      ? result
+      : [];
+
+ }catch(error){
+
+   return [];
+
+ }
+
+},
+getFamilyStatuses: async()=>{
+
+ try{
+
+   const result =
+      await apiClient(
+       '/master/family-status'
+      );
+
+   return Array.isArray(result)
+      ? result
+      : [];
+
+ }catch(error){
+
+   return [];
+
+ }
+
+},
+getFamilyValues: async()=>{
+
+ try{
+
+   const result =
+      await apiClient(
+        '/master/family-values'
+      );
+
+   return Array.isArray(result)
+      ? result
+      : [];
+
+ }catch(error){
+
+   return [];
+
+ }
+
+},
+
+// ==========================================
+// QUALIFICATIONS
+// ==========================================
+
+getQualifications: async () => {
+
+ try {
+
+   const result =
+     await apiClient(
+       '/qualifications'
+     );
+
+   return Array.isArray(result)
+     ? result
+     : [];
+
+ } catch(error){
+
+   console.error(error);
+
+   return [];
+
+ }
+
+},
+
+// ==========================================
+// FIELD OF STUDIES
+// ==========================================
+
+getFieldsOfStudy: async () => {
+
+ try {
+
+   const result =
+     await apiClient(
+       '/fields-of-study'
+     );
+
+   return Array.isArray(result)
+     ? result
+     : [];
+
+ } catch(error){
+
+   return [];
+
+ }
+
+},// ==========================================
+// EMPLOYED
+// ==========================================
+
+getEmploymentStatuses: async () => {
+
+ try {
+
+   const result =
+     await apiClient(
+       '/master/employed'
+     );
+
+   return Array.isArray(result)
+   ? result
+   : [];
+
+ } catch(error){
+
+   console.log(error);
+
+   return [];
+
+ }
+
+},
+// ==========================================
+// DISABILITY STATUS
+// ==========================================
+
+getDisabilityStatuses: async () => {
+
+ try {
+
+  const result =
+   await apiClient(
+     '/master/disability-statuses'
+   );
+   return Array.isArray(result)
+     ? result
+     : [];
+
+ } catch(error){
+
+   return [];
+
+ }
+
+},
+
+// ==========================================
+// BLOOD GROUPS
+// ==========================================
+
+getBloodGroups: async () => {
+
+ try {
+
+   const result =
+     await apiClient(
+       '/blood-groups'
+     );
+
+   return Array.isArray(result)
+     ? result
+     : [];
+
+ } catch(error){
+
+   return [];
+
+ }
+
+},
   // ==========================================
   // DRINKING
   // ==========================================
 
-  getDrinkingOptions: async () => {
-    try {
+    getDrinkingOptions: async () => {
 
-      console.log('🔍 Fetching drinking options...');
+      try {
 
-      const result =
-        await apiClient('/master/drinking');
+        console.log('🔍 Fetching drinking options...');
 
-      console.log(
-        '✅ MASTER API RESPONSE - Drinking:',
-        result
-      );
+        const result =
+          await apiClient('/master/drinking');
 
-      return Array.isArray(result)
-        ? result
-        : [];
+        return Array.isArray(result)
+          ? result
+          : [];
 
-    } catch (error) {
+      } catch (error) {
 
-      console.error(
-        '❌ Get Drinking API error:',
-        error
-      );
+        return [];
 
-      return [];
+      }
 
     }
-  }
 
-};
-export default {
-  authAPI,
-  profileAPI,
-  searchAPI,
-  masterDataAPI
-};
+  };
+
+ export const partnerPreferenceAPI = {
+
+getMyPreference: async(userId)=>{
+
+return await apiClient(
+
+`/partner-preferences/user/${userId}`
+
+);
+
+},
+ save: async (data) => {
+
+ return await apiClient(
+
+ '/partner-preferences',
+
+ {
+
+ method:'POST',
+
+ body:JSON.stringify(data)
+
+ }
+
+ );
+
+ },
+
+ update: async(userId,data)=>{
+
+ return await apiClient(
+
+ `/partner-preferences/${userId}`,
+
+ {
+
+ method:"PUT",
+
+ body:JSON.stringify(data)
+
+ }
+
+ );
+
+ },
+
+ getByUserId: async(userId)=>{
+
+ return await apiClient(
+
+ `/partner-preferences/user/${userId}`
+
+ );
+
+ }
+
+ };

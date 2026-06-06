@@ -27,6 +27,7 @@ const Navbar = () => {
     { label: t.navbar.search, to: "/search", icon: <Search className="h-4 w-4" /> },
     { label: t.navbar.matches, to: "/matches", icon: <Heart className="h-4 w-4" /> },
     { label: t.navbar.kundli, to: "/kundli", icon: <Star className="h-4 w-4" /> },
+    { label: "Shortlists", to: "/shortlists", icon: <Star className="h-4 w-4" /> },
     { label: t.navbar.messages, to: "/messages", icon: <MessageSquare className="h-4 w-4" /> },
     { label: t.navbar.settings, to: "/settings", icon: <Settings className="h-4 w-4" /> },
   ];
