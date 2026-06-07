@@ -25,7 +25,7 @@ const validateToken = () => {
 };
 
 // Centralized API client with proper auth and error handling
-const apiClient = async (endpoint, options = {}) => {
+export const apiClient = async (endpoint, options = {}) => {
   try {
     const token = localStorage.getItem('token');
 
@@ -1436,3 +1436,4 @@ update: async(userId,data)=>{
 
   };
 
+export default apiClient;

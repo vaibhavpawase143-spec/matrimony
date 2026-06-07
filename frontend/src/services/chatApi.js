@@ -1,4 +1,4 @@
-import api from "./api";
+import { apiClient as api } from "./api";
 
 const API_BASE = "/api/chat";
 
@@ -26,16 +26,15 @@ export const getMyChats = async () => {
 
 };
 
-export const getConversations = ()=>{
+export const getConversations = () => {
 
-return api.get(
+return api(
 
 "/chat/conversations"
 
 );
 
 };
-
 export const getMessages = (
 
     otherUserId,
@@ -46,11 +45,11 @@ export const getMessages = (
 
 ) => {
 
-    return api.get(
+   return api(
 
-        `/chat/messages?otherUserId=${otherUserId}&page=${page}&size=${size}`
+   `/chat/messages?otherUserId=${otherUserId}&page=${page}&size=${size}`
 
-    );
+   );
 
 };
 
