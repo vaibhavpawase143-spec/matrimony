@@ -1,7 +1,11 @@
 import { Heart, User, Search, Settings, LogOut, ChevronDown, Bell, MessageSquare, Star, Menu } from "lucide-react";
 
 import { Link, useNavigate } from "react-router-dom";
-
+import HeartAnimation
+from "@/components/HeartAnimation";
+import { swipeAPI } from "@/services/swipeAPI";
+import useLikes
+from "@/hooks/useLikes";
 import { motion } from "framer-motion";
 
 import { useState, useEffect } from "react";
@@ -10,7 +14,7 @@ import { useAuth } from "@/hooks/useAuth";
 
 import { useLoading } from "@/hooks/useLoading";
 
-import { useLikeBookmark } from "@/hooks/useLikeBookmark";
+
 
 import ThemeToggle from "@/components/ThemeToggle";
 
@@ -56,18 +60,21 @@ disconnectNotifications
 const HomeFixed = () => {
 
 const navigate = useNavigate();
+const {
+
+isLiked,
+
+toggleLike
+
+}=useLikes();
+
 
 const { userName, logout } = useAuth();
 
 const { startLoading, stopLoading } =
 useLoading();
 
-const {
-isLiked,
-isBookmarked,
-toggleLike,
-toggleBookmark
-} = useLikeBookmark();
+
 
 const { t } = useLanguage();
 
@@ -108,7 +115,7 @@ interestsReceived:0,
 shortlists:0,
 
 profileViews:0,
-
+likesReceived:0,
 messages:0
 
 });
@@ -142,7 +149,8 @@ await shortlistAPI
 0,
 100
 );
-
+const likesReceived =
+await swipeAPI.getReceivedLikes();
 setDashboardStats(prev=>({
 
 ...prev,
@@ -157,7 +165,9 @@ shortlists:
 (
 shortlistData.content ||
 []
-).length
+).length,
+likesReceived:
+likesReceived.length
 
 }));
 
@@ -194,7 +204,10 @@ window.addEventListener(
 refreshDashboard
 
 );
-
+window.addEventListener(
+"like:updated",
+refreshDashboard
+);
 return ()=>{
 
 window.removeEventListener(
@@ -229,6 +242,10 @@ setNotificationCount
 
 const [loadingProfiles,setLoadingProfiles] =
 useState(true);
+
+
+const [showHeart,setShowHeart] =
+useState(null);
 
 const calculateAge = (dob) => {
 
@@ -715,84 +732,204 @@ p-8
                    hover:scale-[1.03]
                    hover:-translate-y-1
                      "
-                      onClick={() => navigate(`/profile/${profile.id}`)}
-                    >
-                 <div className="relative h-[320px] overflow-hidden">
+onClick={(e)=>{
 
-                    {
+if(
 
-                 profile.imageUrl ? (
+e.target.closest(
 
-                 <>
+"button"
 
-                 <img
+)
 
-                 src={profile.imageUrl}
+){
 
-                 alt={`${profile.firstName} ${profile.lastName}`}
+return;
 
-                 className="
-                 w-full
-                 h-full
-                 object-cover
-                 "
+}
 
-                 onError={(e)=>{
+setTimeout(()=>{
 
-                 e.target.parentElement.innerHTML =
-                 `
-                 <div class="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400">
+if(
 
-                 No Image
+e.detail===1
 
-                 </div>
-                 `;
+){
 
-                 }}
+navigate(
 
-                 />
+`/profile/${profile.id}`
 
-                 <div className="
-                 absolute
-                 bottom-3
-                 left-3
-                 bg-white/90
-                 px-3
-                 py-1
-                 rounded-full
-                 text-sm
-                 font-medium
-                 shadow
-                 ">
+);
 
-                 ❤️ {profile.matchPercentage || 0}% Match
+}
 
-                 </div>
+},220);
 
-                 </>
+}}
 
-                 )
+>
 
-                 :
-                   (
-                    <div className="
-                    w-full
-                    h-full
-                    flex
-                    items-center
-                    justify-center
-                    bg-gray-100
-                    text-gray-400
-                    ">
+<div
 
-                    No Image
+className="
 
-                    </div>
+relative
 
-                    )
+h-[320px]
 
-                    }
 
+"
+onDoubleClick={async(e)=>{
+
+e.stopPropagation();
+
+try{
+
+if(
+
+!isLiked(
+profile.userId
+)
+
+){
+
+setShowHeart(
+profile.userId
+);
+
+await toggleLike(
+profile.userId
+);
+window.dispatchEvent(
+new Event(
+"like:updated"
+)
+);
+toast.success(
+"Liked ❤️"
+);
+
+}else{
+
+toast(
+"Already liked ❤️"
+);
+
+}
+
+}catch(err){
+
+toast.error(
+"Failed"
+);
+
+}
+
+}}
+>
+
+<HeartAnimation
+
+show={
+
+showHeart===profile.userId
+
+}
+
+onComplete={()=>{
+
+setShowHeart(
+null
+);
+
+}}
+
+/>
+
+{
+profile.imageUrl ? (
+
+<>
+<img
+
+src={profile.imageUrl}
+
+alt={`${profile.firstName} ${profile.lastName}`}
+
+className="
+w-full
+h-full
+object-cover
+"
+
+onError={(e)=>{
+
+e.target.parentElement.innerHTML=
+`
+
+<div class="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400">
+
+No Image
+
+</div>
+
+`;
+
+}}
+
+ />
+
+<div
+
+className="
+absolute
+bottom-3
+left-3
+bg-white/90
+px-3
+py-1
+rounded-full
+text-sm
+font-medium
+shadow
+"
+
+>
+
+❤️ {profile.matchPercentage || 0}% Match
+
+</div>
+
+</>
+
+)
+
+:
+
+(
+
+<div
+
+className="
+w-full
+h-full
+flex
+items-center
+justify-center
+bg-gray-100
+text-gray-400
+"
+
+>
+
+No Image
+
+</div>
+
+)
+
+}
                     </div>
                   <div className="p-5 pb-6">
                    <h3 className="text-xl font-bold">
@@ -869,36 +1006,39 @@ p-8
 
                   </button>
 
-                  <button
+                 <button
 
-      className="
-      w-full
-      bg-[#F8F9FA]
-      border
-      border-[#E9ECEF]
-      text-[#343A40]
-      py-3
-      rounded-xl
-      font-semibold
-      shadow-sm
-      hover:bg-white
-      transition
-      "
+                 className="
+                 w-full
+                 bg-[#F8F9FA]
+                 border
+                 border-[#E9ECEF]
+                 text-[#343A40]
+                 py-3
+                 rounded-xl
+                 font-semibold
+                 shadow-sm
+                 hover:bg-white
+                 transition
+                 "
 
-                  onClick={(e)=>{
+                 onClick={(e)=>{
 
-                  e.stopPropagation();
+                 e.stopPropagation();
 
-                  navigate(`/profile/${profile.id}`);
+                 navigate(
 
-                  }}
+                 `/profile/${profile.id}`
 
-                  >
+                 );
 
-                  👤 View Profile
+                 }}
 
-                  </button>
+                 >
 
+                 👤 View Profile
+
+                 </button>
                    </div>
 <div className="mt-5 flex justify-center gap-3">
 
@@ -906,42 +1046,122 @@ p-8
 
 title="Like"
 
-onClick={(e)=>{
+onClick={async(e)=>{
 
 e.stopPropagation();
 
-toggleLike(
-profile.id || i
+try{
+
+const likedBefore =
+
+isLiked(
+profile.userId
 );
 
-}}
+setShowHeart(
+profile.userId
+);
 
+await toggleLike(
+profile.userId
+);
+
+if(
+
+likedBefore
+
+){
+
+toast(
+"Like removed"
+);
+
+}else{
+
+toast.success(
+"Liked ❤️"
+);
+
+}
+
+}catch{
+
+toast.error(
+"Failed"
+);
+
+}
+
+}}
 className="
+
 group
+
 w-12
 h-12
-rounded-xl
+
+rounded-full
+
 bg-gradient-to-br
+
 from-pink-500
+
 to-rose-600
-shadow-md
-hover:scale-110
+
+shadow-lg
+
+hover:scale-125
+
+active:scale-95
+
 transition-all
+
 duration-300
+
 flex
+
 items-center
+
 justify-center
-text-white
+
 "
 
 >
 
-<span className="text-xl">
+<span
+
+className={`
+
+text-2xl
+
+transition-all
+
+duration-300
+
+${
+
+isLiked(
+profile.userId
+)
+
+?
+
+"scale-125"
+
+:
+
+""
+
+}
+
+`}
+
+>
 
 {
 
 isLiked(
-profile.id || i
+profile.userId
 )
 
 ?
@@ -955,9 +1175,7 @@ profile.id || i
 }
 
 </span>
-
 </button>
-
 <div title="Shortlist">
 
 <ShortlistButton

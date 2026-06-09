@@ -14,6 +14,7 @@ import MobileBottomNav from "@/components/MobileBottomNav";
 import AuthenticatedLayout from "@/components/AuthenticatedLayout";
 import SentInterests from "./pages/SentInterests";
 import ReceivedInterests from "./pages/ReceivedInterests";
+import EmailVerified from "@/pages/EmailVerified";
 import MyShortlists from "@/pages/MyShortlists";
 // NORMAL PAGES
 import Index from "./pages/Index";
@@ -33,7 +34,7 @@ import Messages from "./pages/Messages";
 import SettingsPage from "./pages/SettingsPage";
 import Account from "./pages/Account";
 import UpgradePremium from "./pages/UpgradePremium";
-
+import Likes from "@/pages/Likes";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsConditions from "./pages/TermsConditions";
 import FAQ from "./pages/FAQ";
@@ -152,7 +153,10 @@ element={
 }
 
 />
-
+<Route
+path="/email-verified"
+element={<EmailVerified />}
+/>
                     <Route
                       path="/messages"
                       element={
@@ -227,7 +231,10 @@ element={
                         </AdminRoute>
                       }
                     />
-
+<Route
+path="/likes"
+element={<Likes />}
+/>
                     {/* NOT FOUND */}
                     <Route path="*" element={<NotFound />} />
                   </Routes>

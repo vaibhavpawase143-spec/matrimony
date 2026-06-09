@@ -1,6 +1,6 @@
 // API service for frontend development
 import errorHandler from '@/utils/errorHandler';
-
+import EmailVerified from "@/pages/EmailVerified";
 const API_BASE_URL = '/api'; // Will be proxied to backend
 
 // Token validation helper

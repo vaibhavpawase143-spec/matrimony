@@ -29,6 +29,8 @@ stats.shortlists || 0,
 
 profileViews:
 stats.profileViews || 0,
+likesReceived:
+stats.likesReceived || 0,
 
 messages:
 stats.messages || 0,
@@ -111,38 +113,18 @@ route:'/shortlists'
 
 },
 {
+label:'Likes Received',
 
-label:'Profile Views',
+value: defaultStats.likesReceived || 0,
 
-value:
-defaultStats.profileViews,
+icon: Heart,
 
-icon:Eye,
+color:'bg-pink-100 dark:bg-pink-900/30',
 
-color:
-'bg-green-100 dark:bg-green-900/30',
+textColor:'text-pink-600 dark:text-pink-400',
 
-textColor:
-'text-green-600 dark:text-green-400'
-
+route:'/likes'
 },
-{
-
-label:'Profile Views',
-
-value:
-defaultStats.shortlists,
-
-icon:Eye,
-
-color:
-'bg-green-100 dark:bg-green-900/30',
-
-textColor:
-'text-green-600 dark:text-green-400'
-
-},
-
 {
 
 label:'Messages',

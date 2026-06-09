@@ -1,5 +1,6 @@
 package com.example.controller.user;
 
+import com.example.dto.response.SwipeResponseDTO;
 import com.example.model.Swipe;
 import com.example.model.SwipeType;
 import com.example.model.User;
@@ -11,31 +12,24 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
-
-@RequestMapping(
-        "/api/swipes"
-)
-
+@RequestMapping("/api/swipes")
 public class SwipeController {
 
     private final SwipeService swipeService;
-
     private final UserRepository userRepository;
 
     public SwipeController(
-
             SwipeService swipeService,
-
             UserRepository userRepository
-
     ){
 
-        this.swipeService=
+        this.swipeService =
                 swipeService;
 
-        this.userRepository=
+        this.userRepository =
                 userRepository;
 
     }
@@ -43,7 +37,6 @@ public class SwipeController {
     private Long getCurrentUserId(){
 
         String email =
-
                 SecurityUtils
                         .getCurrentUsername();
 
@@ -52,24 +45,50 @@ public class SwipeController {
                         .findByEmailWithRoles(
                                 email
                         )
-
                         .orElseThrow(
-
                                 ()->new RuntimeException(
                                         "User not found"
                                 )
-
                         );
 
         return user.getId();
 
     }
 
+    private SwipeResponseDTO map(
+            Swipe s
+    ){
+
+        return SwipeResponseDTO
+                .builder()
+
+                .id(
+                        s.getId()
+                )
+
+                .fromUserId(
+                        s.getFromUser()
+                                .getId()
+                )
+
+                .toUserId(
+                        s.getToUser()
+                                .getId()
+                )
+
+                .type(
+                        s.getType()
+                                .name()
+                )
+
+                .build();
+
+    }
+
     @PostMapping(
             "/like/{userId}"
     )
-
-    public ResponseEntity<Swipe>
+    public ResponseEntity<SwipeResponseDTO>
     likeUser(
 
             @PathVariable
@@ -77,21 +96,25 @@ public class SwipeController {
 
     ){
 
-        Long currentUserId=
+        Long currentUserId =
                 getCurrentUserId();
 
+        Swipe swipe =
+                swipeService
+                        .createSwipe(
+
+                                currentUserId,
+
+                                userId,
+
+                                SwipeType.LIKE
+
+                        );
+
         return ResponseEntity.ok(
-
-                swipeService.createSwipe(
-
-                        currentUserId,
-
-                        userId,
-
-                        SwipeType.LIKE
-
+                map(
+                        swipe
                 )
-
         );
 
     }
@@ -99,8 +122,7 @@ public class SwipeController {
     @PostMapping(
             "/pass/{userId}"
     )
-
-    public ResponseEntity<Swipe>
+    public ResponseEntity<SwipeResponseDTO>
     passUser(
 
             @PathVariable
@@ -108,21 +130,25 @@ public class SwipeController {
 
     ){
 
-        Long currentUserId=
+        Long currentUserId =
                 getCurrentUserId();
 
+        Swipe swipe =
+                swipeService
+                        .createSwipe(
+
+                                currentUserId,
+
+                                userId,
+
+                                SwipeType.PASS
+
+                        );
+
         return ResponseEntity.ok(
-
-                swipeService.createSwipe(
-
-                        currentUserId,
-
-                        userId,
-
-                        SwipeType.PASS
-
+                map(
+                        swipe
                 )
-
         );
 
     }
@@ -130,18 +156,28 @@ public class SwipeController {
     @GetMapping(
             "/likes/me"
     )
-
-    public ResponseEntity<List<Swipe>>
+    public ResponseEntity<List<SwipeResponseDTO>>
     myLikes(){
 
+        List<SwipeResponseDTO> list =
+
+                swipeService
+                        .getMyLikes(
+                                getCurrentUserId()
+                        )
+
+                        .stream()
+
+                        .map(
+                                this::map
+                        )
+
+                        .collect(
+                                Collectors.toList()
+                        );
+
         return ResponseEntity.ok(
-
-                swipeService.getMyLikes(
-
-                        getCurrentUserId()
-
-                )
-
+                list
         );
 
     }
@@ -149,18 +185,28 @@ public class SwipeController {
     @GetMapping(
             "/received"
     )
-
-    public ResponseEntity<List<Swipe>>
+    public ResponseEntity<List<SwipeResponseDTO>>
     receivedLikes(){
 
+        List<SwipeResponseDTO> list =
+
+                swipeService
+                        .getLikesReceived(
+                                getCurrentUserId()
+                        )
+
+                        .stream()
+
+                        .map(
+                                this::map
+                        )
+
+                        .collect(
+                                Collectors.toList()
+                        );
+
         return ResponseEntity.ok(
-
-                swipeService.getLikesReceived(
-
-                        getCurrentUserId()
-
-                )
-
+                list
         );
 
     }
@@ -168,7 +214,6 @@ public class SwipeController {
     @DeleteMapping(
             "/{userId}"
     )
-
     public ResponseEntity<Void>
     removeLike(
 
@@ -185,8 +230,8 @@ public class SwipeController {
 
         );
 
-        return ResponseEntity.noContent()
-
+        return ResponseEntity
+                .noContent()
                 .build();
 
     }

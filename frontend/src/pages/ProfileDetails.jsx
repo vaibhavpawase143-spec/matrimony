@@ -1,5 +1,6 @@
 import { useParams, Link } from "react-router-dom";
 import { useState, useEffect } from "react";
+import ShortlistButton from "@/components/ShortlistButton";
 import {
 Heart,
 MapPin,
@@ -10,7 +11,7 @@ ArrowLeft,
 Star,
 MessageSquare
 } from "lucide-react";
-
+import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import { useLanguage } from "@/context/LanguageContext";
 import { profileAPI,interestAPI } from "@/services/api";
@@ -188,6 +189,20 @@ Number(
 currentUser.profile.userId
 );
 
+if(
+
+interestSent
+
+){
+
+toast(
+"Interest already sent ❤️"
+);
+
+return;
+
+}
+
 const receiverId =
 Number(
 profile.userId
@@ -222,7 +237,6 @@ senderId,
 receiverId
 
 );
-
 setInterestSent(
 true
 );
@@ -388,21 +402,15 @@ Message
 
 </button>
 
-<button className="
-w-full
-bg-yellow-600
-rounded-lg
-py-3
-flex
-justify-center
-gap-2
-">
+<ShortlistButton
 
-<Star size={18}/>
+profileId={profile.id}
 
-Shortlist
+size="lg"
 
-</button>
+showLabel={true}
+
+/>
 
 </div>
 
