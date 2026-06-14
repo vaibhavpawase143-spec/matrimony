@@ -1,7 +1,16 @@
 import { Progress } from '@/components/ui/progress';
 import { CheckCircle2, AlertCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
-const ProfileCompletionBar = ({ completionPercentage = 0, message = '', showMessage = true, compact = false }) => {
+const ProfileCompletionBar = ({
+  completionPercentage = 0,
+  message = '',
+  showMessage = true,
+  compact = false
+}) => {
+
+  const navigate = useNavigate();
+
   const getColor = () => {
     if (completionPercentage === 100) return 'bg-green-500';
     if (completionPercentage >= 75) return 'bg-blue-500';
@@ -18,6 +27,7 @@ const ProfileCompletionBar = ({ completionPercentage = 0, message = '', showMess
             className="h-2"
           />
         </div>
+
         <span className="text-sm font-semibold text-muted-foreground whitespace-nowrap">
           {completionPercentage}%
         </span>
@@ -26,17 +36,44 @@ const ProfileCompletionBar = ({ completionPercentage = 0, message = '', showMess
   }
 
   return (
-    <div className="bg-gradient-to-r from-primary/5 to-primary/10 dark:from-primary/10 dark:to-primary/5 border border-primary/20 rounded-lg p-4 space-y-3">
+    <div
+      onClick={() => navigate("/settings")}
+      className="
+        bg-gradient-to-r
+        from-primary/5
+        to-primary/10
+        dark:from-primary/10
+        dark:to-primary/5
+        border
+        border-primary/20
+        rounded-lg
+        p-4
+        space-y-3
+        cursor-pointer
+        hover:shadow-md
+        transition
+      "
+    >
       <div className="flex items-center justify-between">
+
         <div className="flex items-center gap-2">
+
           {completionPercentage === 100 ? (
             <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
           ) : (
             <AlertCircle className="h-5 w-5 text-amber-500 flex-shrink-0" />
           )}
-          <h3 className="font-semibold text-foreground">Profile Completion</h3>
+
+          <h3 className="font-semibold text-foreground">
+            Profile Completion
+          </h3>
+
         </div>
-        <span className="text-sm font-bold text-primary">{completionPercentage}%</span>
+
+        <span className="text-sm font-bold text-primary">
+          {completionPercentage}%
+        </span>
+
       </div>
 
       <Progress
@@ -45,7 +82,9 @@ const ProfileCompletionBar = ({ completionPercentage = 0, message = '', showMess
       />
 
       {showMessage && message && (
-        <p className="text-sm text-muted-foreground">{message}</p>
+        <p className="text-sm text-muted-foreground">
+          {message}
+        </p>
       )}
     </div>
   );

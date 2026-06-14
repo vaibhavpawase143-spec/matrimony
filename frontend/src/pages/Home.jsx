@@ -36,8 +36,8 @@ import {
 
 profileAPI,
 
-interestAPI
-
+interestAPI,
+profileVisitorAPI
 } from "@/services/api";
 
 import {
@@ -151,6 +151,9 @@ await shortlistAPI
 );
 const likesReceived =
 await swipeAPI.getReceivedLikes();
+const visitors =
+await profileVisitorAPI
+.getMyVisitors();
 setDashboardStats(prev=>({
 
 ...prev,
@@ -166,11 +169,14 @@ shortlists:
 shortlistData.content ||
 []
 ).length,
+
 likesReceived:
-likesReceived.length
+likesReceived.length,
+
+profileViews:
+visitors.length
 
 }));
-
 }catch(err){
 
 console.log(err);
@@ -242,10 +248,26 @@ setNotificationCount
 
 const [loadingProfiles,setLoadingProfiles] =
 useState(true);
+const [showProfilePopup, setShowProfilePopup] =
+useState(false);
+useEffect(() => {
 
+  if (
+    profileData &&
+    profileData.profileCompleted === false
+  ) {
+
+
+
+    setShowProfilePopup(true);
+
+  }
+
+}, [profileData]);
 
 const [showHeart,setShowHeart] =
 useState(null);
+
 
 const calculateAge = (dob) => {
 
@@ -307,25 +329,26 @@ const calculateAge = (dob) => {
  localStorage.getItem("user")
  );
 
- const filteredProfiles =
- Array.isArray(data)
+const filteredProfiles =
+  Array.isArray(data)
 
- ?
+    ?
 
- data.filter(profile =>
+    data.filter(profile =>
 
- String(profile.email)
- .toLowerCase()
+      profile.profileCompleted === true &&
 
- !==
+      String(profile.email)
+        .toLowerCase()
 
- String(currentUser.email)
- .toLowerCase()
+      !==
 
- )
+      String(currentUser.email)
+        .toLowerCase()
 
- : [];
+    )
 
+    : [];
  console.log(
  "CURRENT USER:",
  currentUser.email
@@ -344,6 +367,16 @@ const calculateAge = (dob) => {
  "FILTERED:",
  filteredProfiles
  );
+filteredProfiles.forEach(profile => {
+
+  console.log(
+    "USER:",
+    profile.firstName,
+    "PREMIUM:",
+    profile.isPremium
+  );
+
+});
  setProfiles(
  filteredProfiles
  );
@@ -361,10 +394,10 @@ const profileCompletion = {
   completionPercentage:
     profileData?.currentStep || 0,
 
-  message:
-    (profileData?.currentStep || 0) >= 100
-      ? "Profile completed"
-      : "Complete your profile"
+ message:
+ (profileData?.currentStep || 0) >= 100
+   ? "Profile completed successfully"
+   : "Click here to complete your profile"
 };
 
   const handleLogout = () => {
@@ -414,7 +447,6 @@ toast.error(
 return;
 
 }
-
 await interestAPI.sendInterest(
 
 senderId,
@@ -484,6 +516,58 @@ timer
 },[]);
 
 return (
+
+    <>
+    {showProfilePopup && (
+      <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[9999]">
+
+        <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl">
+
+          <div className="text-center">
+
+            <div className="text-6xl mb-4">
+              ⚠️
+            </div>
+
+            <h2 className="text-2xl font-bold mb-3">
+              Complete Your Profile
+            </h2>
+
+        <p className="text-gray-600 mb-6">
+          Please complete your profile to continue.
+          You are not allowed to access this feature until your profile is completed.
+        </p>
+
+            <div className="flex gap-3 justify-center">
+
+              <button
+                className="bg-pink-600 text-white px-6 py-3 rounded-xl"
+                onClick={() =>
+                  navigate("/settings")
+                }
+              >
+                Complete Profile
+              </button>
+
+              <button
+                className="border px-6 py-3 rounded-xl"
+                onClick={() =>
+                  setShowProfilePopup(false)
+                }
+              >
+                Later
+              </button>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+    )}
+
+
     <div className="min-h-screen bg-muted/30 flex">
       {/* Sidebar */}
       <aside className={`hidden md:flex flex-col bg-card border-r border-border min-h-screen sticky top-0 transition-all duration-300 ${isSidebarOpen ? 'w-64' : 'w-20'}`}>
@@ -504,7 +588,28 @@ return (
           ].map((item) => (
             <Link
               key={item.label}
-              to={item.to}
+              to={
+                profileData?.profileCompleted
+                  ? item.to
+                  : item.label === "Dashboard"
+                  ? "/home"
+                  : "#"
+              }
+              onClick={(e) => {
+
+                if (
+                  !profileData?.profileCompleted &&
+                  item.label !== "Dashboard" &&
+                  item.label !== "Settings"
+                ) {
+
+                  e.preventDefault();
+
+                  setShowProfilePopup(true);
+
+                }
+
+              }}
               className={`w-full flex items-center px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                 isSidebarOpen ? 'gap-3' : 'justify-center'
               } ${
@@ -714,6 +819,7 @@ p-8
               ) : profiles.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {profiles.map((profile, i) => (
+
                     <motion.div
                       key={profile.id || i}
                       initial={{ opacity: 0, y: 20 }}
@@ -932,13 +1038,19 @@ No Image
 }
                     </div>
                   <div className="p-5 pb-6">
-                   <h3 className="text-xl font-bold">
+                  <h3 className="text-xl font-bold">
 
-                   {profile.firstName}
-                   {" "}
-                   {profile.lastName}
+                    {profile.firstName}
+                    {" "}
+                    {profile.lastName}
 
-                   </h3>
+                    {profile.isPremium && (
+                      <span className="ml-2 text-yellow-500">
+                        👑
+                      </span>
+                    )}
+
+                  </h3>
 
                    <p className="text-gray-600 mt-1">
 
@@ -953,11 +1065,11 @@ No Image
 
                   <button
 
-                  disabled={
-                  sentInterests.includes(
-                  profile.userId
-                  )
-                  }
+           disabled={
+             sentInterests.includes(
+               profile.userId
+             )
+           }
 
                   className="
                   w-full
@@ -970,18 +1082,27 @@ No Image
                   shadow-md
                   transition
                   "
-        onClick={()=>{
+     onClick={() => {
 
-        console.log(
-        "PROFILE CLICKED:",
-        profile
-        );
+       if (
+         !profileData?.profileCompleted
+       ) {
 
-        handleSendInterest(
-        profile
-        );
+         setShowProfilePopup(true);
 
-        }}
+         return;
+       }
+
+       console.log(
+         "PROFILE CLICKED:",
+         profile
+       );
+
+       handleSendInterest(
+         profile
+       );
+
+     }}
 
 
                   >
@@ -1022,15 +1143,22 @@ No Image
                  transition
                  "
 
-                 onClick={(e)=>{
+                 onClick={(e) => {
 
-                 e.stopPropagation();
+                   e.stopPropagation();
 
-                 navigate(
+                   if (
+                     !profileData?.profileCompleted
+                   ) {
 
-                 `/profile/${profile.id}`
+                     setShowProfilePopup(true);
 
-                 );
+                     return;
+                   }
+
+                   navigate(
+                     `/profile/${profile.id}`
+                   );
 
                  }}
 
@@ -1237,6 +1365,7 @@ showLabel={false}
       </div>
 
     </div>
+    </>
   );
 };
 

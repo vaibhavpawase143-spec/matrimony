@@ -29,59 +29,116 @@ public class UserPhotoServiceImpl implements UserPhotoService {
     // =========================
     @Override
     @Transactional
-    public String upload(MultipartFile file, PhotoType type) {
+    public String upload(
+            MultipartFile file,
+            PhotoType type
+    ) {
 
-        User user = getLoggedInUser();
+        User user =
+                getLoggedInUser();
 
-        repository.findFirstByUserIdAndPhotoType(user.getId(), type)
-                .ifPresent(existing -> {
-                    deletePhysical(existing.getPhotoUrl());
-                    repository.delete(existing);
-                });
+        long totalPhotos =
+                repository.countByUserId(
+                        user.getId()
+                );
 
-        String fileName = fileStorageService.storeFile(file);
-        String fileUrl = BASE_URL + fileName;
+        if (totalPhotos >= 8) {
 
-        UserPhoto photo = new UserPhoto();
+            throw new RuntimeException(
+                    "Maximum 8 photos allowed"
+            );
+        }
+
+        String fileName =
+                fileStorageService.storeFile(file);
+
+        String fileUrl =
+                BASE_URL + fileName;
+
+        UserPhoto photo =
+                new UserPhoto();
+
         photo.setUser(user);
         photo.setPhotoType(type);
         photo.setPhotoUrl(fileUrl);
 
-        repository.save(photo);
+        if (totalPhotos == 0) {
 
-        if (type == PhotoType.PROFILE) {
-            updateProfile(user, fileUrl);
+            photo.setPrimaryPhoto(true);
+
+            updateProfile(
+                    user,
+                    fileUrl
+            );
         }
+
+        repository.save(photo);
 
         return fileUrl;
     }
-
     // =========================
     // 📸 MULTIPLE
     // =========================
     @Override
     @Transactional
-    public List<String> uploadMultiple(List<MultipartFile> files) {
+    public List<String> uploadMultiple(
+            List<MultipartFile> files
+    ) {
 
-        User user = getLoggedInUser();
+        User user =
+                getLoggedInUser();
+
+        long existing =
+                repository.countByUserId(
+                        user.getId()
+                );
+
+//        if (
+//                existing + files.size()
+//                        > 8
+//        ) {
+//
+//            throw new RuntimeException(
+//                    "Maximum 8 photos allowed"
+//            );
+//        }
 
         return files.stream().map(file -> {
 
-            String fileName = fileStorageService.storeFile(file);
-            String fileUrl = BASE_URL + fileName;
+            String fileName =
+                    fileStorageService.storeFile(file);
 
-            UserPhoto photo = new UserPhoto();
+            String fileUrl =
+                    BASE_URL + fileName;
+
+            UserPhoto photo =
+                    new UserPhoto();
+
             photo.setUser(user);
             photo.setPhotoType(PhotoType.OTHER);
             photo.setPhotoUrl(fileUrl);
+
+            if (
+                    repository.countByUserId(
+                            user.getId()
+                    ) == 0
+            ) {
+
+                photo.setPrimaryPhoto(true);
+
+                updateProfile(
+                        user,
+                        fileUrl
+                );
+            }
 
             repository.save(photo);
 
             return fileUrl;
 
         }).toList();
-    }
 
+    }
     // =========================
     // ❌ DELETE
     // =========================
@@ -113,12 +170,109 @@ public class UserPhotoServiceImpl implements UserPhotoService {
 
     @Override
     public String getMyProfilePhoto() {
+
         return repository
-                .findFirstByUserIdAndPhotoType(getLoggedInUser().getId(), PhotoType.PROFILE)
+                .findFirstByUserIdAndPrimaryPhotoTrue(
+                        getLoggedInUser().getId()
+                )
                 .map(UserPhoto::getPhotoUrl)
                 .orElse(null);
     }
 
+    @Override
+    public List<UserPhoto> getPhotosByUserId(
+            Long userId
+    ) {
+
+        return repository.findByUserId(
+                userId
+        );
+    }
+
+    @Override
+    public long getPhotoCount(
+            Long userId
+    ) {
+
+        return repository.countByUserId(
+                userId
+        );
+    }
+
+    @Override
+    @Transactional
+    public void setPrimary(
+            Long photoId
+    ) {
+
+        User user =
+                getLoggedInUser();
+
+        UserPhoto photo =
+                repository.findById(photoId)
+                        .orElseThrow(
+                                () -> new RuntimeException(
+                                        "Photo not found"
+                                )
+                        );
+
+        if (
+                !photo.getUser().getId()
+                        .equals(user.getId())
+        ) {
+
+            throw new RuntimeException(
+                    "Access denied"
+            );
+        }
+
+        repository.clearPrimaryPhotos(
+                user.getId()
+        );
+
+        photo.setPrimaryPhoto(true);
+
+        repository.save(photo);
+
+        updateProfile(
+                user,
+                photo.getPhotoUrl()
+        );
+    }
+
+    @Override
+    @Transactional
+    public void deletePhoto(Long photoId) {
+
+        User user = getLoggedInUser();
+
+        UserPhoto photo =
+                repository.findById(photoId)
+                        .orElseThrow(
+                                () -> new RuntimeException(
+                                        "Photo not found"
+                                )
+                        );
+
+        if (
+                !photo.getUser()
+                        .getId()
+                        .equals(user.getId())
+        ) {
+
+            throw new RuntimeException(
+                    "Access denied"
+            );
+
+        }
+
+        deletePhysical(
+                photo.getPhotoUrl()
+        );
+
+        repository.delete(photo);
+
+    }
     // =========================
     // 🔧 HELPERS
     // =========================

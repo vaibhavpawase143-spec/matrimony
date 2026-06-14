@@ -8,13 +8,54 @@ import java.util.List;
 
 public interface UserPhotoService {
 
-    String upload(MultipartFile file, PhotoType type);
+    // =========================
+    // UPLOAD
+    // =========================
 
-    List<String> uploadMultiple(List<MultipartFile> files);
+    String upload(
+            MultipartFile file,
+            PhotoType type
+    );
 
-    void delete(PhotoType type);
+    List<String> uploadMultiple(
+            List<MultipartFile> files
+    );
+
+    // =========================
+    // DELETE
+    // =========================
+
+    void delete(
+            PhotoType type
+    );
+
+    // =========================
+    // GET MY PHOTOS
+    // =========================
 
     List<UserPhoto> getMyPhotos();
 
     String getMyProfilePhoto();
+
+    // =========================
+    // PHOTO GALLERY
+    // =========================
+
+    List<UserPhoto> getPhotosByUserId(
+            Long userId
+    );
+
+    long getPhotoCount(
+            Long userId
+    );
+
+    // =========================
+    // PRIMARY PHOTO
+    // =========================
+
+    void setPrimary(
+            Long photoId
+    );
+
+    void deletePhoto(Long photoId);
 }

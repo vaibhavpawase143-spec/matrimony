@@ -243,7 +243,7 @@ public class ProfileResponseDTO {
     // =====================================================
 
     private Boolean isActive;
-
+    private Boolean verified;
     private Integer currentStep;
 
     private Boolean profileCompleted;

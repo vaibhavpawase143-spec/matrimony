@@ -16,6 +16,10 @@ import SentInterests from "./pages/SentInterests";
 import ReceivedInterests from "./pages/ReceivedInterests";
 import EmailVerified from "@/pages/EmailVerified";
 import MyShortlists from "@/pages/MyShortlists";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+import ProfileVisitors from "./pages/ProfileVisitors";
+
 // NORMAL PAGES
 import Index from "./pages/Index";
 import Home from "./pages/Home";
@@ -72,7 +76,7 @@ const App = () => (
                     <Route path="/register" element={<Register />} />
                     <Route path="/verify-email" element={<VerifyEmail />} />
                     <Route path="/request-verification" element={<RequestVerification />} />
-                    <Route path="/profie/create" element={<CreateProfile />} />
+                    <Route path="/profile/create" element={<CreateProfile />} />
                     <Route path="/about" element={<About />} />
                     <Route path="/contact" element={<Contact />} />
                     <Route path="/privacy-policy" element={<PrivacyPolicy />} />
@@ -90,6 +94,27 @@ const App = () => (
                         </AuthenticatedLayout>
                       }
                     />
+
+                    <Route
+                      path="/profile-visitors"
+                      element={
+                        <AuthenticatedLayout>
+                          <ProfileVisitors />
+                        </AuthenticatedLayout>
+                      }
+                    />
+
+
+<Route
+path="/forgot-password"
+element={<ForgotPassword />}
+/>
+
+<Route
+path="/reset-password"
+element={<ResetPassword />}
+/>
+
                     <Route
                       path="/search"
                       element={

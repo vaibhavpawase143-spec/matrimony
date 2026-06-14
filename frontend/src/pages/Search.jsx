@@ -8,27 +8,79 @@ import { searchAPI, masterDataAPI } from "@/services/api";
 import { useMatrimonyOptions } from "@/hooks/useMatrimonyOptions";
 import { useLanguage } from "@/context/LanguageContext.jsx";
 
-const SelectField = ({ label, options, value, onChange, placeholder = "Select" }) => (
-  <div>
-    <label className="text-xs font-medium text-foreground mb-1 block">{label}</label>
-    <div className="relative">
-      <select 
-        value={value} 
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full appearance-none bg-background border border-border rounded-lg px-4 py-2.5 pr-10 text-sm text-muted-foreground font-body focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
-      >
-        <option value="">{placeholder}</option>
-        {options.map((o) => (
-            <option key={o.id} value={o.id}>
-                {o.name}
-            </option>
-        ))}
-      </select>
-      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-    </div>
-  </div>
-);
+const SelectField = ({
+  label,
+  options = [],
+  value,
+  onChange,
+  placeholder = "Select"
+}) => {
 
+  const safeOptions =
+    Array.isArray(options)
+      ? options
+      : [];
+
+  return (
+    <div>
+      <label className="text-xs font-medium text-foreground mb-1 block">
+        {label}
+      </label>
+
+      <div className="relative">
+
+        <select
+          value={value || ""}
+          onChange={(e) => onChange(e.target.value)}
+          className="
+          w-full
+          appearance-none
+          bg-background
+          border
+          border-border
+          rounded-lg
+          px-4
+          py-2.5
+          pr-10
+          text-sm
+          text-muted-foreground
+          "
+        >
+
+          <option value="">
+            {placeholder}
+          </option>
+
+          {safeOptions.map((o) => (
+
+            <option
+              key={o?.id || o?.value}
+              value={o?.id || o?.value}
+            >
+              {o?.name || o?.label}
+            </option>
+
+          ))}
+
+        </select>
+
+        <ChevronDown
+          className="
+          absolute
+          right-3
+          top-1/2
+          -translate-y-1/2
+          h-3.5
+          w-3.5
+          text-muted-foreground
+          pointer-events-none
+          "
+        />
+
+      </div>
+    </div>
+  );
+};
 const SearchPage = () => {
   const { startLoading, stopLoading } = useLoading();
   const { success, error } = useToast();
@@ -52,6 +104,8 @@ const SearchPage = () => {
     height_id: '',
     weight_id: '',
     marital_status_id: '',
+    min_weight: '',
+    max_weight: '',
     sort: 'relevance'
   });
 
@@ -67,72 +121,215 @@ const SearchPage = () => {
     maritalStatuses: []
   });
 
+useEffect(() => {
+
+  const loadCastes = async () => {
+
+    if (!filters.religion_id) {
+
+      setMasterData(prev => ({
+        ...prev,
+        castes: [],
+        subCastes: []
+      }));
+
+      return;
+    }
+
+    const data =
+      await masterDataAPI.getCastes(
+        filters.religion_id
+      );
+
+    setMasterData(prev => ({
+      ...prev,
+      castes: data || []
+    }));
+  };
+
+  loadCastes();
+
+}, [filters.religion_id]);
+useEffect(() => {
+
+  const loadSubCastes = async () => {
+
+    if (!filters.caste_id) {
+      setMasterData(prev => ({
+        ...prev,
+        subCastes: []
+      }));
+      return;
+    }
+
+    try {
+
+      const data =
+        await masterDataAPI.getSubCastes(
+          filters.caste_id
+        );
+
+      console.log(
+        "SUB CASTES =",
+        data
+      );
+
+      setMasterData(prev => ({
+        ...prev,
+        subCastes: data || []
+      }));
+
+    } catch (err) {
+
+      console.error(
+        "SUB CASTE ERROR",
+        err
+      );
+
+    }
+  };
+
+  loadSubCastes();
+
+}, [filters.caste_id]);
+useEffect(() => {
+  console.log("MASTER DATA =", masterData);
+}, [masterData]);
   // Load master data on component mount
+  const loadMasterData = async () => {
+
+    try {
+
+      const [
+        religionsRes,
+
+        citiesRes,
+        educationLevelsRes,
+        occupationsRes,
+        maritalStatusesRes,
+        weightsRes
+      ] = await Promise.all([
+        masterDataAPI.getReligions(),
+
+        masterDataAPI.getCities(),
+        masterDataAPI.getEducationLevels(),
+        masterDataAPI.getOccupations(),
+        masterDataAPI.getMaritalStatuses(),
+         masterDataAPI.getWeights()
+      ]);
+
+setMasterData({
+  religions: Array.isArray(religionsRes) ? religionsRes : [],
+  castes: [],
+  cities: Array.isArray(citiesRes) ? citiesRes : [],
+  educationLevels: Array.isArray(educationLevelsRes) ? educationLevelsRes : [],
+  occupations: Array.isArray(occupationsRes) ? occupationsRes : [],
+  maritalStatuses: Array.isArray(maritalStatusesRes) ? maritalStatusesRes : [],
+  subCastes: [],
+  heights: [],
+  weights: Array.isArray(weightsRes)
+    ? weightsRes
+    : [],
+});
+
+      console.log("MASTER DATA LOADED");
+
+    } catch (err) {
+
+      console.error(
+        "MASTER DATA ERROR",
+        err
+      );
+
+    }
+  };
   useEffect(() => {
     loadMasterData();
     performSearch(); // Initial search
   }, []);
 
-  const loadMasterData = async () => {
-    try {
-      const [
-        religionsRes,
-        citiesRes,
-        educationLevelsRes,
-        occupationsRes,
-        maritalStatusesRes
-      ] = await Promise.all([
-        masterDataAPI.getReligions(),
-        masterDataAPI.getCities(),
-        masterDataAPI.getEducationLevels(),
-        masterDataAPI.getOccupations(),
-        masterDataAPI.getMaritalStatuses()
-      ]);
 
-      setMasterData({
-        religions: religionsRes.data || [],
-        castes: [], // Load based on selected religion
-        cities: citiesRes.data || [],
-        educationLevels: educationLevelsRes.data || [],
-        occupations: occupationsRes.data || [],
-        heights: [], // Add if needed
-        weights: [], // Add if needed
-        maritalStatuses: maritalStatusesRes.data || []
-      });
-    } catch (err) {
-      console.warn('Failed to load master data:', err.message);
-      // Fallback to local options if API fails
-      setMasterData({
-        religions: getOptions('religion').map(r => ({ value: r, label: r })),
-        cities: getOptions('city').map(c => ({ value: c, label: c })),
-        educationLevels: getOptions('education').map(e => ({ value: e, label: e })),
-        occupations: getOptions('occupation').map(o => ({ value: o, label: o })),
-        maritalStatuses: getOptions('maritalStatus').map(m => ({ value: m, label: m })),
-        castes: [],
-        heights: [],
-        weights: []
-      });
-    }
-  };
+const performSearch = async () => {
+  console.log('🔍 Performing search with filters:', filters);
 
-  const performSearch = async () => {
-    console.log('🔍 Performing search with filters:', filters);
-    setLoading(true);
-    try {
-      const response = await searchAPI.searchProfiles(filters);
-      console.log('🔍 Search response:', response);
-      setSearchResults(response.data || []);
-      setTotalResults(response.total || response.data?.length || 0);
-      console.log('🔍 Search results count:', response.data?.length || 0);
-    } catch (err) {
-      console.error('🔍 Search failed:', err.message);
-      error('Search failed. Please try again.');
-      setSearchResults([]);
-      setTotalResults(0);
-    } finally {
-      setLoading(false);
-    }
-  };
+  setLoading(true);
+
+  try {
+
+    const searchPayload = {
+      religion: filters.religion_id
+        ? { id: Number(filters.religion_id) }
+        : null,
+
+      caste: filters.caste_id
+        ? { id: Number(filters.caste_id) }
+        : null,
+
+      city: filters.city_id
+        ? { id: Number(filters.city_id) }
+        : null,
+
+      educationLevel: filters.education_level_id
+        ? { id: Number(filters.education_level_id) }
+        : null,
+
+      occupation: filters.occupation_id
+        ? { id: Number(filters.occupation_id) }
+        : null,
+
+      maritalStatus: filters.marital_status_id
+        ? { id: Number(filters.marital_status_id) }
+        : null,
+
+      minAge: filters.min_age
+        ? Number(filters.min_age)
+        : null,
+
+      maxAge: filters.max_age
+        ? Number(filters.max_age)
+        : null,
+
+        minWeight: filters.min_weight
+          ? Number(filters.min_weight)
+          : null,
+
+        maxWeight: filters.max_weight
+          ? Number(filters.max_weight)
+          : null,
+    };
+    console.log("SEARCH PAYLOAD =", searchPayload);
+
+    const response =
+      await searchAPI.searchProfiles(searchPayload);
+
+    console.log(
+      "SEARCH RESPONSE =",
+      response
+    );
+
+    setSearchResults(response.content || []);
+    setTotalResults(response.totalElements || 0);
+
+  } catch (err) {
+
+    console.error(
+      "🔍 Search failed:",
+      err
+    );
+
+    error(
+      "Search failed. Please try again."
+    );
+
+    setSearchResults([]);
+    setTotalResults(0);
+
+  } finally {
+
+    setLoading(false);
+
+  }
+};
 
   const handleFilterChange = (field, value) => {
     setFilters(prev => ({
@@ -140,7 +337,11 @@ const SearchPage = () => {
       [field]: value
     }));
   };
-
+console.log(
+  "WEIGHT FILTER =",
+  filters.min_weight,
+  filters.max_weight
+);
   const handleSearch = () => {
     performSearch();
   };
@@ -157,6 +358,8 @@ const SearchPage = () => {
       height_id: '',
       weight_id: '',
       marital_status_id: '',
+      min_weight: '',
+      max_weight: '',
       sort: 'relevance'
     });
     // Perform search after reset
@@ -250,7 +453,23 @@ const SearchPage = () => {
                   onChange={(value) => handleFilterChange('marital_status_id', value)}
                   placeholder={t.search.placeholders.allStatus}
                 />
+<SelectField
+  label="Min Weight"
+  value={filters.min_weight}
+  onChange={(value) =>
+    handleFilterChange('min_weight', value)
+  }
+  options={masterData.weights}
+/>
 
+<SelectField
+  label="Max Weight"
+  value={filters.max_weight}
+  onChange={(value) =>
+    handleFilterChange('max_weight', value)
+  }
+  options={masterData.weights}
+/>
                 <button 
                   onClick={handleSearch}
                   disabled={loading}
@@ -318,10 +537,10 @@ const SearchPage = () => {
                 {searchResults.map((profile) => (
                   <Link to={`/profile/${profile.id}`} key={profile.id} className="bg-card rounded-xl overflow-hidden border border-border shadow-sm hover:shadow-md transition-shadow group">
                     <div className="aspect-[3/4] overflow-hidden bg-muted">
-                      {profile.photo_url || profile.profilePhotoUrl ? (
+                      {profile.imageUrl ? (
                         <img 
-                          src={profile.photo_url || profile.profilePhotoUrl} 
-                          alt={profile.name || profile.fullName} 
+                          src={profile.imageUrl}
+                         alt={`${profile.firstName} ${profile.lastName}`}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                           onError={(e) => {
                             e.target.style.display = 'none';
@@ -333,7 +552,7 @@ const SearchPage = () => {
                           <div className="text-center">
                             <div className="w-16 h-16 bg-muted-foreground/20 rounded-full mx-auto mb-2 flex items-center justify-center">
                               <span className="text-muted-foreground text-xl">
-                                {profile.name?.charAt(0)?.toUpperCase() || '?'}
+                           {profile.firstName?.charAt(0)?.toUpperCase() || '?'}
                               </span>
                             </div>
                             <p className="text-xs text-muted-foreground">No Photo</p>
@@ -342,14 +561,18 @@ const SearchPage = () => {
                       )}
                     </div>
                     <div className="p-4">
-                      <h3 className="text-sm font-semibold text-foreground">
-                        {profile.name || 'Unknown'}, <span className="text-primary">{profile.age || '?'}</span>
-                      </h3>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {profile.occupation || 'Profession not specified'} · {profile.city || 'Location not specified'}
-                      </p>
+                    <h3 className="text-sm font-semibold text-foreground">
+                      {profile.firstName} {profile.lastName}
+                    </h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {profile.occupationName || 'Profession not specified'}
+                    ·
+                    {profile.cityName || 'Location not specified'}
+                  </p>
                       <p className="text-xs text-muted-foreground">
-                        {profile.education_level || 'Education not specified'} · {profile.religion || 'Religion not specified'}
+                        {profile.educationLevelName || 'Education not specified'}
+                        ·
+                        {profile.religionName || 'Religion not specified'}
                       </p>
                       <div className="flex gap-2 mt-3">
                         <button className="flex-1 bg-accent/10 text-accent text-xs font-semibold py-1.5 rounded-lg hover:bg-accent/20 transition-colors">

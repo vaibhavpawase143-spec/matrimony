@@ -5,11 +5,78 @@ import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/context/LanguageContext.jsx";
 import logo from "@/assets/logo.png";
-
+import { Bell } from "lucide-react";
+import { notificationAPI } from "@/services/api";
 const Navbar = () => {
+     alert("NAVBAR LOADED");
+    console.log(
+        "NAVBAR LOADED"
+      );
   const [mobileOpen, setMobileOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [notifications, setNotifications] =
+  useState([]);
+
+  const [unreadCount, setUnreadCount] =
+  useState(0);
+
+  const [showNotifications,
+  setShowNotifications] =
+  useState(false);
+  useEffect(() => {
+ console.log(
+    "LOAD NOTIFICATIONS STARTED"
+  );
+    const loadNotifications =
+      async () => {
+
+        try {
+  console.log(
+          "INSIDE LOAD NOTIFICATIONS"
+        );
+          const user =
+            JSON.parse(
+              localStorage.getItem("user")
+            );
+
+          if (!user?.profile?.userId)
+            return;
+
+          const list =
+            await notificationAPI.getAll(
+              user.profile.userId
+            );
+
+          const count =
+            await notificationAPI.unreadCount(
+              user.profile.userId
+            );
+  console.log(
+    "NOTIFICATIONS =",
+    list
+  );
+
+  console.log(
+    "UNREAD COUNT =",
+    count
+  );
+          setNotifications(list);
+
+          setUnreadCount(count);
+
+        } catch(err) {
+
+          console.log(err);
+
+        }
+
+      };
+
+    loadNotifications();
+
+  }, []);
+
   const { isLoggedIn, userName, logout } = useAuth();
   const navigate = useNavigate();
   const { language, setLanguage, t } = useLanguage();
@@ -41,7 +108,6 @@ const Navbar = () => {
       setDarkMode(true);
       document.documentElement.classList.add('dark');
     }
-
     // Handle scroll effect
     const handleScroll = () => {
       setScrolled(window.scrollY > 10);
@@ -117,6 +183,149 @@ const Navbar = () => {
           >
             <Globe className="h-4 w-4" />
           </button>
+          <div className="relative">
+
+        <button
+          onClick={() => {
+console.log(
+  "SHOW NOTIFICATIONS = ",
+  showNotifications
+);
+            console.log(
+              "BELL CLICKED"
+            );
+
+            setShowNotifications(
+              !showNotifications
+            );
+
+          }}
+
+          className="
+          relative
+          p-2
+          text-foreground
+          hover:text-primary
+          "
+        >
+
+          <Bell className="h-5 w-5" />
+
+          {unreadCount > 0 && (
+
+            <span
+              className="
+              absolute
+              -top-1
+              -right-1
+              bg-red-500
+              text-white
+              text-xs
+              rounded-full
+              w-5
+              h-5
+              flex
+              items-center
+              justify-center
+              "
+            >
+              {unreadCount}
+            </span>
+
+          )}
+
+        </button>
+          {
+          showNotifications && (
+
+          <div
+          className="
+          absolute
+          right-0
+          top-10
+          w-80
+          bg-white
+          shadow-lg
+          rounded-lg
+          border
+          max-h-96
+          overflow-y-auto
+          z-50
+          "
+          >
+
+          <h3
+          className="
+          font-bold
+          p-3
+          border-b
+          "
+          >
+
+          Notifications
+
+          </h3>
+
+          {
+          notifications.length === 0 ? (
+
+          <p className="p-3">
+
+          No Notifications
+
+          </p>
+
+          ) : (
+
+          notifications.map(
+          (item) => (
+
+          <div
+          key={item.id}
+          className="
+          p-3
+          border-b
+          "
+          >
+
+          <p>
+
+          {item.message}
+
+          </p>
+
+          <p
+          className="
+          text-xs
+          text-gray-500
+          "
+          >
+
+          {
+          new Date(
+          item.createdAt
+          ).toLocaleString()
+          }
+
+          </p>
+
+          </div>
+
+          )
+
+          )
+
+          )
+
+          }
+
+          </div>
+
+          )
+
+          }
+
+          </div>
           <button 
             onClick={toggleDarkMode}
             className="text-foreground hover:text-primary transition-all duration-300 ease-in-out p-2 rounded-lg hover:bg-muted/50 hover:scale-105 hover:shadow-md"

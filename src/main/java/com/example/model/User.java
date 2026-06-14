@@ -79,6 +79,7 @@ public class User {
     private Integer reportCount = 0;
 
     // ================= ROLE =================
+    @JsonIgnore
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "users_roles",

@@ -42,7 +42,7 @@ public class ProfileServiceImpl implements ProfileService {
     private final EmployedRepository employedRepository;
 
     private final DisabilityStatusRepository disabilityStatusRepository;
-
+    private final UserPhotoRepository userPhotoRepository;
     private final BloodGroupRepository bloodGroupRepository;
 
     private final BrotherTypeRepository brotherTypeRepository;
@@ -1025,7 +1025,15 @@ public class ProfileServiceImpl implements ProfileService {
             dto.setLastName(
                     p.getUser().getLastName()
             );
+            dto.setVerified(
 
+                    p.getUser().getEmailVerified()
+
+                            &&
+
+                            p.getUser().getPhoneVerified()
+
+            );
             dto.setEmail(
                     p.getUser().getEmail()
             );
@@ -1520,6 +1528,9 @@ public class ProfileServiceImpl implements ProfileService {
         dto.setIsActive(
                 p.getIsActive()
         );
+        dto.setIsPremium(
+                p.getIsPremium()
+        );
         return dto;
     }
 
@@ -1705,6 +1716,18 @@ public class ProfileServiceImpl implements ProfileService {
         total++;
         if (p.getImageUrl() != null &&
                 !p.getImageUrl().isBlank()) filled++;
+        // ================= PHOTOS =================
+
+        long photoCount =
+                userPhotoRepository.countByUserId(
+                        p.getUser().getId()
+                );
+
+        total++;
+
+        if (photoCount >= 4) {
+            filled++;
+        }
 
         // ================= PARTNER PREF =================
 
@@ -1716,8 +1739,14 @@ public class ProfileServiceImpl implements ProfileService {
                 percentage
         );
 
+        boolean hasMinimumPhotos =
+                userPhotoRepository.countByUserId(
+                        p.getUser().getId()
+                ) >= 4;
+
         p.setProfileCompleted(
                 percentage >= 90
+                        && hasMinimumPhotos
         );
 
         System.out.println(

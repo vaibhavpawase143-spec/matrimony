@@ -113,6 +113,22 @@ route:'/shortlists'
 
 },
 {
+label:'Profile Visitors',
+
+value:
+defaultStats.profileViews,
+
+icon:Eye,
+
+color:
+'bg-green-100 dark:bg-green-900/30',
+
+textColor:
+'text-green-600 dark:text-green-400',
+
+route:'/profile-visitors'
+},
+{
 label:'Likes Received',
 
 value: defaultStats.likesReceived || 0,

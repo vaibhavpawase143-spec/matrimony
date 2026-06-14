@@ -1,6 +1,7 @@
 // API service for frontend development
 import errorHandler from '@/utils/errorHandler';
 import EmailVerified from "@/pages/EmailVerified";
+
 const API_BASE_URL = '/api'; // Will be proxied to backend
 
 // Token validation helper
@@ -62,9 +63,17 @@ const apiClient = async (endpoint, options = {}) => {
       throw error;
     }
 
-    const result = await response.json();
-    console.log('✅ API Success Response:', result);
-    return result;
+   const text = await response.text();
+
+   if (!text) {
+     return {};
+   }
+
+   try {
+     return JSON.parse(text);
+   } catch {
+     return text;
+   }
   } catch (error) {
     console.error('❌ API Request Failed:', error);
     console.error('❌ Error details:', {
@@ -84,6 +93,161 @@ const apiClient = async (endpoint, options = {}) => {
   }
 };
 
+deletePhoto: async (photoId) => {
+
+  const response = await fetch(
+    `${API_BASE_URL}/photos/${photoId}`,
+    {
+      method: "DELETE",
+      headers: {
+        Authorization:
+          `Bearer ${localStorage.getItem("token")}`
+      }
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      "Failed to delete photo"
+    );
+  }
+
+}
+
+
+export const photoAPI = {
+
+  getMyPhotos: async () => {
+
+    const response = await fetch(
+      `${API_BASE_URL}/photos/me`,
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`
+        }
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to load photos");
+    }
+
+    return await response.json();
+  },
+getUserPhotos: async (userId) => {
+
+  const response = await fetch(
+    `${API_BASE_URL}/photos/user/${userId}`,
+    {
+      headers: {
+        Authorization:
+          `Bearer ${localStorage.getItem("token")}`
+      }
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      "Failed to load photos"
+    );
+  }
+
+  return await response.json();
+},
+  uploadMultiple: async (formData) => {
+
+    const response = await fetch(
+      `${API_BASE_URL}/photos/upload-multiple`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`
+        },
+        body: formData
+      }
+    );
+
+    const text = await response.text();
+
+    console.log(
+      "UPLOAD RESPONSE:",
+      response.status,
+      text
+    );
+
+    if (!response.ok) {
+      throw new Error(text || "Photo upload failed");
+    }
+
+    try {
+      return JSON.parse(text);
+    } catch {
+      return text;
+    }
+  },
+
+  deletePhoto: async (photoId) => {
+
+    const response = await fetch(
+      `${API_BASE_URL}/photos/${photoId}`,
+      {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`
+        }
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to delete photo");
+    }
+
+    return true;
+  }
+
+};
+
+export const notificationAPI = {
+
+  getAll: async (userId) => {
+
+    return await apiClient(
+      `/notifications?userId=${userId}`
+    );
+
+  },
+
+  unreadCount: async (userId) => {
+
+    return await apiClient(
+      `/notifications/unread?userId=${userId}`
+    );
+
+  },
+
+  markRead: async (id) => {
+
+    return await apiClient(
+      `/notifications/read/${id}`,
+      {
+        method: "PUT"
+      }
+    );
+
+  },
+
+  delete: async (id) => {
+
+    return await apiClient(
+      `/notifications/${id}`,
+      {
+        method: "DELETE"
+      }
+    );
+
+  }
+
+};
 export const authAPI = {
   login: async (data, isAdmin = false) => {
     try {
@@ -172,8 +336,76 @@ export const authAPI = {
       // Return null instead of throwing for getCurrentUser
       return null;
     }
-  }
+  },
+ forgotPassword: async (email) => {
+
+   return await apiClient(
+
+     "/auth/forgot-password",
+
+     {
+       method: "POST",
+
+       body: JSON.stringify({
+         email
+       })
+
+     }
+
+   );
+
+ },
+resetPassword: async (
+  token,
+  newPassword
+) => {
+
+  return await apiClient(
+
+    "/auth/reset-password",
+
+    {
+      method: "POST",
+
+      body: JSON.stringify({
+
+        token,
+
+        newPassword
+
+      })
+
+    }
+
+  );
+
+},
+
 };
+
+export const profileVisitorAPI = {
+
+  saveVisit: async (visitedUserId) => {
+
+    return await apiClient(
+      `/profile-visitors/${visitedUserId}`,
+      {
+        method: "POST"
+      }
+    );
+
+  },
+
+  getMyVisitors: async () => {
+
+    return await apiClient(
+      "/profile-visitors/me"
+    );
+
+  }
+
+};
+
 
 export const profileAPI = {
 
@@ -300,8 +532,7 @@ error?.message ||
 }
 
 };
-
-export const interestAPI = {
+ export const interestAPI = {
 
 getReceivedPendingInterests:
 

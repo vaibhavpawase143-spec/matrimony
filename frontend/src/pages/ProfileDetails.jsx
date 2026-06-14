@@ -11,11 +11,17 @@ ArrowLeft,
 Star,
 MessageSquare
 } from "lucide-react";
+import { photoAPI } from "@/services/api";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import { useLanguage } from "@/context/LanguageContext";
-import { profileAPI,interestAPI } from "@/services/api";
+import {
+  profileAPI,
+  interestAPI,
+  profileVisitorAPI
+} from "@/services/api";
 import toast from "react-hot-toast";
+
 
 const InfoRow = ({label,value}) => (
 
@@ -55,7 +61,8 @@ text-right
 const ProfileDetails=()=>{
 
 const {t}=useLanguage();
-
+const [currentPhotoIndex, setCurrentPhotoIndex] =
+useState(0);
 const calculateAge=(dob)=>{
 
 if(!dob) return "-";
@@ -88,6 +95,11 @@ return age;
 
 };
 
+const [galleryPhotos,setGalleryPhotos] =
+useState([]);
+
+const [showGallery,setShowGallery] =
+useState(false);
 const {id}=useParams();
 
 const [profile,setProfile]=
@@ -95,6 +107,9 @@ useState(null);
 const [interestSent,
 setInterestSent]=
 useState(false);
+const [canViewContact,setCanViewContact] =
+useState(false);
+
 useEffect(()=>{
 
 const loadProfile =
@@ -107,22 +122,94 @@ await profileAPI
 .getProfileById(id);
 
 setProfile(data);
-
-const currentUser =
-JSON.parse(
-localStorage.getItem(
-"user"
-)
+const photos =
+await photoAPI.getUserPhotos(
+  data.userId
 );
 
+console.log(
+  "PHOTOS = ",
+  photos
+);
+console.log(
+  "Gallery Photos =",
+  photos
+);
+
+console.log(
+  "Gallery Length =",
+  photos.length
+);
+console.log(
+  "FIRST PHOTO =",
+  photos[0]
+);
+setGalleryPhotos(
+  photos
+);
+const currentUser =
+JSON.parse(
+  localStorage.getItem("user")
+);
+console.log(
+  "CURRENT USER",
+  currentUser
+);
+
+console.log(
+  "PROFILE DATA",
+  data
+);
+if (
+  currentUser?.profile?.userId !==
+  data.userId
+) {
+
+  console.log(
+    "VISITOR SAVE START",
+    data.userId
+  );
+
+//   await profileVisitorAPI.saveVisit(
+//     data.userId
+//   );
+
+  console.log(
+    "VISITOR SAVE SUCCESS"
+  );
+}
 const sentInterests =
 await interestAPI
 .getSentInterests(
 
 currentUser.profile.userId
 
+);console.log(
+  "SENT INTERESTS =",
+  JSON.stringify(
+    sentInterests,
+    null,
+    2
+  )
+);
+const acceptedInterest =
+sentInterests.find(
+
+item =>
+
+Number(item.receiverId) ===
+Number(data.userId)
+
+&&
+
+item.status ===
+"ACCEPTED"
+
 );
 
+setCanViewContact(
+!!acceptedInterest
+);
 const alreadySent =
 sentInterests.some(
 
@@ -159,108 +246,72 @@ loadProfile();
 }
 
 },[id]);
-const handleSendInterest =
-async()=>{
+const handleSendInterest = async () => {
 
-try{
+  try {
 
-const currentUser =
-JSON.parse(
-localStorage.getItem(
-"user"
-)
-);
+    const currentUser =
+      JSON.parse(
+        localStorage.getItem("user")
+      );
 
-if(
-!currentUser ||
-!profile
-){
+    if (!currentUser || !profile) {
 
-toast.error(
-"User not found"
-);
+      toast.error("User not found");
+      return;
 
-return;
+    }
 
-}
+    const senderId =
+      Number(
+        currentUser.profile.userId
+      );
 
-const senderId =
-Number(
-currentUser.profile.userId
-);
+    if (interestSent) {
 
-if(
+      toast(
+        "Interest already sent ❤️"
+      );
 
-interestSent
+      return;
 
-){
+    }
 
-toast(
-"Interest already sent ❤️"
-);
+    const receiverId =
+      Number(profile.userId);
 
-return;
+    if (senderId === receiverId) {
 
-}
+      toast.error(
+        "You cannot send interest to yourself"
+      );
 
-const receiverId =
-Number(
-profile.userId
-);
+      return;
 
-console.log(
-"SENDER:",
-senderId
-);
+    }
 
-console.log(
-"RECEIVER:",
-receiverId
-);
+    await interestAPI.sendInterest(
+      senderId,
+      receiverId
+    );
 
-if(
-senderId === receiverId
-){
+    setInterestSent(true);
 
-toast.error(
-"You cannot send interest to yourself"
-);
+    toast.success(
+      "Interest Sent Successfully ❤️"
+    );
 
-return;
+  } catch (err) {
 
-}
+    console.log(err);
 
-await interestAPI.sendInterest(
+    toast.error(
+      err?.message || "Failed"
+    );
 
-senderId,
-
-receiverId
-
-);
-setInterestSent(
-true
-);
-
-toast.success(
-"Interest Sent Successfully ❤️"
-);
-
-}catch(err){
-
-console.log(err);
-
-toast.error(
-
-err?.message ||
-
-"Failed"
-
-);
-
-}
+  }
 
 };
-
 if(!profile){
 
 return(
@@ -281,7 +332,7 @@ Loading Profile...
 }
 
 return(
-
+<>
 <div className="
 min-h-screen
 bg-muted/30
@@ -401,6 +452,38 @@ gap-2
 Message
 
 </button>
+<button
+  onClick={() => {
+
+    if (
+      !galleryPhotos ||
+      galleryPhotos.length === 0
+    ) {
+
+      toast(
+        "This user has not uploaded any gallery photos"
+      );
+
+      return;
+    }
+
+    setCurrentPhotoIndex(0);
+    setShowGallery(true);
+
+  }}
+  className="
+  w-full
+  bg-blue-600
+  hover:bg-blue-700
+  text-white
+  rounded-lg
+  py-3
+  font-medium
+  transition
+  "
+>
+  View Photo Gallery
+</button>
 
 <ShortlistButton
 
@@ -445,7 +528,28 @@ font-bold
 {profile.lastName}
 
 </h1>
+{
+profile.verified && (
 
+<div className="
+mt-2
+inline-flex
+items-center
+bg-green-100
+text-green-700
+px-3
+py-1
+rounded-full
+text-sm
+font-medium
+">
+
+🛡 Verified Profile
+
+</div>
+
+)
+}
 {/* TOP SECTION */}
 
 <div className="
@@ -736,7 +840,46 @@ value={profile.address}
 
 </div>
 
+<div
+className="
+bg-card
+rounded-xl
+border
+border-border
+p-6
+"
+>
 
+<h2
+className="
+font-bold
+mb-4
+"
+>
+
+Contact Details
+
+</h2>
+
+<InfoRow
+label="Email"
+value={
+canViewContact
+? profile.email
+: "🔒 Send Interest & Get Accepted"
+}
+/>
+
+<InfoRow
+label="Phone"
+value={
+canViewContact
+? profile.phone
+: "🔒 Send Interest & Get Accepted"
+}
+/>
+
+</div>
 {/* LIFESTYLE */}
 
 <div className="
@@ -780,7 +923,133 @@ value={profile.drinkingValue}
 </div>
 
 </div>
+{
+showGallery && (
 
+<div
+className="
+fixed
+inset-0
+bg-black/80
+z-50
+flex
+items-center
+justify-center
+p-4
+"
+>
+
+<div
+className="
+bg-white
+rounded-xl
+max-w-6xl
+w-full
+p-5
+max-h-[90vh]
+overflow-auto
+"
+>
+
+<div
+className="
+flex
+justify-between
+items-center
+mb-4
+"
+>
+
+<h2 className="text-xl font-bold">
+Photo Gallery
+</h2>
+
+<button
+onClick={() =>
+setShowGallery(false)
+}
+>
+✕
+</button>
+
+</div>
+<div className="
+flex
+items-center
+justify-center
+gap-4
+">
+
+<button
+onClick={() =>
+setCurrentPhotoIndex(prev =>
+prev === 0
+? galleryPhotos.length - 1
+: prev - 1
+)
+}
+className="
+bg-gray-200
+px-4
+py-2
+rounded
+"
+>
+◀ Prev
+</button>
+
+{galleryPhotos.length > 0 && (
+
+<img
+src={
+galleryPhotos[
+currentPhotoIndex
+]?.photoUrl ||
+
+galleryPhotos[
+currentPhotoIndex
+]?.imageUrl ||
+
+galleryPhotos[
+currentPhotoIndex
+]?.url
+}
+alt=""
+className="
+max-h-[70vh]
+max-w-[70vw]
+object-contain
+rounded-lg
+"
+/>
+
+)}
+<button
+onClick={() =>
+setCurrentPhotoIndex(prev =>
+prev === galleryPhotos.length - 1
+? 0
+: prev + 1
+)
+}
+className="
+bg-gray-200
+px-4
+py-2
+rounded
+"
+>
+Next ▶
+</button>
+
+</div>
+</div>
+
+</div>
+
+)
+}
+</>
 );
 
 };

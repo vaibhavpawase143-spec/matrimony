@@ -52,10 +52,95 @@ public class ProfileSpecification {
             }
 
             // 🎯 CITY FILTER
+            // CITY
+            if (pref.getCity() != null) {
+
+                predicates.add(
+                        cb.equal(
+                                root.get("city").get("id"),
+                                pref.getCity().getId()
+                        )
+                );
+            }
+
+// EDUCATION
+            if (pref.getEducationLevel() != null) {
+
+                predicates.add(
+                        cb.equal(
+                                root.get("educationLevel").get("id"),
+                                pref.getEducationLevel().getId()
+                        )
+                );
+            }
+
+// OCCUPATION
+            if (pref.getOccupation() != null) {
+
+                predicates.add(
+                        cb.equal(
+                                root.get("occupation").get("id"),
+                                pref.getOccupation().getId()
+                        )
+                );
+            }
+
+// MARITAL STATUS
+            if (pref.getMaritalStatus() != null) {
+
+                predicates.add(
+                        cb.equal(
+                                root.get("maritalStatus").get("id"),
+                                pref.getMaritalStatus().getId()
+                        )
+                );
+            }
+
+            // RELIGION
+            if (pref.getReligion() != null) {
+                predicates.add(cb.equal(
+                        root.get("religion").get("id"),
+                        pref.getReligion().getId()
+                ));
+            }
+
+// CASTE
+            if (pref.getCaste() != null) {
+                predicates.add(cb.equal(
+                        root.get("caste").get("id"),
+                        pref.getCaste().getId()
+                ));
+            }
+
+// CITY
             if (pref.getCity() != null) {
                 predicates.add(cb.equal(
                         root.get("city").get("id"),
                         pref.getCity().getId()
+                ));
+            }
+
+// EDUCATION
+            if (pref.getEducationLevel() != null) {
+                predicates.add(cb.equal(
+                        root.get("educationLevel").get("id"),
+                        pref.getEducationLevel().getId()
+                ));
+            }
+
+// OCCUPATION
+            if (pref.getOccupation() != null) {
+                predicates.add(cb.equal(
+                        root.get("occupation").get("id"),
+                        pref.getOccupation().getId()
+                ));
+            }
+
+// MARITAL STATUS
+            if (pref.getMaritalStatus() != null) {
+                predicates.add(cb.equal(
+                        root.get("maritalStatus").get("id"),
+                        pref.getMaritalStatus().getId()
                 ));
             }
 
@@ -95,7 +180,19 @@ public class ProfileSpecification {
 
                 );
             }
+            if (
+                    pref.getMinWeight() != null &&
+                            pref.getMaxWeight() != null
+            ) {
 
+                predicates.add(
+                        cb.between(
+                                root.get("weight").get("id"),
+                                pref.getMinWeight(),
+                                pref.getMaxWeight()
+                        )
+                );
+            }
             // 🚫 EXCLUDE NULL USERS (SAFETY)
             predicates.add(cb.isNotNull(root.get("user")));
 
