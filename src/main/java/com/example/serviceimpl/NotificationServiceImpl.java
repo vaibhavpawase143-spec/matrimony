@@ -2,7 +2,9 @@ package com.example.serviceimpl;
 
 import com.example.model.Notification;
 import com.example.model.NotificationType;
+import com.example.model.User;
 import com.example.repository.NotificationRepository;
+import com.example.repository.UserRepository;
 import com.example.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -10,13 +12,12 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
-
 @Service
 @RequiredArgsConstructor
 public class NotificationServiceImpl implements NotificationService {
 
     private final NotificationRepository repo;
-
+    private final UserRepository userRepository;
     // 🔥 WebSocket Sender (IMPORTANT)
     private final SimpMessagingTemplate messagingTemplate;
 
@@ -24,7 +25,16 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     public void create(Long senderId, Long receiverId, NotificationType type) {
 
-        String message = generateMessage(senderId, type);
+        User sender = userRepository.findById(senderId)
+                .orElse(null);
+
+        String senderName =
+                sender != null
+                        ? sender.getFullName().trim()
+                        : "Someone";
+
+        String message =
+                generateMessage(senderName, type);
 
         Notification n = new Notification();
         n.setSenderId(senderId);
@@ -115,15 +125,21 @@ public class NotificationServiceImpl implements NotificationService {
                 "================================="
 
         );
+        System.out.println(
+                "SENDING TO = /topic/notifications/"
+                        + receiverId
+        );
 
+        System.out.println(
+                "MESSAGE = "
+                        + saved.getMessage()
+        );
+        System.out.println(
+                "TOPIC SENT SUCCESSFULLY"
+        );
         messagingTemplate.convertAndSend(
-
-                "/topic/notifications/" +
-
-                        receiverId,
-
-                "HELLO_NOTIFICATION"
-
+                "/topic/notifications/" + receiverId,
+                saved.getMessage()
         );
         System.out.println(
                 "WEBSOCKET MESSAGE SENT"
@@ -137,34 +153,47 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     // 🔥 Dynamic Message Generator
-    private String generateMessage(Long senderId, NotificationType type) {
+    private String generateMessage(
+            String senderName,
+            NotificationType type
+    ) {
 
         return switch (type) {
 
             case REQUEST ->
-                    "User " + senderId + " sent you a request";
-
-            case VIEW ->
-                    "User " + senderId + " viewed your profile";
-
-            case MESSAGE ->
-                    "User " + senderId + " sent you a message";
-
-            case SHORTLIST ->
-                    "User " + senderId + " shortlisted your profile";
+                    "💌 " + senderName +
+                            " sent you an interest request";
 
             case ACCEPT ->
-                    "User " + senderId + " accepted your request";
+                    "✅ " + senderName +
+                            " accepted your interest request";
 
             case REJECT ->
-                    "User " + senderId + " rejected your request";
+                    "❌ " + senderName +
+                            " declined your interest request";
 
             case MATCH ->
-                    "🎉 You have a new match with User " + senderId;
+                    "🎉 You matched with " +
+                            senderName;
 
+            case VIEW ->
+                    "👀 " + senderName +
+                            " viewed your profile";
+
+            case SHORTLIST ->
+                    "⭐ " + senderName +
+                            " added you to their shortlist";
+
+            case MESSAGE ->
+                    "💬 New message from " +
+                            senderName;
+
+            case LIKE ->
+                    "❤️ " + senderName +
+                            " liked your profile";
         };
-    }
 
+    }
     // 📥 GET ALL
     @Override
     public List<Notification> getAll(Long userId) {
@@ -185,6 +214,25 @@ public class NotificationServiceImpl implements NotificationService {
 
         n.setRead(true);
         repo.save(n);
+    }
+
+    @Override
+    public void markAllRead(Long userId) {
+
+        List<Notification> notifications =
+
+                repo.findByReceiverIdAndReadFalseAndDeletedFalse(
+                        userId
+                );
+
+        notifications.forEach(
+                n -> n.setRead(true)
+        );
+
+        repo.saveAll(
+                notifications
+        );
+
     }
 
     // ❌ SOFT DELETE

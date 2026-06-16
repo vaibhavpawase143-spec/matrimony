@@ -6,12 +6,54 @@ import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/context/LanguageContext.jsx";
 import logo from "@/assets/logo.png";
 import { Bell } from "lucide-react";
+import { useRef } from "react";
+
+import toast from "react-hot-toast";
+import {
+  connectNotifications,
+  disconnectNotifications
+} from "@/utils/notificationSocket";
 import { notificationAPI } from "@/services/api";
 const Navbar = () => {
-     alert("NAVBAR LOADED");
-    console.log(
-        "NAVBAR LOADED"
-      );
+    const formatTimeAgo = (date) => {
+
+      const seconds =
+        Math.floor(
+          (new Date() - new Date(date))
+          / 1000
+        );
+
+      const minutes =
+        Math.floor(seconds / 60);
+
+      const hours =
+        Math.floor(minutes / 60);
+
+      const days =
+        Math.floor(hours / 24);
+
+      if (days > 0)
+        return `${days}d ago`;
+
+      if (hours > 0)
+        return `${hours}h ago`;
+
+      if (minutes > 0)
+        return `${minutes}m ago`;
+
+      return "Just now";
+    };
+const notificationRef = useRef(null);
+const notificationAudio = useRef(
+  new Audio("/microsammy-ak-47-firing-8760.mp3")
+);
+const user =
+  JSON.parse(
+    localStorage.getItem("user")
+  );
+
+const currentUserId =
+  user?.profile?.userId;
   const [mobileOpen, setMobileOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -24,59 +66,46 @@ const Navbar = () => {
   const [showNotifications,
   setShowNotifications] =
   useState(false);
-  useEffect(() => {
- console.log(
-    "LOAD NOTIFICATIONS STARTED"
-  );
-    const loadNotifications =
-      async () => {
+useEffect(() => {
 
-        try {
-  console.log(
-          "INSIDE LOAD NOTIFICATIONS"
-        );
-          const user =
-            JSON.parse(
-              localStorage.getItem("user")
-            );
+  const loadNotifications =
+    async () => {
 
-          if (!user?.profile?.userId)
-            return;
+      try {
 
-          const list =
-            await notificationAPI.getAll(
-              user.profile.userId
-            );
+        const user =
+          JSON.parse(
+            localStorage.getItem("user")
+          );
 
-          const count =
-            await notificationAPI.unreadCount(
-              user.profile.userId
-            );
-  console.log(
-    "NOTIFICATIONS =",
-    list
-  );
+        if (!user?.profile?.userId)
+          return;
 
-  console.log(
-    "UNREAD COUNT =",
-    count
-  );
-          setNotifications(list);
+        const list =
+          await notificationAPI.getAll(
+            user.profile.userId
+          );
 
-          setUnreadCount(count);
+        const count =
+          await notificationAPI.unreadCount(
+            user.profile.userId
+          );
 
-        } catch(err) {
+        setNotifications(list);
 
-          console.log(err);
+        setUnreadCount(count);
 
-        }
+      } catch(err) {
 
-      };
+        console.log(err);
 
-    loadNotifications();
+      }
 
-  }, []);
+    };
 
+  loadNotifications();
+
+}, []);
   const { isLoggedIn, userName, logout } = useAuth();
   const navigate = useNavigate();
   const { language, setLanguage, t } = useLanguage();
@@ -140,6 +169,196 @@ const Navbar = () => {
     const nextIndex = (currentIndex + 1) % languages.length;
     setLanguage(languages[nextIndex]);
   };
+useEffect(() => {
+
+  const handleClickOutside = (event) => {
+
+    if (
+      notificationRef.current &&
+      !notificationRef.current.contains(event.target)
+    ) {
+      setShowNotifications(false);
+    }
+
+  };
+
+  document.addEventListener(
+    "mousedown",
+    handleClickOutside
+  );
+
+  return () => {
+
+    document.removeEventListener(
+      "mousedown",
+      handleClickOutside
+    );
+
+  };
+
+}, []);
+
+useEffect(() => {
+
+  console.log(
+    "WEBSOCKET EFFECT RUNNING"
+  );
+
+  const user =
+    JSON.parse(
+      localStorage.getItem("user")
+    );
+
+  if (
+    !user?.profile?.userId
+  ) {
+    return;
+  }
+
+  console.log(
+    "WS USER ID =",
+    user.profile.userId
+  );
+
+  connectNotifications(
+    user.profile.userId,
+    async (data) => {
+
+      console.log(
+        "LIVE NOTIFICATION:",
+        data
+      );
+
+   if (notificationAudio.current) {
+
+     notificationAudio.current.currentTime = 0;
+
+     notificationAudio.current
+       .play()
+       .then(() => {
+
+         console.log(
+           "SOUND PLAYED"
+         );
+
+       })
+       .catch((err) => {
+
+         console.log(
+           "AUDIO BLOCKED",
+           err
+         );
+
+       });
+
+   }
+
+      if (
+
+        "Notification" in window &&
+
+        Notification.permission === "granted"
+
+      ) {
+
+        new Notification(
+
+          "Gathbandhan",
+
+          {
+
+            body:
+              data?.message ||
+              "New Notification",
+
+            icon: "/logo.png"
+
+          }
+
+        );
+
+      }
+
+      toast.success(
+
+        data?.message ||
+        "New Notification",
+
+        {
+
+          duration: 5000,
+
+          position: "top-right"
+
+        }
+
+      );
+
+      const list =
+        await notificationAPI.getAll(
+          user.profile.userId
+        );
+
+      const count =
+        await notificationAPI.unreadCount(
+          user.profile.userId
+        );
+
+      setNotifications(list);
+
+      setUnreadCount(count);
+
+      window.dispatchEvent(
+        new Event("interestUpdated")
+      );
+
+      window.dispatchEvent(
+        new Event("shortlist:updated")
+      );
+
+      window.dispatchEvent(
+        new Event("like:updated")
+      );
+
+      console.log(
+        "DASHBOARD REFRESH EVENT FIRED"
+      );
+    }
+  );
+
+  return () => {
+    console.log(
+      "DISCONNECTING WS"
+    );
+
+    disconnectNotifications();
+  };
+
+}, []);useEffect(() => {
+
+  if (
+    "Notification" in window &&
+    Notification.permission !== "granted"
+  ) {
+
+    Notification.requestPermission();
+
+  }
+
+}, []);
+
+useEffect(() => {
+
+  if (
+    "Notification" in window &&
+    Notification.permission === "default"
+  ) {
+
+    Notification.requestPermission();
+
+  }
+
+}, []);
 
   return (
     <motion.nav 
@@ -159,7 +378,7 @@ const Navbar = () => {
           />
         </Link>
 
-        <div className="hidden md:flex items-center gap-5">
+       <div className="flex items-center gap-5">
           {links.map((l) => (
             <motion.div key={l.label} whileHover={{ scale: 1.05 }} transition={{ duration: 0.2 }}>
               <Link 
@@ -176,6 +395,11 @@ const Navbar = () => {
               </Link>
             </motion.div>
           ))}
+
+
+
+
+
           <button 
             onClick={cycleLanguage}
             className="text-foreground hover:text-primary transition-all duration-300 ease-in-out p-2 rounded-lg hover:bg-muted/50 hover:scale-105 hover:shadow-md"
@@ -183,30 +407,26 @@ const Navbar = () => {
           >
             <Globe className="h-4 w-4" />
           </button>
-          <div className="relative">
+<div
+className="relative"
+ref={notificationRef}
+>
 
         <button
-          onClick={() => {
-console.log(
-  "SHOW NOTIFICATIONS = ",
-  showNotifications
-);
-            console.log(
-              "BELL CLICKED"
-            );
+     onClick={() => {
+       setShowNotifications(prev => !prev);
+     }}
+         className="
+         relative
+         p-2
+         rounded-lg
+         text-foreground
+         hover:bg-slate-200
+         hover:text-primary
+         transition-all
+         duration-200
+         "
 
-            setShowNotifications(
-              !showNotifications
-            );
-
-          }}
-
-          className="
-          relative
-          p-2
-          text-foreground
-          hover:text-primary
-          "
         >
 
           <Bell className="h-5 w-5" />
@@ -229,7 +449,7 @@ console.log(
               justify-center
               "
             >
-              {unreadCount}
+             {unreadCount > 99 ? "99+" : unreadCount}
             </span>
 
           )}
@@ -239,87 +459,351 @@ console.log(
           showNotifications && (
 
           <div
-          className="
-          absolute
-          right-0
-          top-10
-          w-80
-          bg-white
-          shadow-lg
-          rounded-lg
-          border
-          max-h-96
-          overflow-y-auto
-          z-50
-          "
-          >
 
-          <h3
-          className="
-          font-bold
-          p-3
-          border-b
-          "
-          >
 
-          Notifications
+      className="
+    fixed
+    top-20
+    right-2
+    left-2
+    md:left-auto
+    md:right-5
+    w-[95vw] max-w-md md:w-96
+      max-h-[500px]
+      overflow-y-auto
+      bg-slate-900
+      rounded-xl
+      shadow-2xl
+      border
+      border-slate-700
+      z-[99999]
+      "
+      >
 
-          </h3>
 
-          {
-          notifications.length === 0 ? (
+         <div
+         className="
+         flex
+         justify-between
+         items-center
+         p-4
+         border-b
+         border-slate-700
+         bg-gradient-to-r
+         from-slate-800
+         to-slate-900
+         "
+         >
 
-          <p className="p-3">
+           <h3
+             className="
+             font-bold
+             text-white
+             "
+           >
+             Notifications
+           </h3>
 
-          No Notifications
+           <div className="flex items-center gap-3">
 
-          </p>
+             <button
+               onClick={async () => {
 
-          ) : (
+                 if (!currentUserId) return;
 
-          notifications.map(
-          (item) => (
+                 try {
+
+                   await notificationAPI.markAllRead(
+                     currentUserId
+                   );
+
+                   setNotifications(
+                     prev =>
+                       prev.map(
+                         n => ({
+                           ...n,
+                           read: true
+                         })
+                       )
+                   );
+
+                   setUnreadCount(0);
+
+                   toast.success(
+                     "All notifications marked as read"
+                   );
+
+                 } catch {
+
+                   toast.error(
+                     "Failed"
+                   );
+
+                 }
+
+               }}
+               className="
+               text-xs
+               text-pink-400
+               hover:text-pink-300
+               "
+             >
+               Mark All Read
+             </button>
+
+             <button
+               onClick={() =>
+                 setShowNotifications(false)
+               }
+               className="
+               text-white
+               hover:text-red-400
+               text-lg
+               "
+             >
+               ✕
+             </button>
+
+           </div>
+
+        </div>
+
+        {notifications.length === 0 ? (
 
           <div
-          key={item.id}
-          className="
-          p-3
-          border-b
-          "
+            className="
+            p-6
+            text-center
+            text-slate-400
+            "
           >
-
-          <p>
-
-          {item.message}
-
-          </p>
-
-          <p
-          className="
-          text-xs
-          text-gray-500
-          "
-          >
-
-          {
-          new Date(
-          item.createdAt
-          ).toLocaleString()
-          }
-
-          </p>
-
+            No notifications yet
           </div>
 
-          )
+        ) : (
 
-          )
+          notifications.map(
+(item) => (
 
-          )
+<div
+key={item.id}
+onClick={async () => {
 
-          }
 
+  try {
+
+    await notificationAPI.markRead(
+      item.id
+    );
+
+    setNotifications(prev =>
+      prev.map(n =>
+        n.id === item.id
+          ? { ...n, read: true }
+          : n
+      )
+    );
+
+ const user =
+ JSON.parse(
+   localStorage.getItem("user")
+ );
+
+ const count =
+ await notificationAPI.unreadCount(
+   user.profile.userId
+ );
+
+setUnreadCount(count);
+
+if(item.type === "REQUEST"){
+
+  navigate("/received-interests");
+
+}
+
+else if(item.type === "ACCEPT"){
+
+  navigate("/sent-interests");
+
+}
+
+else if(item.type === "SHORTLIST"){
+
+  navigate("/shortlists");
+
+}
+
+else if(item.type === "VIEW"){
+
+  navigate("/profile-visitors");
+
+}
+else if(item.type === "LIKE"){
+
+  navigate("/likes");
+
+}
+
+else if(item.type === "REJECT"){
+
+  navigate("/sent-interests");
+
+}
+else if(item.type === "MESSAGE"){
+
+  navigate("/messages");
+
+}
+
+else if(item.type === "MATCH"){
+
+  navigate("/matches");
+
+}
+
+} catch(err) {
+
+    console.log(err);
+
+  }
+
+}}
+
+className={`
+mx-2
+my-2
+p-4
+rounded-lg
+cursor-pointer
+transition-all
+duration-200
+hover:scale-[1.01]
+
+${item.read
+? "bg-slate-950 opacity-60"
+: "bg-slate-800 border-l-4 border-pink-500"}
+
+hover:bg-slate-700
+`}
+>
+<div className="flex justify-between items-start gap-3">
+
+  <div className="flex gap-3 flex-1">
+
+    <div className="text-xl">
+      {item.type === "MATCH" && "🎉"}
+      {item.type === "REQUEST" && "💌"}
+      {item.type === "ACCEPT" && "✅"}
+      {item.type === "REJECT" && "❌"}
+      {item.type === "SHORTLIST" && "⭐"}
+      {item.type === "LIKE" && "❤️"}
+      {item.type === "VIEW" && "👀"}
+      {item.type === "MESSAGE" && "💬"}
+    </div>
+
+    <div>
+
+      <p
+        className={`
+        text-sm
+        font-medium
+        leading-relaxed
+        ${
+          item.read
+            ? "text-slate-400"
+            : "text-white"
+        }
+        `}
+      >
+        {item.message}
+      </p>
+
+      <p
+        className="
+        text-xs
+        text-slate-500
+        mt-1
+        "
+      >
+        {formatTimeAgo(item.createdAt)}
+      </p>
+
+    </div>
+
+  </div>
+
+  <button
+
+    onClick={async (e) => {
+
+      e.stopPropagation();
+
+      try {
+
+        await notificationAPI.delete(
+          item.id
+        );
+
+        setNotifications(
+          prev =>
+            prev.filter(
+              n => n.id !== item.id
+            )
+        );
+
+        if (!item.read) {
+
+          setUnreadCount(
+            prev =>
+              Math.max(
+                0,
+                prev - 1
+              )
+          );
+
+        }
+
+        toast.success(
+          "Notification deleted"
+        );
+
+      } catch (err) {
+
+        console.log(err);
+
+        toast.error(
+          "Delete failed"
+        );
+
+      }
+
+    }}
+
+    className="
+    text-slate-400
+    hover:text-red-500
+    transition
+    px-2
+    "
+
+    title="Delete Notification"
+
+  >
+
+    ✕
+
+  </button>
+
+</div>
           </div>
+          )
+
+        )
+
+      )}
+
+      </div>
 
           )
 
@@ -334,6 +818,7 @@ console.log(
           </button>
           {isLoggedIn && (
             <>
+
               <motion.button 
                 onClick={() => navigate("/upgrade")}
                 className="text-sm font-medium bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-lg transition-all duration-300 ease-in-out flex items-center gap-2 hover:scale-105"
@@ -364,8 +849,7 @@ console.log(
             </>
           )}
         </div>
-
-        <motion.button 
+               <motion.button
           className="md:hidden text-foreground transition-all duration-300 ease-in-out hover:scale-110" 
           onClick={() => setMobileOpen(!mobileOpen)}
           whileHover={{ scale: 1.1 }}

@@ -1,7 +1,7 @@
 import { Search as SearchIcon, ChevronDown, SlidersHorizontal } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
-import Navbar from "@/components/Navbar";
+
 import { useLoading } from "@/hooks/useLoading";
 import { useToast } from "@/components/Toast";
 import { searchAPI, masterDataAPI } from "@/services/api";
@@ -367,7 +367,7 @@ console.log(
   };
   return (
     <div className="min-h-screen bg-muted/30">
-      <Navbar />
+
 
       {/* Header */}
       <div className="py-8 text-center" style={{ background: "linear-gradient(135deg, hsl(270 60% 35%), hsl(290 55% 45%), hsl(270 50% 55%))" }}>

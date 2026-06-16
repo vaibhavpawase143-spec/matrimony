@@ -235,7 +235,21 @@ export const notificationAPI = {
     );
 
   },
+markAllRead: async(userId)=>{
 
+  return await apiClient(
+
+    `/notifications/read-all/${userId}`,
+
+    {
+
+      method:"PUT"
+
+    }
+
+  );
+
+},
   delete: async (id) => {
 
     return await apiClient(

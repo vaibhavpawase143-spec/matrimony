@@ -174,16 +174,23 @@ w-12
 
 h-12
 
-rounded-xl
+rounded-full
 
-bg-gradient-to-br
+bg-white
 
-from-purple-500
+border
 
-to-indigo-600
+border-amber-200
 
-hover:scale-110
+text-amber-500
 
+hover:text-amber-600
+
+hover:border-amber-300
+
+hover:scale-125
+
+shadow-lg
 `
 
 }
@@ -217,29 +224,19 @@ shortlisted
 >
 
 <Star
-
 className={`
-
 ${iconSizes[size]}
-
+transition-all
+duration-300
 ${
-
 shortlisted
-
 ?
-
-"fill-current"
-
+"fill-current text-amber-500 scale-110"
 :
-
-""
-
+"text-amber-500"
 }
-
 `}
-
 />
-
 {
 
 showLabel && (

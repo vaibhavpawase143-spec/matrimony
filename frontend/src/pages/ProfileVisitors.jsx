@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import Navbar from "@/components/Navbar";
+
 import { profileVisitorAPI } from "@/services/api";
 import toast from "react-hot-toast";
 
@@ -51,7 +51,7 @@ const ProfileVisitors = () => {
 
     <div className="min-h-screen bg-gray-50">
 
-      <Navbar />
+
 
       <div className="container mx-auto p-6">
 

@@ -66,16 +66,32 @@ public class ShortlistServiceImpl implements ShortlistService {
 
         // 🔥 If already exists
         if (existing.isPresent()) {
+
             Shortlist old = existing.get();
 
-            // 👉 If already active → prevent duplicate
             if (Boolean.TRUE.equals(old.getIsActive())) {
-                throw new RuntimeException("Profile already shortlisted!");
+
+                throw new RuntimeException(
+                        "Profile already shortlisted!"
+                );
+
             }
 
-            // 👉 If inactive → reactivate
             old.setIsActive(true);
-            Shortlist updated = repository.save(old);
+
+            Shortlist updated =
+                    repository.save(old);
+
+            Long receiverId =
+                    old.getProfile()
+                            .getUser()
+                            .getId();
+
+            notificationService.create(
+                    userId,
+                    receiverId,
+                    NotificationType.SHORTLIST
+            );
 
             return updated;
         }
@@ -84,9 +100,15 @@ public class ShortlistServiceImpl implements ShortlistService {
         Shortlist saved = repository.save(shortlist);
 
         // 🔔 Notification
+        Long receiverId =
+                shortlist
+                        .getProfile()
+                        .getUser()
+                        .getId();
+
         notificationService.create(
                 userId,
-                profileId,
+                receiverId,
                 NotificationType.SHORTLIST
         );
 

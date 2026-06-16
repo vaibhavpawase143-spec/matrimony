@@ -1,18 +1,18 @@
 package com.example.serviceimpl;
 
+import com.example.model.NotificationType;
 import com.example.model.Swipe;
 import com.example.model.SwipeType;
 import com.example.model.User;
 import com.example.repository.SwipeRepository;
 import com.example.repository.UserRepository;
+import com.example.service.NotificationService;
 import com.example.service.SwipeService;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
-
 @Service
 @Transactional
 public class SwipeServiceImpl
@@ -22,24 +22,30 @@ public class SwipeServiceImpl
 
     private final UserRepository userRepository;
 
+    private final NotificationService notificationService;
+
     public SwipeServiceImpl(
 
             SwipeRepository swipeRepository,
 
-            UserRepository userRepository
+            UserRepository userRepository,
+
+            NotificationService notificationService
 
     ){
 
-        this.swipeRepository=
+        this.swipeRepository =
                 swipeRepository;
 
-        this.userRepository=
+        this.userRepository =
                 userRepository;
+
+        this.notificationService =
+                notificationService;
 
     }
 
     @Override
-
     public Swipe createSwipe(
 
             Long fromUserId,
@@ -66,7 +72,7 @@ public class SwipeServiceImpl
                 userRepository
                         .findById(fromUserId)
                         .orElseThrow(
-                                ()->new RuntimeException(
+                                () -> new RuntimeException(
                                         "User not found"
                                 ));
 
@@ -74,7 +80,7 @@ public class SwipeServiceImpl
                 userRepository
                         .findById(toUserId)
                         .orElseThrow(
-                                ()->new RuntimeException(
+                                () -> new RuntimeException(
                                         "User not found"
                                 ));
 
@@ -85,6 +91,7 @@ public class SwipeServiceImpl
                                 toUser
                         );
 
+        // Existing swipe update
         if(
                 existing.isPresent()
         ){
@@ -96,13 +103,30 @@ public class SwipeServiceImpl
                     type
             );
 
-            return swipeRepository
-                    .save(
+            Swipe updated =
+                    swipeRepository.save(
                             swipe
                     );
 
+            if(type == SwipeType.LIKE){
+
+                notificationService.create(
+
+                        fromUserId,
+
+                        toUserId,
+
+                        NotificationType.LIKE
+
+                );
+
+            }
+
+            return updated;
+
         }
 
+        // New swipe
         Swipe swipe =
                 new Swipe();
 
@@ -118,15 +142,30 @@ public class SwipeServiceImpl
                 type
         );
 
-        return swipeRepository
-                .save(
+        Swipe saved =
+                swipeRepository.save(
                         swipe
                 );
+
+        if(type == SwipeType.LIKE){
+
+            notificationService.create(
+
+                    fromUserId,
+
+                    toUserId,
+
+                    NotificationType.LIKE
+
+            );
+
+        }
+
+        return saved;
 
     }
 
     @Override
-
     public Optional<Swipe>
     getSwipe(
 
@@ -136,14 +175,14 @@ public class SwipeServiceImpl
 
     ){
 
-        User fromUser=
+        User fromUser =
                 userRepository
                         .findById(
                                 fromUserId
                         )
                         .orElseThrow();
 
-        User toUser=
+        User toUser =
                 userRepository
                         .findById(
                                 toUserId
@@ -159,13 +198,12 @@ public class SwipeServiceImpl
     }
 
     @Override
-
     public List<Swipe>
     getMyLikes(
             Long userId
     ){
 
-        User user=
+        User user =
                 userRepository
                         .findById(
                                 userId
@@ -184,13 +222,12 @@ public class SwipeServiceImpl
     }
 
     @Override
-
     public List<Swipe>
     getLikesReceived(
             Long userId
     ){
 
-        User user=
+        User user =
                 userRepository
                         .findById(
                                 userId
@@ -209,7 +246,6 @@ public class SwipeServiceImpl
     }
 
     @Override
-
     public void removeSwipe(
 
             Long fromUserId,
@@ -218,14 +254,14 @@ public class SwipeServiceImpl
 
     ){
 
-        User from=
+        User from =
                 userRepository
                         .findById(
                                 fromUserId
                         )
                         .orElseThrow();
 
-        User to=
+        User to =
                 userRepository
                         .findById(
                                 toUserId
@@ -240,7 +276,7 @@ public class SwipeServiceImpl
 
                 .ifPresent(
 
-                        swipe->
+                        swipe ->
 
                                 swipeRepository.delete(
                                         swipe

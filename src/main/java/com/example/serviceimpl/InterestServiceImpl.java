@@ -165,12 +165,7 @@ public class InterestServiceImpl implements InterestService {
                 "NOTIFICATION SERVICE CALLED"
 
         );
-        // 🔥 NOTIFICATION (REQUEST)
-        notificationService.create(
-                senderId,
-                receiverId,
-                NotificationType.REQUEST
-        );
+
         System.out.println(
 
                 "NOTIFICATION CREATE CALLED"
@@ -193,16 +188,11 @@ public class InterestServiceImpl implements InterestService {
         Interest updated = interestRepository.save(existing);
 
         // ✅ ACCEPT LOGIC ONLY
+        // ✅ ACCEPT
         if (status.equalsIgnoreCase("ACCEPTED")) {
 
-            // 🔥 NOTIFICATION (ACCEPT)
-            notificationService.create(
-                    existing.getReceiver().getId(),
-                    existing.getSender().getId(),
-                    NotificationType.ACCEPT
-            );
-
             // 🔥 MATCH NOTIFICATION (BOTH USERS)
+
             notificationService.create(
                     existing.getSender().getId(),
                     existing.getReceiver().getId(),
@@ -218,22 +208,52 @@ public class InterestServiceImpl implements InterestService {
             User sender = existing.getSender();
             User receiver = existing.getReceiver();
 
-            Long u1 = Math.min(sender.getId(), receiver.getId());
-            Long u2 = Math.max(sender.getId(), receiver.getId());
+            Long u1 = Math.min(
+                    sender.getId(),
+                    receiver.getId()
+            );
+
+            Long u2 = Math.max(
+                    sender.getId(),
+                    receiver.getId()
+            );
 
             boolean exists = matchRepository
-                    .findByUser1_IdAndUser2_Id(u1, u2)
+                    .findByUser1_IdAndUser2_Id(
+                            u1,
+                            u2
+                    )
                     .isPresent();
 
             if (!exists) {
+
                 Match match = new Match();
-                match.setUsers(sender, receiver);
-                matchRepository.save(match);
+
+                match.setUsers(
+                        sender,
+                        receiver
+                );
+
+                matchRepository.save(
+                        match
+                );
+
             }
+
         }
 
-        return mapToDTO(updated);
-    }
+// ❌ REJECT
+        else if (status.equalsIgnoreCase("REJECTED")) {
+            System.out.println("🔥 REJECT BLOCK ENTERED");
+            notificationService.create(
+                    existing.getReceiver().getId(),
+                    existing.getSender().getId(),
+                    NotificationType.REJECT
+            );
+
+        }
+
+        return mapToDTO(updated);    }
 
     // ❌ Delete
     @Override

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Send, Search } from "lucide-react";
-import Navbar from "@/components/Navbar";
+
 import { useLanguage } from "@/context/LanguageContext";
 import profile1 from "@/assets/profile1.jpg";
 import profile2 from "@/assets/profile2.jpg";
@@ -30,7 +30,7 @@ const Messages = () => {
 
   return (
     <div className="min-h-screen bg-muted/30 flex flex-col">
-      <Navbar />
+
 
       <div className="flex-1 container mx-auto px-4 py-6">
         <div className="bg-card rounded-xl border border-border overflow-hidden flex h-[calc(100vh-120px)]">

@@ -7,5 +7,6 @@ public enum NotificationType {
     SHORTLIST,
     ACCEPT,
     REJECT,
+    LIKE,
     MATCH
 }

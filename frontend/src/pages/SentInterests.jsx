@@ -1,5 +1,5 @@
 import { useEffect,useState } from "react";
-import Navbar from "@/components/Navbar";
+import profile1 from "@/assets/profile1.jpg";
 import { interestAPI, profileAPI } from "@/services/api";
 import { useNavigate } from "react-router-dom";
 
@@ -122,7 +122,7 @@ return(
 
 <div className="min-h-screen bg-muted/30">
 
-<Navbar/>
+
 
 <div className="container mx-auto p-6">
 
@@ -212,10 +212,14 @@ profiles.map(profile=>(
 key={profile.id}
 
 className="
-bg-card
-rounded-xl
-p-5
+bg-white
+rounded-2xl
 border
+shadow-sm
+hover:shadow-lg
+transition-all
+duration-300
+p-6
 flex
 justify-between
 items-center
@@ -223,18 +227,36 @@ items-center
 
 >
 
-<div>
+<div className="flex items-center gap-4">
 
-<h2 className="font-bold">
+<img
+  src={profile.imageUrl || profile1}
+  alt={profile.firstName}
+  className="
+    h-16
+    w-16
+    rounded-full
+    object-cover
+    border-2
+    border-purple-200
+  "
+/>
 
-{profile.firstName}
-{" "}
-{profile.lastName}
+  <div>
 
-</h2>
+    <h2
+      className="
+      text-xl
+      font-bold
+      text-slate-800
+      "
+    >
+      {profile.firstName} {profile.lastName}
+    </h2>
 
-<div className="mt-2">
 
+
+    <div className="mt-2">
 <span
 
 className={`
@@ -297,7 +319,7 @@ profile.interestStatus==="ACCEPTED"
 
 </div>
 </div>
-
+</div>
 <button
 
 onClick={()=>navigate(
@@ -328,8 +350,8 @@ View Profile
 
 </div>
 
-</div>
 
+</div>
 </div>
 
 );

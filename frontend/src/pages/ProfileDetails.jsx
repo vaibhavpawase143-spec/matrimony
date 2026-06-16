@@ -13,7 +13,7 @@ MessageSquare
 } from "lucide-react";
 import { photoAPI } from "@/services/api";
 import { useNavigate } from "react-router-dom";
-import Navbar from "@/components/Navbar";
+
 import { useLanguage } from "@/context/LanguageContext";
 import {
   profileAPI,
@@ -338,7 +338,7 @@ min-h-screen
 bg-muted/30
 ">
 
-<Navbar/>
+
 
 <div className="
 container

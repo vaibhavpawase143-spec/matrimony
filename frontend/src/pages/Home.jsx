@@ -654,10 +654,7 @@ return (
           </div>
           <div className="flex items-center gap-3">
             <ThemeToggle />
-            <button className="relative text-muted-foreground hover:text-foreground transition-colors">
-              <Bell className="h-5 w-5" />
-              <span className="absolute -top-1 -right-1 h-4 w-4 bg-primary text-primary-foreground text-[10px] font-bold rounded-full flex items-center justify-center">{notificationCount}</span>
-            </button>
+
             <button
               onClick={() => navigate("/account")}
               className="h-9 w-9 rounded-full bg-accent/20 hover:bg-accent/30 flex items-center justify-center text-accent font-bold text-sm cursor-pointer transition-colors"
@@ -1304,20 +1301,33 @@ profile.userId
 
 </span>
 </button>
-<div title="Shortlist">
+<div
+className="
+group
+w-12
+h-12
+rounded-full
+bg-white
+border
+border-amber-200
+shadow-lg
+hover:scale-125
+active:scale-95
+transition-all
+duration-300
+flex
+items-center
+justify-center
+"
+>
 
 <ShortlistButton
-
 profileId={profile.id || i}
-
-size="md"
-
+size="sm"
 showLabel={false}
-
 />
 
 </div>
-
 </div>
                    </div>
                     </motion.div>

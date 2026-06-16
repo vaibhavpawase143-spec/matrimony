@@ -19,7 +19,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useEffect } from "react";
-import Navbar from "@/components/Navbar";
+
 import { useLanguage } from "@/context/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfileData } from "@/hooks/useProfileData";
@@ -302,7 +302,7 @@ const Account = () => {
 
   return (
     <div className="min-h-screen bg-muted/30">
-      <Navbar />
+
 
       {/* Header */}
       <motion.div

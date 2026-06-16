@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { motion } from "framer-motion";
-import Navbar from "@/components/Navbar";
+
 import { Button } from "@/components/ui/button";
 
 const UpgradePremium = () => {
@@ -241,7 +241,7 @@ const UpgradePremium = () => {
 
   return (
     <div className="min-h-screen bg-muted/30">
-      <Navbar />
+
       
       {/* Hero Section */}
       <section className="relative overflow-hidden" style={{ background: "linear-gradient(135deg, hsl(270 60% 35%), hsl(290 55% 45%), hsl(270 50% 55%))" }}>

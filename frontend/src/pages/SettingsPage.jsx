@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { User, Lock, Bell, Save, Upload, X } from "lucide-react";
 import { motion } from "framer-motion";
-import Navbar from "@/components/Navbar";
+
 import { useToast } from "@/components/Toast";
 import { useProfileData } from "@/hooks/useProfileData";
 import { partnerPreferenceAPI } from "@/services/api";
@@ -2163,7 +2163,7 @@ fieldOptions = masterOptions.bloodGroups || [];
 
   return (
     <div className="min-h-screen bg-muted/30">
-      <Navbar />
+
 
       <div className="py-8 text-center" style={{ background: "linear-gradient(135deg, hsl(270 60% 35%), hsl(290 55% 45%), hsl(270 50% 55%))" }}>
         <h1 className="text-3xl md:text-4xl font-display font-bold text-primary-foreground mb-2">Settings</h1>
