@@ -17,4 +17,12 @@ public class MessageResponseDTO {
 
     private LocalDateTime createdAt;
 
+    private String mediaUrl;
+
+    private String mediaType;
+
+    private Boolean deletedForEveryone;
+
+    private String deletedForUsers;
+
 }

@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
-import { getMessages, sendMessage } from "../services/chatApi";
+import {
+getMessages,
+sendMessage,
+getConversations
+} from "../services/chatApi";
 
 function ChatPage() {
 
@@ -33,6 +37,10 @@ function ChatPage() {
     const [text, setText] = useState("");
 
     const bottomRef = useRef(null);
+
+    const [chatUser,setChatUser]=useState(null);
+
+    const [userInfo, setUserInfo] = useState(null);
 
     const markSeen = async()=>{
 
@@ -123,10 +131,36 @@ function ChatPage() {
         }
 
     };
+const loadUser = async()=>{
+
+try{
+
+const res = await getConversations();
+
+const user = res.data.find(
+
+c => String(c.otherUserId) === receiverId
+
+);
+
+setChatUser(user);
+setUserInfo(user);
+console.log("USER DATA", user);
+}
+
+catch(err){
+
+console.log(err);
+
+}
+
+};
 
     useEffect(()=>{
 
     loadMessages();
+
+    loadUser();
 
     markSeen();
 
@@ -134,11 +168,14 @@ function ChatPage() {
 
     useEffect(() => {
 
-        const interval = setInterval(() => {
-
-            loadMessages();
-
-        }, 2000);
+//         const interval = setInterval(() => {
+//
+//             loadMessages();
+//             loadUser();
+//             markSeen();
+//
+//
+//         }, 2000);
 
         return () => {
 
@@ -148,15 +185,15 @@ function ChatPage() {
 
     }, [receiverId]);
 
-    useEffect(() => {
-
-        bottomRef.current?.scrollIntoView({
-
-            behavior: "smooth"
-
-        });
-
-    }, [messages]);
+//     useEffect(() => {
+//
+//         bottomRef.current?.scrollIntoView({
+//
+//             behavior: "smooth"
+//
+//         });
+//
+//     }, [messages]);
 
     const handleSend = async () => {
 
@@ -174,13 +211,16 @@ function ChatPage() {
 
                 content: text,
 
-                replyToMessageId: null
+                replyToMessageId:
+                replyingTo?.messageId
+                || null
 
             });
 
-            setText("");
+           setText("");
 
-            loadMessages();
+           loadMessages();
+           markSeen();
 
         }
 
@@ -208,15 +248,117 @@ function ChatPage() {
             }}
         >
 
-            <h2
-                style={{
-                    marginBottom: "20px"
-                }}
+            <div
+
+            style={{
+
+            background:"white",
+
+            padding:"20px",
+
+            borderRadius:"20px 20px 0 0",
+
+            display:"flex",
+
+            alignItems:"center",
+
+            gap:"15px",
+
+            border:"1px solid #ddd",
+
+            borderBottom:"none"
+
+            }}
+
             >
 
-                Chat
+            <div
 
-            </h2>
+            style={{
+
+            width:"60px",
+
+            height:"60px",
+
+            borderRadius:"50%",
+
+            background:"#fbcfe8",
+
+            display:"flex",
+
+            alignItems:"center",
+
+            justifyContent:"center",
+
+            fontSize:"24px",
+
+            fontWeight:"bold"
+
+            }}
+
+            >
+
+            {
+
+            (
+
+            chatUser?.otherUsername ||
+
+            chatUser?.otherUserName ||
+
+            "U"
+
+            )
+
+            .charAt(0)
+
+            .toUpperCase()
+
+            }
+
+            </div>
+
+            <div>
+
+            <h3
+
+            style={{
+
+            margin:0
+
+            }}
+
+            >
+
+            {
+
+            chatUser?.otherUsername ||
+
+            chatUser?.otherUserName ||
+
+            "User"
+
+            }
+
+            </h3>
+
+            {
+                userInfo?.isOnline
+                    ? (
+                        <p style={{color:"green"}}>
+                            ● Online
+                        </p>
+                    )
+                    : (
+                        <p style={{color:"#666"}}>
+                            Offline
+                        </p>
+                    )
+            }
+
+            </div>
+
+            </div>
 
             <div
 
@@ -236,7 +378,7 @@ function ChatPage() {
 
                     flexDirection: "column",
 
-                    background: "#fafafa",
+                    background:"#f8f5f2",
 
                     marginBottom: "20px"
 
@@ -258,13 +400,7 @@ function ChatPage() {
 
                     justifyContent:
 
-                    message.senderId===
-
-                    JSON.parse(
-
-                    localStorage.getItem("user")
-
-                    ).id
+                    message.senderId === currentUserId
 
                     ?
 
@@ -286,13 +422,7 @@ function ChatPage() {
 
                     background:
 
-                    message.senderId===
-
-                    JSON.parse(
-
-                    localStorage.getItem("user")
-
-                    ).id
+                    message.senderId === currentUserId
 
                     ?
 
@@ -304,13 +434,7 @@ function ChatPage() {
 
                     color:
 
-                    message.senderId===
-
-                    JSON.parse(
-
-                    localStorage.getItem("user")
-
-                    ).id
+                    message.senderId === currentUserId
 
                     ?
 
@@ -521,7 +645,7 @@ function ChatPage() {
 
                         borderRadius: "10px",
 
-                        background: "#9333ea",
+                        background:"#db2777",
 
                         color: "white",
 

@@ -280,7 +280,7 @@ const SentInterests = () => {
 
                                                 navigate(
 
-                                                    `/chat/1/${profile.chatUserId}`
+                                                    `/messages?receiverId=${profile.chatUserId}`
 
                                                 );
 

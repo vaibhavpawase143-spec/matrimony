@@ -43,13 +43,13 @@ interests
 );
 
 
-const pending =
+const pending = interests.filter(
 
-interests.filter(
+item =>
 
-item=>
+item.status === "PENDING" ||
 
-item.status==="PENDING"
+item.status === "ACCEPTED"
 
 );
 
@@ -105,16 +105,31 @@ action
 
 try{
 
-if(
+if(action==="accept"){
 
-action==="accept"
-
-){
-
-await interestAPI
-.acceptInterest(
+await interestAPI.acceptInterest(
 
 interestId
+
+);
+
+toast.success(
+
+"Interest accepted"
+
+);
+
+setProfiles(prev =>
+
+prev.map(item =>
+
+item.interestId === interestId
+
+? { ...item, status: "ACCEPTED" }
+
+: item
+
+)
 
 );
 
@@ -122,24 +137,19 @@ interestId
 
 else{
 
-await interestAPI
-.rejectInterest(
+await interestAPI.rejectInterest(
 
 interestId
 
 );
 
-}
-
 toast.success(
 
-`Interest ${action}ed`
+"Interest rejected"
 
 );
 
-setProfiles(
-
-prev =>
+setProfiles(prev =>
 
 prev.filter(
 
@@ -153,15 +163,13 @@ item.interestId !== interestId
 
 }
 
+}
+
 catch(err){
 
 console.log(err);
 
-toast.error(
-
-"Failed"
-
-);
+toast.error("Failed");
 
 }
 
@@ -256,7 +264,7 @@ Status:
 
 </div>
 
-<div className="flex gap-3">
+<div className="flex gap-3 flex-wrap">
 
 <button
 
@@ -279,6 +287,12 @@ rounded-lg
 View Profile
 
 </button>
+
+{
+
+profile.status==="PENDING" && (
+
+<>
 
 <button
 
@@ -327,6 +341,47 @@ rounded-lg
 Reject
 
 </button>
+
+</>
+
+)
+
+}
+
+{
+
+profile.status==="ACCEPTED" && (
+
+
+<button
+
+onClick={() => {
+
+    navigate(
+
+        `/messages?receiverId=${profile.userId}`
+
+    );
+
+}}
+
+className="
+px-4
+py-2
+bg-purple-600
+text-white
+rounded-lg
+"
+
+>
+
+Chat
+
+</button>
+
+)
+
+}
 
 </div>
 </div>

@@ -82,11 +82,20 @@ public interface ChatService {
 
     void deleteMessage(Long messageId);
 
+
     // ================= ❤️ REACTION =================
 
     void reactToMessage(Long messageId, String reaction);
 
     void removeReaction(Long messageId);
+
+    void pinMessage(Long messageId);
+
+    void unpinMessage(Long messageId);
+
+    void starMessage(Long messageId);
+
+    void unstarMessage(Long messageId);
 
     // ================= 🛑 BLOCK =================
 
@@ -105,4 +114,7 @@ public interface ChatService {
     void editMessage(Long messageId, String content);
 
 
+    void deleteForMe(Long id, Long id1);
+
+    void deleteForEveryone(Long id, Long id1);
 }

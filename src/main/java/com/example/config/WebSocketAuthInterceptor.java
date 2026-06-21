@@ -10,109 +10,52 @@ import org.springframework.web.socket.server.HandshakeInterceptor;
 import java.util.Map;
 
 @RequiredArgsConstructor
-public class WebSocketAuthInterceptor
-        implements HandshakeInterceptor {
+public class WebSocketAuthInterceptor implements HandshakeInterceptor {
 
     private final JwtUtil jwtUtil;
 
     @Override
     public boolean beforeHandshake(
-
             ServerHttpRequest request,
             ServerHttpResponse response,
             WebSocketHandler wsHandler,
-            Map<String,Object> attributes
+            Map<String, Object> attributes
+    ) {
 
-    ){
+        try {
 
-        try{
+            String query = request.getURI().getQuery();
 
-            // GET TOKEN FROM URL
-            String token =
-                    request.getURI()
-                            .getQuery();
+            if (query == null || !query.startsWith("token=")) {
 
-            if(
-
-                    token==null ||
-
-                            !token.startsWith(
-                                    "token="
-                            )
-
-            ){
-
-                System.out.println(
-                        "❌ Missing Token"
-                );
+                System.out.println("❌ WebSocket : Missing Token");
 
                 return false;
 
             }
 
-            token =
-                    token.replace(
-                            "token=",
-                            ""
-                    );
-            System.out.println(
+            String token = query.substring("token=".length());
 
-                    "TOKEN RECEIVED: " +
+            String username = jwtUtil.extractUsername(token);
 
-                            token
+            if (username == null || !jwtUtil.isValid(token, username)) {
 
-            );
-            String username =
-                    jwtUtil.extractUsername(
-                            token
-                    );
-
-            if(
-
-                    !jwtUtil.isValid(
-                            token,
-                            username
-                    )
-
-            ){
-
-                System.out.println(
-                        "❌ Invalid JWT"
-                );
+                System.out.println("❌ WebSocket : Invalid Token");
 
                 return false;
 
             }
 
-            attributes.put(
+            // Store username in session attributes
+            attributes.put("username", username);
 
-                    "username",
-
-                    username
-
-            );
-
-            System.out.println(
-
-                    "✅ WebSocket Connected: "
-
-                            + username
-
-            );
+            System.out.println("✅ WebSocket Auth Success : " + username);
 
             return true;
 
-        }
+        } catch (Exception e) {
 
-        catch(Exception e){
-
-            System.out.println(
-
-                    "❌ WebSocket Error: "
-
-                            + e.getMessage()
-
-            );
+            System.out.println("❌ WebSocket Handshake Error : " + e.getMessage());
 
             return false;
 
@@ -122,16 +65,13 @@ public class WebSocketAuthInterceptor
 
     @Override
     public void afterHandshake(
-
             ServerHttpRequest request,
-
             ServerHttpResponse response,
-
             WebSocketHandler wsHandler,
-
             Exception exception
+    ) {
 
-    ){
+        // No implementation required
 
     }
 

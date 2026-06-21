@@ -83,6 +83,59 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
     """)
     void softDeleteMessage(@Param("messageId") Long messageId);
 
+    @Modifying
+    @Query("""
+UPDATE Message m
+SET m.deletedForEveryone = true
+WHERE m.id = :messageId
+""")
+    void deleteForEveryone(
+            @Param("messageId") Long messageId
+    );
+    @Modifying
+    @Query("""
+UPDATE Message m
+SET m.pinned = :pinned
+WHERE m.id = :messageId
+""")
+    void updatePinned(
+            @Param("messageId") Long messageId,
+            @Param("pinned") Boolean pinned
+    );
+
+
+    @Modifying
+    @Query("""
+UPDATE Message m
+SET m.starred = true
+WHERE m.id IN :ids
+""")
+    void starMessages(@Param("ids") List<Long> ids);
+
+    @Modifying
+    @Query("""
+UPDATE Message m
+SET m.starred = false
+WHERE m.id IN :ids
+""")
+    void unstarMessages(@Param("ids") List<Long> ids);
+
+    @Modifying
+    @Query("""
+UPDATE Message m
+SET m.pinned = true
+WHERE m.id IN :ids
+""")
+    void pinMessages(@Param("ids") List<Long> ids);
+
+    @Modifying
+    @Query("""
+UPDATE Message m
+SET m.pinned = false
+WHERE m.id IN :ids
+""")
+    void unpinMessages(@Param("ids") List<Long> ids);
+
 
 
 }

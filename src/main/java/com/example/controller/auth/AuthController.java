@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.Map;
 
 @RestController
@@ -142,6 +143,20 @@ public class AuthController {
                 .success(true)
                 .message("Phone verification bypassed for development")
                 .data(null)
+                .build();
+    }
+    @PostMapping("/logout")
+    public ApiResponse<String> logout(
+            Principal principal
+    ) {
+
+        userService.logout(
+                principal.getName()
+        );
+
+        return ApiResponse.<String>builder()
+                .success(true)
+                .message("Logout successful")
                 .build();
     }
 }

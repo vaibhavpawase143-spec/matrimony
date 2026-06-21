@@ -73,6 +73,8 @@ public class User {
 
     private LocalDateTime lastLogin;
 
+    private LocalDateTime lastHeartbeat;
+
     // ================= SECURITY =================
     private Boolean isBlocked = false;
 

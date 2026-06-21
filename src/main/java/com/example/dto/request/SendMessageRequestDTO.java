@@ -9,4 +9,10 @@ public class SendMessageRequestDTO {
 
     private String content;
 
+    private String mediaUrl;
+
+    private String mediaType;
+
+    private Long replyToMessageId;
+
 }

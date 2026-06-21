@@ -79,7 +79,8 @@ public class SecurityConfig {
                                 "/api/genders/**",
                                 "/api/countries/**",
                                 "/ws/**",
-                                "/api/image/**"
+                                "/api/image/**",
+                                "/uploads/**"
 
                         ).permitAll()
 

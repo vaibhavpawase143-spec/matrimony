@@ -53,18 +53,65 @@ export const apiClient = async (endpoint, options = {}) => {
     console.log('🌐 Response headers:', Object.fromEntries(response.headers.entries()));
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      console.error('❌ API Error Response:', errorData);
-      const error = new Error(errorData.message || errorData.error || `API call failed: ${endpoint}`);
+
+      const errorData =
+        await response.json()
+          .catch(() => ({}));
+
+      console.error(
+        '❌ API Error Response:',
+        errorData
+      );
+
+      const error =
+        new Error(
+          errorData.message ||
+          errorData.error ||
+          `API call failed: ${endpoint}`
+        );
+
       error.status = response.status;
       error.endpoint = endpoint;
       error.url = fullUrl;
+
       throw error;
     }
 
-    const result = await response.json();
-    console.log('✅ API Success Response:', result);
-    return result;
+    const contentType =
+      response.headers.get(
+        "content-type"
+      );
+
+    if (
+      contentType &&
+      contentType.includes(
+        "application/json"
+      )
+    ) {
+
+      const result =
+        await response.json();
+
+      console.log(
+        '✅ API Success Response:',
+        result
+      );
+
+      return result;
+    }
+
+    console.log(
+      '✅ API Success Response: Empty Body'
+    );
+
+    return {};
+    if (
+      response.status === 204
+    ) {
+
+      return {};
+
+    }
   } catch (error) {
     console.error('❌ API Request Failed:', error);
     console.error('❌ Error details:', {

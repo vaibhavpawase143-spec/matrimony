@@ -22,6 +22,14 @@ public class Message {
     @Column(length = 1000)
     private String content;
 
+    @Column(nullable = false)
+    private Boolean deletedForEveryone = false;
+
+    @Column(length = 500)
+    private String deletedForUsers;
+
+    private LocalDateTime deletedAt;
+
     @Enumerated(EnumType.STRING)
     private MessageStatus status;
 
@@ -40,6 +48,9 @@ public class Message {
 
     // 🔥 NEW: REACTION
     private String reaction;
+    private Boolean pinned = false;
+    private Boolean starred = false;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "reply_to_id")
     private Message replyTo;
@@ -84,8 +95,24 @@ public class Message {
     public String getMediaType() { return mediaType; }
     public void setMediaType(String mediaType) { this.mediaType = mediaType; }
 
-    public String getReaction() { return reaction; }
+    public String getReaction() {return reaction; }
     public void setReaction(String reaction) { this.reaction = reaction; }
+    // ================= PIN =================
+
+    public Boolean getPinned() {
+        return pinned;
+    }
+
+    public void setPinned(Boolean pinned) {
+        this.pinned = pinned;
+    }
+    public Boolean getStarred() {
+        return starred;
+    }
+
+    public void setStarred(Boolean starred) {
+        this.starred = starred;
+    }
 
     public User getReceiver() {
         if (conversation == null || sender == null) return null;
@@ -104,8 +131,34 @@ public class Message {
         this.replyTo = replyTo;
     }
 
+    public Boolean getDeletedForEveryone() {
+        return deletedForEveryone;
+    }
+
+
 
     public void setReceiver(User receiver) {
 
+    }
+
+
+
+    public LocalDateTime getDeletedAt() {
+        return deletedAt;
+    }
+
+    public String getDeletedForUsers() {
+        return deletedForUsers;
+    }
+
+    public void setDeletedForUsers(String deletedForUsers) {
+        this.deletedForUsers = deletedForUsers;
+    }
+
+    public void setDeletedForEveryone(Boolean deletedForEveryone) {
+        this.deletedForEveryone = deletedForEveryone;
+    }
+    public void setDeletedAt(LocalDateTime deletedAt) {
+        this.deletedAt = deletedAt;
     }
 }

@@ -48,10 +48,94 @@ import PaymentsPage from "./pages/admin/PaymentsPage";
 import VerificationPage from "./pages/admin/VerificationPage";
 
 import NotFound from "./pages/NotFound";
+import { useEffect } from "react";
 
 const queryClient = new QueryClient();
 
-const App = () => (
+const App = () => {
+
+//   useEffect(() => {
+//
+//     const handleUnload = () => {
+//
+//       const token = localStorage.getItem("token");
+//
+//       if (!token) {
+//         return;
+//       }
+//
+//       fetch(
+//         "http://localhost:9090/api/chat/offline",
+//         {
+//           method: "PUT",
+//           keepalive: true,
+//           headers: {
+//             Authorization: `Bearer ${token}`
+//           }
+//         }
+//       );
+//
+//     };
+//
+//     window.addEventListener(
+//       "beforeunload",
+//       handleUnload
+//     );
+//
+//     return () => {
+//
+//       window.removeEventListener(
+//         "beforeunload",
+//         handleUnload
+//       );
+//
+//     };
+//
+//   }, []);
+useEffect(() => {
+
+  const token = localStorage.getItem("token");
+
+  if (!token) {
+    return;
+  }
+
+  const pingServer = async () => {
+
+    try {
+
+      await fetch(
+        "http://localhost:9090/api/chat/ping",
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
+
+    } catch (err) {
+
+      console.log("PING ERROR", err);
+
+    }
+
+  };
+
+  // First ping immediately
+  pingServer();
+
+  // Then every 30 seconds
+  const interval = setInterval(
+    pingServer,
+    10000
+  );
+
+  return () => clearInterval(interval);
+
+}, []);
+
+  return (
   <QueryClientProvider client={queryClient}>
     <LanguageProvider>
       <ThemeProvider>
@@ -241,6 +325,8 @@ element={
       </ThemeProvider>
     </LanguageProvider>
   </QueryClientProvider>
-);
+  );
 
-export default App;
+  };
+
+  export default App;

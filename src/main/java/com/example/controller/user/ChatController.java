@@ -1,19 +1,28 @@
 package com.example.controller.user;
 
 import com.example.dto.request.ChatMessageDTO;
+import com.example.dto.request.SendMessageRequestDTO;
 import com.example.dto.response.ApiResponse;
 import com.example.model.Message;
 import com.example.model.User;
+import com.example.repository.UserRepository;
 import com.example.service.ChatService;
 
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.data.domain.Page;
+import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
+import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.Map;
+
+import org.springframework.web.multipart.MultipartFile;
+import java.nio.file.*;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/chat")
@@ -22,21 +31,31 @@ public class ChatController {
 
     private final ChatService chatService;
     private final SimpMessagingTemplate messagingTemplate;
+    private final UserRepository userRepository;
 
     // ================= 💬 SEND MESSAGE =================
     @PostMapping("/send")
     public ApiResponse<ChatMessageDTO> sendMessage(
-            @RequestBody Map<String, Object> request,
+            @RequestBody SendMessageRequestDTO request,
             Principal principal
     ) {
 
         String senderEmail = principal.getName();
 
-        Long receiverId = Long.valueOf(request.get("receiverId").toString());
-        String content = request.get("content").toString();
-        Long replyToMessageId = request.get("replyToMessageId") != null
-                ? Long.valueOf(request.get("replyToMessageId").toString())
-                : null;
+        Long receiverId =
+                request.getReceiverId();
+
+        String content =
+                request.getContent();
+
+        String mediaUrl =
+                request.getMediaUrl();
+
+        String mediaType =
+                request.getMediaType();
+        Long replyToMessageId =
+                request.getReplyToMessageId();
+
 
         Message message = chatService.sendMessageByEmail(
                 senderEmail,
@@ -44,6 +63,7 @@ public class ChatController {
                 content,
                 replyToMessageId
         );
+
 
         ChatMessageDTO dto = mapToDTO(message);
 
@@ -135,6 +155,83 @@ public class ChatController {
                 .build();
     }
 
+    @PutMapping("/messages/{id}/pin")
+    public ApiResponse<String> pinMessage(
+            @PathVariable Long id
+    ) {
+
+        chatService.pinMessage(id);
+
+        return ApiResponse.<String>builder()
+                .success(true)
+                .message("Message pinned")
+                .data(null)
+                .build();
+    }
+
+    @PutMapping("/messages/{id}/unpin")
+    public ApiResponse<String> unpinMessage(
+            @PathVariable Long id
+    ) {
+
+        chatService.unpinMessage(id);
+
+        return ApiResponse.<String>builder()
+                .success(true)
+                .message("Message unpinned")
+                .data(null)
+                .build();
+    }
+    @PutMapping("/messages/{id}/star")
+    public ApiResponse<String> starMessage(
+            @PathVariable Long id
+    ) {
+
+        chatService.starMessage(id);
+
+        return ApiResponse.<String>builder()
+                .success(true)
+                .message("Message starred")
+                .data(null)
+                .build();
+    }
+
+    @PutMapping("/messages/{id}/unstar")
+    public ApiResponse<String> unstarMessage(
+            @PathVariable Long id
+    ) {
+
+        chatService.unstarMessage(id);
+
+        return ApiResponse.<String>builder()
+                .success(true)
+                .message("Message unstarred")
+                .data(null)
+                .build();
+    }
+
+    @GetMapping("/user/{id}")
+    public ApiResponse<?> getChatUser(
+            @PathVariable Long id
+    ){
+
+        User user = userRepository.findById(id)
+                .orElseThrow();
+
+        Map<String,Object> data = new HashMap<>();
+
+        data.put("id", user.getId());
+        data.put("otherUserId", user.getId());
+        data.put("otherUsername", user.getEmail());
+        data.put("isOnline", user.getIsOnline());
+        data.put("lastSeen", user.getLastSeen());
+
+        return ApiResponse.builder()
+                .success(true)
+                .message("User fetched")
+                .data(data)
+                .build();
+    }
     // ================= ✔✔ SEEN =================
     @PutMapping("/seen/{conversationId}")
     public ApiResponse<String> markAsSeen(
@@ -355,15 +452,26 @@ public class ChatController {
                 )
 
                 .mediaUrl(
-
                         message.getMediaUrl()
-
                 )
 
                 .mediaType(
-
                         message.getMediaType()
+                )
 
+                .deletedForEveryone(
+                        message.getDeletedForEveryone()
+                )
+
+                .deletedForUsers(
+                        message.getDeletedForUsers()
+                )
+                .pinned(
+                        message.getPinned()
+                )
+
+                .starred(
+                        message.getStarred()
                 )
 
                 .build();
@@ -380,5 +488,296 @@ public class ChatController {
                 .message("Conversations fetched")
                 .data(chatService.getUserConversationsByEmail(email))
                 .build();
+    }
+    @PutMapping("/offline")
+    public ResponseEntity<?> offline(Principal principal){
+
+        System.out.println("OFFLINE API CALLED");
+
+        User user = userRepository
+                .findByEmail(principal.getName())
+                .orElseThrow();
+
+        user.setIsOnline(false);
+        user.setLastSeen(LocalDateTime.now());
+        user.setLastHeartbeat(null);
+
+        userRepository.save(user);
+
+        System.out.println(
+                "USER OFFLINE -> " +
+                        user.getEmail()
+        );
+
+        return ResponseEntity.ok().build();
+    }
+    @PutMapping("/ping")
+    public ResponseEntity<?> ping(Principal principal){
+
+        User user = userRepository
+                .findByEmail(principal.getName())
+                .orElseThrow();
+
+        user.setLastSeen(LocalDateTime.now());
+        user.setIsOnline(true);
+
+        userRepository.save(user);
+
+        return ResponseEntity.ok().build();
+    }
+    @PostMapping("/upload-image")
+    public ResponseEntity<?> uploadImage(
+
+            @RequestParam("file")
+            MultipartFile file
+
+    ) {
+
+        try {
+
+            String fileName =
+
+                    UUID.randomUUID()
+
+                            + "_"
+
+                            + file.getOriginalFilename();
+
+            Path path = Paths.get(
+                    "uploads/images",
+                    fileName
+            );
+
+            Files.createDirectories(
+                    path.getParent()
+            );
+
+            Files.copy(
+                    file.getInputStream(),
+                    path,
+                    StandardCopyOption.REPLACE_EXISTING
+            );
+
+            return ResponseEntity.ok(
+
+                    Map.of(
+
+                            "url",
+
+                            "/uploads/images/" + fileName
+
+                    )
+
+            );
+
+        }
+        catch (Exception e){
+
+            return ResponseEntity.badRequest()
+
+                    .body(
+
+                            e.getMessage()
+
+                    );
+
+        }
+
+    }
+    @PostMapping("/upload-audio")
+    public ResponseEntity<?> uploadAudio(
+
+            @RequestParam("file")
+            MultipartFile file
+
+    ) {
+
+        try {
+
+            String fileName =
+
+                    UUID.randomUUID()
+
+                            + "_"
+
+                            + file.getOriginalFilename();
+
+            Path path = Paths.get(
+                    "uploads/audio",
+                    fileName
+            );
+
+            Files.createDirectories(
+                    path.getParent()
+            );
+
+            Files.copy(
+                    file.getInputStream(),
+                    path,
+                    StandardCopyOption.REPLACE_EXISTING
+            );
+
+            return ResponseEntity.ok(
+
+                    Map.of(
+
+                            "url",
+
+                            "/uploads/audio/" + fileName
+
+                    )
+
+            );
+
+        }
+        catch (Exception e){
+
+            return ResponseEntity.badRequest()
+
+                    .body(
+                            e.getMessage()
+                    );
+
+        }
+
+    }
+    @PostMapping("/upload-document")
+    public ResponseEntity<?> uploadDocument(
+            @RequestParam("file") MultipartFile file
+    ) {
+
+        try {
+
+            String fileName =
+                    UUID.randomUUID()
+                            + "_"
+                            + file.getOriginalFilename();
+
+            Path path = Paths.get(
+                    "uploads/documents",
+                    fileName
+            );
+
+            Files.createDirectories(
+                    path.getParent()
+            );
+
+            Files.copy(
+                    file.getInputStream(),
+                    path,
+                    StandardCopyOption.REPLACE_EXISTING
+            );
+
+            return ResponseEntity.ok(
+                    Map.of(
+                            "url",
+                            "/uploads/documents/" + fileName
+                    )
+            );
+
+        } catch (Exception e) {
+
+            return ResponseEntity.badRequest()
+                    .body(e.getMessage());
+
+        }
+    }
+    @PostMapping("/upload-video")
+    public ResponseEntity<?> uploadVideo(
+
+            @RequestParam("file")
+            MultipartFile file
+
+    ) {
+
+        try {
+
+            String fileName =
+
+                    UUID.randomUUID()
+
+                            + "_"
+
+                            + file.getOriginalFilename();
+
+            Path path = Paths.get(
+                    "uploads/videos",
+                    fileName
+            );
+
+            Files.createDirectories(
+                    path.getParent()
+            );
+
+            Files.copy(
+                    file.getInputStream(),
+                    path,
+                    StandardCopyOption.REPLACE_EXISTING
+            );
+
+            return ResponseEntity.ok(
+
+                    Map.of(
+
+                            "url",
+
+                            "/uploads/videos/" + fileName
+
+                    )
+
+            );
+
+        }
+        catch (Exception e){
+
+            return ResponseEntity.badRequest()
+
+                    .body(
+
+                            e.getMessage()
+
+                    );
+
+        }
+
+    }
+    @DeleteMapping("/messages/{id}/me")
+    public ResponseEntity<?> deleteForMe(
+            @PathVariable Long id,
+            Principal principal
+    ){
+        User user =
+                userRepository
+                        .findByEmail(
+                                principal.getName()
+                        )
+                        .orElseThrow();
+
+        chatService.deleteForMe(
+                id,
+                user.getId()
+        );
+
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/messages/{id}/everyone")
+    public ResponseEntity<?> deleteForEveryone(
+            @PathVariable Long id,
+            Principal principal
+    ){
+        User user =
+                userRepository
+                        .findByEmail(
+                                principal.getName()
+                        )
+                        .orElseThrow();
+
+        chatService.deleteForEveryone(
+                id,
+                user.getId()
+        );
+
+        return ResponseEntity.ok().build();
     }
 }

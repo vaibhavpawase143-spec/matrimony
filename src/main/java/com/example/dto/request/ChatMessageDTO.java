@@ -37,4 +37,12 @@ public class ChatMessageDTO {
     // ================= EXTRA (REAL-TIME) =================
     private String action; // TYPING / STOP_TYPING / MESSAGE
 
+    private Boolean deletedForEveryone;
+
+    private String deletedForUsers;
+
+    private Boolean pinned;
+
+    private Boolean starred;
+
 }

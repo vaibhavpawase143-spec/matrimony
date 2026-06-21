@@ -34,6 +34,8 @@ public interface UserService {
 
     void bypassPhoneVerification(String phone);
 
+    void logout(String email);
+
 
     // ================= PASSWORD =================
 

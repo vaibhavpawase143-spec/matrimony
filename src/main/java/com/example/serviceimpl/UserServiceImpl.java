@@ -176,9 +176,15 @@ public class UserServiceImpl implements UserService {
             // Don't fail login if profile creation fails
         }
 
+
+        // Update online status
+        user.setIsOnline(true);
+        user.setLastHeartbeat(LocalDateTime.now());
         user.setLastLogin(LocalDateTime.now());
 
-        return userRepository.save(user);
+        User savedUser = userRepository.save(user);
+
+        return savedUser;
     }
 
     // ================= LOGIN TOKEN =================
@@ -216,9 +222,19 @@ public class UserServiceImpl implements UserService {
             // Don't fail token generation if profile creation fails
         }
 
-        // Update last login
+        // ================= UPDATE USER STATUS =================
+        user.setIsOnline(true);
+        user.setLastSeen(null);
         user.setLastLogin(LocalDateTime.now());
+
         userRepository.save(user);
+
+        System.out.println(
+                "✅ USER LOGIN -> "
+                        + user.getEmail()
+                        + " ONLINE = "
+                        + user.getIsOnline()
+        );
 
         List<String> roles = Optional.ofNullable(user.getRoles())
                 .orElse(Set.of())
@@ -264,9 +280,19 @@ public class UserServiceImpl implements UserService {
             System.err.println("⚠️ Failed to create profile during login: " + e.getMessage());
         }
 
-        // Update last login
+        // Update user status
         user.setLastLogin(LocalDateTime.now());
+        user.setIsOnline(true);
+        user.setLastSeen(null);
+
         userRepository.save(user);
+
+        System.out.println(
+                "USER LOGIN -> "
+                        + user.getEmail()
+                        + " ONLINE="
+                        + user.getIsOnline()
+        );
 
         // Generate tokens
         List<String> roles = Optional.ofNullable(user.getRoles())
@@ -413,6 +439,33 @@ public class UserServiceImpl implements UserService {
         userRepository.save(user);
         
         System.out.println("🔥 Development: Phone verification bypassed for " + phone);
+    }
+
+    @Override
+    @Transactional
+    public void logout(String email) {
+
+        User user = userRepository
+                .findByEmail(email)
+                .orElseThrow(() ->
+                        new RuntimeException("User not found")
+                );
+
+        // ================= USER OFFLINE =================
+        user.setIsOnline(false);
+        user.setLastSeen(LocalDateTime.now());
+        user.setLastHeartbeat(null);
+
+        userRepository.saveAndFlush(user);
+
+        System.out.println(
+                "🔴 USER LOGOUT -> "
+                        + user.getEmail()
+                        + " | ONLINE = "
+                        + user.getIsOnline()
+                        + " | LAST SEEN = "
+                        + user.getLastSeen()
+        );
     }
 
     // ================= BASIC =================
