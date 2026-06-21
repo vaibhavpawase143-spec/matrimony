@@ -176,4 +176,25 @@ public interface ShortlistRepository
     List<Shortlist>
     findByIsActiveTrue();
 
+    @Query("""
+
+SELECT COUNT(s)
+
+FROM Shortlist s
+
+WHERE
+
+s.user.id = :userId
+
+AND
+
+s.isActive = true
+
+""")
+    long countActiveShortlistsByUser(
+
+            @Param("userId")
+            Long userId
+
+    );
 }

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-
+import { formatDistanceToNow } from "date-fns";
 import { profileVisitorAPI } from "@/services/api";
 import toast from "react-hot-toast";
 
@@ -61,18 +61,26 @@ const ProfileVisitors = () => {
             👀 Profile Visitors
           </h1>
 
-          <div
-            className="
-            bg-pink-100
-            text-pink-700
-            px-4
-            py-2
-            rounded-lg
-            font-semibold
-            "
-          >
-            Total Visitors : {visitors.length}
-          </div>
+<div
+  className="
+  bg-gradient-to-r
+  from-pink-500
+  to-rose-500
+  text-white
+  px-6
+  py-4
+  rounded-2xl
+  shadow-lg
+  "
+>
+  <p className="text-sm">
+    Profile Visitors
+  </p>
+
+  <h2 className="text-3xl font-bold">
+    {visitors.length}
+  </h2>
+</div>
 
         </div>
 
@@ -84,22 +92,33 @@ const ProfileVisitors = () => {
 
         )}
 
-        {!loading &&
-          visitors.length === 0 && (
+{!loading &&
+  visitors.length === 0 && (
 
-          <div
-            className="
-            bg-white
-            rounded-xl
-            shadow-sm
-            p-8
-            text-center
-            "
-          >
-            No visitors yet 👀
-          </div>
+  <div
+    className="
+    bg-white
+    rounded-2xl
+    shadow-sm
+    p-12
+    text-center
+    "
+  >
+    <div className="text-6xl mb-4">
+      👀
+    </div>
 
-        )}
+    <h3 className="text-xl font-semibold mb-2">
+      No Visitors Yet
+    </h3>
+
+    <p className="text-gray-500">
+      Complete your profile and start exploring
+      matches to get noticed.
+    </p>
+  </div>
+
+)}
 
         <div className="space-y-4">
 
@@ -109,13 +128,20 @@ const ProfileVisitors = () => {
               key={visitor.userId}
               className="
               bg-white
-              rounded-xl
+              rounded-2xl
               shadow-sm
               border
               p-5
-              flex
-              items-center
-              justify-between
+             flex
+             flex-col
+             md:flex-row
+             md:items-center
+             justify-between
+             gap-4
+              hover:shadow-md
+              hover:-translate-y-1
+              transition-all
+              duration-300
               "
             >
 
@@ -127,13 +153,14 @@ const ProfileVisitors = () => {
                     "/default-profile.png"
                   }
                   alt="Visitor"
-                  className="
-                  w-14
-                  h-14
-                  rounded-full
-                  object-cover
-                  border
-                  "
+                className="
+                w-16
+                h-16
+                rounded-full
+                object-cover
+                border-2
+                border-pink-200
+                "
                 />
 
                 <div>
@@ -142,17 +169,15 @@ const ProfileVisitors = () => {
                     {visitor.fullName}
                   </h3>
 
-                  <p className="text-gray-500">
-                    {visitor.email}
-                  </p>
 
                   <p className="text-sm text-gray-400 mt-1">
-                    Viewed At :{" "}
+                    Viewed{" "}
                     {
                       visitor.viewedAt
-                        ? new Date(
-                            visitor.viewedAt
-                          ).toLocaleString()
+                        ? formatDistanceToNow(
+                            new Date(visitor.viewedAt),
+                            { addSuffix: true }
+                          )
                         : "-"
                     }
                   </p>
@@ -163,15 +188,18 @@ const ProfileVisitors = () => {
 
               <Link
                 to={`/profile/${visitor.profileId}`}
-                className="
-                bg-pink-600
-                text-white
-                px-4
-                py-2
-                rounded-lg
-                hover:bg-pink-700
-                transition
-                "
+               className="
+               w-full
+               md:w-auto
+               text-center
+               bg-pink-600
+               text-white
+               px-5
+               py-2.5
+               rounded-xl
+               hover:bg-pink-700
+               transition
+               "
               >
                 View Profile
               </Link>

@@ -93,26 +93,7 @@ const apiClient = async (endpoint, options = {}) => {
   }
 };
 
-deletePhoto: async (photoId) => {
 
-  const response = await fetch(
-    `${API_BASE_URL}/photos/${photoId}`,
-    {
-      method: "DELETE",
-      headers: {
-        Authorization:
-          `Bearer ${localStorage.getItem("token")}`
-      }
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error(
-      "Failed to delete photo"
-    );
-  }
-
-}
 
 
 export const photoAPI = {
@@ -419,7 +400,90 @@ export const profileVisitorAPI = {
   }
 
 };
+export const blockAPI = {
 
+  blockUser: async (
+    blockerId,
+    blockedId
+  ) => {
+
+    return await apiClient(
+
+      `/block?blockerId=${blockerId}&blockedId=${blockedId}`,
+
+      {
+        method: "POST"
+      }
+
+    );
+
+  },
+
+getMyBlockedUsers: async (
+  blockerId
+) => {
+
+  return await apiClient(
+    `/block/my-blocked-users?blockerId=${blockerId}`
+  );
+
+},
+  unblockUser: async (
+    blockerId,
+    blockedId
+  ) => {
+
+    return await apiClient(
+
+      `/block?blockerId=${blockerId}&blockedId=${blockedId}`,
+
+      {
+        method: "DELETE"
+      }
+
+    );
+
+  },
+
+  checkBlocked: async (
+    user1,
+    user2
+  ) => {
+
+    return await apiClient(
+
+      `/block/check?user1=${user1}&user2=${user2}`
+
+    );
+
+  }
+
+};
+export const reportAPI = {
+
+  reportUser: async (
+    reportedUserId,
+    reason = "Inappropriate profile"
+  ) => {
+
+    return await apiClient(
+      `/report?reportedUserId=${reportedUserId}&reason=${encodeURIComponent(reason)}`,
+      {
+        method: "POST"
+      }
+    );
+
+  },
+
+
+hasReported: async (reportedUserId) => {
+
+  return await apiClient(
+    `/report/check/${reportedUserId}`
+  );
+
+},
+};
 
 export const profileAPI = {
 
@@ -546,6 +610,49 @@ error?.message ||
 }
 
 };
+export const supportAPI = {
+
+  createTicket: async (data) => {
+
+    return await apiClient(
+      "/support",
+      {
+        method: "POST",
+        body: JSON.stringify(data)
+      }
+    );
+
+  },
+
+  getMyTickets: async () => {
+
+    return await apiClient(
+      "/support/me"
+    );
+
+  },
+
+  getTicket: async (ticketNumber) => {
+
+    return await apiClient(
+      `/support/${ticketNumber}`
+    );
+
+  },
+
+  closeTicket: async (ticketNumber) => {
+
+    return await apiClient(
+      `/support/${ticketNumber}/close`,
+      {
+        method: "PUT"
+      }
+    );
+
+  }
+
+};
+
  export const interestAPI = {
 
 getReceivedPendingInterests:
@@ -1682,5 +1789,153 @@ return await apiClient(
  );
 
  }
+
+ };
+ export const subscriptionAPI = {
+
+   // ==========================
+   // GET ALL PLANS
+   // ==========================
+   getPlans: async () => {
+
+     try {
+
+       return await apiClient("/subscription/plans");
+
+     } catch (error) {
+
+       console.error("Subscription API Error:", error);
+
+       return [];
+
+     }
+
+   },
+
+   // ==========================
+   // BUY PLAN
+   // ==========================
+   subscribe: async (data) => {
+
+     try {
+
+       return await apiClient(
+         "/subscription/subscribe",
+         {
+           method: "POST",
+           body: JSON.stringify(data)
+         }
+       );
+
+     } catch (error) {
+
+       console.error("Subscription API Error:", error);
+
+       throw error;
+
+     }
+
+   },
+
+   // ==========================
+   // CREATE ORDER
+   // ==========================
+   createOrder: async (planId) => {
+
+     return await apiClient(
+       `/razorpay/create-order?planId=${planId}`,
+       {
+         method: "POST"
+       }
+     );
+
+   },
+
+   // ==========================
+   // VERIFY PAYMENT
+   // ==========================
+   verifyPayment: async (data) => {
+
+     return await apiClient(
+       `/razorpay/verify-payment?orderId=${data.orderId}&paymentId=${data.paymentId}&signature=${data.signature}`,
+       {
+         method: "POST"
+       }
+     );
+
+   },
+
+   // ==========================
+   // PAYMENT STATUS
+   // ==========================
+   getPaymentStatus: async (orderId) => {
+
+     return await apiClient(
+       `/razorpay/payment-status/${orderId}`
+     );
+
+   },
+
+   // ==========================
+   // MY SUBSCRIPTION
+   // ==========================
+   getMySubscription: async () => {
+
+     try {
+
+       return await apiClient("/subscription/me");
+
+     } catch (error) {
+
+       console.error("Subscription API Error:", error);
+
+       return null;
+
+     }
+
+   },
+
+   // ==========================
+   // HISTORY
+   // ==========================
+   getHistory: async () => {
+
+     try {
+
+       return await apiClient("/subscription/history");
+
+     } catch (error) {
+
+       console.error("Subscription API Error:", error);
+
+       return [];
+
+     }
+
+   },
+
+   // ==========================
+   // CANCEL SUBSCRIPTION
+   // ==========================
+   cancelSubscription: async () => {
+
+     try {
+
+       return await apiClient(
+         "/subscription/cancel",
+         {
+           method: "PUT"
+         }
+       );
+
+     } catch (error) {
+
+       console.error("Subscription API Error:", error);
+
+       throw error;
+
+     }
+
+   }
 
  };

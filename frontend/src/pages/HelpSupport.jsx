@@ -1,10 +1,13 @@
 import { Headphones, Mail, Phone, MessageCircle, Clock, MapPin, Users, CheckCircle, AlertCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState } from "react";
+import toast from "react-hot-toast";
+import { supportAPI } from "@/services/api";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
 const HelpSupport = () => {
+    const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -21,21 +24,63 @@ const HelpSupport = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    // Handle form submission
-    console.log('Support request submitted:', formData);
-    alert('Your support request has been submitted. We will respond within 24 hours.');
-    setFormData({
-      name: "",
-      email: "",
-      phone: "",
-      subject: "",
-      message: "",
-      category: "general"
-    });
-  };
+  const handleSubmit = async (e) => {
 
+    e.preventDefault();
+
+    try {
+
+      setLoading(true);
+
+      await supportAPI.createTicket({
+
+        category: formData.category.toUpperCase(),
+
+        subject: formData.subject,
+
+        message: formData.message,
+
+        attachmentUrl: null
+
+      });
+
+      toast.success("Support ticket submitted successfully.");
+
+      setFormData({
+
+        name: "",
+
+        email: "",
+
+        phone: "",
+
+        subject: "",
+
+        message: "",
+
+        category: "OTHER"
+
+      });
+
+    } catch (error) {
+
+      console.log(error);
+
+      toast.error(
+
+        error.message ||
+
+        "Failed to submit support ticket"
+
+      );
+
+    } finally {
+
+      setLoading(false);
+
+    }
+
+  };
   const supportOptions = [
     {
       icon: <Phone className="h-6 w-6" />,
@@ -285,12 +330,27 @@ const HelpSupport = () => {
                     required
                     className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                   >
-                    <option value="general">General Query</option>
-                    <option value="profile">Profile Issues</option>
-                    <option value="payment">Payment Issues</option>
-                    <option value="technical">Technical Support</option>
-                    <option value="safety">Safety Concerns</option>
-                    <option value="feedback">Feedback</option>
+                  <option value="OTHER">General</option>
+
+                  <option value="ACCOUNT">Account</option>
+
+                  <option value="PROFILE">Profile</option>
+
+                  <option value="PHOTO">Photo</option>
+
+                  <option value="PREMIUM">Premium</option>
+
+                  <option value="PAYMENT">Payment</option>
+
+                  <option value="CHAT">Chat</option>
+
+                  <option value="MATCH">Match</option>
+
+                  <option value="REPORT">Report</option>
+
+                  <option value="TECHNICAL">Technical</option>
+
+                  <option value="FEATURE_REQUEST">Feature Request</option>
                   </select>
                 </div>
               </div>
@@ -325,12 +385,17 @@ const HelpSupport = () => {
                 ></textarea>
               </div>
 
-              <button
-                type="submit"
-                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-3 px-6 rounded-lg transition-colors duration-200"
-              >
-                Send Message
-              </button>
+             <button
+               type="submit"
+               disabled={loading}
+               className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-3 px-6 rounded-lg"
+             >
+
+               {loading
+                   ? "Submitting..."
+                   : "Submit Support Ticket"}
+
+             </button>
             </form>
           </motion.div>
         </div>

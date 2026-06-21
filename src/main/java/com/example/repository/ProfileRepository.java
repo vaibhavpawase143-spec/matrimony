@@ -191,7 +191,10 @@ LEFT JOIN FETCH p.employed
 
 LEFT JOIN FETCH p.disabilityStatus
 LEFT JOIN FETCH p.bloodGroup
+WHERE p.isActive = true
 
+ORDER BY p.isPremium DESC,
+         p.createdAt DESC
 """)
 
     List<Profile> findAllWithUser();

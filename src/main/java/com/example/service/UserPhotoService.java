@@ -1,5 +1,6 @@
 package com.example.service;
 
+import com.example.dto.response.UserGalleryResponseDTO;
 import com.example.model.PhotoType;
 import com.example.model.UserPhoto;
 import org.springframework.web.multipart.MultipartFile;
@@ -41,9 +42,7 @@ public interface UserPhotoService {
     // PHOTO GALLERY
     // =========================
 
-    List<UserPhoto> getPhotosByUserId(
-            Long userId
-    );
+    UserGalleryResponseDTO getPhotosByUserId(Long userId);
 
     long getPhotoCount(
             Long userId

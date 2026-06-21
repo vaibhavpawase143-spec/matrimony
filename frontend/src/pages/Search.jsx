@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 
 import { useLoading } from "@/hooks/useLoading";
 import { useToast } from "@/components/Toast";
-import { searchAPI, masterDataAPI } from "@/services/api";
+import { searchAPI, masterDataAPI,  blockAPI } from "@/services/api";
 import { useMatrimonyOptions } from "@/hooks/useMatrimonyOptions";
 import { useLanguage } from "@/context/LanguageContext.jsx";
 
@@ -301,13 +301,43 @@ const performSearch = async () => {
 
     const response =
       await searchAPI.searchProfiles(searchPayload);
+const currentUser =
+  JSON.parse(
+    localStorage.getItem("user")
+  );
 
+const blockedUsers =
+  await blockAPI.getMyBlockedUsers(
+    currentUser.profile.userId
+  );
+
+const blockedIds =
+  blockedUsers.map(
+    user => user.blockedId
+  );
     console.log(
       "SEARCH RESPONSE =",
       response
     );
 
-    setSearchResults(response.content || []);
+const filteredResults =
+  (response.content || []).filter(
+    profile =>
+
+      !blockedIds.includes(
+        profile.userId
+      )
+
+      &&
+
+      profile.userId !==
+      currentUser.profile.userId
+
+  );
+
+setSearchResults(
+  filteredResults
+);
     setTotalResults(response.totalElements || 0);
 
   } catch (err) {
@@ -536,7 +566,29 @@ console.log(
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
                 {searchResults.map((profile) => (
                   <Link to={`/profile/${profile.id}`} key={profile.id} className="bg-card rounded-xl overflow-hidden border border-border shadow-sm hover:shadow-md transition-shadow group">
-                    <div className="aspect-[3/4] overflow-hidden bg-muted">
+                   <div className="relative aspect-[3/4] overflow-hidden bg-muted">
+                   {profile.isPremium && (
+                     <div
+                       className="
+                         absolute
+                         top-3
+                         left-3
+                         z-10
+                         bg-gradient-to-r
+                         from-yellow-400
+                         to-amber-500
+                         text-white
+                         px-3
+                         py-1
+                         rounded-full
+                         text-xs
+                         font-bold
+                         shadow-lg
+                       "
+                     >
+                       👑 PREMIUM
+                     </div>
+                   )}
                       {profile.imageUrl ? (
                         <img 
                           src={profile.imageUrl}
@@ -561,9 +613,15 @@ console.log(
                       )}
                     </div>
                     <div className="p-4">
-                    <h3 className="text-sm font-semibold text-foreground">
-                      {profile.firstName} {profile.lastName}
-                    </h3>
+                   <h3 className="text-sm font-semibold text-foreground flex items-center gap-1">
+                     {profile.firstName} {profile.lastName}
+
+                     {profile.isPremium && (
+                       <span className="text-yellow-500">
+                         👑
+                       </span>
+                     )}
+                   </h3>
                   <p className="text-xs text-muted-foreground mt-0.5">
                     {profile.occupationName || 'Profession not specified'}
                     ·

@@ -2,19 +2,19 @@ package com.example.serviceimpl;
 
 import com.example.dto.request.InterestRequestDTO;
 import com.example.dto.response.InterestResponseDTO;
-import com.example.model.Interest;
-import com.example.model.Match;
-import com.example.model.NotificationType;
-import com.example.model.User;
+import com.example.model.*;
 import com.example.repository.InterestRepository;
 import com.example.repository.MatchRepository;
 import com.example.repository.UserRepository;
 import com.example.service.InterestService;
 import com.example.service.NotificationService;
+import com.example.service.SubscriptionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -26,7 +26,7 @@ public class InterestServiceImpl implements InterestService {
     private final UserRepository userRepository;
     private final MatchRepository matchRepository;
     private final NotificationService notificationService;
-
+    private final SubscriptionService subscriptionService;
     // ✅ Send Interest
     @Override
     @Transactional
@@ -44,39 +44,56 @@ public class InterestServiceImpl implements InterestService {
 
         User receiver = userRepository.findById(receiverId)
                 .orElseThrow(() -> new RuntimeException("Receiver not found"));
+// ================= DAILY LIMIT =================
+
+        // ================= PREMIUM LIMIT =================
+
+        boolean premium = subscriptionService.isCurrentUserPremium();
+
+        if (!premium) {
+
+            long interestCount =
+                    interestRepository.countBySender_IdAndIsActiveTrue(senderId);
+
+            if (interestCount >= 5) {
+
+                throw new RuntimeException(
+                        "You've reached your free interest limit. Upgrade to Premium to send unlimited interests."
+                );
+
+            }
+
+        }
+
+// ================= USER VALIDATION =================
 
         if (!sender.getIsActive()) {
+
             throw new RuntimeException("Sender is inactive");
+
         }
 
         if (!receiver.getIsActive()) {
+
             throw new RuntimeException("Cannot send interest to inactive user");
+
         }
 
-        Interest existing = interestRepository
-                .findBySender_IdAndReceiver_Id(
-                        senderId,
-                        receiverId
-                )
-                .orElse(null);
+// ================= DUPLICATE CHECK =================
 
-        if(existing != null){
+        Interest existing =
+                interestRepository
+                        .findBySender_IdAndReceiver_Id(
+                                senderId,
+                                receiverId
+                        )
+                        .orElse(null);
 
-            // Already pending and active
-            if(
+        if (existing != null) {
 
-                    existing.getStatus()
-                            .equalsIgnoreCase(
-                                    "PENDING"
-                            )
-
-                            &&
-
-                            Boolean.TRUE.equals(
-                                    existing.getIsActive()
-                            )
-
-            ){
+            // Already pending
+            if ("PENDING".equalsIgnoreCase(existing.getStatus())
+                    && Boolean.TRUE.equals(existing.getIsActive())) {
 
                 throw new RuntimeException(
                         "Interest already sent"
@@ -84,15 +101,8 @@ public class InterestServiceImpl implements InterestService {
 
             }
 
-            // Already matched / accepted
-            if(
-
-                    existing.getStatus()
-                            .equalsIgnoreCase(
-                                    "ACCEPTED"
-                            )
-
-            ){
+            // Already accepted
+            if ("ACCEPTED".equalsIgnoreCase(existing.getStatus())) {
 
                 throw new RuntimeException(
                         "You are already connected"
@@ -100,79 +110,43 @@ public class InterestServiceImpl implements InterestService {
 
             }
 
-            // Reuse old record
-            existing.setStatus(
-                    "PENDING"
-            );
-
-            existing.setIsActive(
-                    true
-            );
+            // Reactivate old interest
+            existing.setStatus("PENDING");
+            existing.setIsActive(true);
 
             Interest updated =
-                    interestRepository.save(
-                            existing
-                    );
+                    interestRepository.save(existing);
 
             notificationService.create(
-
                     senderId,
-
                     receiverId,
-
                     NotificationType.REQUEST
-
             );
 
-            return mapToDTO(
-                    updated
-            );
-
+            return mapToDTO(updated);
         }
+
+// ================= SAVE =================
+
         Interest interest = new Interest();
+
         interest.setSender(sender);
         interest.setReceiver(receiver);
         interest.setStatus("PENDING");
         interest.setIsActive(true);
 
-        Interest saved = interestRepository.save(interest);
-        System.out.println(
+        Interest saved =
+                interestRepository.save(interest);
 
-                "RECEIVER ID = " +
-
-                        receiverId
-
-        );
-
-        System.out.println(
-
-                "SENDING WS"
-
-        );
+// ================= NOTIFICATION =================
 
         notificationService.create(
-
                 senderId,
-
                 receiverId,
-
                 NotificationType.REQUEST
-
         );
 
-        System.out.println(
-
-                "NOTIFICATION SERVICE CALLED"
-
-        );
-
-        System.out.println(
-
-                "NOTIFICATION CREATE CALLED"
-
-        );
-        return mapToDTO(saved);
-    }
+        return mapToDTO(saved);    }
 
     // 🔄 Accept / Reject + Match
     @Override

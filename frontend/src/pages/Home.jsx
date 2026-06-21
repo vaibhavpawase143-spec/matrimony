@@ -1,5 +1,6 @@
 import { Heart, User, Search, Settings, LogOut, ChevronDown, Bell, MessageSquare, Star, Menu } from "lucide-react";
-
+import RecentActivity
+from "@/components/RecentActivity";
 import { Link, useNavigate } from "react-router-dom";
 import HeartAnimation
 from "@/components/HeartAnimation";
@@ -7,7 +8,7 @@ import { swipeAPI } from "@/services/swipeAPI";
 import useLikes
 from "@/hooks/useLikes";
 import { motion } from "framer-motion";
-
+import ReportModal from "../components/ReportModal";
 import { useState, useEffect } from "react";
 
 import { useAuth } from "@/hooks/useAuth";
@@ -37,7 +38,9 @@ import {
 profileAPI,
 
 interestAPI,
-profileVisitorAPI
+profileVisitorAPI,
+blockAPI,
+reportAPI
 } from "@/services/api";
 
 import {
@@ -67,8 +70,13 @@ isLiked,
 toggleLike
 
 }=useLikes();
-
-
+const [showReportModal, setShowReportModal] = useState(false);
+const [reportedUsers, setReportedUsers] = useState({});
+console.log("showReportModal =", showReportModal);
+const [selectedProfile, setSelectedProfile] = useState(null);
+const [selectedReason, setSelectedReason] = useState("");
+const [customReason, setCustomReason] = useState("");
+const [blockedUsers, setBlockedUsers] = useState([]);
 const { userName, logout } = useAuth();
 
 const { startLoading, stopLoading } =
@@ -88,14 +96,18 @@ useState(true);
 
 const [profiles,setProfiles] =
 useState([]);
+const [visitors, setVisitors] =
+useState([]);
 
-const [
+const [receivedInterests,
+setReceivedInterests] =
+useState([]);
 
-sentInterests,
+const [shortlists,
+setShortlists] =
+useState([]);
+const [sentInterests, setSentInterests] = useState([]);
 
-setSentInterests
-
-] = useState([]);
 
 
 const [
@@ -136,7 +148,9 @@ const sentInterests =
 await interestAPI.getSentInterests(
 senderId
 );
-
+setSentInterests(
+  sentInterests || []
+);
 const receivedInterests =
 await interestAPI
 .getReceivedPendingInterests(
@@ -149,11 +163,25 @@ await shortlistAPI
 0,
 100
 );
-const likesReceived =
-await swipeAPI.getReceivedLikes();
 const visitors =
 await profileVisitorAPI
 .getMyVisitors();
+setReceivedInterests(
+  receivedInterests || []
+);
+
+setShortlists(
+  shortlistData.content || []
+);
+console.log(
+  "SHORTLIST ITEM",
+  shortlistData.content[0]
+);
+setVisitors(
+  visitors || []
+);
+const likesReceived =
+await swipeAPI.getReceivedLikes();
 setDashboardStats(prev=>({
 
 ...prev,
@@ -317,17 +345,39 @@ const calculateAge = (dob) => {
   const loadProfiles = async () => {
     try {
       setLoadingProfiles(true);
+      const currentUser =
+       JSON.parse(
+       localStorage.getItem("user")
+       );
   const data =
   await profileAPI.getProfiles();
+  console.log(
+    "PROFILES API:",
+    data
+  );
+  const blockedUsers =
+    await blockAPI.getMyBlockedUsers(
+      currentUser.profile.userId
+    );
 
+  console.log(
+    "BLOCKED USERS:",
+    blockedUsers
+  );
+console.log("FIRST PROFILE:", data[0]);
   console.log(
   "Profiles API Response:",
  JSON.stringify(data,null,2)
   );
- const currentUser =
- JSON.parse(
- localStorage.getItem("user")
- );
+const blockedIds =
+  blockedUsers.map(
+    user => user.blockedId
+  );
+
+console.log(
+  "BLOCKED IDS:",
+  blockedIds
+);
 
 const filteredProfiles =
   Array.isArray(data)
@@ -342,14 +392,20 @@ const filteredProfiles =
         .toLowerCase()
 
       !==
-
       String(currentUser.email)
         .toLowerCase()
+
+      &&
+
+      !blockedIds.includes(
+        profile.userId
+      )
 
     )
 
     : [];
- console.log(
+
+     console.log(
  "CURRENT USER:",
  currentUser.email
  );
@@ -377,9 +433,29 @@ filteredProfiles.forEach(profile => {
   );
 
 });
- setProfiles(
- filteredProfiles
- );
+const reportStatus = {};
+
+for (const profile of filteredProfiles) {
+
+  try {
+
+    reportStatus[profile.userId] =
+      await reportAPI.hasReported(
+        profile.userId
+      );
+
+  } catch {
+
+    reportStatus[profile.userId] = false;
+
+  }
+
+}
+
+setReportedUsers(reportStatus);
+
+
+setProfiles(filteredProfiles);
 
     } catch (error) {
       console.warn('Failed to load profiles:', error.message);
@@ -483,6 +559,26 @@ toast.success(
 }catch(err){
 
 console.log(err);
+
+if(
+
+err?.message?.includes(
+
+"Daily limit reached"
+
+)
+
+){
+
+toast.error(
+
+"Daily limit reached.\nUpgrade to Premium for unlimited interests."
+
+);
+
+return;
+
+}
 
 toast.error(
 
@@ -805,6 +901,13 @@ p-8
 
             />            </div>
 
+
+<RecentActivity
+  visitors={visitors}
+  receivedInterests={receivedInterests}
+  shortlists={shortlists}
+  sentInterests={sentInterests}
+/>
             {/* Real Profiles Section */}
             <div className="mb-8">
               <h2 className="text-2xl font-bold mb-6">Discover Profiles</h2>
@@ -1328,6 +1431,126 @@ showLabel={false}
 />
 
 </div>
+<button
+title="Block User"
+onClick={async (e) => {
+  e.stopPropagation();
+
+  const confirmBlock = window.confirm(
+    "Are you sure you want to block this user?"
+  );
+
+  if (!confirmBlock) return;
+
+  try {
+
+    const currentUser = JSON.parse(
+      localStorage.getItem("user")
+    );
+
+    const blockerId =
+      Number(currentUser.profile.userId);
+
+    const blockedId =
+      Number(profile.userId);
+
+    console.log("BLOCKER:", blockerId);
+    console.log("BLOCKED:", blockedId);
+
+    const result =
+      await blockAPI.blockUser(
+        blockerId,
+        blockedId
+      );
+
+    console.log("BLOCK API RESULT:", result);
+
+ toast.success(
+   "User blocked successfully"
+ );
+
+ setBlockedUsers(prev => [
+   ...prev,
+   profile.userId
+ ]);
+setProfiles(prev =>
+  prev.filter(
+    p => p.userId !== profile.userId
+  )
+);
+  } catch (err) {
+
+    console.error("BLOCK ERROR:", err);
+
+    toast.error(
+      err.message || "Failed to block user"
+    );
+
+  }
+}}
+
+className="
+group
+w-12
+h-12
+rounded-full
+bg-red-100
+border
+border-red-200
+shadow-lg
+hover:scale-125
+active:scale-95
+transition-all
+duration-300
+flex
+items-center
+justify-center
+"
+>
+🚫
+</button>
+<button
+  title={
+    reportedUsers[profile.userId]
+      ? "Already Reported"
+      : "Report User"
+  }
+  disabled={reportedUsers[profile.userId]}
+  onClick={(e) => {
+
+    e.stopPropagation();
+
+    if (reportedUsers[profile.userId]) {
+      return;
+    }
+
+    setSelectedProfile(profile);
+    setShowReportModal(true);
+
+  }}
+  className={`
+    group
+    w-12
+    h-12
+    rounded-full
+    border
+    shadow-lg
+    transition-all
+    duration-300
+    flex
+    items-center
+    justify-center
+    text-xl
+
+    ${
+      reportedUsers[profile.userId]
+        ? "bg-gray-200 border-gray-300 cursor-not-allowed opacity-70"
+        : "bg-orange-100 border-orange-200 hover:scale-125 active:scale-95"
+    }
+  `}
+>
+  {reportedUsers[profile.userId] ? "✔️" : "⚠️"}
+</button>
 </div>
                    </div>
                     </motion.div>
@@ -1372,9 +1595,86 @@ showLabel={false}
 
         </div>
 
-      </div>
 
     </div>
+        </div>
+
+        <ReportModal
+          open={showReportModal}
+          onClose={() => {
+            setShowReportModal(false);
+            setSelectedReason("");
+            setCustomReason("");
+          }}
+          selectedReason={selectedReason}
+          setSelectedReason={setSelectedReason}
+          customReason={customReason}
+          setCustomReason={setCustomReason}
+         onSubmit={async () => {
+
+           try {
+
+             if (!selectedReason) {
+
+               toast.error("Please select a reason");
+
+               return;
+
+             }
+
+             const finalReason =
+               selectedReason === "Other"
+                 ? customReason
+                 : selectedReason;
+
+             if (
+               selectedReason === "Other" &&
+               !customReason.trim()
+             ) {
+
+               toast.error(
+                 "Please enter a reason"
+               );
+
+               return;
+
+             }
+
+             const result =
+               await reportAPI.reportUser(
+                 selectedProfile.userId,
+                 finalReason
+               );
+
+             toast.success(
+               result || "User reported successfully"
+             );
+setReportedUsers(prev => ({
+    ...prev,
+    [selectedProfile.userId]: true
+}));
+             setShowReportModal(false);
+
+             setSelectedReason("");
+
+             setCustomReason("");
+
+             setSelectedProfile(null);
+
+           } catch (err) {
+
+             console.error(err);
+
+             toast.error(
+               err.message || "Failed to report user"
+             );
+
+           }
+
+         }}
+        />
+
+
     </>
   );
 };

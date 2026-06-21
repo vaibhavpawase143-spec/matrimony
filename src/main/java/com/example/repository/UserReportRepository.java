@@ -12,7 +12,10 @@ public interface UserReportRepository extends JpaRepository<UserReport, Long> {
     long countByReportedUser(User user);
 
     boolean existsByReporterAndReportedUser(User reporter, User reportedUser);
-
+    boolean existsByReporterEmailAndReportedUserId(
+            String email,
+            Long reportedUserId
+    );
     List<UserReport> findByStatus(ReportStatus reportStatus);
     long countByReportedUserId(Long reportedUserId);
 }

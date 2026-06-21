@@ -18,7 +18,8 @@ import { useLanguage } from "@/context/LanguageContext";
 import {
   profileAPI,
   interestAPI,
-  profileVisitorAPI
+  profileVisitorAPI,
+    blockAPI
 } from "@/services/api";
 import toast from "react-hot-toast";
 
@@ -104,12 +105,17 @@ const {id}=useParams();
 
 const [profile,setProfile]=
 useState(null);
+const [blockedProfile,
+setBlockedProfile] =
+useState(false);
+
 const [interestSent,
 setInterestSent]=
 useState(false);
 const [canViewContact,setCanViewContact] =
 useState(false);
-
+const [isPremiumUser, setIsPremiumUser] =
+useState(false);
 useEffect(()=>{
 
 const loadProfile =
@@ -121,35 +127,72 @@ const data =
 await profileAPI
 .getProfileById(id);
 
-setProfile(data);
-const photos =
-await photoAPI.getUserPhotos(
-  data.userId
-);
 
-console.log(
-  "PHOTOS = ",
-  photos
-);
-console.log(
-  "Gallery Photos =",
-  photos
-);
-
-console.log(
-  "Gallery Length =",
-  photos.length
-);
-console.log(
-  "FIRST PHOTO =",
-  photos[0]
-);
-setGalleryPhotos(
-  photos
-);
 const currentUser =
 JSON.parse(
   localStorage.getItem("user")
+);
+const myProfile =
+    await profileAPI.getProfile();
+
+console.log(myProfile);
+
+
+console.log("MY PROFILE =", myProfile);
+console.log("MY PROFILE PREMIUM =", myProfile.isPremium);
+
+setIsPremiumUser(
+    Boolean(myProfile.isPremium)
+);const blockedUsers =
+await blockAPI.getMyBlockedUsers(
+  currentUser.profile.userId
+);
+
+const blockedIds =
+blockedUsers.map(
+  user => user.blockedId
+);
+if (
+  blockedIds.includes(
+    data.userId
+  )
+) {
+
+  setBlockedProfile(true);
+
+  return;
+
+}
+if (
+  blockedIds.includes(
+    data.userId
+  )
+) {
+
+  toast.error(
+    "This profile is blocked"
+  );
+
+  return;
+
+}
+const galleryResponse =
+    await photoAPI.getUserPhotos(data.userId);
+
+console.log("Gallery Response =", galleryResponse);
+
+console.log(
+    "Gallery Photos =",
+    galleryResponse.photos
+);
+
+console.log(
+    "Gallery Length =",
+    galleryResponse.photos.length
+);
+
+setGalleryPhotos(
+    galleryResponse.photos
 );
 console.log(
   "CURRENT USER",
@@ -230,7 +273,7 @@ data.userId
 setInterestSent(
 alreadySent
 );
-
+setProfile(data);
 }catch(err){
 
 console.log(err);
@@ -301,36 +344,83 @@ const handleSendInterest = async () => {
       "Interest Sent Successfully ❤️"
     );
 
-  } catch (err) {
+}catch(err){
 
-    console.log(err);
+console.log(err);
 
-    toast.error(
-      err?.message || "Failed"
-    );
+if(
 
-  }
+err?.message?.includes(
 
-};
-if(!profile){
+"Daily limit reached"
 
-return(
+)
 
-<div className="
-min-h-screen
-flex
-items-center
-justify-center
-">
+){
 
-Loading Profile...
+toast.error(
 
-</div>
+"Daily limit reached.\nUpgrade to Premium for unlimited interests."
+
+);
+
+return;
+
+}
+
+toast.error(
+
+err?.message ||
+
+"Failed"
 
 );
 
 }
 
+};
+if (blockedProfile) {
+
+  return (
+
+    <div
+      className="
+      min-h-screen
+      flex
+      items-center
+      justify-center
+      text-2xl
+      font-bold
+      "
+    >
+
+      🚫 This profile is blocked
+
+    </div>
+
+  );
+
+}
+if (!profile) {
+
+  return (
+
+    <div
+      className="
+      min-h-screen
+      flex
+      items-center
+      justify-center
+      "
+    >
+
+      Loading Profile...
+
+    </div>
+
+  );
+
+}
 return(
 <>
 <div className="
@@ -378,13 +468,41 @@ gap-6
 <div>
 
 <div className="
+relative
 bg-card
 rounded-xl
 overflow-hidden
 border
 border-border
 ">
+{
+profile.isPremium && (
 
+<div
+className="
+absolute
+top-4
+left-4
+z-10
+bg-gradient-to-r
+from-yellow-400
+to-amber-500
+text-white
+px-4
+py-1
+rounded-full
+text-sm
+font-bold
+shadow-lg
+"
+>
+
+👑 PREMIUM
+
+</div>
+
+)
+}
 <img
 
 src={
@@ -453,24 +571,31 @@ Message
 
 </button>
 <button
-  onClick={() => {
+onClick={() => {
 
-    if (
-      !galleryPhotos ||
-      galleryPhotos.length === 0
-    ) {
+    if (!isPremiumUser) {
 
-      toast(
-        "This user has not uploaded any gallery photos"
-      );
+        toast.error(
+            "Upgrade to Premium to view this user's photo gallery."
+        );
 
-      return;
+        return;
+    }
+
+    if (!galleryPhotos || galleryPhotos.length === 0) {
+
+        toast(
+            "This user has not uploaded any gallery photos."
+        );
+
+        return;
     }
 
     setCurrentPhotoIndex(0);
+
     setShowGallery(true);
 
-  }}
+}}
   className="
   w-full
   bg-blue-600
@@ -516,10 +641,15 @@ border
 border-border
 ">
 
-<h1 className="
+<h1
+className="
 text-3xl
 font-bold
-">
+flex
+items-center
+gap-2
+"
+>
 
 {profile.firstName}
 
@@ -527,8 +657,30 @@ font-bold
 
 {profile.lastName}
 
-</h1>
 {
+profile.isPremium && (
+
+<span
+className="
+bg-yellow-100
+text-yellow-700
+text-sm
+px-3
+py-1
+rounded-full
+font-semibold
+"
+>
+
+👑 Premium
+
+</span>
+
+)
+
+}
+
+</h1>{
 profile.verified && (
 
 <div className="
@@ -864,21 +1016,30 @@ Contact Details
 <InfoRow
 label="Email"
 value={
-canViewContact
+!canViewContact
+? "🔒 Send Interest & Get Accepted"
+
+: isPremiumUser
+
 ? profile.email
-: "🔒 Send Interest & Get Accepted"
+
+: "👑 Upgrade to Premium to view Email"
 }
 />
 
 <InfoRow
 label="Phone"
 value={
-canViewContact
+!canViewContact
+? "🔒 Send Interest & Get Accepted"
+
+: isPremiumUser
+
 ? profile.phone
-: "🔒 Send Interest & Get Accepted"
+
+: "👑 Upgrade to Premium to view Phone"
 }
 />
-
 </div>
 {/* LIFESTYLE */}
 
@@ -980,23 +1141,37 @@ justify-center
 gap-4
 ">
 
-<button
-onClick={() =>
-setCurrentPhotoIndex(prev =>
-prev === 0
-? galleryPhotos.length - 1
-: prev - 1
-)
-}
-className="
-bg-gray-200
-px-4
-py-2
-rounded
-"
->
-◀ Prev
-</button>
+{galleryPhotos.length > 1 && (
+
+<>
+    <button
+        onClick={() =>
+            setCurrentPhotoIndex(prev =>
+                prev === 0
+                    ? galleryPhotos.length - 1
+                    : prev - 1
+            )
+        }
+        className="bg-gray-200 px-4 py-2 rounded"
+    >
+        ◀ Prev
+    </button>
+
+    <button
+        onClick={() =>
+            setCurrentPhotoIndex(prev =>
+                prev === galleryPhotos.length - 1
+                    ? 0
+                    : prev + 1
+            )
+        }
+        className="bg-gray-200 px-4 py-2 rounded"
+    >
+        Next ▶
+    </button>
+</>
+
+)}
 
 {galleryPhotos.length > 0 && (
 
@@ -1024,23 +1199,6 @@ rounded-lg
 />
 
 )}
-<button
-onClick={() =>
-setCurrentPhotoIndex(prev =>
-prev === galleryPhotos.length - 1
-? 0
-: prev + 1
-)
-}
-className="
-bg-gray-200
-px-4
-py-2
-rounded
-"
->
-Next ▶
-</button>
 
 </div>
 </div>

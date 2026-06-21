@@ -4,8 +4,8 @@ import com.example.dto.request.ProfileRequestDTO;
 import com.example.dto.request.UpdateProfileRequestDTO;
 import com.example.dto.response.ProfileResponseDTO;
 import com.example.model.PartnerPreference;
+import com.example.model.PremiumPlan;
 import com.example.model.Profile;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -116,4 +116,14 @@ public interface ProfileService {
     // =====================================================
 
     void delete(Long id);
+
+
+    // =====================================================
+    // PREMIUM
+    // =====================================================
+
+    void activatePremium(
+            Long userId,
+            PremiumPlan plan
+    );
 }

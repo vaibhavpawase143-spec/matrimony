@@ -1,8 +1,11 @@
 package com.example.controller.user;
 
+import com.example.model.UserBlock;
 import com.example.service.UserBlockService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/block")
@@ -20,7 +23,17 @@ public class UserBlockController {
         userBlockService.blockUser(blockerId, blockedId);
         return "User blocked successfully";
     }
+    @GetMapping("/my-blocked-users")
+    public List<UserBlock> getMyBlockedUsers(
+            @RequestParam Long blockerId
+    ) {
 
+        return userBlockService
+                .getBlockedUsers(
+                        blockerId
+                );
+
+    }
     // ✅ UNBLOCK USER
     @DeleteMapping
     public String unblockUser(

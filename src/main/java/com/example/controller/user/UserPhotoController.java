@@ -1,11 +1,10 @@
 package com.example.controller.user;
 
+import com.example.dto.response.UserGalleryResponseDTO;
 import com.example.model.PhotoType;
 import com.example.model.UserPhoto;
 import com.example.service.UserPhotoService;
-
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -87,13 +86,12 @@ public class UserPhotoController {
     // =========================
 
     @GetMapping("/user/{userId}")
-    public List<UserPhoto> getUserPhotos(
+    public UserGalleryResponseDTO getUserPhotos(
             @PathVariable Long userId
     ) {
 
-        return service.getPhotosByUserId(
-                userId
-        );
+        return service.getPhotosByUserId(userId);
+
     }
 
     // =========================

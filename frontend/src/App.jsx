@@ -9,6 +9,8 @@ import { ToastProvider } from "@/components/Toast";
 import { LanguageProvider } from "@/context/LanguageContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import AdminRoute from "@/routes/AdminRoute";
+import SupportTickets from "./pages/SupportTickets";
+import SupportTicketDetails from "./pages/SupportTicketDetails";
 import LoadingSpinner from "./components/LoadingSpinner";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import AuthenticatedLayout from "@/components/AuthenticatedLayout";
@@ -19,7 +21,7 @@ import MyShortlists from "@/pages/MyShortlists";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import ProfileVisitors from "./pages/ProfileVisitors";
-
+// import PremiumDashboard from "./pages/PremiumDashboard";
 // NORMAL PAGES
 import Index from "./pages/Index";
 import Home from "./pages/Home";
@@ -68,7 +70,14 @@ const App = () => (
               <AuthProvider>
                 <BrowserRouter>
                   <MobileBottomNav />
-
+{/* <Route */}
+{/*   path="/premium" */}
+{/*   element={ */}
+{/*     <AuthenticatedLayout> */}
+{/*       <PremiumDashboard /> */}
+{/*     </AuthenticatedLayout> */}
+{/*   } */}
+{/* /> */}
                   <Routes>
                     {/* PUBLIC ROUTES */}
                     <Route path="/" element={<Index />} />
@@ -94,7 +103,23 @@ const App = () => (
                         </AuthenticatedLayout>
                       }
                     />
+<Route
+  path="/support/tickets"
+  element={
+    <AuthenticatedLayout>
+      <SupportTickets />
+    </AuthenticatedLayout>
+  }
+/>
 
+<Route
+  path="/support/tickets/:ticketNumber"
+  element={
+    <AuthenticatedLayout>
+      <SupportTicketDetails />
+    </AuthenticatedLayout>
+  }
+/>
                     <Route
                       path="/profile-visitors"
                       element={

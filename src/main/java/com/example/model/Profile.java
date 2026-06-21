@@ -226,7 +226,15 @@ public class Profile {
 
     @Column(name = "is_premium")
     private Boolean isPremium = false;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "premium_plan")
+    private PremiumPlan premiumPlan = PremiumPlan.FREE;
 
+    @Column(name = "premium_start_date")
+    private LocalDateTime premiumStartDate;
+
+    @Column(name = "premium_end_date")
+    private LocalDateTime premiumEndDate;
     @Column(name = "boost_score")
     private Integer boostScore = 0;
 
@@ -594,5 +602,28 @@ public class Profile {
 
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
+    }
+    public PremiumPlan getPremiumPlan() {
+        return premiumPlan;
+    }
+
+    public void setPremiumPlan(PremiumPlan premiumPlan) {
+        this.premiumPlan = premiumPlan;
+    }
+
+    public LocalDateTime getPremiumStartDate() {
+        return premiumStartDate;
+    }
+
+    public void setPremiumStartDate(LocalDateTime premiumStartDate) {
+        this.premiumStartDate = premiumStartDate;
+    }
+
+    public LocalDateTime getPremiumEndDate() {
+        return premiumEndDate;
+    }
+
+    public void setPremiumEndDate(LocalDateTime premiumEndDate) {
+        this.premiumEndDate = premiumEndDate;
     }
 }

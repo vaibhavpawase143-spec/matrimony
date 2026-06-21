@@ -54,7 +54,9 @@ public interface UserPhotoRepository extends JpaRepository<UserPhoto, Long> {
     Optional<UserPhoto> findFirstByUserIdAndPrimaryPhotoTrue(
             Long userId
     );
-
+    Optional<UserPhoto> findFirstByUserIdOrderByCreatedAtAsc(
+            Long userId
+    );
     @Modifying
     @Query("""
            update UserPhoto p

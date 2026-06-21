@@ -34,7 +34,11 @@ public class ProfileSpecification {
             // ✅ ACTIVE USERS ONLY (VERY IMPORTANT)
             predicates.add(cb.isTrue(root.get("isActive")));
             predicates.add(cb.isTrue(root.get("user").get("isActive")));
-
+            predicates.add(
+                    cb.isTrue(
+                            root.get("profileCompleted")
+                    )
+            );
             // 🎯 RELIGION FILTER
             if (pref.getReligion() != null) {
                 predicates.add(cb.equal(

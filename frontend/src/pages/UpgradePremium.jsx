@@ -17,96 +17,110 @@ import {
   Gift,
   Zap
 } from "lucide-react";
-import { useState } from "react";
+import { useState,useEffect  } from "react";
+
 import { motion } from "framer-motion";
-
+import { subscriptionAPI } from "@/services/api";
 import { Button } from "@/components/ui/button";
-
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 const UpgradePremium = () => {
   const [billingToggle, setBillingToggle] = useState("monthly");
   const [expandedFAQ, setExpandedFAQ] = useState(null);
-
+const [plans, setPlans] = useState([]);
+const navigate = useNavigate();
+const [loading, setLoading] = useState(true);
+const [paymentLoading, setPaymentLoading] = useState(false);
   // Premium plans data
-  const premiumPlans = [
-    {
-      id: 1,
-      name: "1 Month Plan",
-      duration: "1 Month",
-      monthlyPrice: 999,
-      totalPrice: 999,
-      discount: null,
-      badge: null,
-      features: [
-        "Unlimited profile views",
-        "Send unlimited messages",
-        "View contact details",
-        "Advanced partner filters",
-        "Basic profile visibility",
-        "Email support"
-      ],
-      highlighted: false,
-      buttonText: "Choose Plan"
-    },
-    {
-      id: 2,
-      name: "3 Months Plan",
-      duration: "3 Months",
-      monthlyPrice: 799,
-      totalPrice: 2397,
-      discount: "20% OFF",
-      badge: "Most Popular",
-      features: [
-        "Unlimited profile views",
-        "Send unlimited messages",
-        "View contact details",
-        "Advanced partner filters",
-        "Enhanced profile visibility",
-        "See who viewed your profile",
-        "Priority email support",
-        "Personalized match recommendations"
-      ],
-      highlighted: true,
-      buttonText: "Choose Plan"
-    },
-    {
-      id: 3,
-      name: "6 Months Plan",
-      duration: "6 Months",
-      monthlyPrice: 599,
-      totalPrice: 3594,
-      discount: "40% OFF",
-      badge: "Best Value",
-      features: [
-        "Everything in 3 Months",
-        "Premium profile visibility",
-        "Direct chat support",
-        "Verified profile badge",
-        "Early access to new features"
-      ],
-      highlighted: false,
-      buttonText: "Choose Plan"
-    },
-    {
-      id: 4,
-      name: "12 Months Plan",
-      duration: "12 Months",
-      monthlyPrice: 499,
-      totalPrice: 5988,
-      discount: "50% OFF",
-      badge: null,
-      features: [
-        "Everything in 6 Months",
-        "Maximum profile visibility",
-        "Dedicated relationship manager",
-        "Exclusive premium events access",
-        "Money-back guarantee"
-      ],
-      highlighted: false,
-      buttonText: "Choose Plan"
-    }
-  ];
+  const loadPlans = async () => {
 
-  // Features comparison data
+    try {
+
+      const data = await subscriptionAPI.getPlans();
+
+      const formattedPlans = data.map((plan) => ({
+
+        id: plan.id,
+
+        name: plan.name,
+
+        duration: `${plan.duration} Days`,
+
+        monthlyPrice: Math.round(plan.price / (plan.duration / 30)),
+
+        totalPrice: plan.price,
+
+        highlighted: plan.duration === 90,
+
+        badge:
+          plan.duration === 90
+            ? "Most Popular"
+            : plan.duration === 180
+            ? "Best Value"
+            : null,
+
+        discount:
+          plan.duration === 90
+            ? "20% OFF"
+            : plan.duration === 180
+            ? "40% OFF"
+            : plan.duration === 365
+            ? "50% OFF"
+            : null,
+
+        buttonText: "Choose Plan",
+
+        features:
+          plan.description
+            ? plan.description.split(",").map(f => f.trim())
+            : []
+
+      }));
+
+      setPlans(formattedPlans);
+
+    } catch (error) {
+
+      console.error(error);
+
+    } finally {
+
+      setLoading(false);
+
+    }
+
+  };
+useEffect(() => {
+
+  loadPlans();
+
+}, []);
+const handleSubscribe = async (planId) => {
+
+  try {
+
+    setPaymentLoading(true);
+
+    const order = await subscriptionAPI.createOrder(planId);
+
+    console.log("Razorpay Order :", order);
+
+    toast.success("Order created successfully.");
+
+  } catch (error) {
+
+    console.error(error);
+
+    toast.error(error.message || "Unable to create order");
+
+  } finally {
+
+    setPaymentLoading(false);
+
+  }
+
+};
+// Features comparison data
   const featuresComparison = [
     {
       feature: "Unlimited Profile Views",
@@ -235,11 +249,21 @@ const UpgradePremium = () => {
     }
   ];
 
-  const toggleFAQ = (index) => {
-    setExpandedFAQ(expandedFAQ === index ? null : index);
-  };
+const toggleFAQ = (index) => {
+  setExpandedFAQ(expandedFAQ === index ? null : index);
+};
 
+if (loading) {
   return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="text-lg font-semibold">
+        Loading plans...
+      </div>
+    </div>
+  );
+}
+
+return (
     <div className="min-h-screen bg-muted/30">
 
       
@@ -335,7 +359,7 @@ const UpgradePremium = () => {
 
           {/* Plans Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
-            {premiumPlans.map((plan, index) => (
+            {plans.map((plan, index) => (
               <motion.div
                 key={plan.id}
                 initial={{ opacity: 0, y: 20 }}
@@ -388,16 +412,17 @@ const UpgradePremium = () => {
                   ))}
                 </div>
 
-                <Button 
-                  className={`w-full ${
-                    plan.highlighted 
-                      ? "bg-primary hover:bg-primary/90 text-primary-foreground" 
-                      : "bg-muted hover:bg-muted/80 text-foreground"
-                  }`}
-                >
-                  {plan.buttonText}
-                  <ArrowRight className="h-4 w-4 ml-2" />
-                </Button>
+ <Button
+   onClick={() => handleSubscribe(plan.id)}
+   className={`w-full ${
+     plan.highlighted
+       ? "bg-primary hover:bg-primary/90 text-primary-foreground"
+       : "bg-muted hover:bg-muted/80 text-foreground"
+   }`}
+ >
+   {plan.buttonText}
+   <ArrowRight className="h-4 w-4 ml-2" />
+ </Button>
               </motion.div>
             ))}
           </div>

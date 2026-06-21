@@ -2,9 +2,11 @@ package com.example.serviceimpl;
 
 import com.example.model.NotificationType;
 import com.example.model.Shortlist;
+import com.example.repository.ProfileRepository;
 import com.example.repository.ShortlistRepository;
 import com.example.service.NotificationService;
 import com.example.service.ShortlistService;
+import com.example.service.SubscriptionService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -12,18 +14,23 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
-
 @Service
 @Transactional
 public class ShortlistServiceImpl implements ShortlistService {
 
     private final ShortlistRepository repository;
     private final NotificationService notificationService;
-
-    public ShortlistServiceImpl(ShortlistRepository repository,
-                                NotificationService notificationService) {
+    private final ProfileRepository profileRepository;
+    private final SubscriptionService subscriptionService;
+    public ShortlistServiceImpl(
+            ShortlistRepository repository,
+            NotificationService notificationService,
+            ProfileRepository profileRepository, SubscriptionService subscriptionService
+    ) {
         this.repository = repository;
         this.notificationService = notificationService;
+        this.profileRepository = profileRepository;
+        this.subscriptionService = subscriptionService;
     }
 
     // ✅ Add to shortlist (handles duplicate + reactivation)
@@ -32,6 +39,23 @@ public class ShortlistServiceImpl implements ShortlistService {
 
         Long userId = shortlist.getUser().getId();
         Long profileId = shortlist.getProfile().getId();
+        boolean premium =
+                subscriptionService.isCurrentUserPremium();
+
+        if (!premium) {
+
+            long count =
+                    repository.countActiveShortlistsByUser(userId);
+
+            if (count >= 5) {
+
+                throw new RuntimeException(
+                        "You've reached your free shortlist limit. Upgrade to Premium to shortlist unlimited profiles."
+                );
+
+            }
+
+        }
         if(
                 shortlist.getProfile()
                         .getUser()

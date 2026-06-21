@@ -30,7 +30,21 @@ public class UserReportController {
                 userReportService.reportUser(reporterEmail, reportedUserId, reason)
         );
     }
+    // ✅ CHECK IF ALREADY REPORTED
+    @GetMapping("/check/{reportedUserId}")
+    public ResponseEntity<Boolean> hasReported(
+            @PathVariable Long reportedUserId
+    ) {
 
+        String reporterEmail = SecurityUtils.getCurrentUsername();
+
+        return ResponseEntity.ok(
+                userReportService.hasReported(
+                        reporterEmail,
+                        reportedUserId
+                )
+        );
+    }
     // ✅ ADMIN: GET ALL REPORTS
     @GetMapping("/all")
     public ResponseEntity<List<UserReport>> getAllReports() {

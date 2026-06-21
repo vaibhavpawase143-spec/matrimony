@@ -9,8 +9,9 @@ import com.example.repository.SubscriptionPlanRepository;
 import com.example.repository.UserRepository;
 import com.example.repository.UserSubscriptionRepository;
 import com.example.service.SubscriptionService;
-
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -35,8 +36,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     @Override
     public SubscriptionResponseDto subscribeUser(UserSubscriptionRequestDTO requestDto) {
 
-        User user = userRepository.findById(requestDto.getUserId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        User user = getCurrentUser();
 
         SubscriptionPlan plan = planRepository.findById(requestDto.getPlanId())
                 .orElseThrow(() -> new RuntimeException("Plan not found"));
@@ -77,49 +77,167 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     }
 
     @Override
+    @Transactional
+    public UserSubscription activateSubscription(User user, SubscriptionPlan plan) {
+
+        // Deactivate existing active subscription
+        subscriptionRepository.findByUserIdAndIsActiveTrue(user.getId())
+                .ifPresent(old -> {
+                    old.setIsActive(false);
+                    old.setStatus("EXPIRED");
+                    subscriptionRepository.save(old);
+                });
+
+        // Create new subscription
+        UserSubscription subscription = new UserSubscription();
+
+        subscription.setUser(user);
+        subscription.setSubscriptionPlan(plan);
+
+        LocalDateTime start = LocalDateTime.now();
+        LocalDateTime end = start.plusDays(plan.getDuration());
+
+        subscription.setStartDate(start);
+        subscription.setEndDate(end);
+
+        subscription.setIsActive(true);
+        subscription.setStatus("ACTIVE");
+
+        return subscriptionRepository.save(subscription);
+    }
+
+    @Override
     public UserSubscription create(UserSubscription subscription) {
-        return null;
+
+        Long userId = subscription.getUser().getId();
+
+        Optional<UserSubscription> existing =
+                subscriptionRepository.findByUserIdAndIsActiveTrue(userId);
+
+        if (existing.isPresent()) {
+
+            UserSubscription old = existing.get();
+
+            old.setIsActive(false);
+            old.setStatus("CANCELLED");
+
+            subscriptionRepository.save(old);
+        }
+
+        subscription.setIsActive(true);
+
+        if (subscription.getStatus() == null) {
+            subscription.setStatus("ACTIVE");
+        }
+
+        return subscriptionRepository.save(subscription);
     }
 
     @Override
     public Optional<UserSubscription> getById(Long id) {
-        return Optional.empty();
+
+        return subscriptionRepository.findById(id);
     }
 
     @Override
     public Optional<UserSubscription> getActiveByUser(Long userId) {
-        return Optional.empty();
+
+        return subscriptionRepository.findByUserIdAndIsActiveTrue(userId);
     }
 
     @Override
     public boolean hasActiveSubscription(Long userId) {
-        return false;
+
+        return subscriptionRepository.existsByUserIdAndIsActiveTrue(userId);
+    }
+    @Override
+    public List<UserSubscription> getByUser(Long userId) {
+
+        return subscriptionRepository.findByUserId(userId);
     }
 
     @Override
-    public List<UserSubscription> getByUser(Long userId) {
-        return List.of();
+    public List<UserSubscription> getInactiveByUser(Long userId) {
+
+        return subscriptionRepository.findByUserIdAndIsActiveFalse(userId);
     }
 
     @Override
     public List<UserSubscription> getByPlan(Long planId) {
-        return List.of();
+
+        return subscriptionRepository.findBySubscriptionPlanId(planId);
     }
 
     @Override
     public List<UserSubscription> getActiveByPlan(Long planId) {
-        return List.of();
-    }
 
+        return subscriptionRepository.findBySubscriptionPlanIdAndIsActiveTrue(planId);
+    }
+    @Override
+    public List<UserSubscription> getAllInactive() {
+
+        return subscriptionRepository.findByIsActiveFalse();
+    }
     @Override
     public void deactivate(Long id) {
 
+        UserSubscription subscription =
+                subscriptionRepository.findById(id)
+                        .orElseThrow(() ->
+                                new RuntimeException("Subscription not found"));
+
+        subscription.setIsActive(false);
+        subscription.setStatus("CANCELLED");
+
+        subscriptionRepository.save(subscription);
     }
+    @Override
+    public List<UserSubscription> getMySubscriptionHistory() {
+
+        User currentUser = getCurrentUser();
+
+        return subscriptionRepository.findByUserId(currentUser.getId());
+
+    }
+    @Override
+    public boolean isCurrentUserPremium() {
+
+        User currentUser = getCurrentUser();
+
+        return subscriptionRepository
+                .findByUserIdAndIsActiveTrue(currentUser.getId())
+                .isPresent();
+    }
+
 
     @Override
     public List<UserSubscription> getAll() {
-        return List.of();
+
+        return subscriptionRepository.findAll();
+    }
+    @Override
+    public UserSubscription getMySubscription() {
+
+        User currentUser = getCurrentUser();
+
+        return subscriptionRepository
+                .findByUserIdAndIsActiveTrue(currentUser.getId())
+                .orElseThrow(() ->
+                        new RuntimeException("No active subscription found"));
     }
 
+
     // (other methods can stay same or empty for now)
+    private User getCurrentUser() {
+
+        String email = SecurityContextHolder
+                .getContext()
+                .getAuthentication()
+                .getName();
+
+        return userRepository
+                .findByEmailIgnoreCase(email)
+                .orElseThrow(() ->
+                        new RuntimeException("User not found"));
+    }
 }

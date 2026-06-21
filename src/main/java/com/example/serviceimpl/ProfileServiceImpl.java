@@ -3,17 +3,21 @@ package com.example.serviceimpl;
 import com.example.dto.request.ProfileRequestDTO;
 import com.example.dto.request.UpdateProfileRequestDTO;
 import com.example.dto.response.ProfileResponseDTO;
-import com.example.model.*;
+import com.example.model.PartnerPreference;
+import com.example.model.PremiumPlan;
+import com.example.model.Profile;
+import com.example.model.User;
 import com.example.repository.*;
 import com.example.service.CacheService;
 import com.example.service.MatchAsyncService;
 import com.example.service.ProfileService;
+import com.example.service.SubscriptionService;
 import com.example.specification.ProfileSpecification;
-
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -29,7 +33,7 @@ public class ProfileServiceImpl implements ProfileService {
 
     private final ProfileRepository repository;
 
-
+    private final SubscriptionService subscriptionService;
     private final ManglikStatusRepository manglikStatusRepository;
 
     private final FamilyTypeRepository familyTypeRepository;
@@ -182,10 +186,10 @@ public class ProfileServiceImpl implements ProfileService {
     // GET MY PROFILE
     // =====================================================
 
-    @Transactional(readOnly = true)
+    @Transactional
     public ProfileResponseDTO getMyProfile() {
 
-        return mapToDTO(
+        Profile profile =
                 repository
                         .findByUserIdWithRelations(
                                 getCurrentUser().getId()
@@ -194,28 +198,51 @@ public class ProfileServiceImpl implements ProfileService {
                                 new RuntimeException(
                                         "Profile not found"
                                 )
-                        )
-        );
-    }
+                        );
 
+        // ===============================
+        // AUTO PREMIUM EXPIRY
+        // ===============================
+
+
+        return mapToDTO(profile);
+
+    }
     // =====================================================
     // GET PROFILE BY ID
     // =====================================================
-
     @Transactional(readOnly = true)
-    public ProfileResponseDTO getProfileById(
-            Long id
-    ) {
+    public ProfileResponseDTO getProfileById(Long id) {
 
-        return mapToDTO(
+        Profile profile =
                 repository
                         .findById(id)
                         .orElseThrow(() ->
-                                new RuntimeException(
-                                        "Profile not found"
-                                )
-                        )
-        );
+                                new RuntimeException("Profile not found"));
+
+        ProfileResponseDTO dto =
+                mapToDTO(profile);
+
+        User currentUser = getCurrentUser();
+
+        Profile currentProfile =
+                repository
+                        .findByUserId(currentUser.getId())
+                        .orElse(null);
+
+        if (
+                currentProfile != null &&
+                        !subscriptionService.hasActiveSubscription(currentUser.getId())
+        )
+        {
+
+            dto.setPhone(null);
+
+            dto.setEmail(null);
+
+        }
+
+        return dto;
     }
 
     // =====================================================
@@ -245,6 +272,59 @@ public class ProfileServiceImpl implements ProfileService {
         repository.delete(profile);
     }
 
+    @Override
+    public void activatePremium(
+            Long userId,
+            PremiumPlan plan
+    ) {
+
+        Profile profile = repository
+                .findByUserId(userId)
+                .orElseThrow(() ->
+                        new RuntimeException("Profile not found")
+                );
+
+        profile.setIsPremium(true);
+        profile.setBoostScore(100);
+        profile.setPremiumPlan(plan);
+
+        profile.setPremiumStartDate(
+                java.time.LocalDateTime.now()
+        );
+
+        switch (plan) {
+
+            case ONE_MONTH -> profile.setPremiumEndDate(
+                    java.time.LocalDateTime.now().plusMonths(1)
+            );
+
+            case THREE_MONTHS -> profile.setPremiumEndDate(
+                    java.time.LocalDateTime.now().plusMonths(3)
+            );
+
+            case SIX_MONTHS -> profile.setPremiumEndDate(
+                    java.time.LocalDateTime.now().plusMonths(6)
+            );
+
+            case TWELVE_MONTHS -> profile.setPremiumEndDate(
+                    java.time.LocalDateTime.now().plusMonths(12)
+            );
+            default -> {
+
+                profile.setIsPremium(false);
+
+                profile.setBoostScore(0);
+
+                profile.setPremiumEndDate(null);
+
+            }
+
+        }
+
+        repository.save(profile);
+
+    }
+
     // =====================================================
     // SAVE PROFILE
     // =====================================================
@@ -259,26 +339,27 @@ public class ProfileServiceImpl implements ProfileService {
 
         if (existing.isPresent()) {
 
-            Profile p = existing.get();
+            Profile dbProfile = existing.get();
 
             if (profile.getImageUrl() != null) {
-                p.setImageUrl(profile.getImageUrl());
+                dbProfile.setImageUrl(profile.getImageUrl());
             }
 
             if (profile.getAbout() != null) {
-                p.setAbout(profile.getAbout());
+                dbProfile.setAbout(profile.getAbout());
             }
 
-            return repository.save(p);
+            return repository.save(dbProfile);
         }
 
         profile.setUser(user);
 
-        profile.setIsActive(true);
+        if (profile.getIsActive() == null) {
+            profile.setIsActive(true);
+        }
 
         return repository.save(profile);
     }
-
     // =====================================================
     // GET ALL
     // =====================================================
@@ -1529,7 +1610,9 @@ public class ProfileServiceImpl implements ProfileService {
                 p.getIsActive()
         );
         dto.setIsPremium(
-                p.getIsPremium()
+                subscriptionService.hasActiveSubscription(
+                        p.getUser().getId()
+                )
         );
         return dto;
     }
@@ -1539,20 +1622,28 @@ public class ProfileServiceImpl implements ProfileService {
     // SEARCH
     // =====================================================
 
+    @Override
     public Page<ProfileResponseDTO> searchProfiles(
             PartnerPreference pref,
             Pageable pageable
     ) {
 
         Specification<Profile> spec =
-                ProfileSpecification
-                        .matchPreferences(pref);
+                ProfileSpecification.matchPreferences(pref);
+
+        Pageable sortedPageable = PageRequest.of(
+                pageable.getPageNumber(),
+                pageable.getPageSize(),
+                Sort.by(
+                        Sort.Order.desc("isPremium"),
+                        Sort.Order.desc("createdAt")
+                )
+        );
 
         return repository
-                .findAll(spec, pageable)
+                .findAll(spec, sortedPageable)
                 .map(this::mapToDTO);
     }
-
     // =====================================================
     // REDIS
     // =====================================================
