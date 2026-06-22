@@ -33,7 +33,17 @@ public class NotificationController {
         service.markRead(id);
         return "Notification marked as read";
     }
+    @PutMapping("/read-all/{userId}")
+    public String markAllRead(
+            @PathVariable Long userId
+    ){
 
+        service.markAllRead(
+                userId
+        );
+
+        return "All notifications marked as read";
+    }
     // ✅ 4. DELETE (SOFT DELETE)
     @DeleteMapping("/{id}")
     public String delete(@PathVariable Long id) {

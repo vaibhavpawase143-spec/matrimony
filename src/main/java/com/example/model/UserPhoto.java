@@ -1,16 +1,21 @@
 package com.example.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
+import lombok.Getter;
+import lombok.Setter;
 
+import java.time.LocalDateTime;
+@Getter
+@Setter
 @Entity
 @Table(
         name = "user_photos",
-        uniqueConstraints = {
-                @UniqueConstraint(columnNames = {"user_id", "photo_type"})
-        },
         indexes = {
-                @Index(name = "idx_user_photo_user", columnList = "user_id")
+                @Index(
+                        name = "idx_user_photo_user",
+                        columnList = "user_id"
+                )
         }
 )
 public class UserPhoto {
@@ -19,18 +24,23 @@ public class UserPhoto {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // 🔥 Owner of photo
+    // Owner
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
+    @JsonIgnore
     private User user;
 
-    // 🔥 Controlled values
+    // PROFILE / COVER / KUNDALI / OTHER
     @Enumerated(EnumType.STRING)
     @Column(name = "photo_type", nullable = false, length = 50)
     private PhotoType photoType;
 
     @Column(name = "photo_url", nullable = false, length = 500)
     private String photoUrl;
+
+    // Main profile photo
+    @Column(name = "is_primary")
+    private Boolean primaryPhoto = false;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -40,11 +50,18 @@ public class UserPhoto {
 
     public UserPhoto() {}
 
-    // 🔥 Lifecycle hooks
+    // =====================
+    // Lifecycle
+    // =====================
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
+
+        if (this.primaryPhoto == null) {
+            this.primaryPhoto = false;
+        }
     }
 
     @PreUpdate
@@ -52,7 +69,9 @@ public class UserPhoto {
         this.updatedAt = LocalDateTime.now();
     }
 
-    // ===== Getters =====
+    // =====================
+    // Getters
+    // =====================
 
     public Long getId() {
         return id;
@@ -70,6 +89,10 @@ public class UserPhoto {
         return photoUrl;
     }
 
+    public Boolean getPrimaryPhoto() {
+        return primaryPhoto;
+    }
+
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
@@ -78,7 +101,9 @@ public class UserPhoto {
         return updatedAt;
     }
 
-    // ===== Setters =====
+    // =====================
+    // Setters
+    // =====================
 
     public void setUser(User user) {
         this.user = user;
@@ -90,5 +115,9 @@ public class UserPhoto {
 
     public void setPhotoUrl(String photoUrl) {
         this.photoUrl = photoUrl;
+    }
+
+    public void setPrimaryPhoto(Boolean primaryPhoto) {
+        this.primaryPhoto = primaryPhoto;
     }
 }

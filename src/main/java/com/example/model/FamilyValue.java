@@ -2,39 +2,87 @@ package com.example.model;
 
 import jakarta.persistence.*;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(
         name = "family_values",
         uniqueConstraints = {
-                @UniqueConstraint(columnNames = {"name", "admin_id"})
+                @UniqueConstraint(
+                        columnNames = {
+                                "name",
+                                "admin_id"
+                        }
+                )
         },
         indexes = {
-                @Index(name = "idx_family_value_name", columnList = "name")
+                @Index(
+                        name = "idx_family_value_name",
+                        columnList = "name"
+                )
         }
 )
 public class FamilyValue {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(
+            strategy = GenerationType.IDENTITY
+    )
     private Long id;
 
     @Column(nullable = false)
     private String name;
 
-    // ✅ Required because repo uses it
     @Column(name = "is_active")
     private Boolean isActive = true;
 
-    // ⚠️ Keep Long adminId (as per your schema)
     @Column(name = "admin_id")
     private Long adminId;
 
-    public FamilyValue() {}
+    // ==========================
+    // CREATED AT
+    // ==========================
 
-    // ===== Getters & Setters =====
+    @Column(
+            name = "created_at",
+            nullable = false,
+            updatable = false
+    )
+    private LocalDateTime createdAt;
+
+    // ==========================
+    // UPDATED AT
+    // ==========================
+
+    @Column(
+            name = "updated_at"
+    )
+    private LocalDateTime updatedAt;
+
+    @PrePersist
+    public void prePersist() {
+
+        this.createdAt = LocalDateTime.now();
+
+        this.updatedAt = LocalDateTime.now();
+
+    }
+
+    @PreUpdate
+    public void preUpdate() {
+
+        this.updatedAt = LocalDateTime.now();
+
+    }
+
+    public FamilyValue() {}
 
     public Long getId() {
         return id;
+    }
+
+    public void setId(Long id) {
+        this.id=id;
     }
 
     public String getName() {
@@ -42,7 +90,7 @@ public class FamilyValue {
     }
 
     public void setName(String name) {
-        this.name = name;
+        this.name=name;
     }
 
     public Boolean getIsActive() {
@@ -50,7 +98,7 @@ public class FamilyValue {
     }
 
     public void setIsActive(Boolean isActive) {
-        this.isActive = isActive;
+        this.isActive=isActive;
     }
 
     public Long getAdminId() {
@@ -58,6 +106,15 @@ public class FamilyValue {
     }
 
     public void setAdminId(Long adminId) {
-        this.adminId = adminId;
+        this.adminId=adminId;
     }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
 }

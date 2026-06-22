@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Star, Heart, CheckCircle2 } from "lucide-react";
-import Navbar from "@/components/Navbar";
+
 import { useLanguage } from "@/context/LanguageContext";
 
 const InputField = ({ label, placeholder, type = "text" }) => (
@@ -31,7 +31,7 @@ const Kundli = () => {
 
   return (
     <div className="min-h-screen bg-muted/30">
-      <Navbar />
+
 
       <div className="py-8 text-center" style={{ background: "linear-gradient(135deg, hsl(270 60% 35%), hsl(290 55% 45%), hsl(270 50% 55%))" }}>
         <Star className="inline-block h-8 w-8 text-gold mb-2" />

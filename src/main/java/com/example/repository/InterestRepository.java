@@ -4,6 +4,7 @@ import com.example.model.Interest;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,4 +22,11 @@ public interface InterestRepository extends JpaRepository<Interest, Long> {
     List<Interest> findBySender_IdAndStatusIgnoreCase(Long senderId, String status);
 
     List<Interest> findByStatusIgnoreCase(String status);
+    long countBySender_IdAndCreatedAtBetween(
+            Long senderId,
+            LocalDateTime start,
+            LocalDateTime end
+    );
+
+    long countBySender_IdAndIsActiveTrue(Long senderId);
 }

@@ -2,8 +2,12 @@ package com.example.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
+import lombok.Getter;
+import lombok.Setter;
 
+import java.time.LocalDateTime;
+@Getter
+@Setter
 @Entity
 @Table(
         name = "partner_preferences",
@@ -29,10 +33,35 @@ public class PartnerPreference {
 
     private Integer minAge;
     private Integer maxAge;
+    @ManyToOne
+    @JoinColumn(name="education_level_id")
+    private EducationLevel educationLevel;
+    @Column(length=1000)
+    private String otherExpectations;
+    @ManyToOne
+    @JoinColumn(name="occupation_id")
+    private Occupation occupation;
 
-    private Double minHeight;
-    private Double maxHeight;
+    @ManyToOne
+    @JoinColumn(name="marital_status_id")
+    private MaritalStatus maritalStatus;
 
+    @ManyToOne
+    @JoinColumn(name="smoking_id")
+    private Smoking smoking;
+
+    @ManyToOne
+    @JoinColumn(name="drinking_id")
+    private Drinking drinking;
+
+    @ManyToOne
+    @JoinColumn(name="diet_id")
+    private Diet diet;
+    private Long minHeight;
+    private Long maxHeight;
+    private Long minWeight;
+
+    private Long maxWeight;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "religion_id")
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
@@ -47,7 +76,71 @@ public class PartnerPreference {
     @JoinColumn(name = "city_id")
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private City city;
+    public EducationLevel getEducationLevel() {
+        return educationLevel;
+    }
 
+    public void setEducationLevel(
+            EducationLevel educationLevel
+    ){
+        this.educationLevel =
+                educationLevel;
+    }
+
+    public Occupation getOccupation() {
+        return occupation;
+    }
+
+    public void setOccupation(
+            Occupation occupation
+    ){
+        this.occupation =
+                occupation;
+    }
+
+    public MaritalStatus getMaritalStatus() {
+        return maritalStatus;
+    }
+
+    public void setMaritalStatus(
+            MaritalStatus maritalStatus
+    ){
+        this.maritalStatus =
+                maritalStatus;
+    }
+
+    public Smoking getSmoking() {
+        return smoking;
+    }
+
+    public void setSmoking(
+            Smoking smoking
+    ){
+        this.smoking =
+                smoking;
+    }
+
+    public Drinking getDrinking() {
+        return drinking;
+    }
+
+    public void setDrinking(
+            Drinking drinking
+    ){
+        this.drinking =
+                drinking;
+    }
+
+    public Diet getDiet() {
+        return diet;
+    }
+
+    public void setDiet(
+            Diet diet
+    ){
+        this.diet =
+                diet;
+    }
     // 🔥 Audit fields
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
@@ -86,9 +179,9 @@ public class PartnerPreference {
 
     public Integer getMaxAge() { return maxAge; }
 
-    public Double getMinHeight() { return minHeight; }
+    public Long getMinHeight() { return minHeight; }
 
-    public Double getMaxHeight() { return maxHeight; }
+    public Long getMaxHeight() { return maxHeight; }
 
     public Religion getReligion() { return religion; }
 
@@ -110,9 +203,9 @@ public class PartnerPreference {
 
     public void setMaxAge(Integer maxAge) { this.maxAge = maxAge; }
 
-    public void setMinHeight(Double minHeight) { this.minHeight = minHeight; }
+    public void setMinHeight(Long minHeight) { this.minHeight = minHeight; }
 
-    public void setMaxHeight(Double maxHeight) { this.maxHeight = maxHeight; }
+    public void setMaxHeight(Long maxHeight) { this.maxHeight = maxHeight; }
 
     public void setReligion(Religion religion) { this.religion = religion; }
 
@@ -121,4 +214,31 @@ public class PartnerPreference {
     public void setCity(City city) { this.city = city; }
 
     public void setIsActive(Boolean isActive) { this.isActive = isActive; }
+    public Long getMinWeight() {
+
+        return minWeight;
+
+    }
+
+    public Long getMaxWeight() {
+
+        return maxWeight;
+
+    }
+    public void setMinWeight(
+            Long minWeight
+    ) {
+
+        this.minWeight = minWeight;
+
+    }
+
+    public void setMaxWeight(
+            Long maxWeight
+    ) {
+
+        this.maxWeight = maxWeight;
+
+    }
+
 }

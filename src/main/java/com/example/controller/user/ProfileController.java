@@ -4,15 +4,13 @@ import com.example.dto.request.ProfileRequestDTO;
 import com.example.dto.request.UpdateProfileRequestDTO;
 import com.example.dto.response.ProfileResponseDTO;
 import com.example.model.PartnerPreference;
+import com.example.model.PremiumPlan;
 import com.example.serviceimpl.ProfileServiceImpl;
-
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -83,7 +81,25 @@ public class ProfileController {
     ) {
         return ResponseEntity.ok(service.updateMyProfile(dto));
     }
+    @GetMapping("/user/{userId}")
 
+    public ResponseEntity<ProfileResponseDTO>
+
+    getByUserId(
+
+            @PathVariable Long userId
+
+    ){
+
+        return ResponseEntity.ok(
+
+                service.getProfileByUserId(
+                        userId
+                )
+
+        );
+
+    }
     // ================= GET BY ID (FIXED 🔥) =================
     @GetMapping("/{id}")
     public ResponseEntity<ProfileResponseDTO> getById(@PathVariable Long id) {
@@ -150,5 +166,25 @@ public class ProfileController {
                 .toList();
 
         return ResponseEntity.ok(list);
+    }
+    // ================= PREMIUM ACTIVATE =================
+    @PostMapping("/premium/activate")
+    public ResponseEntity<String> activatePremium(
+
+            @RequestParam Long userId,
+
+            @RequestParam PremiumPlan plan
+
+    ) {
+
+        service.activatePremium(
+                userId,
+                plan
+        );
+
+        return ResponseEntity.ok(
+                "Premium activated successfully"
+        );
+
     }
 }

@@ -70,6 +70,14 @@ public class SecurityConfig {
                                 "/api/incomes/**",
                                 "/api/manglik-statuses/**",
                                 "/api/interests/**",
+                                "/api/image/**",
+                                "/ws/**",
+                                "/api/users/init-photo-directory",
+                                "/api/user-photos/**",
+                                "/api/reports/**",
+                                "/api/support/**",
+                                "/api/support-categories/**",
+                                "/api/blocks/**",
                                 "/api/fields-of-study/**",
                                 "/api/subscription-plans/**",
                                 "/swagger-ui/**",
@@ -78,7 +86,13 @@ public class SecurityConfig {
                                 "/api/body-types/**",
                                 "/api/genders/**",
                                 "/api/countries/**",
+<<<<<<< HEAD
                                 "/api/image/**"
+=======
+                                "/ws/**",
+                                "/api/image/**",
+                                "/uploads/**"
+>>>>>>> vaibhav
 
                         ).permitAll()
 

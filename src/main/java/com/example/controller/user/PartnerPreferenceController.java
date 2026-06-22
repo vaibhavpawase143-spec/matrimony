@@ -2,212 +2,461 @@ package com.example.controller.user;
 
 import com.example.dto.request.PartnerPreferenceRequestDTO;
 import com.example.dto.response.PartnerPreferenceResponseDTO;
-import com.example.model.*;
+import com.example.model.PartnerPreference;
+import com.example.model.User;
 import com.example.repository.*;
 import com.example.service.PartnerPreferenceService;
-
 import jakarta.validation.Valid;
-
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/partner-preferences")
 public class PartnerPreferenceController {
 
     private final PartnerPreferenceService preferenceService;
+
     private final UserRepository userRepository;
+
     private final ReligionRepository religionRepository;
+
     private final CasteRepository casteRepository;
+
     private final CityRepository cityRepository;
 
+    private final EducationLevelRepository educationLevelRepository;
+
+    private final OccupationRepository occupationRepository;
+
+    private final MaritalStatusRepository maritalStatusRepository;
+
+    private final SmokingRepository smokingRepository;
+
+    private final DrinkingRepository drinkingRepository;
+
+    private final DietRepository dietRepository;
+
+
     public PartnerPreferenceController(
+
             PartnerPreferenceService preferenceService,
+
             UserRepository userRepository,
+
             ReligionRepository religionRepository,
+
             CasteRepository casteRepository,
-            CityRepository cityRepository
+
+            CityRepository cityRepository,
+
+            EducationLevelRepository educationLevelRepository,
+
+            OccupationRepository occupationRepository,
+
+            MaritalStatusRepository maritalStatusRepository,
+
+            SmokingRepository smokingRepository,
+
+            DrinkingRepository drinkingRepository,
+
+            DietRepository dietRepository
+
     ) {
+
         this.preferenceService = preferenceService;
         this.userRepository = userRepository;
         this.religionRepository = religionRepository;
         this.casteRepository = casteRepository;
         this.cityRepository = cityRepository;
+
+        this.educationLevelRepository =
+                educationLevelRepository;
+
+        this.occupationRepository =
+                occupationRepository;
+
+        this.maritalStatusRepository =
+                maritalStatusRepository;
+
+        this.smokingRepository =
+                smokingRepository;
+
+        this.drinkingRepository =
+                drinkingRepository;
+
+        this.dietRepository =
+                dietRepository;
+
     }
 
-    // ✅ CREATE
+
     @PostMapping
     public ResponseEntity<PartnerPreferenceResponseDTO> create(
-            @Valid @RequestBody PartnerPreferenceRequestDTO dto) {
+            @Valid @RequestBody PartnerPreferenceRequestDTO dto
+    ){
 
-        // 🔥 FETCH USER
-        User user = userRepository.findById(dto.getUserId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        User user=
+                userRepository.findById(
+                        dto.getUserId()
+                ).orElseThrow(
+                        ()->new RuntimeException(
+                                "User not found"
+                        )
+                );
 
-        PartnerPreference preference = new PartnerPreference();
+        PartnerPreference preference=
+                new PartnerPreference();
+
         preference.setUser(user);
 
-        preference.setMinAge(dto.getMinAge());
-        preference.setMaxAge(dto.getMaxAge());
-        preference.setMinHeight(dto.getMinHeight());
-        preference.setMaxHeight(dto.getMaxHeight());
-        preference.setIsActive(dto.getIsActive());
+        applyFields(
+                preference,
+                dto
+        );
+        preference.setOtherExpectations(
+                dto.getOtherExpectations()
+        );
+        PartnerPreference saved=
+                preferenceService.savePreference(
+                        preference
+                );
 
-        // 🔥 RELATIONS
-        if (dto.getReligionId() != null) {
-            preference.setReligion(
-                    religionRepository.findById(dto.getReligionId())
-                            .orElseThrow(() -> new RuntimeException("Religion not found"))
-            );
-        }
+        return ResponseEntity.ok(
+                mapToResponse(saved)
+        );
 
-        if (dto.getCasteId() != null) {
-            preference.setCaste(
-                    casteRepository.findById(dto.getCasteId())
-                            .orElseThrow(() -> new RuntimeException("Caste not found"))
-            );
-        }
 
-        if (dto.getCityId() != null) {
-            preference.setCity(
-                    cityRepository.findById(dto.getCityId())
-                            .orElseThrow(() -> new RuntimeException("City not found"))
-            );
-        }
-
-        PartnerPreference saved = preferenceService.savePreference(preference);
-
-        return ResponseEntity.ok(mapToResponse(saved));
     }
 
-    // ✅ UPDATE
+
     @PutMapping("/{userId}")
     public ResponseEntity<PartnerPreferenceResponseDTO> update(
+
             @PathVariable Long userId,
-            @RequestBody PartnerPreferenceRequestDTO dto) {
 
-        PartnerPreference existing = preferenceService.getByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Preference not found"));
+            @RequestBody PartnerPreferenceRequestDTO dto
 
-        existing.setMinAge(dto.getMinAge());
-        existing.setMaxAge(dto.getMaxAge());
-        existing.setMinHeight(dto.getMinHeight());
-        existing.setMaxHeight(dto.getMaxHeight());
-        existing.setIsActive(dto.getIsActive());
+    ){
 
-        if (dto.getReligionId() != null) {
-            existing.setReligion(
-                    religionRepository.findById(dto.getReligionId())
-                            .orElseThrow(() -> new RuntimeException("Religion not found"))
-            );
-        }
+        PartnerPreference existing=
+                preferenceService
+                        .getByUserId(userId)
+                        .orElseThrow(
+                                ()->new RuntimeException(
+                                        "Preference not found"
+                                )
+                        );
 
-        if (dto.getCasteId() != null) {
-            existing.setCaste(
-                    casteRepository.findById(dto.getCasteId())
-                            .orElseThrow(() -> new RuntimeException("Caste not found"))
-            );
-        }
+        applyFields(
+                existing,
+                dto
+        );
 
-        if (dto.getCityId() != null) {
-            existing.setCity(
-                    cityRepository.findById(dto.getCityId())
-                            .orElseThrow(() -> new RuntimeException("City not found"))
-            );
-        }
+        existing.setOtherExpectations(
+                dto.getOtherExpectations()
+        );
 
-        PartnerPreference updated = preferenceService.savePreference(existing);
+        PartnerPreference updated=
+                preferenceService.savePreference(
+                        existing
+                );
 
-        return ResponseEntity.ok(mapToResponse(updated));
+        return ResponseEntity.ok(
+                mapToResponse(updated)
+        );
+
     }
 
-    // ✅ GET BY USER
+    private void applyFields(
+
+            PartnerPreference preference,
+
+            PartnerPreferenceRequestDTO dto
+
+    ){
+
+        preference.setMinAge(
+                dto.getMinAge()
+        );
+
+        preference.setMaxAge(
+                dto.getMaxAge()
+        );
+        preference.setMaxHeight(
+                dto.getMaxHeight()
+        );
+        preference.setMinWeight(
+                dto.getMinWeight()
+        );
+
+        preference.setMaxWeight(
+                dto.getMaxWeight()
+        );
+        preference.setMinHeight(
+                dto.getMinHeight()
+        );
+
+        preference.setMaxHeight(
+                dto.getMaxHeight()
+        );
+
+        preference.setIsActive(
+                dto.getIsActive()
+        );
+
+        if(dto.getReligionId()!=null){
+
+            preference.setReligion(
+
+                    religionRepository
+                            .findById(
+                                    dto.getReligionId()
+                            )
+                            .orElseThrow()
+
+            );
+
+        }
+
+        if(dto.getCasteId()!=null){
+
+            preference.setCaste(
+
+                    casteRepository
+                            .findById(
+                                    dto.getCasteId()
+                            )
+                            .orElseThrow()
+
+            );
+
+        }
+
+        if(dto.getCityId()!=null){
+
+            preference.setCity(
+
+                    cityRepository
+                            .findById(
+                                    dto.getCityId()
+                            )
+                            .orElseThrow()
+
+            );
+
+        }
+
+        if(dto.getEducationLevelId()!=null){
+
+            preference.setEducationLevel(
+
+                    educationLevelRepository
+                            .findById(
+                                    dto.getEducationLevelId()
+                            )
+                            .orElseThrow()
+
+            );
+
+        }
+
+        if(dto.getOccupationId()!=null){
+
+            preference.setOccupation(
+
+                    occupationRepository
+                            .findById(
+                                    dto.getOccupationId()
+                            )
+                            .orElseThrow()
+
+            );
+
+        }
+
+        if(dto.getMaritalStatusId()!=null){
+
+            preference.setMaritalStatus(
+
+                    maritalStatusRepository
+                            .findById(
+                                    dto.getMaritalStatusId()
+                            )
+                            .orElseThrow()
+
+            );
+
+        }
+
+        if(dto.getSmokingId()!=null){
+
+            preference.setSmoking(
+
+                    smokingRepository
+                            .findById(
+                                    dto.getSmokingId()
+                            )
+                            .orElseThrow()
+
+            );
+
+        }
+
+        if(dto.getDrinkingId()!=null){
+
+            preference.setDrinking(
+
+                    drinkingRepository
+                            .findById(
+                                    dto.getDrinkingId()
+                            )
+                            .orElseThrow()
+
+            );
+
+        }
+
+        if(dto.getDietId()!=null){
+
+            preference.setDiet(
+
+                    dietRepository
+                            .findById(
+                                    dto.getDietId()
+                            )
+                            .orElseThrow()
+
+            );
+
+        }
+
+    }
+
+
     @GetMapping("/user/{userId}")
-    public ResponseEntity<PartnerPreferenceResponseDTO> getByUserId(@PathVariable Long userId) {
+    public ResponseEntity<PartnerPreferenceResponseDTO> getByUserId(
+            @PathVariable Long userId
+    ){
 
-        Optional<PartnerPreference> pp = preferenceService.getByUserId(userId);
+        Optional<PartnerPreference> pp=
+                preferenceService.getByUserId(
+                        userId
+                );
 
-        return pp.map(p -> ResponseEntity.ok(mapToResponse(p)))
-                .orElse(ResponseEntity.notFound().build());
-    }
-
-    // ✅ DELETE
-    @DeleteMapping("/{userId}")
-    public ResponseEntity<String> delete(@PathVariable Long userId) {
-
-        Optional<PartnerPreference> existing = preferenceService.getByUserId(userId);
-
-        if (existing.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
-
-        preferenceService.delete(existing.get().getId());
-
-        return ResponseEntity.ok("Deleted successfully");
-    }
-    // ✅ FILTER APIs
-    @GetMapping("/religion/{religionId}")
-    public ResponseEntity<List<PartnerPreferenceResponseDTO>> getByReligion(@PathVariable Long religionId) {
-        return ResponseEntity.ok(
-                preferenceService.getByReligion(religionId)
-                        .stream()
-                        .map(this::mapToResponse)
-                        .collect(Collectors.toList())
+        return pp.map(
+                p->ResponseEntity.ok(
+                        mapToResponse(p)
+                )
+        ).orElse(
+                ResponseEntity.notFound().build()
         );
+
     }
 
-    @GetMapping("/caste/{casteId}")
-    public ResponseEntity<List<PartnerPreferenceResponseDTO>> getByCaste(@PathVariable Long casteId) {
-        return ResponseEntity.ok(
-                preferenceService.getByCaste(casteId)
-                        .stream()
-                        .map(this::mapToResponse)
-                        .collect(Collectors.toList())
+
+    private PartnerPreferenceResponseDTO mapToResponse(
+            PartnerPreference p
+    ){
+
+        PartnerPreferenceResponseDTO dto=
+                new PartnerPreferenceResponseDTO();
+
+        dto.setId(
+                p.getId()
         );
-    }
 
-    @GetMapping("/city/{cityId}")
-    public ResponseEntity<List<PartnerPreferenceResponseDTO>> getByCity(@PathVariable Long cityId) {
-        return ResponseEntity.ok(
-                preferenceService.getByCity(cityId)
-                        .stream()
-                        .map(this::mapToResponse)
-                        .collect(Collectors.toList())
+        dto.setUserId(
+                p.getUser().getId()
         );
-    }
 
-    // ✅ MAPPER
-    private PartnerPreferenceResponseDTO mapToResponse(PartnerPreference p) {
+        dto.setMinAge(
+                p.getMinAge()
+        );
 
-        PartnerPreferenceResponseDTO dto = new PartnerPreferenceResponseDTO();
+        dto.setMaxAge(
+                p.getMaxAge()
+        );
 
-        dto.setId(p.getId());
-        dto.setUserId(p.getUser().getId());
+        dto.setMinHeight(
+                p.getMinHeight()
+        );
 
-        dto.setMinAge(p.getMinAge());
-        dto.setMaxAge(p.getMaxAge());
+        dto.setMaxHeight(
+                p.getMaxHeight()
+        );
 
-        dto.setMinHeight(p.getMinHeight());
-        dto.setMaxHeight(p.getMaxHeight());
+// ADD THESE
 
-        dto.setIsActive(p.getIsActive());
+        dto.setMinWeight(
+                p.getMinWeight()
+        );
 
-        if (p.getReligion() != null)
-            dto.setReligionId(p.getReligion().getId());
+        dto.setMaxWeight(
+                p.getMaxWeight()
+        );
+        dto.setIsActive(
+                p.getIsActive()
+        );
 
-        if (p.getCaste() != null)
-            dto.setCasteId(p.getCaste().getId());
+        if(p.getReligion()!=null)
+            dto.setReligionId(
+                    p.getReligion().getId()
+            );
 
-        if (p.getCity() != null)
-            dto.setCityId(p.getCity().getId());
+        if(p.getCaste()!=null)
+            dto.setCasteId(
+                    p.getCaste().getId()
+            );
 
-        dto.setCreatedAt(p.getCreatedAt());
-        dto.setUpdatedAt(p.getUpdatedAt());
+        if(p.getCity()!=null)
+            dto.setCityId(
+                    p.getCity().getId()
+            );
+
+        if(p.getEducationLevel()!=null)
+            dto.setEducationLevelId(
+                    p.getEducationLevel().getId()
+            );
+
+        if(p.getOccupation()!=null)
+            dto.setOccupationId(
+                    p.getOccupation().getId()
+            );
+
+        if(p.getMaritalStatus()!=null)
+            dto.setMaritalStatusId(
+                    p.getMaritalStatus().getId()
+            );
+
+        if(p.getSmoking()!=null)
+            dto.setSmokingId(
+                    p.getSmoking().getId()
+            );
+
+        if(p.getDrinking()!=null)
+            dto.setDrinkingId(
+                    p.getDrinking().getId()
+            );
+
+        if(p.getDiet()!=null)
+            dto.setDietId(
+                    p.getDiet().getId()
+            );
+        dto.setOtherExpectations(
+                p.getOtherExpectations()
+        );
+        dto.setCreatedAt(
+                p.getCreatedAt()
+        );
+
+        dto.setUpdatedAt(
+                p.getUpdatedAt()
+        );
 
         return dto;
+
     }
+
 }

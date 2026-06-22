@@ -2,11 +2,11 @@ package com.example.service;
 
 import com.example.model.UserBlock;
 import com.example.repository.UserBlockRepository;
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -65,5 +65,15 @@ public class UserBlockService {
                 .existsByBlockerIdAndBlockedIdAndIsActiveTrue(user1, user2)
                 || userBlockRepository
                 .existsByBlockerIdAndBlockedIdAndIsActiveTrue(user2, user1);
+    }
+    public List<UserBlock> getBlockedUsers(
+            Long blockerId
+    ) {
+
+        return userBlockRepository
+                .findByBlockerIdAndIsActiveTrue(
+                        blockerId
+                );
+
     }
 }

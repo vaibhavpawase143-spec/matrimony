@@ -36,6 +36,10 @@ public class UserReportService {
         User reportedUser = userRepository.findById(reportedUserId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
+        System.out.println("===== REPORT DEBUG =====");
+        System.out.println("Reporter: " + reporter.getEmail());
+        System.out.println("Reported User ID: " + reportedUserId);
+
         // 🔥 Already blocked check
         if (userBlockRepository.existsByBlockedIdAndIsActiveTrue(reportedUserId)) {
             return "User already blocked";
@@ -79,7 +83,15 @@ public class UserReportService {
 
         return "User reported successfully";
     }
+    // ✅ CHECK IF CURRENT USER ALREADY REPORTED
+    public boolean hasReported(String reporterEmail, Long reportedUserId) {
 
+        return userReportRepository
+                .existsByReporterEmailAndReportedUserId(
+                        reporterEmail,
+                        reportedUserId
+                );
+    }
     // ✅ ADMIN APIs
     public List<UserReport> getAllReports() {
         return userReportRepository.findAll();

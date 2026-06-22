@@ -816,3 +816,449 @@ CURRENT_TIMESTAMP
 WHERE NOT EXISTS (
     SELECT 1 FROM drinking WHERE value='Regularly'
 );
+-- ==========================================
+-- PROFILE TYPES
+-- ==========================================
+
+INSERT INTO profile_types
+(admin_id,name,is_active,created_at,updated_at)
+
+SELECT
+NULL,
+'Self',
+TRUE,
+CURRENT_TIMESTAMP,
+CURRENT_TIMESTAMP
+
+WHERE NOT EXISTS (
+SELECT 1 FROM profile_types
+WHERE name='Self'
+);
+
+INSERT INTO profile_types
+(admin_id,name,is_active,created_at,updated_at)
+
+SELECT
+NULL,
+'Son',
+TRUE,
+CURRENT_TIMESTAMP,
+CURRENT_TIMESTAMP
+
+WHERE NOT EXISTS (
+SELECT 1 FROM profile_types
+WHERE name='Son'
+);
+
+INSERT INTO profile_types
+(admin_id,name,is_active,created_at,updated_at)
+
+SELECT
+NULL,
+'Daughter',
+TRUE,
+CURRENT_TIMESTAMP,
+CURRENT_TIMESTAMP
+
+WHERE NOT EXISTS (
+SELECT 1 FROM profile_types
+WHERE name='Daughter'
+);
+
+INSERT INTO profile_types
+(admin_id,name,is_active,created_at,updated_at)
+
+SELECT
+NULL,
+'Brother',
+TRUE,
+CURRENT_TIMESTAMP,
+CURRENT_TIMESTAMP
+
+WHERE NOT EXISTS (
+SELECT 1 FROM profile_types
+WHERE name='Brother'
+);
+
+INSERT INTO profile_types
+(admin_id,name,is_active,created_at,updated_at)
+
+SELECT
+NULL,
+'Sister',
+TRUE,
+CURRENT_TIMESTAMP,
+CURRENT_TIMESTAMP
+
+WHERE NOT EXISTS (
+SELECT 1 FROM profile_types
+WHERE name='Sister'
+);
+
+INSERT INTO profile_types
+(admin_id,name,is_active,created_at,updated_at)
+
+SELECT
+NULL,
+'Friend',
+TRUE,
+CURRENT_TIMESTAMP,
+CURRENT_TIMESTAMP
+
+WHERE NOT EXISTS (
+SELECT 1 FROM profile_types
+WHERE name='Friend'
+);
+
+INSERT INTO profile_types
+(admin_id,name,is_active,created_at,updated_at)
+
+SELECT
+NULL,
+'Relative',
+TRUE,
+CURRENT_TIMESTAMP,
+CURRENT_TIMESTAMP
+
+WHERE NOT EXISTS (
+SELECT 1 FROM profile_types
+WHERE name='Relative'
+);
+
+INSERT INTO profile_types
+(admin_id,name,is_active,created_at,updated_at)
+
+SELECT
+NULL,
+'Other',
+TRUE,
+CURRENT_TIMESTAMP,
+CURRENT_TIMESTAMP
+
+WHERE NOT EXISTS (
+SELECT 1 FROM profile_types
+WHERE name='Other'
+);
+-- =====================================================
+-- PROFILE TYPES
+-- =====================================================
+
+INSERT INTO profile_types (admin_id,name,is_active,created_at,updated_at)
+SELECT NULL,'Self',TRUE,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+SELECT 1 FROM profile_types WHERE name='Self'
+);
+
+INSERT INTO profile_types (admin_id,name,is_active,created_at,updated_at)
+SELECT NULL,'Son',TRUE,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+SELECT 1 FROM profile_types WHERE name='Son'
+);
+
+INSERT INTO profile_types (admin_id,name,is_active,created_at,updated_at)
+SELECT NULL,'Daughter',TRUE,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+SELECT 1 FROM profile_types WHERE name='Daughter'
+);
+
+INSERT INTO profile_types (admin_id,name,is_active,created_at,updated_at)
+SELECT NULL,'Brother',TRUE,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+SELECT 1 FROM profile_types WHERE name='Brother'
+);
+
+INSERT INTO profile_types (admin_id,name,is_active,created_at,updated_at)
+SELECT NULL,'Sister',TRUE,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+SELECT 1 FROM profile_types WHERE name='Sister'
+);
+
+INSERT INTO profile_types (admin_id,name,is_active,created_at,updated_at)
+SELECT NULL,'Friend',TRUE,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+SELECT 1 FROM profile_types WHERE name='Friend'
+);
+
+-- =====================================================
+-- MANGLIK STATUS
+-- =====================================================
+
+INSERT INTO manglik_status (admin_id,name,is_active,created_at,updated_at)
+SELECT NULL,'Manglik',TRUE,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+SELECT 1 FROM manglik_status WHERE name='Manglik'
+);
+
+INSERT INTO manglik_status (admin_id,name,is_active,created_at,updated_at)
+SELECT NULL,'Non Manglik',TRUE,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+SELECT 1 FROM manglik_status WHERE name='Non Manglik'
+);
+
+INSERT INTO manglik_status (admin_id,name,is_active,created_at,updated_at)
+SELECT NULL,'Partial Manglik',TRUE,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+SELECT 1 FROM manglik_status WHERE name='Partial Manglik'
+);
+
+-- =====================================================
+-- FAMILY TYPE
+-- =====================================================
+
+INSERT INTO family_types (admin_id,name,is_active,created_at,updated_at)
+SELECT NULL,'Joint Family',TRUE,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+SELECT 1 FROM family_types WHERE name='Joint Family'
+);
+
+INSERT INTO family_types (admin_id,name,is_active,created_at,updated_at)
+SELECT NULL,'Nuclear Family',TRUE,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+SELECT 1 FROM family_types WHERE name='Nuclear Family'
+);
+
+-- =====================================================
+-- FAMILY STATUS
+-- =====================================================
+
+INSERT INTO family_status (admin_id,name,is_active,created_at,updated_at)
+SELECT NULL,'Middle Class',TRUE,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+SELECT 1 FROM family_status WHERE name='Middle Class'
+);
+
+INSERT INTO family_status (admin_id,name,is_active,created_at,updated_at)
+SELECT NULL,'Upper Middle Class',TRUE,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+SELECT 1 FROM family_status WHERE name='Upper Middle Class'
+);
+
+INSERT INTO family_status (admin_id,name,is_active,created_at,updated_at)
+SELECT NULL,'Rich / Affluent',TRUE,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+SELECT 1 FROM family_status WHERE name='Rich / Affluent'
+);
+
+-- =====================================================
+-- FAMILY VALUES
+-- =====================================================
+
+INSERT INTO family_values (admin_id,name,is_active,created_at,updated_at)
+SELECT NULL,'Traditional',TRUE,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+SELECT 1 FROM family_values WHERE name='Traditional'
+);
+
+INSERT INTO family_values (admin_id,name,is_active,created_at,updated_at)
+SELECT NULL,'Moderate',TRUE,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+SELECT 1 FROM family_values WHERE name='Moderate'
+);
+
+INSERT INTO family_values (admin_id,name,is_active,created_at,updated_at)
+SELECT NULL,'Liberal',TRUE,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+SELECT 1 FROM family_values WHERE name='Liberal'
+);
+-- =====================================================
+-- QUALIFICATIONS
+-- =====================================================
+
+INSERT INTO qualifications
+(admin_id,name,is_active,created_at,updated_at)
+
+SELECT NULL,'BCA',TRUE,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+SELECT 1 FROM qualifications WHERE name='BCA'
+);
+
+INSERT INTO qualifications
+(admin_id,name,is_active,created_at,updated_at)
+
+SELECT NULL,'BTech',TRUE,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+SELECT 1 FROM qualifications WHERE name='BTech'
+);
+
+INSERT INTO qualifications
+(admin_id,name,is_active,created_at,updated_at)
+
+SELECT NULL,'MCA',TRUE,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+SELECT 1 FROM qualifications WHERE name='MCA'
+);
+
+INSERT INTO qualifications
+(admin_id,name,is_active,created_at,updated_at)
+
+SELECT NULL,'MBA',TRUE,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+SELECT 1 FROM qualifications WHERE name='MBA'
+);
+
+-------------------------------------------------------
+
+-- FIELD OF STUDY
+
+INSERT INTO fields_of_study
+(admin_id,name,is_active,created_at,updated_at)
+
+SELECT NULL,'Computer Science',TRUE,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+SELECT 1 FROM fields_of_study
+WHERE name='Computer Science'
+);
+
+INSERT INTO fields_of_study
+(admin_id,name,is_active,created_at,updated_at)
+
+SELECT NULL,'Information Technology',TRUE,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+SELECT 1 FROM fields_of_study
+WHERE name='Information Technology'
+);
+
+INSERT INTO fields_of_study
+(admin_id,name,is_active,created_at,updated_at)
+
+SELECT NULL,'Mechanical',TRUE,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+SELECT 1 FROM fields_of_study
+WHERE name='Mechanical'
+);
+
+-------------------------------------------------------
+
+-- EMPLOYED
+
+INSERT INTO employed
+(admin_id,name,is_active,created_at,updated_at)
+
+SELECT NULL,'Student',TRUE,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+SELECT 1 FROM employed
+WHERE name='Student'
+);
+
+INSERT INTO employed
+(admin_id,name,is_active,created_at,updated_at)
+
+SELECT NULL,'Private Employee',TRUE,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+SELECT 1 FROM employed
+WHERE name='Private Employee'
+);
+
+INSERT INTO employed
+(admin_id,name,is_active,created_at,updated_at)
+
+SELECT NULL,'Government Employee',TRUE,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+SELECT 1 FROM employed
+WHERE name='Government Employee'
+);
+
+INSERT INTO employed
+(admin_id,name,is_active,created_at,updated_at)
+
+SELECT NULL,'Business',TRUE,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+SELECT 1 FROM employed
+WHERE name='Business'
+);
+
+-------------------------------------------------------
+
+-- DISABILITY STATUS
+
+INSERT INTO disability_statuses
+(admin_id,value,is_active,created_at,updated_at)
+
+SELECT NULL,'No Disability',TRUE,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+SELECT 1 FROM disability_statuses
+WHERE value='No Disability'
+);
+
+INSERT INTO disability_statuses
+(admin_id,value,is_active,created_at,updated_at)
+
+SELECT NULL,'Physically Challenged',TRUE,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+SELECT 1 FROM disability_statuses
+WHERE value='Physically Challenged'
+);-------------------------------------------------------
+
+-- BLOOD GROUPS
+
+INSERT INTO blood_groups
+(admin_id,type,is_active,created_at,updated_at)
+
+SELECT NULL,'A+',TRUE,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+SELECT 1 FROM blood_groups
+WHERE type='A+'
+);
+
+INSERT INTO blood_groups
+(admin_id,type,is_active,created_at,updated_at)
+
+SELECT NULL,'A-',TRUE,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+SELECT 1 FROM blood_groups
+WHERE type='A-'
+);
+
+INSERT INTO blood_groups
+(admin_id,type,is_active,created_at,updated_at)
+
+SELECT NULL,'B+',TRUE,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+SELECT 1 FROM blood_groups
+WHERE type='B+'
+);
+
+INSERT INTO blood_groups
+(admin_id,type,is_active,created_at,updated_at)
+
+SELECT NULL,'B-',TRUE,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+SELECT 1 FROM blood_groups
+WHERE type='B-'
+);
+
+INSERT INTO blood_groups
+(admin_id,type,is_active,created_at,updated_at)
+
+SELECT NULL,'AB+',TRUE,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+SELECT 1 FROM blood_groups
+WHERE type='AB+'
+);
+
+INSERT INTO blood_groups
+(admin_id,type,is_active,created_at,updated_at)
+
+SELECT NULL,'AB-',TRUE,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+SELECT 1 FROM blood_groups
+WHERE type='AB-'
+);
+
+INSERT INTO blood_groups
+(admin_id,type,is_active,created_at,updated_at)
+
+SELECT NULL,'O+',TRUE,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+SELECT 1 FROM blood_groups
+WHERE type='O+'
+);
+
+INSERT INTO blood_groups
+(admin_id,type,is_active,created_at,updated_at)
+
+SELECT NULL,'O-',TRUE,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+SELECT 1 FROM blood_groups
+WHERE type='O-'
+);

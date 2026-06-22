@@ -20,17 +20,29 @@ public class RazorpayPaymentController {
      */
     @PostMapping("/create-order")
     public ResponseEntity<?> createOrder(
-            @RequestParam Long userId,
             @RequestParam Long planId) {
 
         try {
-            Map<String, Object> orderData = razorpayPaymentService.createOrder(userId, planId);
+
+            Map<String, Object> orderData =
+                    razorpayPaymentService.createOrder(planId);
+
             return ResponseEntity.ok(orderData);
+
         } catch (RazorpayException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+
+            return ResponseEntity.badRequest().body(
+                    Map.of("error", e.getMessage())
+            );
+
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(Map.of("error", "Internal server error"));
+
+            return ResponseEntity.internalServerError().body(
+                    Map.of("error", e.getMessage())
+            );
+
         }
+
     }
 
     /**

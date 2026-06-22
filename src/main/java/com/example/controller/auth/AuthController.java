@@ -1,20 +1,17 @@
 package com.example.controller.auth;
 
+import com.example.dto.request.ResendVerificationRequestDTO;
 import com.example.dto.request.UserLoginRequestDTO;
 import com.example.dto.request.UserRegisterRequestDTO;
-import com.example.dto.request.ResendVerificationRequestDTO;
 import com.example.dto.response.ApiResponse;
 import com.example.dto.response.LoginResponse;
-import com.example.model.RefreshToken;
 import com.example.service.RefreshTokenService;
 import com.example.service.UserService;
-
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -40,17 +37,27 @@ public class AuthController {
 
     // ================= STEP 2: VERIFY EMAIL =================
     @GetMapping("/verify")
-    public ApiResponse<String> verifyEmail(@RequestParam String token) {
+    public ResponseEntity<Void> verifyEmail(
+            @RequestParam String token,
+            HttpServletResponse response
+    ) {
 
-        userService.verifyEmail(token);
+        try {
 
-        return ApiResponse.<String>builder()
-                .success(true)
-                .message("Email verified successfully")
-                .data(null)
-                .build();
+            userService.verifyEmail(token);
+
+            response.sendRedirect(
+                    "http://localhost:3000/email-verified"
+            );
+
+        } catch (Exception e) {
+
+            e.printStackTrace();
+
+        }
+
+        return ResponseEntity.ok().build();
     }
-
     // ================= DEV: BYPASS EMAIL VERIFICATION =================
     @PostMapping("/bypass-verification")
     public ApiResponse<String> bypassVerification(@RequestParam String email) {
@@ -144,4 +151,6 @@ public class AuthController {
                 .data(null)
                 .build();
     }
+
+
 }

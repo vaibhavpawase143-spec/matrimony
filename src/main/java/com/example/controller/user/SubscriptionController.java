@@ -2,11 +2,11 @@ package com.example.controller.user;
 
 import com.example.dto.request.UserSubscriptionRequestDTO;
 import com.example.dto.response.SubscriptionResponseDto;
+import com.example.dto.response.UserSubscriptionResponseDTO;
 import com.example.model.SubscriptionPlan;
 import com.example.model.UserSubscription;
-import com.example.service.SubscriptionService;
 import com.example.service.SubscriptionPlanService;
-
+import com.example.service.SubscriptionService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,49 +27,118 @@ public class SubscriptionController {
         this.subscriptionPlanService = subscriptionPlanService;
     }
 
-    // ✅ 1. Get all plans
+    // =====================================================
+    // GET ALL PLANS
+    // =====================================================
+
     @GetMapping("/plans")
     public ResponseEntity<List<SubscriptionPlan>> getAllPlans() {
-        return ResponseEntity.ok(subscriptionPlanService.getAll());
-    }
 
-    // ✅ 2. Get plan by ID
-    @GetMapping("/plan/{id}")
-    public ResponseEntity<SubscriptionPlan> getPlanById(@PathVariable Long id) {
         return ResponseEntity.ok(
-                subscriptionPlanService.getById(id)
-                        .orElseThrow(() -> new RuntimeException("Plan not found"))
+                subscriptionPlanService.getAll()
         );
     }
 
-    // ✅ 3. Subscribe user
+    // =====================================================
+    // GET PLAN BY ID
+    // =====================================================
+
+    @GetMapping("/plan/{id}")
+    public ResponseEntity<SubscriptionPlan> getPlanById(
+            @PathVariable Long id) {
+
+        SubscriptionPlan plan =
+                subscriptionPlanService.getById(id)
+                        .orElseThrow(() ->
+                                new RuntimeException("Plan not found"));
+
+        return ResponseEntity.ok(plan);
+    }
+
+    // =====================================================
+    // BUY SUBSCRIPTION
+    // =====================================================
+
     @PostMapping("/subscribe")
     public ResponseEntity<SubscriptionResponseDto> subscribeUser(
             @RequestBody UserSubscriptionRequestDTO requestDto) {
 
-        return ResponseEntity.ok(subscriptionService.subscribeUser(requestDto));
-    }
-
-    // ✅ 4. Get user subscription
-    @GetMapping("/user/{userId}")
-    public ResponseEntity<UserSubscription> getUserSubscription(
-            @PathVariable Long userId) {
-
         return ResponseEntity.ok(
-                subscriptionService.getActiveByUser(userId)
-                        .orElseThrow(() -> new RuntimeException("No active subscription"))
+                subscriptionService.subscribeUser(requestDto)
         );
     }
 
-    // ✅ 5. Cancel subscription
-    @PutMapping("/cancel/{userId}")
-    public ResponseEntity<String> cancelSubscription(@PathVariable Long userId) {
+    // =====================================================
+// MY ACTIVE SUBSCRIPTION
+// =====================================================
 
-        UserSubscription sub = subscriptionService.getActiveByUser(userId)
-                .orElseThrow(() -> new RuntimeException("No active subscription"));
+    @GetMapping("/me")
+    public ResponseEntity<UserSubscriptionResponseDTO> getMySubscription() {
 
-        subscriptionService.deactivate(sub.getId());
+        UserSubscription subscription =
+                subscriptionService.getMySubscription();
 
-        return ResponseEntity.ok("Subscription cancelled successfully");
+        UserSubscriptionResponseDTO dto =
+                UserSubscriptionResponseDTO.builder()
+                        .id(subscription.getId())
+                        .userId(subscription.getUser().getId())
+                        .userName(subscription.getUser().getFullName())
+                        .planId(subscription.getSubscriptionPlan().getId())
+                        .planName(subscription.getSubscriptionPlan().getName())
+                        .startDate(subscription.getStartDate())
+                        .endDate(subscription.getEndDate())
+                        .isActive(subscription.getIsActive())
+                        .status(subscription.getStatus())
+                        .createdAt(subscription.getCreatedAt())
+                        .updatedAt(subscription.getUpdatedAt())
+                        .build();
+
+        return ResponseEntity.ok(dto);
+    }
+    @GetMapping("/history")
+    public ResponseEntity<List<UserSubscriptionResponseDTO>> getHistory() {
+
+        List<UserSubscriptionResponseDTO> history =
+                subscriptionService
+                        .getMySubscriptionHistory()
+                        .stream()
+                        .map(subscription ->
+
+                                UserSubscriptionResponseDTO
+                                        .builder()
+                                        .id(subscription.getId())
+                                        .userId(subscription.getUser().getId())
+                                        .userName(subscription.getUser().getFullName())
+                                        .planId(subscription.getSubscriptionPlan().getId())
+                                        .planName(subscription.getSubscriptionPlan().getName())
+                                        .startDate(subscription.getStartDate())
+                                        .endDate(subscription.getEndDate())
+                                        .status(subscription.getStatus())
+                                        .isActive(subscription.getIsActive())
+                                        .createdAt(subscription.getCreatedAt())
+                                        .updatedAt(subscription.getUpdatedAt())
+                                        .build()
+
+                        )
+                        .toList();
+
+        return ResponseEntity.ok(history);
+
+    }
+    // =====================================================
+    // CANCEL MY SUBSCRIPTION
+    // =====================================================
+
+    @PutMapping("/cancel")
+    public ResponseEntity<String> cancelSubscription() {
+
+        UserSubscription subscription =
+                subscriptionService.getMySubscription();
+
+        subscriptionService.deactivate(subscription.getId());
+
+        return ResponseEntity.ok(
+                "Subscription cancelled successfully"
+        );
     }
 }

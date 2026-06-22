@@ -16,8 +16,8 @@ public class UserDetailsSearchRequest {
     private Integer minAge;
     private Integer maxAge;
 
-    private Double minHeight;
-    private Double maxHeight;
+    private Long minHeight;
+    private Long maxHeight;
 
     private String preferredCity;
     private String preferredReligion;

@@ -1,5 +1,6 @@
 // API service for frontend development
 import errorHandler from '@/utils/errorHandler';
+import EmailVerified from "@/pages/EmailVerified";
 
 const API_BASE_URL = '/api'; // Will be proxied to backend
 
@@ -62,9 +63,17 @@ const apiClient = async (endpoint, options = {}) => {
       throw error;
     }
 
-    const result = await response.json();
-    console.log('✅ API Success Response:', result);
-    return result;
+   const text = await response.text();
+
+   if (!text) {
+     return {};
+   }
+
+   try {
+     return JSON.parse(text);
+   } catch {
+     return text;
+   }
   } catch (error) {
     console.error('❌ API Request Failed:', error);
     console.error('❌ Error details:', {
@@ -84,6 +93,156 @@ const apiClient = async (endpoint, options = {}) => {
   }
 };
 
+
+
+
+export const photoAPI = {
+
+  getMyPhotos: async () => {
+
+    const response = await fetch(
+      `${API_BASE_URL}/photos/me`,
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`
+        }
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to load photos");
+    }
+
+    return await response.json();
+  },
+getUserPhotos: async (userId) => {
+
+  const response = await fetch(
+    `${API_BASE_URL}/photos/user/${userId}`,
+    {
+      headers: {
+        Authorization:
+          `Bearer ${localStorage.getItem("token")}`
+      }
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      "Failed to load photos"
+    );
+  }
+
+  return await response.json();
+},
+  uploadMultiple: async (formData) => {
+
+    const response = await fetch(
+      `${API_BASE_URL}/photos/upload-multiple`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`
+        },
+        body: formData
+      }
+    );
+
+    const text = await response.text();
+
+    console.log(
+      "UPLOAD RESPONSE:",
+      response.status,
+      text
+    );
+
+    if (!response.ok) {
+      throw new Error(text || "Photo upload failed");
+    }
+
+    try {
+      return JSON.parse(text);
+    } catch {
+      return text;
+    }
+  },
+
+  deletePhoto: async (photoId) => {
+
+    const response = await fetch(
+      `${API_BASE_URL}/photos/${photoId}`,
+      {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`
+        }
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to delete photo");
+    }
+
+    return true;
+  }
+
+};
+
+export const notificationAPI = {
+
+  getAll: async (userId) => {
+
+    return await apiClient(
+      `/notifications?userId=${userId}`
+    );
+
+  },
+
+  unreadCount: async (userId) => {
+
+    return await apiClient(
+      `/notifications/unread?userId=${userId}`
+    );
+
+  },
+
+  markRead: async (id) => {
+
+    return await apiClient(
+      `/notifications/read/${id}`,
+      {
+        method: "PUT"
+      }
+    );
+
+  },
+markAllRead: async(userId)=>{
+
+  return await apiClient(
+
+    `/notifications/read-all/${userId}`,
+
+    {
+
+      method:"PUT"
+
+    }
+
+  );
+
+},
+  delete: async (id) => {
+
+    return await apiClient(
+      `/notifications/${id}`,
+      {
+        method: "DELETE"
+      }
+    );
+
+  }
+
+};
 export const authAPI = {
   login: async (data, isAdmin = false) => {
     try {
@@ -172,126 +331,566 @@ export const authAPI = {
       // Return null instead of throwing for getCurrentUser
       return null;
     }
+  },
+ forgotPassword: async (email) => {
+
+   return await apiClient(
+
+     "/auth/forgot-password",
+
+     {
+       method: "POST",
+
+       body: JSON.stringify({
+         email
+       })
+
+     }
+
+   );
+
+ },
+resetPassword: async (
+  token,
+  newPassword
+) => {
+
+  return await apiClient(
+
+    "/auth/reset-password",
+
+    {
+      method: "POST",
+
+      body: JSON.stringify({
+
+        token,
+
+        newPassword
+
+      })
+
+    }
+
+  );
+
+},
+
+};
+
+export const profileVisitorAPI = {
+
+  saveVisit: async (visitedUserId) => {
+
+    return await apiClient(
+      `/profile-visitors/${visitedUserId}`,
+      {
+        method: "POST"
+      }
+    );
+
+  },
+
+  getMyVisitors: async () => {
+
+    return await apiClient(
+      "/profile-visitors/me"
+    );
+
   }
+
+};
+export const blockAPI = {
+
+  blockUser: async (
+    blockerId,
+    blockedId
+  ) => {
+
+    return await apiClient(
+
+      `/block?blockerId=${blockerId}&blockedId=${blockedId}`,
+
+      {
+        method: "POST"
+      }
+
+    );
+
+  },
+
+getMyBlockedUsers: async (
+  blockerId
+) => {
+
+  return await apiClient(
+    `/block/my-blocked-users?blockerId=${blockerId}`
+  );
+
+},
+  unblockUser: async (
+    blockerId,
+    blockedId
+  ) => {
+
+    return await apiClient(
+
+      `/block?blockerId=${blockerId}&blockedId=${blockedId}`,
+
+      {
+        method: "DELETE"
+      }
+
+    );
+
+  },
+
+  checkBlocked: async (
+    user1,
+    user2
+  ) => {
+
+    return await apiClient(
+
+      `/block/check?user1=${user1}&user2=${user2}`
+
+    );
+
+  }
+
+};
+export const reportAPI = {
+
+  reportUser: async (
+    reportedUserId,
+    reason = "Inappropriate profile"
+  ) => {
+
+    return await apiClient(
+      `/report?reportedUserId=${reportedUserId}&reason=${encodeURIComponent(reason)}`,
+      {
+        method: "POST"
+      }
+    );
+
+  },
+
+
+hasReported: async (reportedUserId) => {
+
+  return await apiClient(
+    `/report/check/${reportedUserId}`
+  );
+
+},
 };
 
 export const profileAPI = {
-  getProfile: async (userId) => {
-    try {
-      const endpoint = userId ? `/profiles/${userId}` : '/profiles/me';
-      return await apiClient(endpoint);
-    } catch (error) {
-     console.error('Login API Error:', error);
 
-     throw new Error(
-       error?.message || 'Something went wrong'
-     );
-    }
+getProfileByUserId:
+
+async(userId)=>{
+
+return await apiClient(
+
+`/profiles/user/${userId}`
+
+);
+
+},
+
+getProfile: async (userId) => {
+
+try {
+
+const endpoint =
+userId
+? `/profiles/${userId}`
+: '/profiles/me';
+
+return await apiClient(endpoint);
+
+} catch(error){
+
+console.error(
+'Profile API Error:',
+error
+);
+
+throw new Error(
+error?.message ||
+'Something went wrong'
+);
+
+}
+
+},
+
+getProfileById: async(id)=>{
+
+try{
+
+return await apiClient(
+
+`/profiles/${id}`
+
+);
+
+}catch(error){
+
+console.error(
+'Profile API Error:',
+error
+);
+
+throw error;
+
+}
+
+},
+
+updateProfile: async(
+userId,
+data
+)=>{
+
+try{
+
+const endpoint =
+userId
+? `/profiles/${userId}`
+: '/profiles/me';
+
+return await apiClient(
+endpoint,
+{
+method:'PUT',
+body:JSON.stringify(data)
+}
+);
+
+}catch(error){
+
+console.error(
+'Profile API Error:',
+error
+);
+
+throw new Error(
+error?.message ||
+'Something went wrong'
+);
+
+}
+
+},
+
+getProfiles: async()=>{
+
+try{
+
+return await apiClient(
+'/profiles'
+);
+
+}catch(error){
+
+console.error(
+'Profile API Error:',
+error
+);
+
+throw new Error(
+error?.message ||
+'Something went wrong'
+);
+
+}
+
+}
+
+};
+export const supportAPI = {
+
+  createTicket: async (data) => {
+
+    return await apiClient(
+      "/support",
+      {
+        method: "POST",
+        body: JSON.stringify(data)
+      }
+    );
+
   },
 
-  updateProfile: async (userId, data) => {
-    try {
-      const endpoint = userId ? `/profiles/${userId}` : '/profiles/me';
-      return await apiClient(endpoint, {
-        method: 'PUT',
-        body: JSON.stringify(data),
-      });
-    } catch (error) {
-      console.error('Login API Error:', error);
+  getMyTickets: async () => {
 
-      throw new Error(
-        error?.message || 'Something went wrong'
-      );
-    }
+    return await apiClient(
+      "/support/me"
+    );
+
   },
 
-  getProfiles: async (page = 0, size = 10, filters = {}) => {
-    try {
-      const params = new URLSearchParams({
-        page: page.toString(),
-        size: size.toString(),
-        ...filters
-      });
-      return await apiClient(`/profiles?${params}`);
-    } catch (error) {
-      console.error('Login API Error:', error);
+  getTicket: async (ticketNumber) => {
 
-      throw new Error(
-        error?.message || 'Something went wrong'
-      );
-    }
+    return await apiClient(
+      `/support/${ticketNumber}`
+    );
+
+  },
+
+  closeTicket: async (ticketNumber) => {
+
+    return await apiClient(
+      `/support/${ticketNumber}/close`,
+      {
+        method: "PUT"
+      }
+    );
+
   }
+
 };
 
+ export const interestAPI = {
+
+getReceivedPendingInterests:
+
+async(receiverId)=>{
+
+return await apiClient(
+
+`/interests/received/${receiverId}/pending`
+
+);
+
+},
+getReceivedInterests:
+
+async(receiverId)=>{
+
+return await apiClient(
+
+`/interests/received/${receiverId}`
+
+);
+
+},
+
+acceptInterest:
+
+async(id)=>{
+
+return await apiClient(
+
+`/interests/accept/${id}`,
+
+{
+
+method:"PUT"
+
+}
+
+);
+
+},
+
+rejectInterest:
+
+async(id)=>{
+
+return await apiClient(
+
+`/interests/reject/${id}`,
+
+{
+
+method:"PUT"
+
+}
+
+);
+
+},
+sendInterest: async (
+senderId,
+receiverId
+)=>{
+
+try{
+
+return await apiClient(
+
+'/interests/send',
+
+{
+
+method:'POST',
+
+body:JSON.stringify({
+
+senderId: senderId,
+
+receiverId: receiverId
+
+})
+
+}
+
+);
+
+}catch(error){
+
+console.error(
+'Interest API Error:',
+error
+);
+
+throw error;
+
+}
+
+},
+
+getSentInterests: async(
+senderId
+)=>{
+
+try{
+
+return await apiClient(
+
+`/interests/sent/${senderId}`
+
+);
+
+}catch(error){
+
+console.error(
+'Interest API Error:',
+error
+);
+
+return [];
+
+}
+
+}
+
+};
 export const searchAPI = {
-  searchProfiles: async (filters) => {
+
+  searchProfiles: async (filters = {}) => {
+
     try {
-      const params = new URLSearchParams(filters);
-      return await apiClient(`/profiles/search?${params}`);
+
+      return await apiClient(
+        '/profiles/search',
+        {
+          method: 'POST',
+          body: JSON.stringify(filters)
+        }
+      );
+
     } catch (error) {
-      console.error('Login API Error:', error);
+
+      console.error(
+        'Search API Error:',
+        error
+      );
 
       throw new Error(
-        error?.message || 'Something went wrong'
+        error?.message ||
+        'Something went wrong'
       );
-    }
-  }
-};
 
+    }
+
+  }
+
+};
 export const masterDataAPI = {
 
   // ==========================================
   // RELIGIONS
   // ==========================================
 
-  getReligions: async () => {
-    try {
+getReligions: async () => {
 
-      console.log('🔍 Fetching religions...');
+  try {
 
-      const result = await apiClient('/religions');
+    console.log(
+      '🔍 Fetching religions...'
+    );
 
-      console.log('✅ MASTER API RESPONSE - Religions:', result);
+    const result =
+      await apiClient(
+        '/religions'
+      );
 
-      return Array.isArray(result)
-        ? result
-        : [];
+    console.log(
+      '✅ MASTER API RESPONSE - Religions:',
+      result
+    );
 
-    } catch (error) {
+    return Array.isArray(result)
+      ? result
+      : [];
 
-      console.error('❌ Get Religions API error:', error);
+   } catch(error){
 
-      return [];
+     console.error(
+       '❌ Get Religions API error:',
+       error
+     );
 
-    }
-  },
+     return [];
 
-  // ==========================================
-  // GENDERS
-  // ==========================================
+   }
 
-  getGenders: async () => {
-    try {
+ },
 
-      console.log('🔍 Fetching genders...');
 
-      const result = await apiClient('/genders');
 
-      console.log('✅ MASTER API RESPONSE - Genders:', result);
+// ==========================================
+// GENDERS
+// ==========================================
 
-      return Array.isArray(result)
-        ? result
-        : [];
+getGenders: async () => {
 
-    } catch (error) {
+  try {
 
-      console.error('❌ Get Genders API error:', error);
+    console.log(
+      '🔍 Fetching genders...'
+    );
 
-      return [];
+    const result =
+      await apiClient(
+        '/genders'
+      );
 
-    }
-  },
+    console.log(
+      '✅ MASTER API RESPONSE - Genders:',
+      result
+    );
 
+    return Array.isArray(result)
+      ? result
+      : [];
+
+  } catch(error){
+
+    console.error(
+      '❌ Get Genders API error:',
+      error
+    );
+
+    return [];
+
+  }
+
+},
   // ==========================================
   // EDUCATION LEVELS
   // ==========================================
@@ -356,6 +955,39 @@ export const masterDataAPI = {
       return [];
 
     }
+  },
+  getProfileTypes: async () => {
+
+  try {
+
+  const result =
+
+  await apiClient(
+
+  '/profile-types'
+
+  );
+
+  return Array.isArray(result)
+
+  ? result
+
+  : [];
+
+  }catch(error){
+
+  console.error(
+
+  '❌ Get Profile Types API error:',
+
+  error
+
+  );
+
+  return [];
+
+  }
+
   },
 
   // ==========================================
@@ -861,44 +1493,449 @@ export const masterDataAPI = {
 
     }
   },
+// ==========================================
+// MANGLIK STATUS
+// ==========================================
 
+getManglikStatuses: async () => {
+
+ try{
+
+   console.log("Fetching Manglik Statuses");
+
+  const result =
+   await apiClient(
+     '/manglik-statuses'
+   );
+
+   return Array.isArray(result)
+      ? result
+      : [];
+
+ }catch(error){
+
+   console.error(error);
+
+   return [];
+
+ }
+
+},
+getFamilyTypes: async()=>{
+
+ try{
+
+   const result =
+      await apiClient(
+        '/master/family-types'
+      );
+
+   return Array.isArray(result)
+      ? result
+      : [];
+
+ }catch(error){
+
+   return [];
+
+ }
+
+},
+getFamilyStatuses: async()=>{
+
+ try{
+
+   const result =
+      await apiClient(
+       '/master/family-status'
+      );
+
+   return Array.isArray(result)
+      ? result
+      : [];
+
+ }catch(error){
+
+   return [];
+
+ }
+
+},
+getFamilyValues: async()=>{
+
+ try{
+
+   const result =
+      await apiClient(
+        '/master/family-values'
+      );
+
+   return Array.isArray(result)
+      ? result
+      : [];
+
+ }catch(error){
+
+   return [];
+
+ }
+
+},
+
+// ==========================================
+// QUALIFICATIONS
+// ==========================================
+
+getQualifications: async () => {
+
+ try {
+
+   const result =
+     await apiClient(
+       '/qualifications'
+     );
+
+   return Array.isArray(result)
+     ? result
+     : [];
+
+ } catch(error){
+
+   console.error(error);
+
+   return [];
+
+ }
+
+},
+
+// ==========================================
+// FIELD OF STUDIES
+// ==========================================
+
+getFieldsOfStudy: async () => {
+
+ try {
+
+   const result =
+     await apiClient(
+       '/fields-of-study'
+     );
+
+   return Array.isArray(result)
+     ? result
+     : [];
+
+ } catch(error){
+
+   return [];
+
+ }
+
+},// ==========================================
+// EMPLOYED
+// ==========================================
+
+getEmploymentStatuses: async () => {
+
+ try {
+
+   const result =
+     await apiClient(
+       '/master/employed'
+     );
+
+   return Array.isArray(result)
+   ? result
+   : [];
+
+ } catch(error){
+
+   console.log(error);
+
+   return [];
+
+ }
+
+},
+// ==========================================
+// DISABILITY STATUS
+// ==========================================
+
+getDisabilityStatuses: async () => {
+
+ try {
+
+  const result =
+   await apiClient(
+     '/master/disability-statuses'
+   );
+   return Array.isArray(result)
+     ? result
+     : [];
+
+ } catch(error){
+
+   return [];
+
+ }
+
+},
+
+// ==========================================
+// BLOOD GROUPS
+// ==========================================
+
+getBloodGroups: async () => {
+
+ try {
+
+   const result =
+     await apiClient(
+       '/blood-groups'
+     );
+
+   return Array.isArray(result)
+     ? result
+     : [];
+
+ } catch(error){
+
+   return [];
+
+ }
+
+},
   // ==========================================
   // DRINKING
   // ==========================================
 
-  getDrinkingOptions: async () => {
-    try {
+    getDrinkingOptions: async () => {
 
-      console.log('🔍 Fetching drinking options...');
+      try {
 
-      const result =
-        await apiClient('/master/drinking');
+        console.log('🔍 Fetching drinking options...');
 
-      console.log(
-        '✅ MASTER API RESPONSE - Drinking:',
-        result
-      );
+        const result =
+          await apiClient('/master/drinking');
 
-      return Array.isArray(result)
-        ? result
-        : [];
+        return Array.isArray(result)
+          ? result
+          : [];
 
-    } catch (error) {
+      } catch (error) {
 
-      console.error(
-        '❌ Get Drinking API error:',
-        error
-      );
+        return [];
 
-      return [];
+      }
 
     }
-  }
 
-};
-export default {
-  authAPI,
-  profileAPI,
-  searchAPI,
-  masterDataAPI
-};
+  };
+
+ export const partnerPreferenceAPI = {
+
+getMyPreference: async(userId)=>{
+
+return await apiClient(
+
+`/partner-preferences/user/${userId}`
+
+);
+
+},
+ save: async (data) => {
+
+ return await apiClient(
+
+ '/partner-preferences',
+
+ {
+
+ method:'POST',
+
+ body:JSON.stringify(data)
+
+ }
+
+ );
+
+ },
+
+ update: async(userId,data)=>{
+
+ return await apiClient(
+
+ `/partner-preferences/${userId}`,
+
+ {
+
+ method:"PUT",
+
+ body:JSON.stringify(data)
+
+ }
+
+ );
+
+ },
+
+ getByUserId: async(userId)=>{
+
+ return await apiClient(
+
+ `/partner-preferences/user/${userId}`
+
+ );
+
+ }
+
+ };
+ export const subscriptionAPI = {
+
+   // ==========================
+   // GET ALL PLANS
+   // ==========================
+   getPlans: async () => {
+
+     try {
+
+       return await apiClient("/subscription/plans");
+
+     } catch (error) {
+
+       console.error("Subscription API Error:", error);
+
+       return [];
+
+     }
+
+   },
+
+   // ==========================
+   // BUY PLAN
+   // ==========================
+   subscribe: async (data) => {
+
+     try {
+
+       return await apiClient(
+         "/subscription/subscribe",
+         {
+           method: "POST",
+           body: JSON.stringify(data)
+         }
+       );
+
+     } catch (error) {
+
+       console.error("Subscription API Error:", error);
+
+       throw error;
+
+     }
+
+   },
+
+   // ==========================
+   // CREATE ORDER
+   // ==========================
+   createOrder: async (planId) => {
+
+     return await apiClient(
+       `/razorpay/create-order?planId=${planId}`,
+       {
+         method: "POST"
+       }
+     );
+
+   },
+
+   // ==========================
+   // VERIFY PAYMENT
+   // ==========================
+   verifyPayment: async (data) => {
+
+     return await apiClient(
+       `/razorpay/verify-payment?orderId=${data.orderId}&paymentId=${data.paymentId}&signature=${data.signature}`,
+       {
+         method: "POST"
+       }
+     );
+
+   },
+
+   // ==========================
+   // PAYMENT STATUS
+   // ==========================
+   getPaymentStatus: async (orderId) => {
+
+     return await apiClient(
+       `/razorpay/payment-status/${orderId}`
+     );
+
+   },
+
+   // ==========================
+   // MY SUBSCRIPTION
+   // ==========================
+   getMySubscription: async () => {
+
+     try {
+
+       return await apiClient("/subscription/me");
+
+     } catch (error) {
+
+       console.error("Subscription API Error:", error);
+
+       return null;
+
+     }
+
+   },
+
+   // ==========================
+   // HISTORY
+   // ==========================
+   getHistory: async () => {
+
+     try {
+
+       return await apiClient("/subscription/history");
+
+     } catch (error) {
+
+       console.error("Subscription API Error:", error);
+
+       return [];
+
+     }
+
+   },
+
+   // ==========================
+   // CANCEL SUBSCRIPTION
+   // ==========================
+   cancelSubscription: async () => {
+
+     try {
+
+       return await apiClient(
+         "/subscription/cancel",
+         {
+           method: "PUT"
+         }
+       );
+
+     } catch (error) {
+
+       console.error("Subscription API Error:", error);
+
+       throw error;
+
+     }
+
+   }
+
+ };

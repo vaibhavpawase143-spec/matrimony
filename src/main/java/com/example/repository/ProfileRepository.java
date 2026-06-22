@@ -2,13 +2,11 @@ package com.example.repository;
 
 import com.example.model.Profile;
 import com.example.model.User;
-
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.*;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -16,10 +14,6 @@ import java.util.Optional;
 public interface ProfileRepository
         extends JpaRepository<Profile, Long>,
         JpaSpecificationExecutor<Profile> {
-
-    // =====================================================
-    // BASIC
-    // =====================================================
 
     Optional<Profile> findByUserId(Long userId);
 
@@ -29,258 +23,272 @@ public interface ProfileRepository
 
     boolean existsByUser(User user);
 
-    // =====================================================
-    // ACTIVE
-    // =====================================================
-
     List<Profile> findByIsActiveTrue();
 
     // =====================================================
-    // FETCH SINGLE PROFILE WITH RELATIONS
+    // PROFILE BY PROFILE ID WITH RELATIONS
     // =====================================================
 
     @Query("""
-        SELECT p FROM Profile p
-        JOIN FETCH p.user
-        LEFT JOIN FETCH p.city
-        LEFT JOIN FETCH p.state
-        LEFT JOIN FETCH p.country
-        LEFT JOIN FETCH p.religion
-        LEFT JOIN FETCH p.caste
-        LEFT JOIN FETCH p.subCaste
-        LEFT JOIN FETCH p.educationLevel
-        LEFT JOIN FETCH p.occupation
-        LEFT JOIN FETCH p.height
-        LEFT JOIN FETCH p.weight
-        LEFT JOIN FETCH p.gender
-        LEFT JOIN FETCH p.bodyType
-        LEFT JOIN FETCH p.complexion
-        LEFT JOIN FETCH p.motherTongue
-        LEFT JOIN FETCH p.maritalStatus
-        WHERE p.user.id = :userId
-        AND p.isActive = true
-    """)
+
+SELECT DISTINCT p FROM Profile p
+
+JOIN FETCH p.user
+
+LEFT JOIN FETCH p.city
+LEFT JOIN FETCH p.state
+LEFT JOIN FETCH p.country
+
+LEFT JOIN FETCH p.religion
+LEFT JOIN FETCH p.caste
+LEFT JOIN FETCH p.subCaste
+
+LEFT JOIN FETCH p.educationLevel
+LEFT JOIN FETCH p.occupation
+
+LEFT JOIN FETCH p.height
+LEFT JOIN FETCH p.weight
+LEFT JOIN FETCH p.gender
+
+LEFT JOIN FETCH p.bodyType
+LEFT JOIN FETCH p.complexion
+
+LEFT JOIN FETCH p.motherTongue
+LEFT JOIN FETCH p.maritalStatus
+
+LEFT JOIN FETCH p.income
+LEFT JOIN FETCH p.diet
+LEFT JOIN FETCH p.smoking
+LEFT JOIN FETCH p.drinking
+
+LEFT JOIN FETCH p.profileType
+LEFT JOIN FETCH p.manglikStatus
+LEFT JOIN FETCH p.familyType
+LEFT JOIN FETCH p.familyStatus
+LEFT JOIN FETCH p.familyValue
+
+LEFT JOIN FETCH p.qualification
+LEFT JOIN FETCH p.fieldOfStudy
+LEFT JOIN FETCH p.employed
+
+LEFT JOIN FETCH p.disabilityStatus
+LEFT JOIN FETCH p.bloodGroup
+
+WHERE p.id=:profileId
+AND p.isActive=true
+
+""")
+
+    Optional<Profile> findByProfileIdWithRelations(
+            Long profileId
+    );
+
+
+    // =====================================================
+    // PROFILE BY USER ID WITH RELATIONS
+    // =====================================================
+
+    @Query("""
+
+SELECT DISTINCT p FROM Profile p
+
+JOIN FETCH p.user
+
+LEFT JOIN FETCH p.city
+LEFT JOIN FETCH p.state
+LEFT JOIN FETCH p.country
+
+LEFT JOIN FETCH p.religion
+LEFT JOIN FETCH p.caste
+LEFT JOIN FETCH p.subCaste
+
+LEFT JOIN FETCH p.educationLevel
+LEFT JOIN FETCH p.occupation
+
+LEFT JOIN FETCH p.height
+LEFT JOIN FETCH p.weight
+LEFT JOIN FETCH p.gender
+
+LEFT JOIN FETCH p.bodyType
+LEFT JOIN FETCH p.complexion
+
+LEFT JOIN FETCH p.motherTongue
+LEFT JOIN FETCH p.maritalStatus
+
+LEFT JOIN FETCH p.income
+LEFT JOIN FETCH p.diet
+LEFT JOIN FETCH p.smoking
+LEFT JOIN FETCH p.drinking
+
+LEFT JOIN FETCH p.profileType
+LEFT JOIN FETCH p.manglikStatus
+LEFT JOIN FETCH p.familyType
+LEFT JOIN FETCH p.familyStatus
+LEFT JOIN FETCH p.familyValue
+
+LEFT JOIN FETCH p.qualification
+LEFT JOIN FETCH p.fieldOfStudy
+LEFT JOIN FETCH p.employed
+
+LEFT JOIN FETCH p.disabilityStatus
+LEFT JOIN FETCH p.bloodGroup
+
+WHERE p.user.id=:userId
+AND p.isActive=true
+
+""")
+
     Optional<Profile> findByUserIdWithRelations(
             Long userId
     );
 
+
     // =====================================================
-    // FETCH ALL WITH USER
+    // ALL PROFILES
     // =====================================================
 
     @Query("""
-        SELECT p FROM Profile p
-        JOIN FETCH p.user
-        LEFT JOIN FETCH p.city
-        LEFT JOIN FETCH p.state
-        LEFT JOIN FETCH p.country
-        LEFT JOIN FETCH p.religion
-        LEFT JOIN FETCH p.caste
-        LEFT JOIN FETCH p.educationLevel
-        LEFT JOIN FETCH p.occupation
-        LEFT JOIN FETCH p.gender
-    """)
+
+SELECT DISTINCT p FROM Profile p
+
+JOIN FETCH p.user
+
+LEFT JOIN FETCH p.city
+LEFT JOIN FETCH p.state
+LEFT JOIN FETCH p.country
+
+LEFT JOIN FETCH p.religion
+LEFT JOIN FETCH p.caste
+LEFT JOIN FETCH p.subCaste
+
+LEFT JOIN FETCH p.educationLevel
+LEFT JOIN FETCH p.occupation
+
+LEFT JOIN FETCH p.height
+LEFT JOIN FETCH p.weight
+LEFT JOIN FETCH p.gender
+
+LEFT JOIN FETCH p.bodyType
+LEFT JOIN FETCH p.complexion
+
+LEFT JOIN FETCH p.motherTongue
+LEFT JOIN FETCH p.maritalStatus
+
+LEFT JOIN FETCH p.income
+LEFT JOIN FETCH p.diet
+LEFT JOIN FETCH p.smoking
+LEFT JOIN FETCH p.drinking
+
+LEFT JOIN FETCH p.profileType
+LEFT JOIN FETCH p.manglikStatus
+LEFT JOIN FETCH p.familyType
+LEFT JOIN FETCH p.familyStatus
+LEFT JOIN FETCH p.familyValue
+
+LEFT JOIN FETCH p.qualification
+LEFT JOIN FETCH p.fieldOfStudy
+LEFT JOIN FETCH p.employed
+
+LEFT JOIN FETCH p.disabilityStatus
+LEFT JOIN FETCH p.bloodGroup
+WHERE p.isActive = true
+
+ORDER BY p.isPremium DESC,
+         p.createdAt DESC
+""")
+
     List<Profile> findAllWithUser();
 
+
     // =====================================================
-    // ACTIVE PROFILES WITH USER
+    // ACTIVE PROFILES
     // =====================================================
 
     @Query("""
-    SELECT p FROM Profile p
-    JOIN FETCH p.user
-    LEFT JOIN FETCH p.city
-    LEFT JOIN FETCH p.state
-    LEFT JOIN FETCH p.country
-    LEFT JOIN FETCH p.religion
-    LEFT JOIN FETCH p.caste
-    LEFT JOIN FETCH p.subCaste
-    LEFT JOIN FETCH p.educationLevel
-    LEFT JOIN FETCH p.occupation
-    LEFT JOIN FETCH p.height
-    LEFT JOIN FETCH p.weight
-    LEFT JOIN FETCH p.gender
-    LEFT JOIN FETCH p.bodyType
-    LEFT JOIN FETCH p.complexion
-    LEFT JOIN FETCH p.motherTongue
-    LEFT JOIN FETCH p.maritalStatus
-    LEFT JOIN FETCH p.income
-    LEFT JOIN FETCH p.diet
-    LEFT JOIN FETCH p.smoking
-    LEFT JOIN FETCH p.drinking
+
+SELECT DISTINCT p FROM Profile p
+
+JOIN FETCH p.user
+
+LEFT JOIN FETCH p.city
+LEFT JOIN FETCH p.state
+LEFT JOIN FETCH p.country
+
+LEFT JOIN FETCH p.religion
+LEFT JOIN FETCH p.caste
+LEFT JOIN FETCH p.subCaste
+
+LEFT JOIN FETCH p.educationLevel
+LEFT JOIN FETCH p.occupation
+
+LEFT JOIN FETCH p.height
+LEFT JOIN FETCH p.weight
+LEFT JOIN FETCH p.gender
+
+LEFT JOIN FETCH p.bodyType
+LEFT JOIN FETCH p.complexion
+
+LEFT JOIN FETCH p.motherTongue
+LEFT JOIN FETCH p.maritalStatus
+
+LEFT JOIN FETCH p.income
+LEFT JOIN FETCH p.diet
+LEFT JOIN FETCH p.smoking
+LEFT JOIN FETCH p.drinking
+
+LEFT JOIN FETCH p.profileType
+LEFT JOIN FETCH p.manglikStatus
+LEFT JOIN FETCH p.familyType
+LEFT JOIN FETCH p.familyStatus
+LEFT JOIN FETCH p.familyValue
+
+LEFT JOIN FETCH p.qualification
+LEFT JOIN FETCH p.fieldOfStudy
+LEFT JOIN FETCH p.employed
+
+LEFT JOIN FETCH p.disabilityStatus
+LEFT JOIN FETCH p.bloodGroup
+
+WHERE p.isActive=true
+
 """)
 
     List<Profile> findActiveProfilesWithUser();
 
-    // =====================================================
-    // PAGINATION
-    // =====================================================
+    // FILTER METHODS
 
-    @Query("""
-        SELECT p FROM Profile p
-        JOIN p.user u
-        WHERE p.isActive = true
-        AND u.isActive = true
-        AND u.id != :userId
-    """)
-    Page<Profile> findActiveProfilesExcludingUser(
-            Long userId,
-            Pageable pageable
+    List<Profile> findByReligionId(Long religionId);
+
+    List<Profile> findByCasteId(Long casteId);
+
+    List<Profile> findByCityId(Long cityId);
+
+    List<Profile> findByEducationLevelId(
+            Long educationLevelId
     );
 
-    // =====================================================
-    // MATCHING
-    // =====================================================
-
-    @Query(
-            value = """
-        SELECT p,
-
-        (
-            CASE
-                WHEN (:religionId IS NOT NULL
-                      AND p.religion.id = :religionId)
-                THEN 20 ELSE 0
-            END +
-
-            CASE
-                WHEN (:casteId IS NOT NULL
-                      AND p.caste.id = :casteId)
-                THEN 15 ELSE 0
-            END +
-
-            CASE
-                WHEN (:cityId IS NOT NULL
-                      AND p.city.id = :cityId)
-                THEN 15 ELSE 0
-            END +
-
-            CASE
-                WHEN (:minDob IS NOT NULL
-                      AND :maxDob IS NOT NULL
-                      AND p.dateOfBirth
-                      BETWEEN :minDob AND :maxDob)
-                THEN 20 ELSE 0
-            END
-        ) as score
-
-        FROM Profile p
-        JOIN FETCH p.user u
-        LEFT JOIN FETCH p.city
-        LEFT JOIN FETCH p.religion
-        LEFT JOIN FETCH p.caste
-
-        WHERE p.isActive = true
-        AND u.isActive = true
-        AND u.id <> :userId
-
-        ORDER BY score DESC
-        """,
-
-            countQuery = """
-        SELECT COUNT(p)
-        FROM Profile p
-        JOIN p.user u
-        WHERE p.isActive = true
-        AND u.isActive = true
-        AND u.id <> :userId
-        """
-    )
-    Page<Object[]> findMatchesWithScorePage(
-            Long userId,
-            Long religionId,
-            Long casteId,
-            Long cityId,
-            LocalDate minDob,
-            LocalDate maxDob,
-            Pageable pageable
+    List<Profile> findByOccupationId(
+            Long occupationId
     );
 
-    // =====================================================
-    // FILTERS
-    // =====================================================
-
-    @Query("""
-        SELECT p FROM Profile p
-        JOIN FETCH p.user
-        WHERE p.religion.id = :id
-    """)
-    List<Profile> findByReligionId(Long id);
-
-    @Query("""
-        SELECT p FROM Profile p
-        JOIN FETCH p.user
-        WHERE p.caste.id = :id
-    """)
-    List<Profile> findByCasteId(Long id);
-
-    @Query("""
-        SELECT p FROM Profile p
-        JOIN FETCH p.user
-        WHERE p.city.id = :id
-    """)
-    List<Profile> findByCityId(Long id);
-
-    @Query("""
-        SELECT p FROM Profile p
-        JOIN FETCH p.user
-        WHERE p.educationLevel.id = :id
-    """)
-    List<Profile> findByEducationLevelId(Long id);
-
-    @Query("""
-        SELECT p FROM Profile p
-        JOIN FETCH p.user
-        WHERE p.occupation.id = :id
-    """)
-    List<Profile> findByOccupationId(Long id);
-
-    // =====================================================
-    // COMBINATIONS
-    // =====================================================
-
-    @Query("""
-        SELECT p FROM Profile p
-        JOIN FETCH p.user
-        WHERE p.religion.id = :religionId
-        AND p.caste.id = :casteId
-    """)
     List<Profile> findByReligionIdAndCasteId(
             Long religionId,
             Long casteId
     );
 
-    @Query("""
-        SELECT p FROM Profile p
-        JOIN FETCH p.user
-        WHERE p.city.id = :cityId
-        AND p.educationLevel.id = :educationLevelId
-    """)
     List<Profile> findByCityIdAndEducationLevelId(
             Long cityId,
             Long educationLevelId
     );
 
-    @Query("""
-        SELECT p FROM Profile p
-        JOIN FETCH p.user
-        WHERE p.occupation.id = :occupationId
-        AND p.city.id = :cityId
-    """)
     List<Profile> findByOccupationIdAndCityId(
             Long occupationId,
             Long cityId
     );
 
-    @Query("""
-        SELECT p FROM Profile p
-        JOIN FETCH p.user
-        WHERE p.religion.id = :religionId
-        AND p.city.id = :cityId
-        AND p.isActive = true
-    """)
     List<Profile> findByReligionIdAndCityIdAndIsActiveTrue(
             Long religionId,
             Long cityId
     );
+
 }

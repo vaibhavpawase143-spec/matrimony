@@ -3,17 +3,21 @@ package com.example.serviceimpl;
 import com.example.dto.request.ProfileRequestDTO;
 import com.example.dto.request.UpdateProfileRequestDTO;
 import com.example.dto.response.ProfileResponseDTO;
-import com.example.model.*;
+import com.example.model.PartnerPreference;
+import com.example.model.PremiumPlan;
+import com.example.model.Profile;
+import com.example.model.User;
 import com.example.repository.*;
 import com.example.service.CacheService;
 import com.example.service.MatchAsyncService;
 import com.example.service.ProfileService;
+import com.example.service.SubscriptionService;
 import com.example.specification.ProfileSpecification;
-
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -29,8 +33,28 @@ public class ProfileServiceImpl implements ProfileService {
 
     private final ProfileRepository repository;
 
-    private final UserRepository userRepository;
+    private final SubscriptionService subscriptionService;
+    private final ManglikStatusRepository manglikStatusRepository;
 
+    private final FamilyTypeRepository familyTypeRepository;
+
+    private final FamilyStatusRepository familyStatusRepository;
+    private final QualificationRepository qualificationRepository;
+
+    private final FieldOfStudyRepository fieldOfStudyRepository;
+
+    private final EmployedRepository employedRepository;
+
+    private final DisabilityStatusRepository disabilityStatusRepository;
+    private final UserPhotoRepository userPhotoRepository;
+    private final BloodGroupRepository bloodGroupRepository;
+
+    private final BrotherTypeRepository brotherTypeRepository;
+
+    private final SisterTypeRepository sisterTypeRepository;
+    private final FamilyValueRepository familyValueRepository;
+    private final UserRepository userRepository;
+    private final ProfileTypeRepository profileTypeRepository;
     private final MatchAsyncService asyncService;
 
     private final ReligionRepository religionRepository;
@@ -162,10 +186,10 @@ public class ProfileServiceImpl implements ProfileService {
     // GET MY PROFILE
     // =====================================================
 
-    @Transactional(readOnly = true)
+    @Transactional
     public ProfileResponseDTO getMyProfile() {
 
-        return mapToDTO(
+        Profile profile =
                 repository
                         .findByUserIdWithRelations(
                                 getCurrentUser().getId()
@@ -174,28 +198,51 @@ public class ProfileServiceImpl implements ProfileService {
                                 new RuntimeException(
                                         "Profile not found"
                                 )
-                        )
-        );
-    }
+                        );
 
+        // ===============================
+        // AUTO PREMIUM EXPIRY
+        // ===============================
+
+
+        return mapToDTO(profile);
+
+    }
     // =====================================================
     // GET PROFILE BY ID
     // =====================================================
-
     @Transactional(readOnly = true)
-    public ProfileResponseDTO getProfileById(
-            Long id
-    ) {
+    public ProfileResponseDTO getProfileById(Long id) {
 
-        return mapToDTO(
+        Profile profile =
                 repository
                         .findById(id)
                         .orElseThrow(() ->
-                                new RuntimeException(
-                                        "Profile not found"
-                                )
-                        )
-        );
+                                new RuntimeException("Profile not found"));
+
+        ProfileResponseDTO dto =
+                mapToDTO(profile);
+
+        User currentUser = getCurrentUser();
+
+        Profile currentProfile =
+                repository
+                        .findByUserId(currentUser.getId())
+                        .orElse(null);
+
+        if (
+                currentProfile != null &&
+                        !subscriptionService.hasActiveSubscription(currentUser.getId())
+        )
+        {
+
+            dto.setPhone(null);
+
+            dto.setEmail(null);
+
+        }
+
+        return dto;
     }
 
     // =====================================================
@@ -225,6 +272,59 @@ public class ProfileServiceImpl implements ProfileService {
         repository.delete(profile);
     }
 
+    @Override
+    public void activatePremium(
+            Long userId,
+            PremiumPlan plan
+    ) {
+
+        Profile profile = repository
+                .findByUserId(userId)
+                .orElseThrow(() ->
+                        new RuntimeException("Profile not found")
+                );
+
+        profile.setIsPremium(true);
+        profile.setBoostScore(100);
+        profile.setPremiumPlan(plan);
+
+        profile.setPremiumStartDate(
+                java.time.LocalDateTime.now()
+        );
+
+        switch (plan) {
+
+            case ONE_MONTH -> profile.setPremiumEndDate(
+                    java.time.LocalDateTime.now().plusMonths(1)
+            );
+
+            case THREE_MONTHS -> profile.setPremiumEndDate(
+                    java.time.LocalDateTime.now().plusMonths(3)
+            );
+
+            case SIX_MONTHS -> profile.setPremiumEndDate(
+                    java.time.LocalDateTime.now().plusMonths(6)
+            );
+
+            case TWELVE_MONTHS -> profile.setPremiumEndDate(
+                    java.time.LocalDateTime.now().plusMonths(12)
+            );
+            default -> {
+
+                profile.setIsPremium(false);
+
+                profile.setBoostScore(0);
+
+                profile.setPremiumEndDate(null);
+
+            }
+
+        }
+
+        repository.save(profile);
+
+    }
+
     // =====================================================
     // SAVE PROFILE
     // =====================================================
@@ -239,26 +339,27 @@ public class ProfileServiceImpl implements ProfileService {
 
         if (existing.isPresent()) {
 
-            Profile p = existing.get();
+            Profile dbProfile = existing.get();
 
             if (profile.getImageUrl() != null) {
-                p.setImageUrl(profile.getImageUrl());
+                dbProfile.setImageUrl(profile.getImageUrl());
             }
 
             if (profile.getAbout() != null) {
-                p.setAbout(profile.getAbout());
+                dbProfile.setAbout(profile.getAbout());
             }
 
-            return repository.save(p);
+            return repository.save(dbProfile);
         }
 
         profile.setUser(user);
 
-        profile.setIsActive(true);
+        if (profile.getIsActive() == null) {
+            profile.setIsActive(true);
+        }
 
         return repository.save(profile);
     }
-
     // =====================================================
     // GET ALL
     // =====================================================
@@ -268,8 +369,35 @@ public class ProfileServiceImpl implements ProfileService {
     public List<Profile> getAll() {
 
         return repository.findAllWithUser();
-    }
 
+    }
+    public ProfileResponseDTO
+
+    getProfileByUserId(
+
+            Long userId
+
+    ){
+
+        Profile profile =
+
+                repository
+
+                        .findByUserId(userId)
+
+                        .orElseThrow(
+
+                                ()->new RuntimeException(
+                                        "Profile not found"
+                                )
+
+                        );
+
+        return mapToDTO(
+                profile
+        );
+
+    }
     // =====================================================
     // DTO → ENTITY
     // =====================================================
@@ -340,7 +468,6 @@ public class ProfileServiceImpl implements ProfileService {
                             .orElse(null)
             );
         }
-
         p.setFatherName(dto.getFatherName());
 
         p.setFatherOccupation(dto.getFatherOccupation());
@@ -351,15 +478,7 @@ public class ProfileServiceImpl implements ProfileService {
 
         p.setSiblingsCount(dto.getSiblingsCount());
 
-        p.setPreferredAgeMin(dto.getPreferredAgeMin());
 
-        p.setPreferredAgeMax(dto.getPreferredAgeMax());
-
-        p.setPreferredLocation(dto.getPreferredLocation());
-
-        p.setPreferredEducation(dto.getPreferredEducation());
-
-        p.setOtherExpectations(dto.getOtherExpectations());
 
         // =====================================================
         // UPDATE USER
@@ -447,7 +566,123 @@ public class ProfileServiceImpl implements ProfileService {
                             .orElse(null)
             );
         }
+        if (dto.getProfileTypeId() != null) {
 
+            p.setProfileType(
+
+                    profileTypeRepository
+                            .findById(
+                                    dto.getProfileTypeId()
+                            )
+                            .orElse(null)
+
+            );
+
+        }
+
+        if(dto.getManglikStatusId()!=null){
+
+            p.setManglikStatus(
+
+                    manglikStatusRepository
+                            .findById(
+                                    dto.getManglikStatusId()
+                            )
+                            .orElse(null)
+
+            );
+
+        }
+
+        if(dto.getFamilyTypeId()!=null){
+
+            p.setFamilyType(
+
+                    familyTypeRepository
+                            .findById(
+                                    dto.getFamilyTypeId()
+                            )
+                            .orElse(null)
+
+            );
+
+        }
+
+        if(dto.getFamilyStatusId()!=null){
+
+            p.setFamilyStatus(
+
+                    familyStatusRepository
+                            .findById(
+                                    dto.getFamilyStatusId()
+                            )
+                            .orElse(null)
+
+            );
+
+        }
+
+        if(dto.getFamilyValueId()!=null){
+
+            p.setFamilyValue(
+
+                    familyValueRepository
+                            .findById(
+                                    dto.getFamilyValueId()
+                            )
+                            .orElse(null)
+
+            );
+
+        }
+        if(dto.getQualificationId()!=null){
+
+            p.setQualification(
+                    qualificationRepository
+                            .findById(dto.getQualificationId())
+                            .orElse(null)
+            );
+
+        }
+
+        if(dto.getFieldOfStudyId()!=null){
+
+            p.setFieldOfStudy(
+                    fieldOfStudyRepository
+                            .findById(dto.getFieldOfStudyId())
+                            .orElse(null)
+            );
+
+        }
+
+        if(dto.getEmployedId()!=null){
+
+            p.setEmployed(
+                    employedRepository
+                            .findById(dto.getEmployedId())
+                            .orElse(null)
+            );
+
+        }
+        if(dto.getDisabilityStatusId()!=null){
+
+            p.setDisabilityStatus(
+                    disabilityStatusRepository
+                            .findById(dto.getDisabilityStatusId())
+                            .orElse(null)
+            );
+
+        }
+
+        if(dto.getBloodGroupId()!=null){
+
+            p.setBloodGroup(
+                    bloodGroupRepository
+                            .findById(dto.getBloodGroupId())
+                            .orElse(null)
+            );
+
+        }
         // =====================================================
         // GENDER
         // =====================================================
@@ -702,30 +937,10 @@ public class ProfileServiceImpl implements ProfileService {
         r.setSiblingsCount(
                 dto.getSiblingsCount()
         );
-
         // =====================================================
         // PARTNER PREFERENCE
         // =====================================================
 
-        r.setPreferredAgeMin(
-                dto.getPreferredAgeMin()
-        );
-
-        r.setPreferredAgeMax(
-                dto.getPreferredAgeMax()
-        );
-
-        r.setPreferredLocation(
-                dto.getPreferredLocation()
-        );
-
-        r.setPreferredEducation(
-                dto.getPreferredEducation()
-        );
-
-        r.setOtherExpectations(
-                dto.getOtherExpectations()
-        );
 
         // =====================================================
         // MASTER IDS
@@ -750,7 +965,24 @@ public class ProfileServiceImpl implements ProfileService {
         r.setMaritalStatusId(
                 dto.getMaritalStatusId()
         );
+        r.setProfileTypeId(
+                dto.getProfileTypeId()
+        );
+        r.setManglikStatusId(
+                dto.getManglikStatusId()
+        );
 
+        r.setFamilyTypeId(
+                dto.getFamilyTypeId()
+        );
+
+        r.setFamilyStatusId(
+                dto.getFamilyStatusId()
+        );
+
+        r.setFamilyValueId(
+                dto.getFamilyValueId()
+        );
         r.setGenderId(
                 dto.getGenderId()
         );
@@ -790,6 +1022,25 @@ public class ProfileServiceImpl implements ProfileService {
         r.setCityId(
                 dto.getCityId()
         );
+        r.setQualificationId(
+                dto.getQualificationId()
+        );
+
+        r.setFieldOfStudyId(
+                dto.getFieldOfStudyId()
+        );
+
+        r.setEmployedId(
+                dto.getEmployedId()
+        );
+        r.setDisabilityStatusId(
+                dto.getDisabilityStatusId()
+        );
+
+        r.setBloodGroupId(
+                dto.getBloodGroupId()
+        );
+
 
         return r;
     }
@@ -817,7 +1068,17 @@ public class ProfileServiceImpl implements ProfileService {
         dto.setAbout(
                 p.getAbout()
         );
+        if(p.getBloodGroup()!=null){
 
+            dto.setBloodGroupId(
+                    p.getBloodGroup().getId()
+            );
+
+            dto.setBloodGroupName(
+                    p.getBloodGroup().getType()
+            );
+
+        }
 
 
         dto.setAboutMe(
@@ -845,7 +1106,15 @@ public class ProfileServiceImpl implements ProfileService {
             dto.setLastName(
                     p.getUser().getLastName()
             );
+            dto.setVerified(
 
+                    p.getUser().getEmailVerified()
+
+                            &&
+
+                            p.getUser().getPhoneVerified()
+
+            );
             dto.setEmail(
                     p.getUser().getEmail()
             );
@@ -1137,6 +1406,144 @@ public class ProfileServiceImpl implements ProfileService {
                     p.getMaritalStatus().getName()
             );
         }
+        if (p.getProfileType() != null) {
+
+            dto.setProfileTypeId(
+                    p.getProfileType().getId()
+            );
+
+            dto.setProfileTypeName(
+                    p.getProfileType().getName()
+            );
+
+        }
+
+        if(p.getManglikStatus()!=null){
+
+            dto.setManglikStatusId(
+                    p.getManglikStatus().getId()
+            );
+
+            dto.setManglikStatusName(
+                    p.getManglikStatus().getName()
+            );
+
+        }
+
+        if(p.getFamilyType()!=null){
+
+            dto.setFamilyTypeId(
+                    p.getFamilyType().getId()
+            );
+
+            dto.setFamilyTypeName(
+                    p.getFamilyType().getName()
+            );
+
+        }
+
+        if(p.getFamilyStatus()!=null){
+
+            dto.setFamilyStatusId(
+                    p.getFamilyStatus().getId()
+            );
+
+            dto.setFamilyStatusName(
+                    p.getFamilyStatus().getName()
+            );
+
+        }
+
+        if(p.getFamilyValue()!=null){
+
+            dto.setFamilyValueId(
+                    p.getFamilyValue().getId()
+            );
+
+            dto.setFamilyValueName(
+                    p.getFamilyValue().getName()
+            );
+
+        }
+        // =====================================================
+// QUALIFICATION
+// =====================================================
+
+        if(p.getQualification()!=null){
+
+            dto.setQualificationId(
+                    p.getQualification().getId()
+            );
+
+            dto.setQualificationName(
+                    p.getQualification().getName()
+            );
+        }
+
+// =====================================================
+// FIELD OF STUDY
+// =====================================================
+
+        if(p.getFieldOfStudy()!=null){
+
+            dto.setFieldOfStudyId(
+                    p.getFieldOfStudy().getId()
+            );
+
+            dto.setFieldOfStudyName(
+                    p.getFieldOfStudy().getName()
+            );
+        }
+
+// =====================================================
+// EMPLOYED STATUS
+// =====================================================
+
+        if(p.getEmployed()!=null){
+
+            dto.setEmployedStatusId(
+                    p.getEmployed().getId()
+            );
+
+            dto.setEmployedStatusName(
+                    p.getEmployed().getName()
+            );
+        }
+
+// =====================================================
+// DISABILITY STATUS
+// =====================================================
+
+        if(p.getDisabilityStatus()!=null){
+
+            dto.setDisabilityStatusId(
+                    p.getDisabilityStatus().getId()
+            );
+
+            dto.setDisabilityStatusName(
+                    p.getDisabilityStatus().getValue()
+            );
+        }
+
+// =====================================================
+// BLOOD GROUP
+// =====================================================
+
+        if(p.getBloodGroup()!=null){
+
+            dto.setBloodGroupId(
+                    p.getBloodGroup().getId()
+            );
+
+            dto.setBloodGroupName(
+                    p.getBloodGroup().getType()
+            );
+        }
+
+// =====================================================
+// BROTHER TYPE
+// =====================================================
+
 
 // =====================================================
 // COMPANY
@@ -1182,25 +1589,7 @@ public class ProfileServiceImpl implements ProfileService {
 // PARTNER PREFERENCE
 // =====================================================
 
-        dto.setPreferredAgeMin(
-                p.getPreferredAgeMin()
-        );
 
-        dto.setPreferredAgeMax(
-                p.getPreferredAgeMax()
-        );
-
-        dto.setPreferredLocation(
-                p.getPreferredLocation()
-        );
-
-        dto.setPreferredEducation(
-                p.getPreferredEducation()
-        );
-
-        dto.setOtherExpectations(
-                p.getOtherExpectations()
-        );
 
 // =====================================================
 // ABOUT ME
@@ -1220,6 +1609,11 @@ public class ProfileServiceImpl implements ProfileService {
         dto.setIsActive(
                 p.getIsActive()
         );
+        dto.setIsPremium(
+                subscriptionService.hasActiveSubscription(
+                        p.getUser().getId()
+                )
+        );
         return dto;
     }
 
@@ -1228,20 +1622,28 @@ public class ProfileServiceImpl implements ProfileService {
     // SEARCH
     // =====================================================
 
+    @Override
     public Page<ProfileResponseDTO> searchProfiles(
             PartnerPreference pref,
             Pageable pageable
     ) {
 
         Specification<Profile> spec =
-                ProfileSpecification
-                        .matchPreferences(pref);
+                ProfileSpecification.matchPreferences(pref);
+
+        Pageable sortedPageable = PageRequest.of(
+                pageable.getPageNumber(),
+                pageable.getPageSize(),
+                Sort.by(
+                        Sort.Order.desc("isPremium"),
+                        Sort.Order.desc("createdAt")
+                )
+        );
 
         return repository
-                .findAll(spec, pageable)
+                .findAll(spec, sortedPageable)
                 .map(this::mapToDTO);
     }
-
     // =====================================================
     // REDIS
     // =====================================================
@@ -1262,9 +1664,11 @@ public class ProfileServiceImpl implements ProfileService {
     private void updateProfileCompletion(Profile p) {
 
         int total = 0;
+
         int filled = 0;
 
-        // ===== BASIC =====
+        // ================= BASIC =================
+
         total++;
         if (p.getReligion() != null) filled++;
 
@@ -1281,13 +1685,53 @@ public class ProfileServiceImpl implements ProfileService {
         if (p.getMaritalStatus() != null) filled++;
 
         total++;
+        if (p.getGender() != null) filled++;
+
+        total++;
+        if (p.getDateOfBirth() != null) filled++;
+
+        // ================= PROFILE TYPE =================
+
+        total++;
+        if (p.getProfileType() != null) filled++;
+
+        total++;
+        if (p.getManglikStatus() != null) filled++;
+
+        total++;
+        if (p.getFamilyType() != null) filled++;
+
+        total++;
+        if (p.getFamilyStatus() != null) filled++;
+
+        total++;
+        if (p.getFamilyValue() != null) filled++;
+
+        // ================= EDUCATION =================
+
+        total++;
         if (p.getEducationLevel() != null) filled++;
+
+        total++;
+        if (p.getQualification() != null) filled++;
+
+        total++;
+        if (p.getFieldOfStudy() != null) filled++;
 
         total++;
         if (p.getOccupation() != null) filled++;
 
         total++;
+        if (p.getEmployed() != null) filled++;
+
+        total++;
+        if (p.getCompanyName() != null &&
+                !p.getCompanyName().isBlank()) filled++;
+
+        total++;
         if (p.getIncome() != null) filled++;
+
+        // ================= LOCATION =================
 
         total++;
         if (p.getCountry() != null) filled++;
@@ -1299,26 +1743,115 @@ public class ProfileServiceImpl implements ProfileService {
         if (p.getCity() != null) filled++;
 
         total++;
+        if (p.getAddress() != null &&
+                !p.getAddress().isBlank()) filled++;
+
+        // ================= PHYSICAL =================
+
+        total++;
         if (p.getHeight() != null) filled++;
 
         total++;
         if (p.getWeight() != null) filled++;
 
         total++;
-        if (p.getAboutMe() != null && !p.getAboutMe().isBlank()) filled++;
+        if (p.getComplexion() != null) filled++;
 
         total++;
-        if (p.getImageUrl() != null && !p.getImageUrl().isBlank()) filled++;
+        if (p.getBodyType() != null) filled++;
 
-        int percentage = (filled * 100) / total;
+        total++;
+        if (p.getBloodGroup() != null) filled++;
 
-        p.setCurrentStep(percentage);
+        total++;
+        if (p.getDisabilityStatus() != null) filled++;
 
-        System.out.println("Filled = " + filled);
-        System.out.println("Total = " + total);
-        System.out.println("PROFILE % = " + percentage);
+        // ================= LIFESTYLE =================
+
+        total++;
+        if (p.getDiet() != null) filled++;
+
+        total++;
+        if (p.getSmoking() != null) filled++;
+
+        total++;
+        if (p.getDrinking() != null) filled++;
+
+        // ================= FAMILY =================
+
+        total++;
+        if (p.getFatherName() != null &&
+                !p.getFatherName().isBlank()) filled++;
+
+        total++;
+        if (p.getMotherName() != null &&
+                !p.getMotherName().isBlank()) filled++;
+
+        total++;
+        if (p.getFatherOccupation() != null &&
+                !p.getFatherOccupation().isBlank()) filled++;
+
+        total++;
+        if (p.getMotherOccupation() != null &&
+                !p.getMotherOccupation().isBlank()) filled++;
+
+        total++;
+        if (p.getSiblingsCount() != null) filled++;
+
+        // ================= ABOUT =================
+
+        total++;
+        if (p.getAboutMe() != null &&
+                !p.getAboutMe().isBlank()) filled++;
+
+        total++;
+        if (p.getImageUrl() != null &&
+                !p.getImageUrl().isBlank()) filled++;
+        // ================= PHOTOS =================
+
+        long photoCount =
+                userPhotoRepository.countByUserId(
+                        p.getUser().getId()
+                );
+
+        total++;
+
+        if (photoCount >= 4) {
+            filled++;
+        }
+
+        // ================= PARTNER PREF =================
+
+
+        int percentage =
+                (filled * 100) / total;
+
+        p.setCurrentStep(
+                percentage
+        );
+
+        boolean hasMinimumPhotos =
+                userPhotoRepository.countByUserId(
+                        p.getUser().getId()
+                ) >= 4;
+
+        p.setProfileCompleted(
+                percentage >= 90
+                        && hasMinimumPhotos
+        );
+
+        System.out.println(
+                "Filled = " + filled
+        );
+
+        System.out.println(
+                "Total = " + total
+        );
+
+        System.out.println(
+                "PROFILE % = " + percentage
+        );
     }
-
     @Override
     @Transactional(readOnly = true)
     public Optional<Profile> getById(Long id) {
@@ -1433,4 +1966,5 @@ public class ProfileServiceImpl implements ProfileService {
                         cityId
                 );
     }
+
 }

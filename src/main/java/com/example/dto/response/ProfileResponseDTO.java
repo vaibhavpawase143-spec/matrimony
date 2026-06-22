@@ -148,10 +148,41 @@ public class ProfileResponseDTO {
 
     private String complexionName;
 
+    private String manglikStatusName;
+    private String familyTypeName;
+    private String familyStatusName;
+    private String familyValueName;
+    private String qualificationName;
+    private String fieldOfStudyName;
+    private String employedStatusName;
+    private String disabilityStatusName;
+    private String bloodGroupName;
+    private String brotherTypeName;
+    private String sisterTypeName;
     // =====================================================
     // EXTRA DETAILS
     // =====================================================
+    private Long profileTypeId;
+    private Long manglikStatusId;
 
+    private Long familyTypeId;
+
+    private Long familyStatusId;
+
+    private Long familyValueId;
+
+    private Long qualificationId;
+
+    private Long fieldOfStudyId;
+
+    private Long employedStatusId;
+
+    private Long disabilityStatusId;
+
+    private Long bloodGroupId;
+
+
+    private String profileTypeName;
 
 
     private String companyName;
@@ -200,15 +231,6 @@ public class ProfileResponseDTO {
 
     private Integer siblingsCount;
 
-    private Integer preferredAgeMin;
-
-    private Integer preferredAgeMax;
-
-    private String preferredLocation;
-
-    private String preferredEducation;
-
-    private String otherExpectations;
 
     // =====================================================
     // ABOUT
@@ -221,7 +243,7 @@ public class ProfileResponseDTO {
     // =====================================================
 
     private Boolean isActive;
-
+    private Boolean verified;
     private Integer currentStep;
 
     private Boolean profileCompleted;

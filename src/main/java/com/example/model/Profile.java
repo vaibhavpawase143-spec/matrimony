@@ -1,10 +1,13 @@
 package com.example.model;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-
+@Getter
+@Setter
 @Entity
 @Table(
         name = "profiles",
@@ -28,14 +31,34 @@ public class Profile {
     // USER
     // =====================================================
 
-    @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "user_id", nullable = false)
+    @ManyToOne(fetch = FetchType.EAGER)
+
+    @JoinColumn(name="user_id")
+
     private User user;
 
     // =====================================================
     // MASTER TABLE RELATIONS
     // =====================================================
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name="profile_type_id")
+    private ProfileType profileType;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name="manglik_status_id")
+    private ManglikStatus manglikStatus;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name="family_type_id")
+    private FamilyType familyType;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name="family_status_id")
+    private FamilyStatus familyStatus;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name="family_value_id")
+    private FamilyValue familyValue;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "religion_id")
     private Religion religion;
@@ -63,6 +86,28 @@ public class Profile {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "mother_tongue_id")
     private MotherTongue motherTongue;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name="qualification_id")
+    private Qualification qualification;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name="field_of_study_id")
+    private FieldOfStudy fieldOfStudy;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "employed_id")
+    private Employed employed;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name="disability_status_id")
+    private DisabilityStatus disabilityStatus;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name="blood_group_id")
+    private BloodGroup bloodGroup;
+
+
+
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "marital_status_id")
@@ -165,20 +210,6 @@ public class Profile {
     // PARTNER PREFERENCE
     // =====================================================
 
-    @Column(name = "preferred_age_min")
-    private Integer preferredAgeMin;
-
-    @Column(name = "preferred_age_max")
-    private Integer preferredAgeMax;
-
-    @Column(length = 200)
-    private String preferredLocation;
-
-    @Column(length = 200)
-    private String preferredEducation;
-
-    @Column(length = 1000)
-    private String otherExpectations;
 
     // =====================================================
     // SYSTEM
@@ -195,7 +226,15 @@ public class Profile {
 
     @Column(name = "is_premium")
     private Boolean isPremium = false;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "premium_plan")
+    private PremiumPlan premiumPlan = PremiumPlan.FREE;
 
+    @Column(name = "premium_start_date")
+    private LocalDateTime premiumStartDate;
+
+    @Column(name = "premium_end_date")
+    private LocalDateTime premiumEndDate;
     @Column(name = "boost_score")
     private Integer boostScore = 0;
 
@@ -516,45 +555,6 @@ public class Profile {
         this.siblingsCount = siblingsCount;
     }
 
-    public Integer getPreferredAgeMin() {
-        return preferredAgeMin;
-    }
-
-    public void setPreferredAgeMin(Integer preferredAgeMin) {
-        this.preferredAgeMin = preferredAgeMin;
-    }
-
-    public Integer getPreferredAgeMax() {
-        return preferredAgeMax;
-    }
-
-    public void setPreferredAgeMax(Integer preferredAgeMax) {
-        this.preferredAgeMax = preferredAgeMax;
-    }
-
-    public String getPreferredLocation() {
-        return preferredLocation;
-    }
-
-    public void setPreferredLocation(String preferredLocation) {
-        this.preferredLocation = preferredLocation;
-    }
-
-    public String getPreferredEducation() {
-        return preferredEducation;
-    }
-
-    public void setPreferredEducation(String preferredEducation) {
-        this.preferredEducation = preferredEducation;
-    }
-
-    public String getOtherExpectations() {
-        return otherExpectations;
-    }
-
-    public void setOtherExpectations(String otherExpectations) {
-        this.otherExpectations = otherExpectations;
-    }
 
     public Boolean getIsActive() {
         return isActive;
@@ -602,5 +602,28 @@ public class Profile {
 
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
+    }
+    public PremiumPlan getPremiumPlan() {
+        return premiumPlan;
+    }
+
+    public void setPremiumPlan(PremiumPlan premiumPlan) {
+        this.premiumPlan = premiumPlan;
+    }
+
+    public LocalDateTime getPremiumStartDate() {
+        return premiumStartDate;
+    }
+
+    public void setPremiumStartDate(LocalDateTime premiumStartDate) {
+        this.premiumStartDate = premiumStartDate;
+    }
+
+    public LocalDateTime getPremiumEndDate() {
+        return premiumEndDate;
+    }
+
+    public void setPremiumEndDate(LocalDateTime premiumEndDate) {
+        this.premiumEndDate = premiumEndDate;
     }
 }

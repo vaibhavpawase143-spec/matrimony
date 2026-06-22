@@ -9,10 +9,19 @@ import { ToastProvider } from "@/components/Toast";
 import { LanguageProvider } from "@/context/LanguageContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import AdminRoute from "@/routes/AdminRoute";
+import SupportTickets from "./pages/SupportTickets";
+import SupportTicketDetails from "./pages/SupportTicketDetails";
 import LoadingSpinner from "./components/LoadingSpinner";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import AuthenticatedLayout from "@/components/AuthenticatedLayout";
-
+import SentInterests from "./pages/SentInterests";
+import ReceivedInterests from "./pages/ReceivedInterests";
+import EmailVerified from "@/pages/EmailVerified";
+import MyShortlists from "@/pages/MyShortlists";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+import ProfileVisitors from "./pages/ProfileVisitors";
+// import PremiumDashboard from "./pages/PremiumDashboard";
 // NORMAL PAGES
 import Index from "./pages/Index";
 import Home from "./pages/Home";
@@ -31,6 +40,7 @@ import Messages from "./pages/Messages";
 import SettingsPage from "./pages/SettingsPage";
 import Account from "./pages/Account";
 import UpgradePremium from "./pages/UpgradePremium";
+import Likes from "@/pages/Likes";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsConditions from "./pages/TermsConditions";
 import FAQ from "./pages/FAQ";
@@ -60,7 +70,14 @@ const App = () => (
               <AuthProvider>
                 <BrowserRouter>
                   <MobileBottomNav />
-
+{/* <Route */}
+{/*   path="/premium" */}
+{/*   element={ */}
+{/*     <AuthenticatedLayout> */}
+{/*       <PremiumDashboard /> */}
+{/*     </AuthenticatedLayout> */}
+{/*   } */}
+{/* /> */}
                   <Routes>
                     {/* PUBLIC ROUTES */}
                     <Route path="/" element={<Index />} />
@@ -86,6 +103,43 @@ const App = () => (
                         </AuthenticatedLayout>
                       }
                     />
+<Route
+  path="/support/tickets"
+  element={
+    <AuthenticatedLayout>
+      <SupportTickets />
+    </AuthenticatedLayout>
+  }
+/>
+
+<Route
+  path="/support/tickets/:ticketNumber"
+  element={
+    <AuthenticatedLayout>
+      <SupportTicketDetails />
+    </AuthenticatedLayout>
+  }
+/>
+                    <Route
+                      path="/profile-visitors"
+                      element={
+                        <AuthenticatedLayout>
+                          <ProfileVisitors />
+                        </AuthenticatedLayout>
+                      }
+                    />
+
+
+<Route
+path="/forgot-password"
+element={<ForgotPassword />}
+/>
+
+<Route
+path="/reset-password"
+element={<ResetPassword />}
+/>
+
                     <Route
                       path="/search"
                       element={
@@ -118,6 +172,41 @@ const App = () => (
                         </AuthenticatedLayout>
                       }
                     />
+<Route
+
+path="/sent-interests"
+
+element={
+
+<AuthenticatedLayout>
+
+<SentInterests/>
+
+</AuthenticatedLayout>
+
+}
+
+/>
+
+<Route
+
+path="/received-interests"
+
+element={
+
+<AuthenticatedLayout>
+
+<ReceivedInterests/>
+
+</AuthenticatedLayout>
+
+}
+
+/>
+<Route
+path="/email-verified"
+element={<EmailVerified />}
+/>
                     <Route
                       path="/messages"
                       element={
@@ -131,6 +220,14 @@ const App = () => (
                       element={
                         <AuthenticatedLayout>
                           <SettingsPage />
+                        </AuthenticatedLayout>
+                      }
+                    />
+                    <Route
+                      path="/shortlists"
+                      element={
+                        <AuthenticatedLayout>
+                          <MyShortlists />
                         </AuthenticatedLayout>
                       }
                     />
@@ -184,7 +281,10 @@ const App = () => (
                         </AdminRoute>
                       }
                     />
-
+<Route
+path="/likes"
+element={<Likes />}
+/>
                     {/* NOT FOUND */}
                     <Route path="*" element={<NotFound />} />
                   </Routes>

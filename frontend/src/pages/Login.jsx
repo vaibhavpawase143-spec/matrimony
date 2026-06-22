@@ -200,24 +200,50 @@ const Login = () => {
             )}
           </div>
 
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={rememberMe}
-              onChange={(e) => setRememberMe(e.target.checked)}
-            />
-            <span className="text-xs">
-              {t?.login?.rememberMe || "Remember me"}
-            </span>
-          </div>
+       <div className="flex items-center justify-between">
 
-          <button
-            type="submit"
-            className="w-full bg-primary text-white py-2.5 rounded-lg hover:opacity-90 transition"
-          >
-            {t?.login?.button || "Login"}
-          </button>
+         <div className="flex items-center gap-2">
+           <input
+             type="checkbox"
+             checked={rememberMe}
+             onChange={(e) =>
+               setRememberMe(e.target.checked)
+             }
+           />
 
+           <span className="text-xs">
+             {t?.login?.rememberMe || "Remember me"}
+           </span>
+         </div>
+
+         <Link
+           to="/forgot-password"
+           className="
+             text-sm
+             text-pink-600
+             hover:text-pink-700
+             font-medium
+           "
+         >
+           Forgot Password?
+         </Link>
+
+       </div>
+
+       <button
+         type="submit"
+         className="
+           w-full
+           bg-primary
+           text-white
+           py-2.5
+           rounded-lg
+           hover:opacity-90
+           transition
+         "
+       >
+         {t?.login?.button || "Login"}
+       </button>
           <p className="text-center text-xs">
             {t?.login?.noAccount || "Don't have an account?"}{" "}
             <Link to="/register" className="text-primary font-semibold">
