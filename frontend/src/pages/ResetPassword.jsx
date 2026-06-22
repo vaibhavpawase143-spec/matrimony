@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate, Link } from "react-router-dom";
 import { useToast } from "@/components/Toast";
@@ -160,7 +160,7 @@ const ResetPassword = () => {
 };
 
 export default ResetPassword;
-=======
+
 import { useState } from "react";
 import {
   useSearchParams,
@@ -315,4 +315,4 @@ const ResetPassword = () => {
 };
 
 export default ResetPassword;
->>>>>>> vaibhav
+

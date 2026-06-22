@@ -1,4 +1,4 @@
-// API service for frontend development
+
 import errorHandler from '@/utils/errorHandler';
 import EmailVerified from "@/pages/EmailVerified";
 
