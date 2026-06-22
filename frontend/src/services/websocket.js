@@ -2,13 +2,18 @@ import SockJS from "sockjs-client";
 import { Client } from "@stomp/stompjs";
 
 let client = null;
+let typingCallback = null;
+let heartbeatInterval = null;
 
-export const connectNotifications = (
+export const connectNotifications=(
 
 userId,
 
-onMessage
+onMessage,
 
+onTyping,
+
+onStatus
 
 )=>{
 
@@ -40,75 +45,118 @@ transports:["websocket"]
 
 client = new Client({
 
-webSocketFactory:()=>socket,
+    webSocketFactory:()=>socket,
 
-debug:(msg)=>{
+    debug:(msg)=>{
 
-console.log(
+        console.log("STOMP:",msg);
 
-"STOMP:",
+    },
 
-msg
+    reconnectDelay:5000,
 
-);
+    heartbeatIncoming:10000,
 
-},
+    heartbeatOutgoing:10000,
 
-reconnectDelay:5000,
+    onConnect:()=>{
 
-onConnect:()=>{
+    console.log("CONNECTED");
 
-console.log(
+    console.log("SUBSCRIBING...");
 
-"CONNECTED"
+    // ================= NOTIFICATIONS =================
 
-);
+    client.subscribe(
 
-console.log(
+        `/topic/notifications/${userId}`,
 
-"SUBSCRIBING..."
+        (message) => {
 
-);
+            onMessage({
 
-client.subscribe(
+                message: message.body
 
-`/topic/notifications/${userId}`,
+            });
 
-(message)=>{
+        }
 
-console.log(
+    );
 
-"MESSAGE RECEIVED:",
+    // ================= TYPING =================
 
-message.body
+    typingCallback = onTyping;
 
-);
+    client.subscribe(
 
-console.log(
+        "/user/queue/typing",
 
-"RAW MESSAGE:",
+        (message) => {
 
-message.body
+            const body = JSON.parse(message.body);
 
-);
+            if (typingCallback) {
 
-onMessage({
+                typingCallback(body);
 
-message:
+            }
 
-message.body
+        }
 
-});
+    );
 
-}
+    // ================= ONLINE / OFFLINE STATUS =================
 
-);
+    client.subscribe(
 
-console.log(
+        "/topic/status",
 
-"SUBSCRIBED SUCCESS"
+        (message) => {
 
-);
+            const body = JSON.parse(message.body);
+
+            console.log("STATUS EVENT =", body);
+
+            if (onStatus) {
+
+                onStatus(body);
+
+            }
+
+        }
+
+    );
+
+    console.log("SUBSCRIBED SUCCESS");
+
+   // ================= HEARTBEAT =================
+
+   heartbeatInterval = setInterval(() => {
+
+       if (client && client.connected) {
+
+           fetch("http://localhost:9090/api/heartbeat", {
+               method: "POST",
+               headers: {
+                   "Authorization": `Bearer ${token}`
+               }
+           })
+           .then((response) => {
+
+               if (!response.ok) {
+                   console.error("Heartbeat Failed:", response.status);
+               }
+
+           })
+           .catch((err) => {
+
+               console.error("Heartbeat Error:", err);
+
+           });
+
+       }
+
+   }, 20000);
 
 },
 
@@ -153,15 +201,98 @@ frame
 client.activate();
 
 };
+export const sendTyping = (
 
-export const disconnectNotifications = ()=>{
+receiverEmail
 
-if(client){
+)=>{
 
-client.deactivate();
+if(
 
-client = null;
+client &&
+
+client.connected
+
+){
+
+client.publish({
+
+destination:"/app/typing",
+
+body:JSON.stringify({
+
+receiver:receiverEmail
+
+})
+
+});
 
 }
 
 };
+export const stopTyping = (
+
+receiverEmail
+
+)=>{
+
+if(
+
+client &&
+
+client.connected
+
+){
+
+client.publish({
+
+destination:"/app/stop-typing",
+
+body:JSON.stringify({
+
+receiver:receiverEmail
+
+})
+
+});
+
+}
+
+};
+
+export const disconnectNotifications = async () => {
+
+    if (heartbeatInterval) {
+
+        clearInterval(heartbeatInterval);
+
+        heartbeatInterval = null;
+
+    }
+
+    if (client) {
+
+        await client.deactivate();
+
+        client = null;
+
+    }
+
+};
+window.addEventListener("beforeunload", () => {
+
+    if (heartbeatInterval) {
+
+        clearInterval(heartbeatInterval);
+
+        heartbeatInterval = null;
+
+    }
+
+    if (client) {
+
+        client.deactivate();
+
+    }
+
+});

@@ -26,7 +26,7 @@ const validateToken = () => {
 };
 
 // Centralized API client with proper auth and error handling
-const apiClient = async (endpoint, options = {}) => {
+export const apiClient = async (endpoint, options = {}) => {
   try {
     const token = localStorage.getItem('token');
 
@@ -54,12 +54,27 @@ const apiClient = async (endpoint, options = {}) => {
     console.log('🌐 Response headers:', Object.fromEntries(response.headers.entries()));
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      console.error('❌ API Error Response:', errorData);
-      const error = new Error(errorData.message || errorData.error || `API call failed: ${endpoint}`);
+
+      const errorData =
+        await response.json()
+          .catch(() => ({}));
+
+      console.error(
+        '❌ API Error Response:',
+        errorData
+      );
+
+      const error =
+        new Error(
+          errorData.message ||
+          errorData.error ||
+          `API call failed: ${endpoint}`
+        );
+
       error.status = response.status;
       error.endpoint = endpoint;
       error.url = fullUrl;
+
       throw error;
     }
 
@@ -74,6 +89,41 @@ const apiClient = async (endpoint, options = {}) => {
    } catch {
      return text;
    }
+    const contentType =
+      response.headers.get(
+        "content-type"
+      );
+
+    if (
+      contentType &&
+      contentType.includes(
+        "application/json"
+      )
+    ) {
+
+      const result =
+        await response.json();
+
+      console.log(
+        '✅ API Success Response:',
+        result
+      );
+
+      return result;
+    }
+
+    console.log(
+      '✅ API Success Response: Empty Body'
+    );
+
+    return {};
+    if (
+      response.status === 204
+    ) {
+
+      return {};
+
+    }
   } catch (error) {
     console.error('❌ API Request Failed:', error);
     console.error('❌ Error details:', {
@@ -650,6 +700,259 @@ export const supportAPI = {
     );
 
   }
+
+
+async(userId)=>{
+
+return await apiClient(
+
+`/profiles/user/${userId}`
+
+);
+
+},
+
+getProfile: async (userId) => {
+
+try {
+
+const endpoint =
+userId
+? `/profiles/${userId}`
+: '/profiles/me';
+
+return await apiClient(endpoint);
+
+} catch(error){
+
+console.error(
+'Profile API Error:',
+error
+);
+
+throw new Error(
+error?.message ||
+'Something went wrong'
+);
+
+}
+
+},
+
+getProfileById: async(id)=>{
+
+try{
+
+return await apiClient(
+
+`/profiles/${id}`
+
+);
+
+}catch(error){
+
+console.error(
+'Profile API Error:',
+error
+);
+
+throw error;
+
+}
+
+},
+
+updateProfile: async(
+userId,
+data
+)=>{
+
+try{
+
+const endpoint =
+userId
+? `/profiles/${userId}`
+: '/profiles/me';
+
+return await apiClient(
+endpoint,
+{
+method:'PUT',
+body:JSON.stringify(data)
+}
+);
+
+}catch(error){
+
+console.error(
+'Profile API Error:',
+error
+);
+
+throw new Error(
+error?.message ||
+'Something went wrong'
+);
+
+}
+
+},
+
+getProfiles: async()=>{
+
+try{
+
+return await apiClient(
+'/profiles'
+);
+
+}catch(error){
+
+console.error(
+'Profile API Error:',
+error
+);
+
+throw new Error(
+error?.message ||
+'Something went wrong'
+);
+
+}
+
+}
+
+};
+
+export const interestAPI = {
+
+getReceivedPendingInterests:
+
+async(receiverId)=>{
+
+return await apiClient(
+
+`/interests/received/${receiverId}/pending`
+
+);
+
+},
+getReceivedInterests:
+
+async(receiverId)=>{
+
+return await apiClient(
+
+`/interests/received/${receiverId}`
+
+);
+
+},
+
+acceptInterest:
+
+async(id)=>{
+
+return await apiClient(
+
+`/interests/accept/${id}`,
+
+{
+
+method:"PUT"
+
+}
+
+);
+
+},
+
+rejectInterest:
+
+async(id)=>{
+
+return await apiClient(
+
+`/interests/reject/${id}`,
+
+{
+
+method:"PUT"
+
+}
+
+);
+
+},
+sendInterest: async(
+senderId,
+receiverId
+)=>{
+
+try{
+
+return await apiClient(
+
+'/interests/send',
+
+{
+
+method:'POST',
+
+body:JSON.stringify({
+
+senderId,
+receiverId
+
+})
+
+}
+
+);
+
+}catch(error){
+
+console.error(
+'Interest API Error:',
+error
+);
+
+throw new Error(
+
+error?.message ||
+
+'Failed to send interest'
+
+);
+
+}
+
+},
+
+getSentInterests: async(
+senderId
+)=>{
+
+try{
+
+return await apiClient(
+
+`/interests/sent/${senderId}`
+
+);
+
+}catch(error){
+
+console.error(
+'Interest API Error:',
+error
+);
+
+return [];
+
+}
+
+}
 
 };
 
@@ -1614,6 +1917,7 @@ getQualifications: async () => {
 // ==========================================
 
 getFieldsOfStudy: async () => {
+getFieldOfStudies: async () => {
 
  try {
 
@@ -1637,6 +1941,13 @@ getFieldsOfStudy: async () => {
 // ==========================================
 
 getEmploymentStatuses: async () => {
+},
+
+// ==========================================
+// EMPLOYED
+// ==========================================
+
+getEmployedStatuses: async () => {
 
  try {
 
@@ -1653,11 +1964,17 @@ getEmploymentStatuses: async () => {
 
    console.log(error);
 
+     ? result
+     : [];
+
+ } catch(error){
+
    return [];
 
  }
 
 },
+
 // ==========================================
 // DISABILITY STATUS
 // ==========================================
@@ -1939,3 +2256,52 @@ return await apiClient(
    }
 
  };
+  export const partnerPreferenceAPI = {
+
+   save: async (data) => {
+
+    return await apiClient(
+
+     '/partner-preferences',
+
+     {
+
+      method:'POST',
+
+      body:JSON.stringify(data)
+
+     }
+
+    );
+
+   },
+update: async(userId,data)=>{
+
+ return await apiClient(
+
+  `/partner-preferences/${userId}`,
+
+  {
+
+   method:"PUT",
+
+   body:JSON.stringify(data)
+
+  }
+
+ );
+
+},
+   getByUserId: async(userId)=>{
+
+    return await apiClient(
+
+     `/partner-preferences/user/${userId}`
+
+    );
+
+   }
+
+  };
+
+export default apiClient;

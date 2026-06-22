@@ -140,6 +140,15 @@ public class NotificationServiceImpl implements NotificationService {
         messagingTemplate.convertAndSend(
                 "/topic/notifications/" + receiverId,
                 saved.getMessage()
+
+        messagingTemplate.convertAndSend(
+
+                "/topic/notifications/" +
+
+                        receiverId,
+
+                "HELLO_NOTIFICATION"
+
         );
         System.out.println(
                 "WEBSOCKET MESSAGE SENT"
@@ -159,6 +168,30 @@ public class NotificationServiceImpl implements NotificationService {
     ) {
 
         return switch (type) {
+
+            case REQUEST ->
+                    "User " + senderId + " sent you a request";
+
+            case VIEW ->
+                    "User " + senderId + " viewed your profile";
+
+            case MESSAGE ->
+                    "User " + senderId + " sent you a message";
+
+            case SHORTLIST ->
+                    "User " + senderId + " shortlisted your profile";
+
+            case ACCEPT ->
+                    "User " + senderId + " accepted your request";
+
+            case REJECT ->
+                    "User " + senderId + " rejected your request";
+
+            case MATCH ->
+                    "🎉 You have a new match with User " + senderId;
+
+        };
+    }
 
             case REQUEST ->
                     "💌 " + senderName +

@@ -131,12 +131,34 @@ public interface UserRepository
             u.lastSeen = :lastSeen
         WHERE u.email = :email
     """)
-    void updateUserStatus(
+     void updateUserStatus(
             @Param("email") String email,
             @Param("isOnline") Boolean isOnline,
             @Param("lastSeen") LocalDateTime lastSeen
     );
 
+    @Transactional
+    @Modifying
+    @Query("""
+UPDATE User u
+SET u.lastHeartbeat = :time,
+    u.isOnline = true
+WHERE u.email = :email
+""")
+     void updateHeartbeat(
+            @Param("email") String email,
+            @Param("time") LocalDateTime time
+    );
+
+    @Query("""
+SELECT u
+FROM User u
+WHERE u.isOnline = true
+AND u.lastHeartbeat < :time
+""")
+    List<User> findExpiredUsers(
+            @Param("time") LocalDateTime time
+    );
     // ================= MATCH =================
 
     @Query("""

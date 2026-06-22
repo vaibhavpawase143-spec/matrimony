@@ -11,49 +11,77 @@ import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.messaging.support.MessageHeaderAccessor;
 import org.springframework.stereotype.Component;
 
-import java.security.Principal;
 import java.time.LocalDateTime;
 
 @Component
 @RequiredArgsConstructor
 public class WebSocketUserInterceptor implements ChannelInterceptor {
 
-    private final OnlineUserService onlineUserService;
     private final UserRepository userRepository;
+    private final OnlineUserService onlineUserService;
 
     @Override
-    public Message<?> preSend(Message<?> message, MessageChannel channel) {
+    public Message<?> preSend(
+            Message<?> message,
+            MessageChannel channel
+    ) {
 
         StompHeaderAccessor accessor =
-                MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
+                MessageHeaderAccessor.getAccessor(
+                        message,
+                        StompHeaderAccessor.class
+                );
 
-        if (accessor == null) return message;
+        if (accessor == null) {
+            return message;
+        }
 
         StompCommand command = accessor.getCommand();
 
-        if (command == null) return message;
-
-        Principal user = accessor.getUser();
-        if (user == null) return message;
-
-        String email = user.getName();
-
-        if (StompCommand.CONNECT.equals(command)) {
-
-            onlineUserService.userOnline(email);
-            userRepository.updateUserStatus(email, true, null);
-
-            System.out.println("🟢 CONNECTED: " + email);
+        if (command == null) {
+            return message;
         }
 
-        if (StompCommand.DISCONNECT.equals(command)) {
+        try {
 
-            onlineUserService.userOffline(email);
-            userRepository.updateUserStatus(email, false, LocalDateTime.now());
+            // ================= CONNECT =================
 
-            System.out.println("🔴 DISCONNECTED: " + email);
+            if (StompCommand.CONNECT.equals(command)) {
+
+                Object usernameObj =
+                        accessor.getSessionAttributes()
+                                .get("username");
+
+                if (usernameObj != null) {
+
+                    String email = usernameObj.toString();
+
+                    accessor.setUser(new StompPrincipal(email));
+
+                    onlineUserService.userOnline(email);
+
+                    userRepository.updateUserStatus(
+                            email,
+                            true,
+                            null
+                    );
+
+                    System.out.println("🟢 USER ONLINE : " + email);
+
+                }
+
+            }
+
+
+
+        } catch (Exception e) {
+
+            e.printStackTrace();
+
         }
 
         return message;
+
     }
+
 }

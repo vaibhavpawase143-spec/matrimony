@@ -22,6 +22,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import ProfileVisitors from "./pages/ProfileVisitors";
 // import PremiumDashboard from "./pages/PremiumDashboard";
+import MyShortlists from "@/pages/MyShortlists";
 // NORMAL PAGES
 import Index from "./pages/Index";
 import Home from "./pages/Home";
@@ -41,11 +42,13 @@ import SettingsPage from "./pages/SettingsPage";
 import Account from "./pages/Account";
 import UpgradePremium from "./pages/UpgradePremium";
 import Likes from "@/pages/Likes";
+
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsConditions from "./pages/TermsConditions";
 import FAQ from "./pages/FAQ";
 import HelpSupport from "./pages/HelpSupport";
 import RefundPolicy from "./pages/RefundPolicy";
+import ChatPage from "./pages/ChatPage";
 
 // ADMIN PAGES
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -54,10 +57,94 @@ import PaymentsPage from "./pages/admin/PaymentsPage";
 import VerificationPage from "./pages/admin/VerificationPage";
 
 import NotFound from "./pages/NotFound";
+import { useEffect } from "react";
 
 const queryClient = new QueryClient();
 
-const App = () => (
+const App = () => {
+
+//   useEffect(() => {
+//
+//     const handleUnload = () => {
+//
+//       const token = localStorage.getItem("token");
+//
+//       if (!token) {
+//         return;
+//       }
+//
+//       fetch(
+//         "http://localhost:9090/api/chat/offline",
+//         {
+//           method: "PUT",
+//           keepalive: true,
+//           headers: {
+//             Authorization: `Bearer ${token}`
+//           }
+//         }
+//       );
+//
+//     };
+//
+//     window.addEventListener(
+//       "beforeunload",
+//       handleUnload
+//     );
+//
+//     return () => {
+//
+//       window.removeEventListener(
+//         "beforeunload",
+//         handleUnload
+//       );
+//
+//     };
+//
+//   }, []);
+useEffect(() => {
+
+  const token = localStorage.getItem("token");
+
+  if (!token) {
+    return;
+  }
+
+  const pingServer = async () => {
+
+    try {
+
+      await fetch(
+        "http://localhost:9090/api/chat/ping",
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
+
+    } catch (err) {
+
+      console.log("PING ERROR", err);
+
+    }
+
+  };
+
+  // First ping immediately
+  pingServer();
+
+  // Then every 30 seconds
+  const interval = setInterval(
+    pingServer,
+    10000
+  );
+
+  return () => clearInterval(interval);
+
+}, []);
+
+  return (
   <QueryClientProvider client={queryClient}>
     <LanguageProvider>
       <ThemeProvider>
@@ -85,7 +172,7 @@ const App = () => (
                     <Route path="/register" element={<Register />} />
                     <Route path="/verify-email" element={<VerifyEmail />} />
                     <Route path="/request-verification" element={<RequestVerification />} />
-                    <Route path="/profile/create" element={<CreateProfile />} />
+                    <Route path="/profie/create" element={<CreateProfile />} />
                     <Route path="/about" element={<About />} />
                     <Route path="/contact" element={<Contact />} />
                     <Route path="/privacy-policy" element={<PrivacyPolicy />} />
@@ -93,6 +180,7 @@ const App = () => (
                     <Route path="/faq" element={<FAQ />} />
                     <Route path="/help" element={<HelpSupport />} />
                     <Route path="/refund-policy" element={<RefundPolicy />} />
+                    <Route path="/chat/:conversationId/:receiverId" element={<ChatPage/>} />
 
                     {/* PROTECTED USER ROUTES */}
                     <Route
@@ -207,6 +295,7 @@ element={
 path="/email-verified"
 element={<EmailVerified />}
 />
+
                     <Route
                       path="/messages"
                       element={
@@ -296,6 +385,8 @@ element={<Likes />}
       </ThemeProvider>
     </LanguageProvider>
   </QueryClientProvider>
-);
+  );
 
-export default App;
+  };
+
+  export default App;

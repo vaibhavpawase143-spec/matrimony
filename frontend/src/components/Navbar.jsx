@@ -158,7 +158,24 @@ useEffect(() => {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+
+    try {
+
+      await fetch(
+        "http://localhost:9090/api/chat/offline",
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`
+          }
+        }
+      );
+
+    } catch (err) {
+      console.log(err);
+    }
+
     logout();
     navigate("/");
   };

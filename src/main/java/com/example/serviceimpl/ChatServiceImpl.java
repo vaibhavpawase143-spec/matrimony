@@ -13,9 +13,12 @@ import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -28,6 +31,7 @@ public class ChatServiceImpl implements ChatService {
     private final UserBlockService userBlockService; // ✅ FIXED
     private final NotificationService notificationService;
     private final MatchRepository matchRepository;
+    private final DeletedMessageRepository deletedMessageRepository;
 
     // ================= USER =================
 
@@ -99,21 +103,37 @@ public class ChatServiceImpl implements ChatService {
 
     // ================= CREATE MESSAGE =================
 
-    private Message createTextMessage(User sender, User receiver, String content, Message replyTo) {
+    private Message createTextMessage(User sender,
+                                      User receiver,
+                                      String content,
+                                      Message replyTo) {
 
         Conversation c = getOrCreateConversation(sender, receiver);
 
         Message m = new Message();
+
         m.setSender(sender);
+        m.setReceiver(receiver);
         m.setConversation(c);
+
+        // TEXT MESSAGE
         m.setContent(encrypt(content));
         m.setMessageType("TEXT");
+
+        // Reply
+        if (replyTo != null) {
+            m.setReplyTo(replyTo);
+        }
+
         m.setCreatedAt(LocalDateTime.now());
-        m.setReplyTo(replyTo);
 
         Message saved = messageRepository.save(m);
 
-        notificationService.create(sender.getId(), receiver.getId(), NotificationType.MESSAGE);
+        notificationService.create(
+                sender.getId(),
+                receiver.getId(),
+                NotificationType.MESSAGE
+        );
 
         return saved;
     }
@@ -167,6 +187,7 @@ public class ChatServiceImpl implements ChatService {
 
         Message m = new Message();
         m.setSender(sender);
+        m.setReceiver(receiver);
         m.setConversation(c);
         m.setMediaUrl(mediaUrl);
         m.setMediaType(mediaType);
@@ -184,15 +205,131 @@ public class ChatServiceImpl implements ChatService {
     // ================= GET =================
 
     @Override
-    public List<Message> getMessages(Long userId, Long otherUserId) {
+    public List<Message> getMessages(
+            Long userId,
+            Long otherUserId
+    ) {
 
-        Conversation c = getConversation(getUser(userId), getUser(otherUserId));
+        User u1 = getUser(userId);
 
-        List<Message> list = messageRepository.findByConversationOrderByCreatedAtAsc(c);
+        User u2 = getUser(otherUserId);
 
-        list.forEach(m -> m.setContent(decrypt(m.getContent())));
+        Conversation conversation =
 
+                conversationRepository
+
+                        .findByUser1AndUser2(
+                                u1,
+                                u2
+                        )
+
+                        .or(() ->
+
+                                conversationRepository
+
+                                        .findByUser1AndUser2(
+                                                u2,
+                                                u1
+                                        )
+
+                        )
+
+                        .orElse(null);
+
+        if(conversation==null){
+
+            return List.of();
+
+        }
+
+        List<Message> list =
+
+                messageRepository
+
+                        .findByConversationOrderByCreatedAtAsc(
+                                conversation
+                        );
+
+        Set<Long> deletedIds =
+
+                deletedMessageRepository
+
+                        .findByUserId(userId)
+
+                        .stream()
+
+                        .map(
+                                DeletedMessage::getMessageId
+                        )
+
+                        .collect(Collectors.toSet());
+
+        list =
+
+                list.stream()
+
+                        .filter(
+                                m -> !deletedIds.contains(
+                                        m.getId()
+                                )
+                        )
+
+                        .collect(Collectors.toList());
+
+        list.forEach(m -> {
+
+            System.out.println(
+
+                    "DB VALUE = "
+
+                            + m.getContent()
+
+            );
+
+            String decrypted =
+
+                    decrypt(
+
+                            m.getContent()
+
+                    );
+
+            System.out.println(
+
+                    "DECRYPTED = "
+
+                            + decrypted
+
+            );
+
+            m.setContent(
+
+                    decrypted
+
+            );
+
+        });
         return list;
+
+    }
+
+    @Override
+    public List<Message> getMessagesForChat(
+
+            Long senderId,
+
+            Long receiverId
+
+    ){
+
+        return getMessages(
+
+                senderId,
+
+                receiverId
+
+        );
+
     }
 
     @Override
@@ -206,7 +343,7 @@ public class ChatServiceImpl implements ChatService {
         Conversation c = getConversation(getUser(userId), getUser(otherUserId));
 
         Page<Message> p = messageRepository.findByConversation(
-                c, PageRequest.of(page, size, Sort.by("createdAt").descending())
+                c, PageRequest.of(page, size, Sort.by("createdAt").ascending())
         );
 
         p.getContent().forEach(m -> m.setContent(decrypt(m.getContent())));
@@ -217,10 +354,27 @@ public class ChatServiceImpl implements ChatService {
     // ================= STATUS =================
 
     @Override
-    public void markAsDelivered(Long conversationId, Long userId) {
-        List<Message> messages = messageRepository.findUndeliveredMessages(conversationId, userId);
-        messages.forEach(m -> m.setStatus(MessageStatus.DELIVERED));
-        messageRepository.saveAll(messages);
+    public void markAsDelivered(
+            Long conversationId,
+            Long userId
+    ) {
+
+        List<Message> messages =
+                messageRepository
+                        .findUndeliveredMessages(
+                                conversationId,
+                                userId
+                        );
+
+        messages.forEach(
+                m -> m.setStatus(
+                        MessageStatus.DELIVERED
+                )
+        );
+
+        messageRepository.saveAll(
+                messages
+        );
     }
 
     @Override
@@ -232,12 +386,69 @@ public class ChatServiceImpl implements ChatService {
 
     @Override
     public List<ConversationListDTO> getUserConversations(Long userId) {
-        return conversationRepository.getConversationList(userId);
+
+        List<ConversationListDTO> list =
+                conversationRepository.getConversationList(userId);
+
+        list.forEach(dto -> {
+
+            if(dto.getLastSeen() != null){
+
+                boolean online =
+                        dto.getLastSeen()
+                                .isAfter(
+                                        LocalDateTime.now()
+                                                .minusSeconds(20)
+                                );
+
+                dto.setIsOnline(online);
+
+            }else{
+
+                dto.setIsOnline(false);
+
+            }
+
+        });
+
+        return list;
     }
 
     @Override
     public List<ConversationListDTO> getUserConversationsByEmail(String email) {
-        return conversationRepository.getConversationList(getUserByEmail(email).getId());
+
+        List<ConversationListDTO> list =
+                conversationRepository.getConversationList(
+                        getUserByEmail(email).getId()
+                );
+
+        list.forEach(dto -> {
+
+            if(dto.getLastSeen() != null){
+
+                boolean online =
+
+                        dto.getLastSeen()
+
+                                .isAfter(
+
+                                        LocalDateTime.now()
+
+                                                .minusMinutes(2)
+
+                                );
+
+                dto.setIsOnline(online);
+
+            }else{
+
+                dto.setIsOnline(false);
+
+            }
+
+        });
+
+        return list;
     }
 
     // ================= REACTION =================
@@ -251,11 +462,57 @@ public class ChatServiceImpl implements ChatService {
     }
 
     @Override
-    public void removeReaction(Long messageId) {
-        Message m = messageRepository.findById(messageId)
-                .orElseThrow(() -> new RuntimeException("Not found"));
-        m.setReaction(null);
-        messageRepository.save(m);
+    public void removeReaction(Long messageId){}
+
+    @Override
+    @Transactional
+    public void pinMessage(Long messageId) {
+
+        Message message = messageRepository.findById(messageId)
+                .orElseThrow(() ->
+                        new RuntimeException("Message not found"));
+
+        message.setPinned(true);
+
+        messageRepository.save(message);
+    }
+
+    @Override
+    @Transactional
+    public void unpinMessage(Long messageId) {
+
+        Message message = messageRepository.findById(messageId)
+                .orElseThrow(() ->
+                        new RuntimeException("Message not found"));
+
+        message.setPinned(false);
+
+        messageRepository.save(message);
+    }
+    @Override
+    @Transactional
+    public void starMessage(Long messageId) {
+
+        Message message = messageRepository.findById(messageId)
+                .orElseThrow(() ->
+                        new RuntimeException("Message not found"));
+
+        message.setStarred(true);
+
+        messageRepository.save(message);
+    }
+
+    @Override
+    @Transactional
+    public void unstarMessage(Long messageId) {
+
+        Message message = messageRepository.findById(messageId)
+                .orElseThrow(() ->
+                        new RuntimeException("Message not found"));
+
+        message.setStarred(false);
+
+        messageRepository.save(message);
     }
 
     // ================= BLOCK =================
@@ -296,6 +553,7 @@ public class ChatServiceImpl implements ChatService {
         // 🆕 Create new message
         Message newMessage = new Message();
         newMessage.setSender(sender);
+        newMessage.setReceiver(receiver);
         newMessage.setConversation(conversation);
 
         // 🔁 Copy content (already encrypted in DB)
@@ -324,6 +582,63 @@ public class ChatServiceImpl implements ChatService {
         messageRepository.softDeleteMessage(id);
     }
 
+
+    @Override
+    @Transactional
+    public void deleteForMe(
+            Long messageId,
+            Long userId
+    ) {
+
+        Message message =
+                messageRepository
+                        .findById(messageId)
+                        .orElseThrow();
+
+        String users =
+                message.getDeletedForUsers();
+
+        if(users == null){
+            users = "";
+        }
+
+        if(!users.contains(userId + ",")){
+            users += userId + ",";
+        }
+
+        message.setDeletedForUsers(users);
+
+        messageRepository.save(message);
+    }
+
+    @Override
+    @Transactional
+    public void deleteForEveryone(
+            Long messageId,
+            Long userId
+    ) {
+
+        Message message =
+                messageRepository
+                        .findById(messageId)
+                        .orElseThrow();
+
+        if(
+                !message.getSender()
+                        .getId()
+                        .equals(userId)
+        ){
+            throw new RuntimeException(
+                    "Only sender can delete for everyone"
+            );
+        }
+
+        message.setDeletedForEveryone(true);
+        message.setDeletedAt(LocalDateTime.now());
+
+        messageRepository.save(message);
+    }
+
     // ================= EDIT =================
 
     @Override
@@ -337,18 +652,16 @@ public class ChatServiceImpl implements ChatService {
 
     // ================= ENCRYPT =================
 
-    private String encrypt(String data) {
-        return data == null ? null : Base64.getEncoder().encodeToString(data.getBytes());
+    private String encrypt(String data){
+
+        return data;
+
     }
 
-    private String decrypt(String data) {
-        if (data == null) return null;
+    private String decrypt(String data){
 
-        try {
-            return new String(Base64.getDecoder().decode(data));
-        } catch (Exception e) {
-            return data;
-        }
+        return data;
+
     }
 
     private String getMediaContent(String type) {
