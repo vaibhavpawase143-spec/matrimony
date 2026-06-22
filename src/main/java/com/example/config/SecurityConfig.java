@@ -86,15 +86,9 @@ public class SecurityConfig {
                                 "/api/body-types/**",
                                 "/api/genders/**",
                                 "/api/countries/**",
-                                "/api/image/**"
-                                "/ws/**",
                                 "/api/image/**",
-                                "/uploads/**"
-=======
                                 "/ws/**",
-                                "/api/image/**",
                                 "/uploads/**"
->>>>>>> origin/tanmay
 
                         ).permitAll()
 

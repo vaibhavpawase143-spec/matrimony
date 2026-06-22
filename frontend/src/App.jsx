@@ -22,7 +22,6 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import ProfileVisitors from "./pages/ProfileVisitors";
 // import PremiumDashboard from "./pages/PremiumDashboard";
-import MyShortlists from "@/pages/MyShortlists";
 // NORMAL PAGES
 import Index from "./pages/Index";
 import Home from "./pages/Home";

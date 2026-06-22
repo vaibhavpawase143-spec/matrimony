@@ -22,15 +22,6 @@ public class WebConfig
                 .addResourceLocations(
                         "file:" + uploadPath
                 );
-        registry
-
-                .addResourceHandler(
-                        "/uploads/**"
-                )
-
-                .addResourceLocations(
-                        "file:uploads/"
-                );
 
     }
 
