@@ -2,7 +2,7 @@ import { Heart, MessageSquare, X } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
-import Navbar from "@/components/Navbar";
+
 import { useLanguage } from "@/context/LanguageContext";
 import { useToast } from "@/components/Toast";
 import { profileAPI } from "@/services/api";
@@ -36,7 +36,7 @@ const Matches = () => {
 
   return (
     <div className="min-h-screen bg-muted/30">
-      <Navbar />
+
 
       <div className="py-8 text-center" style={{ background: "linear-gradient(135deg, hsl(270 60% 35%), hsl(290 55% 45%), hsl(270 50% 55%))" }}>
         <Heart className="inline-block h-8 w-8 text-pink-soft fill-pink-soft mb-2" />

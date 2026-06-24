@@ -1,6 +1,6 @@
 import { Heart } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/components/Toast";
 import { useLoading } from "@/hooks/useLoading";
@@ -19,6 +19,11 @@ const Login = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [errors, setErrors] = useState({});
+
+  useEffect(() => {
+    setEmail("");
+    setPassword("");
+  }, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -157,23 +162,30 @@ const Login = () => {
           </p>
         </div>
 
-        <form className="space-y-4" onSubmit={handleLogin}>
+        <form
+        className="space-y-4"
+        onSubmit={handleLogin}
+        autoComplete="off"
+        >
           <div>
             <label className="text-xs font-medium mb-1 block">
               {t?.login?.emailLabel || "Email"}
             </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => {
-                setEmail(e.target.value);
-                if (errors.email) {
-                  setErrors((prev) => ({ ...prev, email: "" }));
-                }
-              }}
-              className="w-full border rounded-lg px-4 py-2.5 text-sm"
-              placeholder={t?.login?.emailPlaceholder || "Enter your email"}
-            />
+           <input
+           type="email"
+           name="user_email_random"
+           value={email}
+           autoComplete="new-email"
+           onChange={(e) => {
+           setEmail(e.target.value);
+
+           if (errors.email) {
+           setErrors((prev) => ({ ...prev, email: "" }));
+           }
+           }}
+           className="w-full border rounded-lg px-4 py-2.5 text-sm"
+           placeholder="Enter your email"
+           />
             {errors.email && (
               <p className="text-xs text-red-500 mt-1">{errors.email}</p>
             )}
@@ -184,40 +196,69 @@ const Login = () => {
               {t?.login?.passwordLabel || "Password"}
             </label>
             <input
-              type="password"
-              value={password}
-              onChange={(e) => {
-                setPassword(e.target.value);
-                if (errors.password) {
-                  setErrors((prev) => ({ ...prev, password: "" }));
-                }
-              }}
-              className="w-full border rounded-lg px-4 py-2.5 text-sm"
-              placeholder={t?.login?.passwordPlaceholder || "Enter your password"}
+            type="password"
+            name="user_password_random"
+            value={password}
+            autoComplete="new-password"
+            onChange={(e) => {
+            setPassword(e.target.value);
+
+            if (errors.password) {
+            setErrors((prev) => ({ ...prev, password: "" }));
+            }
+            }}
+            className="w-full border rounded-lg px-4 py-2.5 text-sm"
+            placeholder="Enter your password"
             />
             {errors.password && (
               <p className="text-xs text-red-500 mt-1">{errors.password}</p>
             )}
           </div>
 
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={rememberMe}
-              onChange={(e) => setRememberMe(e.target.checked)}
-            />
-            <span className="text-xs">
-              {t?.login?.rememberMe || "Remember me"}
-            </span>
-          </div>
+       <div className="flex items-center justify-between">
 
-          <button
-            type="submit"
-            className="w-full bg-primary text-white py-2.5 rounded-lg hover:opacity-90 transition"
-          >
-            {t?.login?.button || "Login"}
-          </button>
+         <div className="flex items-center gap-2">
+           <input
+             type="checkbox"
+             checked={rememberMe}
+             onChange={(e) =>
+               setRememberMe(e.target.checked)
+             }
+           />
 
+           <span className="text-xs">
+             {t?.login?.rememberMe || "Remember me"}
+           </span>
+         </div>
+
+         <Link
+           to="/forgot-password"
+           className="
+             text-sm
+             text-pink-600
+             hover:text-pink-700
+             font-medium
+           "
+         >
+           Forgot Password?
+         </Link>
+
+       </div>
+
+       <button
+         type="submit"
+         className="
+           w-full
+           bg-primary
+           text-white
+           py-2.5
+           rounded-lg
+           hover:opacity-90
+           transition
+         "
+       >
+         {t?.login?.button || "Login"}
+       </button>
           <p className="text-center text-xs">
             {t?.login?.noAccount || "Don't have an account?"}{" "}
             <Link to="/register" className="text-primary font-semibold">

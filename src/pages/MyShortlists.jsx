@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import Navbar from '@/components/Navbar';
+
 import { useNavigate } from 'react-router-dom';
 import useShortlist from '@/hooks/useShortlist';
 import { profileAPI } from '@/services/api';
@@ -101,7 +101,9 @@ await remove(profileId);
 toast.success(
 'Removed from shortlists'
 );
-
+window.dispatchEvent(
+    new Event("dashboardUpdated")
+);
 }catch(err){
 
 console.error(err);
@@ -122,7 +124,7 @@ return (
 
 <div className="min-h-screen bg-muted/30">
 
-<Navbar />
+
 
 <div className="container mx-auto px-4 py-8">
 

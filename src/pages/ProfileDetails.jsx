@@ -1,5 +1,7 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link,useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
+import ShortlistButton from "@/components/ShortlistButton";
+
 import {
 Heart,
 MapPin,
@@ -10,11 +12,19 @@ ArrowLeft,
 Star,
 MessageSquare
 } from "lucide-react";
+import { photoAPI } from "@/services/api";
 
-import Navbar from "@/components/Navbar";
+
 import { useLanguage } from "@/context/LanguageContext";
-import { profileAPI,interestAPI } from "@/services/api";
+import {
+  profileAPI,
+  interestAPI,
+  profileVisitorAPI,
+    blockAPI,
+    subscriptionAPI
+} from "@/services/api";
 import toast from "react-hot-toast";
+
 
 const InfoRow = ({label,value}) => (
 
@@ -52,9 +62,10 @@ text-right
 );
 
 const ProfileDetails=()=>{
-
+const navigate = useNavigate();
 const {t}=useLanguage();
-
+const [currentPhotoIndex, setCurrentPhotoIndex] =
+useState(0);
 const calculateAge=(dob)=>{
 
 if(!dob) return "-";
@@ -87,13 +98,27 @@ return age;
 
 };
 
+const [galleryPhotos,setGalleryPhotos] =
+useState([]);
+
+const [showGallery,setShowGallery] =
+useState(false);
 const {id}=useParams();
 
 const [profile,setProfile]=
 useState(null);
+const [blockedProfile,
+setBlockedProfile] =
+useState(false);
+
 const [interestSent,
 setInterestSent]=
 useState(false);
+const [canViewContact,setCanViewContact] =
+useState(false);
+const [isPremiumUser, setIsPremiumUser] =
+useState(false);
+const [showUpgradePopup, setShowUpgradePopup] = useState(false);
 useEffect(()=>{
 
 const loadProfile =
@@ -105,23 +130,134 @@ const data =
 await profileAPI
 .getProfileById(id);
 
-setProfile(data);
 
 const currentUser =
 JSON.parse(
-localStorage.getItem(
-"user"
-)
+  localStorage.getItem("user")
+);
+const myProfile =
+    await profileAPI.getProfile();
+
+console.log(myProfile);
+
+
+console.log("MY PROFILE =", myProfile);
+console.log("MY PROFILE PREMIUM =", myProfile.isPremium);
+
+setIsPremiumUser(
+    Boolean(myProfile.isPremium)
+);const blockedUsers =
+await blockAPI.getMyBlockedUsers(
+  currentUser.profile.userId
 );
 
+const blockedIds =
+blockedUsers.map(
+  user => user.blockedId
+);
+if (
+  blockedIds.includes(
+    data.userId
+  )
+) {
+
+  setBlockedProfile(true);
+
+  return;
+
+}
+if (
+  blockedIds.includes(
+    data.userId
+  )
+) {
+
+  toast.error(
+    "This profile is blocked"
+  );
+
+  return;
+
+}
+const galleryResponse =
+    await photoAPI.getUserPhotos(data.userId);
+
+console.log("Gallery Response =", galleryResponse);
+
+console.log(
+    "Gallery Photos =",
+    galleryResponse.photos
+);
+
+console.log(
+    "Gallery Length =",
+    galleryResponse.photos.length
+);
+
+setGalleryPhotos(
+    galleryResponse.photos
+);
+console.log(
+  "CURRENT USER",
+  currentUser
+);
+
+console.log(
+  "PROFILE DATA",
+  data
+);
+if (
+  currentUser?.profile?.userId !==
+  data.userId
+) {
+
+  console.log(
+    "VISITOR SAVE START",
+    data.userId
+  );
+
+await profileVisitorAPI.saveVisit(
+    data.userId
+);
+window.dispatchEvent(
+    new Event("dashboardUpdated")
+);
+  console.log(
+    "VISITOR SAVE SUCCESS"
+  );
+}
 const sentInterests =
 await interestAPI
 .getSentInterests(
 
 currentUser.profile.userId
 
+);console.log(
+  "SENT INTERESTS =",
+  JSON.stringify(
+    sentInterests,
+    null,
+    2
+  )
+);
+const acceptedInterest =
+sentInterests.find(
+
+item =>
+
+Number(item.receiverId) ===
+Number(data.userId)
+
+&&
+
+item.status ===
+"ACCEPTED"
+
 );
 
+setCanViewContact(
+!!acceptedInterest
+);
 const alreadySent =
 sentInterests.some(
 
@@ -142,7 +278,7 @@ data.userId
 setInterestSent(
 alreadySent
 );
-
+setProfile(data);
 }catch(err){
 
 console.log(err);
@@ -158,82 +294,108 @@ loadProfile();
 }
 
 },[id]);
-const handleSendInterest =
-async()=>{
 
-try{
+const handleMessageClick = async () => {
 
-const currentUser =
-JSON.parse(
-localStorage.getItem(
-"user"
-)
-);
+    try {
 
-if(
-!currentUser ||
-!profile
-){
+        const subscription =
+            await subscriptionAPI.getMySubscription();
 
-toast.error(
-"User not found"
-);
+        if (subscription?.isActive) {
 
-return;
+            navigate(`/messages?receiverId=${profile.userId}`);
 
-}
+       } else {
 
-const senderId =
-Number(
-currentUser.profile.userId
-);
+           setShowUpgradePopup(true);
 
-const receiverId =
-Number(
-profile.userId
-);
+       }
+   } catch {
 
-console.log(
-"SENDER:",
-senderId
-);
+       setShowUpgradePopup(true);
 
-console.log(
-"RECEIVER:",
-receiverId
-);
+   }
+};
 
-if(
-senderId === receiverId
-){
+const handleSendInterest = async () => {
 
-toast.error(
-"You cannot send interest to yourself"
-);
+  try {
 
-return;
+    const currentUser =
+      JSON.parse(
+        localStorage.getItem("user")
+      );
 
-}
+    if (!currentUser || !profile) {
 
-await interestAPI.sendInterest(
+      toast.error("User not found");
+      return;
 
-senderId,
+    }
 
-receiverId
+    const senderId =
+      Number(
+        currentUser.profile.userId
+      );
 
-);
+    if (interestSent) {
 
-setInterestSent(
-true
-);
+      toast(
+        "Interest already sent ❤️"
+      );
 
-toast.success(
-"Interest Sent Successfully ❤️"
-);
+      return;
+
+    }
+
+    const receiverId =
+      Number(profile.userId);
+
+    if (senderId === receiverId) {
+
+      toast.error(
+        "You cannot send interest to yourself"
+      );
+
+      return;
+
+    }
+
+    await interestAPI.sendInterest(
+      senderId,
+      receiverId
+    );
+
+    setInterestSent(true);
+
+    toast.success(
+      "Interest Sent Successfully ❤️"
+    );
 
 }catch(err){
 
 console.log(err);
+
+if(
+
+err?.message?.includes(
+
+"Daily limit reached"
+
+)
+
+){
+
+toast.error(
+
+"Daily limit reached.\nUpgrade to Premium for unlimited interests."
+
+);
+
+return;
+
+}
 
 toast.error(
 
@@ -246,34 +408,56 @@ err?.message ||
 }
 
 };
+if (blockedProfile) {
 
-if(!profile){
+  return (
 
-return(
+    <div
+      className="
+      min-h-screen
+      flex
+      items-center
+      justify-center
+      text-2xl
+      font-bold
+      "
+    >
 
-<div className="
-min-h-screen
-flex
-items-center
-justify-center
-">
+      🚫 This profile is blocked
 
-Loading Profile...
+    </div>
 
-</div>
-
-);
+  );
 
 }
+if (!profile) {
 
+  return (
+
+    <div
+      className="
+      min-h-screen
+      flex
+      items-center
+      justify-center
+      "
+    >
+
+      Loading Profile...
+
+    </div>
+
+  );
+
+}
 return(
-
+<>
 <div className="
 min-h-screen
 bg-muted/30
 ">
 
-<Navbar/>
+
 
 <div className="
 container
@@ -313,13 +497,41 @@ gap-6
 <div>
 
 <div className="
+relative
 bg-card
 rounded-xl
 overflow-hidden
 border
 border-border
 ">
+{
+profile.isPremium && (
 
+<div
+className="
+absolute
+top-4
+left-4
+z-10
+bg-gradient-to-r
+from-yellow-400
+to-amber-500
+text-white
+px-4
+py-1
+rounded-full
+text-sm
+font-bold
+shadow-lg
+"
+>
+
+👑 PREMIUM
+
+</div>
+
+)
+}
 <img
 
 src={
@@ -360,49 +572,81 @@ ${interestSent
 >
 
 <Heart size={18}/>
-
-{
-
-interestSent
-
-? "Interest Sent"
-
-: "Send Interest"
-
-}
-
+{interestSent ? "Interest Sent" : "Send Interest"}
 </button>
-<button className="
+
+
+
+<button
+onClick={handleMessageClick}
+className="
 w-full
 bg-purple-700
+hover:bg-purple-800
+text-white
 rounded-lg
 py-3
 flex
 justify-center
 gap-2
-">
+transition
+"
+>
 
 <MessageSquare size={18}/>
 
 Message
 
 </button>
+<button
+onClick={() => {
 
-<button className="
-w-full
-bg-yellow-600
-rounded-lg
-py-3
-flex
-justify-center
-gap-2
-">
+    if (!isPremiumUser) {
 
-<Star size={18}/>
+        toast.error(
+            "Upgrade to Premium to view this user's photo gallery."
+        );
 
-Shortlist
+        return;
+    }
 
+    if (!galleryPhotos || galleryPhotos.length === 0) {
+
+        toast(
+            "This user has not uploaded any gallery photos."
+        );
+
+        return;
+    }
+
+    setCurrentPhotoIndex(0);
+
+    setShowGallery(true);
+
+}}
+  className="
+  w-full
+  bg-blue-600
+  hover:bg-blue-700
+  text-white
+  rounded-lg
+  py-3
+  font-medium
+  transition
+  "
+>
+  View Photo Gallery
 </button>
+
+<ShortlistButton
+
+profileId={profile.id}
+
+size="lg"
+
+showLabel={true}
+
+/>
 
 </div>
 
@@ -425,10 +669,15 @@ border
 border-border
 ">
 
-<h1 className="
+<h1
+className="
 text-3xl
 font-bold
-">
+flex
+items-center
+gap-2
+"
+>
 
 {profile.firstName}
 
@@ -436,8 +685,51 @@ font-bold
 
 {profile.lastName}
 
-</h1>
+{
+profile.isPremium && (
 
+<span
+className="
+bg-yellow-100
+text-yellow-700
+text-sm
+px-3
+py-1
+rounded-full
+font-semibold
+"
+>
+
+👑 Premium
+
+</span>
+
+)
+
+}
+
+</h1>{
+profile.verified && (
+
+<div className="
+mt-2
+inline-flex
+items-center
+bg-green-100
+text-green-700
+px-3
+py-1
+rounded-full
+text-sm
+font-medium
+">
+
+🛡 Verified Profile
+
+</div>
+
+)
+}
 {/* TOP SECTION */}
 
 <div className="
@@ -728,7 +1020,55 @@ value={profile.address}
 
 </div>
 
+<div
+className="
+bg-card
+rounded-xl
+border
+border-border
+p-6
+"
+>
 
+<h2
+className="
+font-bold
+mb-4
+"
+>
+
+Contact Details
+
+</h2>
+
+<InfoRow
+label="Email"
+value={
+!canViewContact
+? "🔒 Send Interest & Get Accepted"
+
+: isPremiumUser
+
+? profile.email
+
+: "👑 Upgrade to Premium to view Email"
+}
+/>
+
+<InfoRow
+label="Phone"
+value={
+!canViewContact
+? "🔒 Send Interest & Get Accepted"
+
+: isPremiumUser
+
+? profile.phone
+
+: "👑 Upgrade to Premium to view Phone"
+}
+/>
+</div>
 {/* LIFESTYLE */}
 
 <div className="
@@ -772,7 +1112,179 @@ value={profile.drinkingValue}
 </div>
 
 </div>
+{
+showGallery && (
 
+<div
+className="
+fixed
+inset-0
+bg-black/80
+z-50
+flex
+items-center
+justify-center
+p-4
+"
+>
+
+<div
+className="
+bg-white
+rounded-xl
+max-w-6xl
+w-full
+p-5
+max-h-[90vh]
+overflow-auto
+"
+>
+
+<div
+className="
+flex
+justify-between
+items-center
+mb-4
+"
+>
+
+<h2 className="text-xl font-bold">
+Photo Gallery
+</h2>
+
+<button
+onClick={() =>
+setShowGallery(false)
+}
+>
+✕
+</button>
+
+</div>
+<div className="
+flex
+items-center
+justify-center
+gap-4
+">
+
+{galleryPhotos.length > 1 && (
+
+<>
+    <button
+        onClick={() =>
+            setCurrentPhotoIndex(prev =>
+                prev === 0
+                    ? galleryPhotos.length - 1
+                    : prev - 1
+            )
+        }
+        className="bg-gray-200 px-4 py-2 rounded"
+    >
+        ◀ Prev
+    </button>
+
+    <button
+        onClick={() =>
+            setCurrentPhotoIndex(prev =>
+                prev === galleryPhotos.length - 1
+                    ? 0
+                    : prev + 1
+            )
+        }
+        className="bg-gray-200 px-4 py-2 rounded"
+    >
+        Next ▶
+    </button>
+</>
+
+)}
+
+{galleryPhotos.length > 0 && (
+
+<img
+src={
+galleryPhotos[
+currentPhotoIndex
+]?.photoUrl ||
+
+galleryPhotos[
+currentPhotoIndex
+]?.imageUrl ||
+
+galleryPhotos[
+currentPhotoIndex
+]?.url
+}
+alt=""
+className="
+max-h-[70vh]
+max-w-[70vw]
+object-contain
+rounded-lg
+"
+/>
+
+)}
+
+</div>
+</div>
+
+</div>
+
+)
+}
+{
+showUpgradePopup && (
+
+<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[999999]">
+
+    <div className="bg-white rounded-3xl p-8 w-[420px] text-center">
+
+        <div className="text-6xl mb-4">
+            👑
+        </div>
+
+        <h2 className="text-2xl font-bold mb-3">
+            Premium Required
+        </h2>
+
+        <p className="text-gray-600 mb-6">
+            Chat is available only for Premium members.
+        </p>
+
+        <div className="flex justify-center gap-3">
+
+            <button
+                onClick={() => {
+                    setShowUpgradePopup(false);
+                    navigate("/home");
+                }}
+                className="px-5 py-2 rounded-xl bg-gray-200"
+            >
+                Home
+            </button>
+
+            <button
+                onClick={() => {
+                    setShowUpgradePopup(false);
+                    navigate("/upgrade");
+                }}
+                className="px-5 py-2 rounded-xl bg-pink-600 text-white"
+            >
+                Upgrade Premium
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+)
+}
+</>
 );
 
 };

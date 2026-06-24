@@ -9,12 +9,19 @@ import { ToastProvider } from "@/components/Toast";
 import { LanguageProvider } from "@/context/LanguageContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import AdminRoute from "@/routes/AdminRoute";
+import SupportTickets from "./pages/SupportTickets";
+import SupportTicketDetails from "./pages/SupportTicketDetails";
 import LoadingSpinner from "./components/LoadingSpinner";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import AuthenticatedLayout from "@/components/AuthenticatedLayout";
 import SentInterests from "./pages/SentInterests";
 import ReceivedInterests from "./pages/ReceivedInterests";
-
+import EmailVerified from "@/pages/EmailVerified";
+import MyShortlists from "@/pages/MyShortlists";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+import ProfileVisitors from "./pages/ProfileVisitors";
+// import PremiumDashboard from "./pages/PremiumDashboard";
 // NORMAL PAGES
 import Index from "./pages/Index";
 import Home from "./pages/Home";
@@ -33,12 +40,13 @@ import Messages from "./pages/Messages";
 import SettingsPage from "./pages/SettingsPage";
 import Account from "./pages/Account";
 import UpgradePremium from "./pages/UpgradePremium";
-import MyShortlists from "./pages/MyShortlists";
+import Likes from "@/pages/Likes";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsConditions from "./pages/TermsConditions";
 import FAQ from "./pages/FAQ";
 import HelpSupport from "./pages/HelpSupport";
 import RefundPolicy from "./pages/RefundPolicy";
+import ChatPage from "./pages/ChatPage";
 
 // ADMIN PAGES
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -47,11 +55,96 @@ import PaymentsPage from "./pages/admin/PaymentsPage";
 import VerificationPage from "./pages/admin/VerificationPage";
 
 import NotFound from "./pages/NotFound";
+import { useEffect } from "react";
 
 const queryClient = new QueryClient();
 
-const App = () => (
+const App = () => {
+
+//   useEffect(() => {
+//
+//     const handleUnload = () => {
+//
+//       const token = localStorage.getItem("token");
+//
+//       if (!token) {
+//         return;
+//       }
+//
+//       fetch(
+//         "http://localhost:9090/api/chat/offline",
+//         {
+//           method: "PUT",
+//           keepalive: true,
+//           headers: {
+//             Authorization: `Bearer ${token}`
+//           }
+//         }
+//       );
+//
+//     };
+//
+//     window.addEventListener(
+//       "beforeunload",
+//       handleUnload
+//     );
+//
+//     return () => {
+//
+//       window.removeEventListener(
+//         "beforeunload",
+//         handleUnload
+//       );
+//
+//     };
+//
+//   }, []);
+useEffect(() => {
+
+  const token = localStorage.getItem("token");
+
+  if (!token) {
+    return;
+  }
+
+  const pingServer = async () => {
+
+    try {
+
+      await fetch(
+        "http://localhost:9090/api/chat/ping",
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
+
+    } catch (err) {
+
+      console.log("PING ERROR", err);
+
+    }
+
+  };
+
+  // First ping immediately
+  pingServer();
+
+  // Then every 30 seconds
+  const interval = setInterval(
+    pingServer,
+    10000
+  );
+
+  return () => clearInterval(interval);
+
+}, []);
+
+  return (
   <QueryClientProvider client={queryClient}>
+
     <LanguageProvider>
       <ThemeProvider>
         <LoadingProvider>
@@ -63,7 +156,14 @@ const App = () => (
               <AuthProvider>
                 <BrowserRouter>
                   <MobileBottomNav />
-
+{/* <Route */}
+{/*   path="/premium" */}
+{/*   element={ */}
+{/*     <AuthenticatedLayout> */}
+{/*       <PremiumDashboard /> */}
+{/*     </AuthenticatedLayout> */}
+{/*   } */}
+{/* /> */}
                   <Routes>
                     {/* PUBLIC ROUTES */}
                     <Route path="/" element={<Index />} />
@@ -71,7 +171,7 @@ const App = () => (
                     <Route path="/register" element={<Register />} />
                     <Route path="/verify-email" element={<VerifyEmail />} />
                     <Route path="/request-verification" element={<RequestVerification />} />
-                    <Route path="/profile/create" element={<CreateProfile />} />
+                    <Route path="/profie/create" element={<CreateProfile />} />
                     <Route path="/about" element={<About />} />
                     <Route path="/contact" element={<Contact />} />
                     <Route path="/privacy-policy" element={<PrivacyPolicy />} />
@@ -79,6 +179,7 @@ const App = () => (
                     <Route path="/faq" element={<FAQ />} />
                     <Route path="/help" element={<HelpSupport />} />
                     <Route path="/refund-policy" element={<RefundPolicy />} />
+                    <Route path="/chat/:conversationId/:receiverId" element={<ChatPage/>} />
 
                     {/* PROTECTED USER ROUTES */}
                     <Route
@@ -89,6 +190,43 @@ const App = () => (
                         </AuthenticatedLayout>
                       }
                     />
+<Route
+  path="/support/tickets"
+  element={
+    <AuthenticatedLayout>
+      <SupportTickets />
+    </AuthenticatedLayout>
+  }
+/>
+
+<Route
+  path="/support/tickets/:ticketNumber"
+  element={
+    <AuthenticatedLayout>
+      <SupportTicketDetails />
+    </AuthenticatedLayout>
+  }
+/>
+                    <Route
+                      path="/profile-visitors"
+                      element={
+                        <AuthenticatedLayout>
+                          <ProfileVisitors />
+                        </AuthenticatedLayout>
+                      }
+                    />
+
+
+<Route
+path="/forgot-password"
+element={<ForgotPassword />}
+/>
+
+<Route
+path="/reset-password"
+element={<ResetPassword />}
+/>
+
                     <Route
                       path="/search"
                       element={
@@ -151,6 +289,10 @@ element={
 
 }
 
+/>
+<Route
+path="/email-verified"
+element={<EmailVerified />}
 />
 
                     <Route
@@ -227,7 +369,10 @@ element={
                         </AdminRoute>
                       }
                     />
-
+<Route
+path="/likes"
+element={<Likes />}
+/>
                     {/* NOT FOUND */}
                     <Route path="*" element={<NotFound />} />
                   </Routes>
@@ -238,7 +383,11 @@ element={
         </LoadingProvider>
       </ThemeProvider>
     </LanguageProvider>
-  </QueryClientProvider>
-);
 
-export default App;
+  </QueryClientProvider>
+  );
+
+
+  };
+
+  export default App;

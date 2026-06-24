@@ -1,5 +1,6 @@
 // API service for frontend development
 import errorHandler from '@/utils/errorHandler';
+import EmailVerified from "@/pages/EmailVerified";
 
 const API_BASE_URL = '/api'; // Will be proxied to backend
 
@@ -25,7 +26,7 @@ const validateToken = () => {
 };
 
 // Centralized API client with proper auth and error handling
-const apiClient = async (endpoint, options = {}) => {
+export const apiClient = async (endpoint, options = {}) => {
   try {
     const token = localStorage.getItem('token');
 
@@ -62,9 +63,17 @@ const apiClient = async (endpoint, options = {}) => {
       throw error;
     }
 
-    const result = await response.json();
-    console.log('✅ API Success Response:', result);
-    return result;
+   const text = await response.text();
+
+   if (!text) {
+     return {};
+   }
+
+   try {
+     return JSON.parse(text);
+   } catch {
+     return text;
+   }
   } catch (error) {
     console.error('❌ API Request Failed:', error);
     console.error('❌ Error details:', {
@@ -84,6 +93,156 @@ const apiClient = async (endpoint, options = {}) => {
   }
 };
 
+
+
+
+export const photoAPI = {
+
+  getMyPhotos: async () => {
+
+    const response = await fetch(
+      `${API_BASE_URL}/photos/me`,
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`
+        }
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to load photos");
+    }
+
+    return await response.json();
+  },
+getUserPhotos: async (userId) => {
+
+  const response = await fetch(
+    `${API_BASE_URL}/photos/user/${userId}`,
+    {
+      headers: {
+        Authorization:
+          `Bearer ${localStorage.getItem("token")}`
+      }
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      "Failed to load photos"
+    );
+  }
+
+  return await response.json();
+},
+  uploadMultiple: async (formData) => {
+
+    const response = await fetch(
+      `${API_BASE_URL}/photos/upload-multiple`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`
+        },
+        body: formData
+      }
+    );
+
+    const text = await response.text();
+
+    console.log(
+      "UPLOAD RESPONSE:",
+      response.status,
+      text
+    );
+
+    if (!response.ok) {
+      throw new Error(text || "Photo upload failed");
+    }
+
+    try {
+      return JSON.parse(text);
+    } catch {
+      return text;
+    }
+  },
+
+  deletePhoto: async (photoId) => {
+
+    const response = await fetch(
+      `${API_BASE_URL}/photos/${photoId}`,
+      {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`
+        }
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to delete photo");
+    }
+
+    return true;
+  }
+
+};
+
+export const notificationAPI = {
+
+  getAll: async (userId) => {
+
+    return await apiClient(
+      `/notifications?userId=${userId}`
+    );
+
+  },
+
+  unreadCount: async (userId) => {
+
+    return await apiClient(
+      `/notifications/unread?userId=${userId}`
+    );
+
+  },
+
+  markRead: async (id) => {
+
+    return await apiClient(
+      `/notifications/read/${id}`,
+      {
+        method: "PUT"
+      }
+    );
+
+  },
+markAllRead: async(userId)=>{
+
+  return await apiClient(
+
+    `/notifications/read-all/${userId}`,
+
+    {
+
+      method:"PUT"
+
+    }
+
+  );
+
+},
+  delete: async (id) => {
+
+    return await apiClient(
+      `/notifications/${id}`,
+      {
+        method: "DELETE"
+      }
+    );
+
+  }
+
+};
 export const authAPI = {
   login: async (data, isAdmin = false) => {
     try {
@@ -172,7 +331,158 @@ export const authAPI = {
       // Return null instead of throwing for getCurrentUser
       return null;
     }
+  },
+ forgotPassword: async (email) => {
+
+   return await apiClient(
+
+     "/auth/forgot-password",
+
+     {
+       method: "POST",
+
+       body: JSON.stringify({
+         email
+       })
+
+     }
+
+   );
+
+ },
+resetPassword: async (
+  token,
+  newPassword
+) => {
+
+  return await apiClient(
+
+    "/auth/reset-password",
+
+    {
+      method: "POST",
+
+      body: JSON.stringify({
+
+        token,
+
+        newPassword
+
+      })
+
+    }
+
+  );
+
+},
+
+};
+
+export const profileVisitorAPI = {
+
+  saveVisit: async (visitedUserId) => {
+
+    return await apiClient(
+      `/profile-visitors/${visitedUserId}`,
+      {
+        method: "POST"
+      }
+    );
+
+  },
+
+  getMyVisitors: async () => {
+
+    return await apiClient(
+      "/profile-visitors/me"
+    );
+
   }
+
+};
+export const blockAPI = {
+
+  blockUser: async (
+    blockerId,
+    blockedId
+  ) => {
+
+    return await apiClient(
+
+      `/block?blockerId=${blockerId}&blockedId=${blockedId}`,
+
+      {
+        method: "POST"
+      }
+
+    );
+
+  },
+
+getMyBlockedUsers: async (
+  blockerId
+) => {
+
+  return await apiClient(
+    `/block/my-blocked-users?blockerId=${blockerId}`
+  );
+
+},
+  unblockUser: async (
+    blockerId,
+    blockedId
+  ) => {
+
+    return await apiClient(
+
+      `/block?blockerId=${blockerId}&blockedId=${blockedId}`,
+
+      {
+        method: "DELETE"
+      }
+
+    );
+
+  },
+
+  checkBlocked: async (
+    user1,
+    user2
+  ) => {
+
+    return await apiClient(
+
+      `/block/check?user1=${user1}&user2=${user2}`
+
+    );
+
+  }
+
+};
+export const reportAPI = {
+
+  reportUser: async (
+    reportedUserId,
+    reason = "Inappropriate profile"
+  ) => {
+
+    return await apiClient(
+      `/report?reportedUserId=${reportedUserId}&reason=${encodeURIComponent(reason)}`,
+      {
+        method: "POST"
+      }
+    );
+
+  },
+
+
+hasReported: async (reportedUserId) => {
+
+  return await apiClient(
+    `/report/check/${reportedUserId}`
+  );
+
+},
 };
 
 export const profileAPI = {
@@ -300,8 +610,50 @@ error?.message ||
 }
 
 };
+export const supportAPI = {
 
-export const interestAPI = {
+  createTicket: async (data) => {
+
+    return await apiClient(
+      "/support",
+      {
+        method: "POST",
+        body: JSON.stringify(data)
+      }
+    );
+
+  },
+
+  getMyTickets: async () => {
+
+    return await apiClient(
+      "/support/me"
+    );
+
+  },
+
+  getTicket: async (ticketNumber) => {
+
+    return await apiClient(
+      `/support/${ticketNumber}`
+    );
+
+  },
+
+  closeTicket: async (ticketNumber) => {
+
+    return await apiClient(
+      `/support/${ticketNumber}/close`,
+      {
+        method: "PUT"
+      }
+    );
+
+  }
+
+};
+
+ export const interestAPI = {
 
 getReceivedPendingInterests:
 
@@ -1437,5 +1789,153 @@ return await apiClient(
  );
 
  }
+
+ };
+ export const subscriptionAPI = {
+
+   // ==========================
+   // GET ALL PLANS
+   // ==========================
+   getPlans: async () => {
+
+     try {
+
+       return await apiClient("/subscription/plans");
+
+     } catch (error) {
+
+       console.error("Subscription API Error:", error);
+
+       return [];
+
+     }
+
+   },
+
+   // ==========================
+   // BUY PLAN
+   // ==========================
+   subscribe: async (data) => {
+
+     try {
+
+       return await apiClient(
+         "/subscription/subscribe",
+         {
+           method: "POST",
+           body: JSON.stringify(data)
+         }
+       );
+
+     } catch (error) {
+
+       console.error("Subscription API Error:", error);
+
+       throw error;
+
+     }
+
+   },
+
+   // ==========================
+   // CREATE ORDER
+   // ==========================
+   createOrder: async (planId) => {
+
+     return await apiClient(
+       `/razorpay/create-order?planId=${planId}`,
+       {
+         method: "POST"
+       }
+     );
+
+   },
+
+   // ==========================
+   // VERIFY PAYMENT
+   // ==========================
+   verifyPayment: async (data) => {
+
+     return await apiClient(
+       `/razorpay/verify-payment?orderId=${data.orderId}&paymentId=${data.paymentId}&signature=${data.signature}`,
+       {
+         method: "POST"
+       }
+     );
+
+   },
+
+   // ==========================
+   // PAYMENT STATUS
+   // ==========================
+   getPaymentStatus: async (orderId) => {
+
+     return await apiClient(
+       `/razorpay/payment-status/${orderId}`
+     );
+
+   },
+
+   // ==========================
+   // MY SUBSCRIPTION
+   // ==========================
+   getMySubscription: async () => {
+
+     try {
+
+       return await apiClient("/subscription/me");
+
+     } catch (error) {
+
+       console.error("Subscription API Error:", error);
+
+       return null;
+
+     }
+
+   },
+
+   // ==========================
+   // HISTORY
+   // ==========================
+   getHistory: async () => {
+
+     try {
+
+       return await apiClient("/subscription/history");
+
+     } catch (error) {
+
+       console.error("Subscription API Error:", error);
+
+       return [];
+
+     }
+
+   },
+
+   // ==========================
+   // CANCEL SUBSCRIPTION
+   // ==========================
+   cancelSubscription: async () => {
+
+     try {
+
+       return await apiClient(
+         "/subscription/cancel",
+         {
+           method: "PUT"
+         }
+       );
+
+     } catch (error) {
+
+       console.error("Subscription API Error:", error);
+
+       throw error;
+
+     }
+
+   }
 
  };

@@ -1,14 +1,14 @@
 import { useEffect,useState } from "react";
-import Navbar from "@/components/Navbar";
+import profile1 from "@/assets/profile1.jpg";
 import { interestAPI, profileAPI } from "@/services/api";
 import { useNavigate } from "react-router-dom";
 
-const SentInterests = ()=>{
+const SentInterests = () => {
 
-const navigate = useNavigate();
+    const navigate = useNavigate();
 
-const [profiles,setProfiles] =
-useState([]);
+    const [profiles, setProfiles] = useState([]);
+
 
 useEffect(()=>{
 
@@ -122,7 +122,7 @@ return(
 
 <div className="min-h-screen bg-muted/30">
 
-<Navbar/>
+
 
 <div className="container mx-auto p-6">
 
@@ -212,10 +212,14 @@ profiles.map(profile=>(
 key={profile.id}
 
 className="
-bg-card
-rounded-xl
-p-5
+bg-white
+rounded-2xl
 border
+shadow-sm
+hover:shadow-lg
+transition-all
+duration-300
+p-6
 flex
 justify-between
 items-center
@@ -223,18 +227,36 @@ items-center
 
 >
 
-<div>
+<div className="flex items-center gap-4">
 
-<h2 className="font-bold">
+<img
+  src={profile.imageUrl || profile1}
+  alt={profile.firstName}
+  className="
+    h-16
+    w-16
+    rounded-full
+    object-cover
+    border-2
+    border-purple-200
+  "
+/>
 
-{profile.firstName}
-{" "}
-{profile.lastName}
+  <div>
 
-</h2>
+    <h2
+      className="
+      text-xl
+      font-bold
+      text-slate-800
+      "
+    >
+      {profile.firstName} {profile.lastName}
+    </h2>
 
-<div className="mt-2">
 
+
+    <div className="mt-2">
 <span
 
 className={`
@@ -297,28 +319,44 @@ profile.interestStatus==="ACCEPTED"
 
 </div>
 </div>
+</div>
+<div className="flex gap-3">
 
-<button
+    <button
+        onClick={() => navigate(`/profile/${profile.id}`)}
+        className="
+        px-4
+        py-2
+        rounded-lg
+        bg-primary
+        text-white
+        "
+    >
+        View Profile
+    </button>
 
-onClick={()=>navigate(
+    {
+        profile.interestStatus === "ACCEPTED" && (
 
-`/profile/${profile.id}`
+            <button
+ onClick={() => {
+     navigate(`/messages?receiverId=${profile.userId}`);
+ }}
+                className="
+                px-4
+                py-2
+                rounded-lg
+                bg-pink-600
+                text-white
+                "
+            >
+                💬 Message
+            </button>
 
-)}
+        )
+    }
 
-className="
-px-4
-py-2
-rounded-lg
-bg-primary
-text-white
-"
-
->
-
-View Profile
-
-</button>
+</div>
 
 </div>
 
@@ -328,8 +366,8 @@ View Profile
 
 </div>
 
-</div>
 
+</div>
 </div>
 
 );

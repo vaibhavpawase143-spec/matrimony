@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { User, Lock, Bell, Save, Upload, X } from "lucide-react";
 import { motion } from "framer-motion";
-import Navbar from "@/components/Navbar";
+
 import { useToast } from "@/components/Toast";
 import { useProfileData } from "@/hooks/useProfileData";
 import { partnerPreferenceAPI } from "@/services/api";
 import { masterDataAPI } from "@/services/api";
+import { photoAPI } from "@/services/api";
 
 const tabs = [
   { id: "profile", label: "Profile", icon: <User className="h-4 w-4" /> },
@@ -137,7 +138,7 @@ bloodGroupId:null,
     profilePhoto: null,
     profilePhotoUrl: ""
   });
-  
+  const [galleryPhotos, setGalleryPhotos] = useState([]);
   const [passwordData, setPasswordData] = useState({
     currentPassword: "",
     newPassword: "",
@@ -1310,8 +1311,52 @@ return updated;
       profilePhotoUrl: ""
     }));
   };
+const handleGalleryUpload = (e) => {
 
-  const validateProfileForm = () => {
+  const files = Array.from(
+    e.target.files || []
+  );
+
+  if (!files.length) return;
+
+  const currentCount =
+    galleryPhotos.filter(
+      p => p.id || p.file
+    ).length;
+
+  if (
+    currentCount + files.length > 8
+  ) {
+
+    error(
+      "Maximum 8 photos allowed"
+    );
+
+    return;
+  }
+
+  const photos = files.map(file => ({
+
+    file,
+
+    preview:
+      URL.createObjectURL(file),
+
+    uploaded: false
+
+  }));
+
+  setGalleryPhotos(prev => [
+
+    ...prev,
+
+    ...photos
+
+  ]);
+
+};
+
+const validateProfileForm = () => {
     // Only validate basic required fields
     if (!formData.firstName || formData.firstName.trim() === "") {
       error("First name is required");
@@ -1352,8 +1397,77 @@ error(
 return false;
 
 }
+const totalPhotos =
+  galleryPhotos.length;
+
+if (totalPhotos < 4) {
+
+  error(
+    "Please upload minimum 4 photos"
+  );
+
+  return false;
+}
     return true;
   };
+const removeGalleryPhoto = async (index) => {
+
+  try {
+
+    const photo = galleryPhotos[index];
+
+    if (photo.id) {
+
+      await photoAPI.deletePhoto(
+        photo.id
+      );
+
+    }
+
+    setGalleryPhotos(prev =>
+      prev.filter((_, i) =>
+        i !== index
+      )
+    );
+
+    success(
+      "Photo deleted successfully"
+    );
+
+  } catch (err) {
+
+    console.error(err);
+
+    error(
+      "Failed to delete photo"
+    );
+
+  }
+
+};
+const loadGalleryPhotos = async () => {
+  try {
+    const photos = await photoAPI.getMyPhotos();
+
+    setGalleryPhotos(
+      photos.map(photo => ({
+        id: photo.id,
+        preview: photo.photoUrl,
+        photoUrl: photo.photoUrl,
+        uploaded: true
+      }))
+    );
+  } catch (err) {
+    console.error(err);
+  }
+};
+
+useEffect(() => {
+
+  loadGalleryPhotos();
+
+}, []);
+
 
   const handleProfileUpdate = async () => {
     if (!validateProfileForm()) return;
@@ -1471,8 +1585,36 @@ bloodGroupId: formData.bloodGroupId,
      2
      )
      );
+const newPhotos = galleryPhotos.filter(
+  photo => photo.file && !photo.uploaded
+);
 
-     const result =
+if (newPhotos.length > 0) {
+
+  const photoFormData = new FormData();
+
+  newPhotos.forEach(photo => {
+
+    photoFormData.append(
+      "files",
+      photo.file
+    );
+
+  });
+
+  console.log(
+    "Uploading New Photos:",
+    newPhotos.length
+  );
+
+  await photoAPI.uploadMultiple(
+    photoFormData
+  );
+
+  await loadGalleryPhotos();
+}
+
+const result =
      await saveProfileData(
      dataToSave
      );
@@ -2021,7 +2163,7 @@ fieldOptions = masterOptions.bloodGroups || [];
 
   return (
     <div className="min-h-screen bg-muted/30">
-      <Navbar />
+
 
       <div className="py-8 text-center" style={{ background: "linear-gradient(135deg, hsl(270 60% 35%), hsl(290 55% 45%), hsl(270 50% 55%))" }}>
         <h1 className="text-3xl md:text-4xl font-display font-bold text-primary-foreground mb-2">Settings</h1>
@@ -2042,7 +2184,7 @@ fieldOptions = masterOptions.bloodGroups || [];
             <div className="space-y-6">
               <h2 className="text-lg font-display font-bold text-foreground mb-4">Update Profile</h2>
 
-              {/* Profile Photo Upload */}
+
               <div className="border border-dashed border-border rounded-lg p-4 bg-muted/30">
                 <label className="text-sm font-medium text-foreground mb-3 block">Profile Photo</label>
                 {formData.profilePhotoUrl ? (
@@ -3143,7 +3285,98 @@ text-foreground
                   />
                 </div>
               </div>
+{/* Profile Photo Upload */}
+              <div className="border rounded-lg p-4">
 
+                <div className="flex justify-between mb-3">
+
+                  <h3 className="font-semibold">
+                    Photo Gallery
+                  </h3>
+
+                  <span>
+                    {galleryPhotos.length}/8
+                  </span>
+
+                </div>
+
+                <p className="text-red-500 text-xs mb-3">
+                  Minimum 4 photos required
+                </p>
+
+                <label className="
+                  bg-primary
+                  text-white
+                  px-4
+                  py-2
+                  rounded-lg
+                  cursor-pointer
+                  inline-block
+                ">
+
+                  Add Gallery Photos
+
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleGalleryUpload}
+                  />
+
+                </label>
+
+                <div className="
+                  grid
+                  grid-cols-2
+                  md:grid-cols-4
+                  gap-3
+                  mt-4
+                ">
+
+                  {galleryPhotos.map((photo,index)=>(
+
+                    <div
+                      key={index}
+                      className="relative"
+                    >
+
+                      <img
+                        src={photo.preview}
+                        alt=""
+                        className="
+                          h-32
+                          w-full
+                          object-cover
+                          rounded-lg
+                        "
+                      />
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          removeGalleryPhoto(index)
+                        }
+                        className="
+                          absolute
+                          top-1
+                          right-1
+                          bg-red-500
+                          text-white
+                          rounded-full
+                          p-1
+                        "
+                      >
+                        <X size={14}/>
+                      </button>
+
+                    </div>
+
+                  ))}
+
+                </div>
+
+              </div>
 
               <button onClick={handleProfileUpdate} className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-6 py-2.5 rounded-lg text-sm transition-colors">
                 <Save className="h-4 w-4" /> Save Changes

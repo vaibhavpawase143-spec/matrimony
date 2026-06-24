@@ -1,8 +1,8 @@
 import { useEffect,useState } from "react";
-import Navbar from "@/components/Navbar";
+
 import { useNavigate } from "react-router-dom";
 import { interestAPI,profileAPI } from "@/services/api";
-
+import profile1 from "@/assets/profile1.jpg";
 import toast from "react-hot-toast";
 
 const ReceivedInterests = ()=>{
@@ -169,11 +169,11 @@ item.interestId !== interestId
 // refresh dashboard values
 
 window.dispatchEvent(
+    new Event("interestUpdated")
+);
 
-new Event(
-"interestUpdated"
-)
-
+window.dispatchEvent(
+    new Event("dashboardUpdated")
 );
 
 }
@@ -196,7 +196,7 @@ return(
 
 <div className="min-h-screen bg-muted/30">
 
-<Navbar/>
+
 
 <div className="container mx-auto p-6">
 
@@ -248,10 +248,15 @@ profiles.map(profile=>(
 key={profile.id}
 
 className="
-bg-card
-rounded-xl
-border
-p-5
+bg-white
+rounded-2xl
+border-l-4
+border-pink-500
+shadow-sm
+hover:shadow-lg
+transition-all
+duration-300
+p-6
 flex
 justify-between
 items-center
@@ -259,28 +264,55 @@ items-center
 
 >
 
-<div>
+<div className="flex items-center gap-4">
 
-<h2 className="font-bold">
+<img
+  src={profile.imageUrl || profile1}
+  alt={profile.firstName}
+  className="
+    h-16
+    w-16
+    rounded-full
+    object-cover
+    border-2
+    border-pink-200
+  "
+/>
 
-{profile.firstName}
+  <div>
 
-{" "}
+    <h2
+      className="
+      text-xl
+      font-bold
+      text-slate-800
+      "
+    >
+      {profile.firstName} {profile.lastName}
+    </h2>
 
-{profile.lastName}
 
-</h2>
 
-<p>
+    <span
+      className="
+      inline-flex
+      items-center
+      mt-2
+      px-3
+      py-1
+      rounded-full
+      text-xs
+      font-semibold
+      bg-amber-100
+      text-amber-700
+      "
+    >
+      ⏳ Pending Request
+    </span>
 
-Status:
-
-{profile.status}
-
-</p>
+  </div>
 
 </div>
-
 <div className="flex gap-3">
 
 <button

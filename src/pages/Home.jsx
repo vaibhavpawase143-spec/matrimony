@@ -1,16 +1,24 @@
 import { Heart, User, Search, Settings, LogOut, ChevronDown, Bell, MessageSquare, Star, Menu } from "lucide-react";
-
+import RecentActivity
+from "@/components/RecentActivity";
 import { Link, useNavigate } from "react-router-dom";
+import HeartAnimation
+from "@/components/HeartAnimation";
 
+import useLikes
+from "@/hooks/useLikes";
+import { swipeAPI } from "@/services/swipeAPI";
+import { getConversations } from "@/services/chatApi";
 import { motion } from "framer-motion";
+import ReportModal from "../components/ReportModal";
+import { useState, useEffect,useCallback  } from "react";
 
-import { useState, useEffect } from "react";
 
 import { useAuth } from "@/hooks/useAuth";
 
 import { useLoading } from "@/hooks/useLoading";
 
-import { useLikeBookmark } from "@/hooks/useLikeBookmark";
+
 
 import ThemeToggle from "@/components/ThemeToggle";
 
@@ -32,34 +40,51 @@ import {
 
 profileAPI,
 
-interestAPI
-
+interestAPI,
+profileVisitorAPI,
+blockAPI,
+reportAPI,
+subscriptionAPI
 } from "@/services/api";
 
 import {
 
-connectNotifications,
+shortlistAPI
 
-disconnectNotifications
+}
 
-} from "@/services/websocket";
+from "@/services/shortlistAPI";
+
+import {
+  connectNotifications,
+  disconnectNotifications
+} from "@/utils/notificationSocket";
 
 
 const HomeFixed = () => {
 
 const navigate = useNavigate();
+const {
 
+isLiked,
+
+toggleLike
+
+}=useLikes();
+const [showReportModal, setShowReportModal] = useState(false);
+const [reportedUsers, setReportedUsers] = useState({});
+console.log("showReportModal =", showReportModal);
+const [selectedProfile, setSelectedProfile] = useState(null);
+const [selectedReason, setSelectedReason] = useState("");
+const [customReason, setCustomReason] = useState("");
+const [blockedUsers, setBlockedUsers] = useState([]);
+const [showUpgradePopup, setShowUpgradePopup] = useState(false);
 const { userName, logout } = useAuth();
 
 const { startLoading, stopLoading } =
 useLoading();
 
-const {
-isLiked,
-isBookmarked,
-toggleLike,
-toggleBookmark
-} = useLikeBookmark();
+
 
 const { t } = useLanguage();
 
@@ -73,100 +98,182 @@ useState(true);
 
 const [profiles,setProfiles] =
 useState([]);
-
-const [
-
-sentInterests,
-
-setSentInterests
-
-] = useState([]);
-
-
-const [
-
-dashboardStats,
-
-setDashboardStats
-
-] = useState({
-
-totalMatches:0,
-
-interestsSent:0,
-
-interestsReceived:0,
-
-bookmarkedProfiles:0,
-
-profileViews:0,
-
-messages:0
-
+const [dashboardStats, setDashboardStats] = useState({
+  totalMatches: 0,
+  interestsSent: 0,
+  interestsReceived: 0,
+  shortlists: 0,
+  profileViews: 0,
+  likesReceived: 0,
+  messages: 0
 });
 
-const loadDashboard = async()=>{
+const [visitors, setVisitors] = useState([]);
+const [receivedInterests, setReceivedInterests] = useState([]);
+const [shortlists, setShortlists] = useState([]);
+const [sentInterests, setSentInterests] = useState([]);
 
-try{
 
-const currentUser =
-JSON.parse(
-localStorage.getItem("user")
-);
+const refreshDashboard = useCallback(async () => {
+  try {
+    const currentUser = JSON.parse(
+      localStorage.getItem("user") || "{}"
+    );
 
-const senderId =
-currentUser.profile.userId;
+    const userId = Number(
+      currentUser?.profile?.userId ||
+      currentUser?.userId ||
+      currentUser?.id
+    );
 
-const sentInterests =
-await interestAPI.getSentInterests(
-senderId
-);
+    if (!userId) {
+      console.warn("Dashboard: userId not found");
+      return;
+    }
 
-const receivedInterests =
-await interestAPI
-.getReceivedPendingInterests(
-senderId
-);
+   const [
+     visitorsResponse,
+     receivedResponse,
+     sentResponse,
+     shortlistResponse,
+     conversationsResponse,
+     likesResponse
+   ] = await Promise.allSettled([
+     profileVisitorAPI.getMyVisitors(),
+     interestAPI.getReceivedInterests(userId),
+     interestAPI.getSentInterests(userId),
+     shortlistAPI.getMyShortlists(),
+     getConversations(),
+     swipeAPI.getReceivedLikes()
+   ]);
+    const safeArray = (response) => {
+      if (response.status !== "fulfilled") {
+        console.warn("Dashboard API failed:", response.reason);
+        return [];
+      }
 
-setDashboardStats(prev=>({
+      const data = response.value;
 
-...prev,
+      if (Array.isArray(data)) {
+        return data;
+      }
 
-interestsSent:
-sentInterests.length,
+      if (Array.isArray(data?.data)) {
+        return data.data;
+      }
 
-interestsReceived:
-receivedInterests.length
+      if (Array.isArray(data?.content)) {
+        return data.content;
+      }
 
-}));
+      return [];
+    };
 
-}catch(err){
+    const visitorsData = safeArray(visitorsResponse);
+    const receivedData = safeArray(receivedResponse);
+    const sentData = safeArray(sentResponse);
+    const shortlistsData = safeArray(shortlistResponse);
+    const conversationsData = safeArray(conversationsResponse);
+const likesData = safeArray(likesResponse);
+    setVisitors(visitorsData);
+    setReceivedInterests(receivedData);
+    setSentInterests(sentData);
+    setShortlists(shortlistsData);
 
-console.log(err);
+    const unreadMessages = conversationsData.reduce(
+      (total, conversation) =>
+        total + Number(
+          conversation.unreadCount ||
+          conversation.unreadMessages ||
+          0
+        ),
+      0
+    );
 
-}
+    const acceptedMatches = receivedData.filter((interest) =>
+      String(
+        interest.status ||
+        interest.interestStatus ||
+        ""
+      ).toUpperCase() === "ACCEPTED"
+    ).length;
 
-};
+    setDashboardStats({
+      totalMatches: acceptedMatches,
+      interestsSent: sentData.length,
+      interestsReceived: receivedData.length,
+      shortlists: shortlistsData.length,
+      profileViews: visitorsData.length,
+    likesReceived: likesData.length,
+      messages: unreadMessages
+    });
 
-useEffect(()=>{
+  } catch (error) {
+    console.error("Dashboard refresh failed:", error);
+  }
+}, []);
 
-loadDashboard();
+useEffect(() => {
+  refreshDashboard();
 
-window.addEventListener(
-"interestUpdated",
-loadDashboard
-);
+  const handleDashboardUpdated = () => {
+    refreshDashboard();
+  };
 
-return ()=>{
+  window.addEventListener(
+    "dashboardUpdated",
+    handleDashboardUpdated
+  );
 
-window.removeEventListener(
-"interestUpdated",
-loadDashboard
-);
+  return () => {
+    window.removeEventListener(
+      "dashboardUpdated",
+      handleDashboardUpdated
+    );
+  };
+}, [refreshDashboard]);
+useEffect(() => {
+  const currentUser = JSON.parse(
+    localStorage.getItem("user") || "{}"
+  );
 
-};
+  const userId = Number(
+    currentUser?.profile?.userId ||
+    currentUser?.userId ||
+    currentUser?.id
+  );
 
-},[]);
+  if (!userId) {
+    console.warn("Home WebSocket: userId not found");
+    return;
+  }
+
+  connectNotifications(userId, (notification) => {
+    console.log(
+      "HOME LIVE NOTIFICATION:",
+      notification
+    );
+
+    if (
+      notification?.receiverId &&
+      Number(notification.receiverId) !== userId
+    ) {
+      return;
+    }
+
+    refreshDashboard();
+
+    window.dispatchEvent(
+      new CustomEvent("dashboardUpdated", {
+        detail: notification
+      })
+    );
+  });
+
+  return () => {
+    disconnectNotifications();
+  };
+}, [refreshDashboard]);
 const [
 
 notificationCount,
@@ -181,6 +288,26 @@ setNotificationCount
 
 const [loadingProfiles,setLoadingProfiles] =
 useState(true);
+const [showProfilePopup, setShowProfilePopup] =
+useState(false);
+useEffect(() => {
+
+  if (
+    profileData &&
+    profileData.profileCompleted === false
+  ) {
+
+
+
+    setShowProfilePopup(true);
+
+  }
+
+}, [profileData]);
+
+const [showHeart,setShowHeart] =
+useState(null);
+
 
 const calculateAge = (dob) => {
 
@@ -230,38 +357,67 @@ const calculateAge = (dob) => {
   const loadProfiles = async () => {
     try {
       setLoadingProfiles(true);
+      const currentUser =
+       JSON.parse(
+       localStorage.getItem("user")
+       );
   const data =
   await profileAPI.getProfiles();
+  console.log(
+    "PROFILES API:",
+    data
+  );
+  const blockedUsers =
+    await blockAPI.getMyBlockedUsers(
+      currentUser.profile.userId
+    );
 
+  console.log(
+    "BLOCKED USERS:",
+    blockedUsers
+  );
+console.log("FIRST PROFILE:", data[0]);
   console.log(
   "Profiles API Response:",
  JSON.stringify(data,null,2)
   );
- const currentUser =
- JSON.parse(
- localStorage.getItem("user")
- );
+const blockedIds =
+  blockedUsers.map(
+    user => user.blockedId
+  );
 
- const filteredProfiles =
- Array.isArray(data)
+console.log(
+  "BLOCKED IDS:",
+  blockedIds
+);
 
- ?
+const filteredProfiles =
+  Array.isArray(data)
 
- data.filter(profile =>
+    ?
 
- String(profile.email)
- .toLowerCase()
+    data.filter(profile =>
 
- !==
+      profile.profileCompleted === true &&
 
- String(currentUser.email)
- .toLowerCase()
+      String(profile.email)
+        .toLowerCase()
 
- )
+      !==
+      String(currentUser.email)
+        .toLowerCase()
 
- : [];
+      &&
 
- console.log(
+      !blockedIds.includes(
+        profile.userId
+      )
+
+    )
+
+    : [];
+
+     console.log(
  "CURRENT USER:",
  currentUser.email
  );
@@ -279,9 +435,39 @@ const calculateAge = (dob) => {
  "FILTERED:",
  filteredProfiles
  );
- setProfiles(
- filteredProfiles
- );
+filteredProfiles.forEach(profile => {
+
+  console.log(
+    "USER:",
+    profile.firstName,
+    "PREMIUM:",
+    profile.isPremium
+  );
+
+});
+const reportStatus = {};
+
+for (const profile of filteredProfiles) {
+
+  try {
+
+    reportStatus[profile.userId] =
+      await reportAPI.hasReported(
+        profile.userId
+      );
+
+  } catch {
+
+    reportStatus[profile.userId] = false;
+
+  }
+
+}
+
+setReportedUsers(reportStatus);
+
+
+setProfiles(filteredProfiles);
 
     } catch (error) {
       console.warn('Failed to load profiles:', error.message);
@@ -296,10 +482,10 @@ const profileCompletion = {
   completionPercentage:
     profileData?.currentStep || 0,
 
-  message:
-    (profileData?.currentStep || 0) >= 100
-      ? "Profile completed"
-      : "Complete your profile"
+ message:
+ (profileData?.currentStep || 0) >= 100
+   ? "Profile completed successfully"
+   : "Click here to complete your profile"
 };
 
   const handleLogout = () => {
@@ -349,43 +535,46 @@ toast.error(
 return;
 
 }
-
 await interestAPI.sendInterest(
-
-senderId,
-
-receiverId
-
+    senderId,
+    receiverId
 );
 
-setSentInterests(
-prev => [
+setSentInterests(prev => [
+    ...prev,
+    receiverId
+]);
 
-...prev,
-
-receiverId
-
-]
-);
-
-setDashboardStats(
-prev => ({
-
-...prev,
-
-interestsSent:
-
-prev.interestsSent + 1
-
-})
+window.dispatchEvent(
+    new Event("dashboardUpdated")
 );
 
 toast.success(
-"Interest Sent Successfully ❤️"
+    "Interest Sent Successfully ❤️"
 );
 }catch(err){
 
 console.log(err);
+
+if(
+
+err?.message?.includes(
+
+"Daily limit reached"
+
+)
+
+){
+
+toast.error(
+
+"Daily limit reached.\nUpgrade to Premium for unlimited interests."
+
+);
+
+return;
+
+}
 
 toast.error(
 
@@ -419,6 +608,104 @@ timer
 },[]);
 
 return (
+
+    <>
+    {showProfilePopup && (
+      <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[9999]">
+
+        <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl">
+
+          <div className="text-center">
+
+            <div className="text-6xl mb-4">
+              ⚠️
+            </div>
+
+            <h2 className="text-2xl font-bold mb-3">
+              Complete Your Profile
+            </h2>
+
+        <p className="text-gray-600 mb-6">
+          Please complete your profile to continue.
+          You are not allowed to access this feature until your profile is completed.
+        </p>
+
+            <div className="flex gap-3 justify-center">
+
+              <button
+                className="bg-pink-600 text-white px-6 py-3 rounded-xl"
+                onClick={() =>
+                  navigate("/settings")
+                }
+              >
+                Complete Profile
+              </button>
+
+              <button
+                className="border px-6 py-3 rounded-xl"
+                onClick={() =>
+                  setShowProfilePopup(false)
+                }
+              >
+                Later
+              </button>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+    )}
+{showUpgradePopup && (
+
+<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[99999]">
+
+    <div className="bg-white rounded-3xl p-8 w-[420px] text-center">
+
+        <div className="text-6xl mb-4">
+            👑
+        </div>
+
+        <h2 className="text-2xl font-bold mb-3">
+            Premium Required
+        </h2>
+
+        <p className="text-gray-600 mb-6">
+            Chat is available only for Premium members.
+            Upgrade your plan to continue.
+        </p>
+
+        <div className="flex justify-center gap-3">
+
+            <button
+                onClick={() => {
+                    setShowUpgradePopup(false);
+                }}
+                className="px-5 py-2 rounded-xl bg-gray-200"
+            >
+                Home
+            </button>
+
+            <button
+                onClick={() => {
+                    setShowUpgradePopup(false);
+                    navigate("/upgrade");
+                }}
+                className="px-5 py-2 rounded-xl bg-pink-600 text-white"
+            >
+                Upgrade Premium
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+)}
+
     <div className="min-h-screen bg-muted/30 flex">
       {/* Sidebar */}
       <aside className={`hidden md:flex flex-col bg-card border-r border-border min-h-screen sticky top-0 transition-all duration-300 ${isSidebarOpen ? 'w-64' : 'w-20'}`}>
@@ -439,8 +726,59 @@ return (
           ].map((item) => (
             <Link
               key={item.label}
-              to={item.to}
-              className={`w-full flex items-center px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+              to={
+                profileData?.profileCompleted
+                  ? item.to
+                  : item.label === "Dashboard"
+                  ? "/home"
+                  : "#"
+              }
+             onClick={async (e) => {
+
+                 // Profile completion check
+                 if (
+                     !profileData?.profileCompleted &&
+                     item.label !== "Dashboard" &&
+                     item.label !== "Settings"
+                 ) {
+
+                     e.preventDefault();
+                     setShowProfilePopup(true);
+                     return;
+
+                 }
+
+                 // Premium check only for Messages
+                 if (item.label === "Messages") {
+
+                     e.preventDefault();
+
+                     try {
+
+                         const subscription =
+                             await subscriptionAPI.getMySubscription();
+
+                         if (subscription?.isActive) {
+
+                             navigate("/messages");
+
+                         } else {
+
+                             setShowUpgradePopup(true);
+
+                         }
+
+                     } catch (error) {
+
+                         setShowUpgradePopup(true);
+
+                     }
+
+                     return;
+
+                 }
+
+             }}              className={`w-full flex items-center px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                 isSidebarOpen ? 'gap-3' : 'justify-center'
               } ${
                 item.active
@@ -484,10 +822,7 @@ return (
           </div>
           <div className="flex items-center gap-3">
             <ThemeToggle />
-            <button className="relative text-muted-foreground hover:text-foreground transition-colors">
-              <Bell className="h-5 w-5" />
-              <span className="absolute -top-1 -right-1 h-4 w-4 bg-primary text-primary-foreground text-[10px] font-bold rounded-full flex items-center justify-center">{notificationCount}</span>
-            </button>
+
             <button
               onClick={() => navigate("/account")}
               className="h-9 w-9 rounded-full bg-accent/20 hover:bg-accent/30 flex items-center justify-center text-accent font-bold text-sm cursor-pointer transition-colors"
@@ -632,12 +967,16 @@ p-8
             {/* Dashboard Stats */}
             <div>
               <h3 className="text-lg font-semibold text-foreground mb-4">{t?.home?.overviewTitle || "Overview"}</h3>
-            <DashboardStats
+         <DashboardStats stats={dashboardStats} />
+                     </div>
 
-            stats={dashboardStats}
 
-            />            </div>
-
+<RecentActivity
+  visitors={visitors}
+  receivedInterests={receivedInterests}
+  shortlists={shortlists}
+  sentInterests={sentInterests}
+/>
             {/* Real Profiles Section */}
             <div className="mb-8">
               <h2 className="text-2xl font-bold mb-6">Discover Profiles</h2>
@@ -649,6 +988,7 @@ p-8
               ) : profiles.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {profiles.map((profile, i) => (
+
                     <motion.div
                       key={profile.id || i}
                       initial={{ opacity: 0, y: 20 }}
@@ -667,93 +1007,222 @@ p-8
                    hover:scale-[1.03]
                    hover:-translate-y-1
                      "
-                      onClick={() => navigate(`/profile/${profile.id}`)}
-                    >
-                 <div className="relative h-[320px] overflow-hidden">
+onClick={(e)=>{
 
-                    {
+if(
 
-                 profile.imageUrl ? (
+e.target.closest(
 
-                 <>
+"button"
 
-                 <img
+)
 
-                 src={profile.imageUrl}
+){
 
-                 alt={`${profile.firstName} ${profile.lastName}`}
+return;
 
-                 className="
-                 w-full
-                 h-full
-                 object-cover
-                 "
+}
 
-                 onError={(e)=>{
+setTimeout(()=>{
 
-                 e.target.parentElement.innerHTML =
-                 `
-                 <div class="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400">
+if(
 
-                 No Image
+e.detail===1
 
-                 </div>
-                 `;
+){
 
-                 }}
+navigate(
 
-                 />
+`/profile/${profile.id}`
 
-                 <div className="
-                 absolute
-                 bottom-3
-                 left-3
-                 bg-white/90
-                 px-3
-                 py-1
-                 rounded-full
-                 text-sm
-                 font-medium
-                 shadow
-                 ">
+);
 
-                 ❤️ {profile.matchPercentage || 0}% Match
+}
 
-                 </div>
+},220);
 
-                 </>
+}}
 
-                 )
+>
 
-                 :
-                   (
-                    <div className="
-                    w-full
-                    h-full
-                    flex
-                    items-center
-                    justify-center
-                    bg-gray-100
-                    text-gray-400
-                    ">
+<div
 
-                    No Image
+className="
 
-                    </div>
+relative
 
-                    )
+h-[320px]
 
-                    }
 
+"
+onDoubleClick={async(e)=>{
+
+e.stopPropagation();
+
+try{
+
+if(
+
+!isLiked(
+profile.userId
+)
+
+){
+
+setShowHeart(
+profile.userId
+);
+
+await toggleLike(
+profile.userId
+);
+window.dispatchEvent(
+  new Event("dashboardUpdated")
+);
+window.dispatchEvent(
+new Event(
+"like:updated"
+)
+);
+toast.success(
+"Liked ❤️"
+);
+
+}else{
+
+toast(
+"Already liked ❤️"
+);
+
+}
+
+}catch(err){
+
+toast.error(
+"Failed"
+);
+
+}
+
+}}
+>
+
+<HeartAnimation
+
+show={
+
+showHeart===profile.userId
+
+}
+
+onComplete={()=>{
+
+setShowHeart(
+null
+);
+
+}}
+
+/>
+
+{
+profile.imageUrl ? (
+
+<>
+<img
+
+src={profile.imageUrl}
+
+alt={`${profile.firstName} ${profile.lastName}`}
+
+className="
+w-full
+h-full
+object-cover
+"
+
+onError={(e)=>{
+
+e.target.parentElement.innerHTML=
+`
+
+<div class="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400">
+
+No Image
+
+</div>
+
+`;
+
+}}
+
+ />
+
+<div
+
+className="
+absolute
+bottom-3
+left-3
+bg-white/90
+px-3
+py-1
+rounded-full
+text-sm
+font-medium
+shadow
+"
+
+>
+
+❤️ {profile.matchPercentage || 0}% Match
+
+</div>
+
+</>
+
+)
+
+:
+
+(
+
+<div
+
+className="
+w-full
+h-full
+flex
+items-center
+justify-center
+bg-gray-100
+text-gray-400
+"
+
+>
+
+No Image
+
+</div>
+
+)
+
+}
                     </div>
                   <div className="p-5 pb-6">
-                   <h3 className="text-xl font-bold">
+                  <h3 className="text-xl font-bold">
 
-                   {profile.firstName}
-                   {" "}
-                   {profile.lastName}
+                    {profile.firstName}
+                    {" "}
+                    {profile.lastName}
 
-                   </h3>
+                    {profile.isPremium && (
+                      <span className="ml-2 text-yellow-500">
+                        👑
+                      </span>
+                    )}
+
+                  </h3>
 
                    <p className="text-gray-600 mt-1">
 
@@ -768,11 +1237,11 @@ p-8
 
                   <button
 
-                  disabled={
-                  sentInterests.includes(
-                  profile.userId
-                  )
-                  }
+           disabled={
+             sentInterests.includes(
+               profile.userId
+             )
+           }
 
                   className="
                   w-full
@@ -785,18 +1254,27 @@ p-8
                   shadow-md
                   transition
                   "
-        onClick={()=>{
+     onClick={() => {
 
-        console.log(
-        "PROFILE CLICKED:",
-        profile
-        );
+       if (
+         !profileData?.profileCompleted
+       ) {
 
-        handleSendInterest(
-        profile
-        );
+         setShowProfilePopup(true);
 
-        }}
+         return;
+       }
+
+       console.log(
+         "PROFILE CLICKED:",
+         profile
+       );
+
+       handleSendInterest(
+         profile
+       );
+
+     }}
 
 
                   >
@@ -821,49 +1299,333 @@ p-8
 
                   </button>
 
-                  <button
+                 <button
 
-      className="
-      w-full
-      bg-[#F8F9FA]
-      border
-      border-[#E9ECEF]
-      text-[#343A40]
-      py-3
-      rounded-xl
-      font-semibold
-      shadow-sm
-      hover:bg-white
-      transition
-      "
+                 className="
+                 w-full
+                 bg-[#F8F9FA]
+                 border
+                 border-[#E9ECEF]
+                 text-[#343A40]
+                 py-3
+                 rounded-xl
+                 font-semibold
+                 shadow-sm
+                 hover:bg-white
+                 transition
+                 "
 
-                  onClick={(e)=>{
+                 onClick={(e) => {
 
-                  e.stopPropagation();
+                   e.stopPropagation();
 
-                  navigate(`/profile/${profile.id}`);
+                   if (
+                     !profileData?.profileCompleted
+                   ) {
 
-                  }}
+                     setShowProfilePopup(true);
 
-                  >
+                     return;
+                   }
 
-                  👤 View Profile
+                   navigate(
+                     `/profile/${profile.id}`
+                   );
 
-                  </button>
+                 }}
 
+                 >
+
+                 👤 View Profile
+
+                 </button>
                    </div>
-<div className="mt-4 flex justify-center gap-2">
-                  <LikeBookmarkButtons
-                    profileId={profile.id || i}
-                    isLiked={isLiked(profile.id || i)}
-                    isBookmarked={isBookmarked(profile.id || i)}
-                    onLike={toggleLike}
-                    onBookmark={toggleBookmark}
-                    size="sm"
-                  />
-                  <ShortlistButton profileId={profile.id || i} size="sm" showLabel={false} />
-                </div>
+<div className="mt-5 flex justify-center gap-3">
 
+<button
+
+title="Like"
+
+onClick={async(e)=>{
+
+e.stopPropagation();
+
+try{
+
+const likedBefore =
+
+isLiked(
+profile.userId
+);
+
+setShowHeart(
+profile.userId
+);
+
+await toggleLike(
+profile.userId
+);
+window.dispatchEvent(
+  new Event("dashboardUpdated")
+);
+if(
+
+likedBefore
+
+){
+
+toast(
+"Like removed"
+);
+
+}else{
+
+toast.success(
+"Liked ❤️"
+);
+
+}
+
+}catch{
+
+toast.error(
+"Failed"
+);
+
+}
+
+}}
+className="
+
+group
+
+w-12
+h-12
+
+rounded-full
+
+bg-gradient-to-br
+
+from-pink-500
+
+to-rose-600
+
+shadow-lg
+
+hover:scale-125
+
+active:scale-95
+
+transition-all
+
+duration-300
+
+flex
+
+items-center
+
+justify-center
+
+"
+
+>
+
+<span
+
+className={`
+
+text-2xl
+
+transition-all
+
+duration-300
+
+${
+
+isLiked(
+profile.userId
+)
+
+?
+
+"scale-125"
+
+:
+
+""
+
+}
+
+`}
+
+>
+
+{
+
+isLiked(
+profile.userId
+)
+
+?
+
+"❤️"
+
+:
+
+"🤍"
+
+}
+
+</span>
+</button>
+<div
+className="
+group
+w-12
+h-12
+rounded-full
+bg-white
+border
+border-amber-200
+shadow-lg
+hover:scale-125
+active:scale-95
+transition-all
+duration-300
+flex
+items-center
+justify-center
+"
+>
+
+<ShortlistButton
+profileId={profile.id || i}
+size="sm"
+showLabel={false}
+/>
+
+</div>
+<button
+title="Block User"
+onClick={async (e) => {
+  e.stopPropagation();
+
+  const confirmBlock = window.confirm(
+    "Are you sure you want to block this user?"
+  );
+
+  if (!confirmBlock) return;
+
+  try {
+
+    const currentUser = JSON.parse(
+      localStorage.getItem("user")
+    );
+
+    const blockerId =
+      Number(currentUser.profile.userId);
+
+    const blockedId =
+      Number(profile.userId);
+
+    console.log("BLOCKER:", blockerId);
+    console.log("BLOCKED:", blockedId);
+
+    const result =
+      await blockAPI.blockUser(
+        blockerId,
+        blockedId
+      );
+
+    console.log("BLOCK API RESULT:", result);
+
+ toast.success(
+   "User blocked successfully"
+ );
+
+ setBlockedUsers(prev => [
+   ...prev,
+   profile.userId
+ ]);
+setProfiles(prev =>
+  prev.filter(
+    p => p.userId !== profile.userId
+  )
+);
+  } catch (err) {
+
+    console.error("BLOCK ERROR:", err);
+
+    toast.error(
+      err.message || "Failed to block user"
+    );
+
+  }
+}}
+
+className="
+group
+w-12
+h-12
+rounded-full
+bg-red-100
+border
+border-red-200
+shadow-lg
+hover:scale-125
+active:scale-95
+transition-all
+duration-300
+flex
+items-center
+justify-center
+"
+>
+🚫
+</button>
+<button
+  title={
+    reportedUsers[profile.userId]
+      ? "Already Reported"
+      : "Report User"
+  }
+  disabled={reportedUsers[profile.userId]}
+  onClick={(e) => {
+
+    e.stopPropagation();
+
+    if (reportedUsers[profile.userId]) {
+      return;
+    }
+
+    setSelectedProfile(profile);
+    setShowReportModal(true);
+
+  }}
+  className={`
+    group
+    w-12
+    h-12
+    rounded-full
+    border
+    shadow-lg
+    transition-all
+    duration-300
+    flex
+    items-center
+    justify-center
+    text-xl
+
+    ${
+      reportedUsers[profile.userId]
+        ? "bg-gray-200 border-gray-300 cursor-not-allowed opacity-70"
+        : "bg-orange-100 border-orange-200 hover:scale-125 active:scale-95"
+    }
+  `}
+>
+  {reportedUsers[profile.userId] ? "✔️" : "⚠️"}
+</button>
+</div>
                    </div>
                     </motion.div>
                   ))}
@@ -907,9 +1669,87 @@ p-8
 
         </div>
 
-      </div>
 
     </div>
+        </div>
+
+        <ReportModal
+          open={showReportModal}
+          onClose={() => {
+            setShowReportModal(false);
+            setSelectedReason("");
+            setCustomReason("");
+          }}
+          selectedReason={selectedReason}
+          setSelectedReason={setSelectedReason}
+          customReason={customReason}
+          setCustomReason={setCustomReason}
+         onSubmit={async () => {
+
+           try {
+
+             if (!selectedReason) {
+
+               toast.error("Please select a reason");
+
+               return;
+
+             }
+
+             const finalReason =
+               selectedReason === "Other"
+                 ? customReason
+                 : selectedReason;
+
+             if (
+               selectedReason === "Other" &&
+               !customReason.trim()
+             ) {
+
+               toast.error(
+                 "Please enter a reason"
+               );
+
+               return;
+
+             }
+
+             const result =
+               await reportAPI.reportUser(
+                 selectedProfile.userId,
+                 finalReason
+               );
+
+             toast.success(
+               result || "User reported successfully"
+             );
+setReportedUsers(prev => ({
+    ...prev,
+    [selectedProfile.userId]: true
+}));
+             setShowReportModal(false);
+
+             setSelectedReason("");
+
+             setCustomReason("");
+
+             setSelectedProfile(null);
+
+           } catch (err) {
+
+             console.error(err);
+
+             toast.error(
+               err.message || "Failed to report user"
+             );
+
+           }
+
+         }}
+        />
+
+
+    </>
   );
 };
 
