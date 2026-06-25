@@ -144,6 +144,7 @@ bloodGroupId:null,
     newPassword: "",
     confirmPassword: ""
   });
+const [partnerPreferenceId, setPartnerPreferenceId] = useState(null);
 const [partnerPreference,setPartnerPreference]=
 useState({
 
@@ -209,7 +210,7 @@ console.log(
 "Partner Preference:",
 pref
 );
-
+setPartnerPreferenceId(pref?.id ?? null);
 setPartnerPreference({
 
 minAge:
@@ -285,7 +286,7 @@ console.log(
 "Partner Preference Error:",
 err
 );
-
+setPartnerPreferenceId(null);
 }
 
 };
@@ -1676,26 +1677,29 @@ console.log(
 "PARTNER DATA:",
 partnerData
 );
-    try{
+console.log("PARTNER PREFERENCE ID:", partnerPreferenceId);
+console.log(
+  "PARTNER PREFERENCE ID BEFORE SAVE:",
+  partnerPreferenceId
+);
+ let savedPreference;
 
-    await partnerPreferenceAPI
-    .update(
+ if (partnerPreferenceId) {
+   // Existing user preference आहे → UPDATE
+   savedPreference = await partnerPreferenceAPI.update(
+     partnerData.userId,
+     partnerData
+   );
+ } else {
+   // New user preference नाही → CREATE
+   savedPreference = await partnerPreferenceAPI.save(
+     partnerData
+   );
+ }
 
-    partnerData.userId,
-
-    partnerData
-
-    );
-
-    }catch{
-
-    await partnerPreferenceAPI
-    .save(
-    partnerData
-    );
-
-    }
-      
+ setPartnerPreferenceId(
+   savedPreference?.id ?? partnerPreferenceId
+ );
       if (result) {
         success("Profile updated successfully!");
         console.log('✅ Profile saved successfully');
