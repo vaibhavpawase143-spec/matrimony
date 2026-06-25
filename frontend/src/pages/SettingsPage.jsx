@@ -144,6 +144,7 @@ bloodGroupId:null,
     newPassword: "",
     confirmPassword: ""
   });
+const [partnerPreferenceId, setPartnerPreferenceId] = useState(null);
 const [partnerPreference,setPartnerPreference]=
 useState({
 
@@ -209,7 +210,7 @@ console.log(
 "Partner Preference:",
 pref
 );
-
+setPartnerPreferenceId(pref?.id ?? null);
 setPartnerPreference({
 
 minAge:
@@ -285,7 +286,7 @@ console.log(
 "Partner Preference Error:",
 err
 );
-
+setPartnerPreferenceId(null);
 }
 
 };
@@ -311,7 +312,7 @@ savedProfileData,
     const loadMasterData = async () => {
       try {
         console.log('🔍 Loading master data from APIs...');
-        
+
    const [
      incomes,
      diets,
@@ -389,7 +390,7 @@ masterDataAPI.getBloodGroups(),
      masterDataAPI.getStates()
 
    ]);
-        
+
         console.log('📊 Master data loaded:', {
           religions: religions?.length || 0,
           genders: genders?.length || 0,
@@ -403,7 +404,7 @@ masterDataAPI.getBloodGroups(),
           bodyTypes: bodyTypes?.length || 0,
           motherTongues: motherTongues?.length || 0
         });
-        
+
         // Ensure all data are arra
         const safeData = {
 
@@ -612,7 +613,7 @@ safeData.disabilityStatuses
                                    console.log("Blood Groups:", safeData.bloodGroups);
                                    console.log("Family Types:", safeData.familyTypes);
                                    console.log("Employment:", safeData.employmentStatuses);
-        
+
       } catch (error) {
         console.error('❌ Failed to load master data:', error);
         // Set empty arrays on error to prevent UI crashes
@@ -641,7 +642,7 @@ safeData.disabilityStatuses
 
   });    }
     };
-    
+
     loadMasterData();
   }, []);
 
@@ -1141,7 +1142,7 @@ savedProfileData.cityId
 
 
  };
-      
+
     console.log(
     "Mapped Data:",
     mappedData
@@ -1212,10 +1213,10 @@ savedProfileData
       'bloodGroupId',
       'drinkingId'
     ];
-      const finalValue = idFields.includes(field) && value !== '' 
+      const finalValue = idFields.includes(field) && value !== ''
         ? (typeof value === 'string' ? parseInt(value, 10) : value)
         : value;
-      
+
       setFormData(prev => ({ ...prev, [field]: finalValue }));
     }
   };
@@ -1362,17 +1363,17 @@ const validateProfileForm = () => {
       error("First name is required");
       return false;
     }
-    
+
     if (!formData.lastName || formData.lastName.trim() === "") {
       error("Last name is required");
       return false;
     }
-    
+
    if (!formData.genderId) {
       error("Gender is required");
       return false;
     }
-    
+
     if (!formData.dateOfBirth) {
       error("Date of birth is required");
       return false;
@@ -1474,13 +1475,13 @@ useEffect(() => {
 
     try {
       console.log('💾 Saving profile data:', formData);
-      
+
       // Prepare data for backend API with correct field mapping
       // Parse fullName into firstName and lastName for backend
       const nameParts = (formData.fullName || '').trim().split(' ');
       const firstNameFromFull = nameParts[0] || formData.firstName;
       const lastNameFromFull = nameParts.slice(1).join(' ') || formData.lastName;
-      
+
      const dataToSave = {
 
        // BASIC
@@ -1676,33 +1677,36 @@ console.log(
 "PARTNER DATA:",
 partnerData
 );
-    try{
+console.log("PARTNER PREFERENCE ID:", partnerPreferenceId);
+console.log(
+  "PARTNER PREFERENCE ID BEFORE SAVE:",
+  partnerPreferenceId
+);
+ let savedPreference;
 
-    await partnerPreferenceAPI
-    .update(
+ if (partnerPreferenceId) {
+   // Existing user preference आहे → UPDATE
+   savedPreference = await partnerPreferenceAPI.update(
+     partnerData.userId,
+     partnerData
+   );
+ } else {
+   // New user preference नाही → CREATE
+   savedPreference = await partnerPreferenceAPI.save(
+     partnerData
+   );
+ }
 
-    partnerData.userId,
-
-    partnerData
-
-    );
-
-    }catch{
-
-    await partnerPreferenceAPI
-    .save(
-    partnerData
-    );
-
-    }
-      
+ setPartnerPreferenceId(
+   savedPreference?.id ?? partnerPreferenceId
+ );
       if (result) {
         success("Profile updated successfully!");
         console.log('✅ Profile saved successfully');
       } else {
         error("Failed to update profile. Please try again.");
       }
-      
+
       // Scroll to top
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err) {
@@ -2217,15 +2221,15 @@ fieldOptions = masterOptions.bloodGroups || [];
                   })}
                   {renderField({ label: "Date of Birth", type: "date", key: "dateOfBirth" })}
                   {renderField({ label: "Age", type: "number", key: "age", placeholder: "Auto-calculated", readOnly: true })}
-                  {renderField({ 
-                    label: "Marital Status", 
-                    key: "maritalStatusId", 
-                    type: "select" 
+                  {renderField({
+                    label: "Marital Status",
+                    key: "maritalStatusId",
+                    type: "select"
                   })}
-                  {renderField({ 
-                    label: "Religion", 
-                    key: "religionId", 
-                    type: "select" 
+                  {renderField({
+                    label: "Religion",
+                    key: "religionId",
+                    type: "select"
                   })}
                   {renderField({ label: "Caste", key: "casteId", type: "select" })}
                   {renderField({ label: "Sub-caste", key: "subCasteId", type: "select" })}
@@ -2257,13 +2261,13 @@ fieldOptions = masterOptions.bloodGroups || [];
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {renderField({ label: "Height", key: "heightId", type: "select" })}
                   {renderField({ label: "Weight", key: "weightId", type: "select" })}
-                  {renderField({ 
-                    label: "Complexion", 
+                  {renderField({
+                    label: "Complexion",
                    key: "complexionId",
                     type: "select",
                   })}
-                  {renderField({ 
-                    label: "Body Type", 
+                  {renderField({
+                    label: "Body Type",
                   key: "bodyTypeId",
                     type: "select",
                   })}
@@ -2277,10 +2281,10 @@ fieldOptions = masterOptions.bloodGroups || [];
 
                 <h3 className="text-sm font-semibold text-foreground mb-3 pb-2 border-b border-border">Education & Career</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {renderField({ 
-                    label: "Highest Education", 
-                    key: "educationLevelId", 
-                    type: "select" 
+                  {renderField({
+                    label: "Highest Education",
+                    key: "educationLevelId",
+                    type: "select"
                   })}
                   {renderField({ label: "Profession/Occupation", key: "occupationId", type: "select" })}
                   {renderField({ label: "Annual Income", key: "incomeId", type: "select" })}
