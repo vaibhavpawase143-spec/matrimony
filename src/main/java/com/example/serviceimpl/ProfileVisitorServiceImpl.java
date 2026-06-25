@@ -1,12 +1,14 @@
 package com.example.serviceimpl;
 
 import com.example.dto.response.ProfileVisitorResponseDTO;
+import com.example.model.NotificationType;
 import com.example.model.Profile;
 import com.example.model.ProfileVisitor;
 import com.example.model.User;
 import com.example.repository.ProfileRepository;
 import com.example.repository.ProfileVisitorRepository;
 import com.example.repository.UserRepository;
+import com.example.service.NotificationService;
 import com.example.service.ProfileVisitorService;
 import com.example.service.SubscriptionService;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +27,7 @@ public class ProfileVisitorServiceImpl implements ProfileVisitorService {
     private final ProfileVisitorRepository repository;
     private final UserRepository userRepository;
     private final SubscriptionService subscriptionService;
-
+    private final NotificationService notificationService;
     // =====================================================
     // CURRENT USER
     // =====================================================
@@ -61,6 +63,8 @@ public class ProfileVisitorServiceImpl implements ProfileVisitorService {
                         visitedUserId
                 );
 
+        // Same user already visited before:
+        // update only the visit time, do not create another notification.
         if (existing.isPresent()) {
 
             ProfileVisitor pv = existing.get();
@@ -74,7 +78,9 @@ public class ProfileVisitorServiceImpl implements ProfileVisitorService {
 
         User visitedUser = userRepository
                 .findById(visitedUserId)
-                .orElseThrow(() -> new RuntimeException("Visited user not found"));
+                .orElseThrow(() ->
+                        new RuntimeException("Visited user not found")
+                );
 
         ProfileVisitor pv = new ProfileVisitor();
 
@@ -82,8 +88,14 @@ public class ProfileVisitorServiceImpl implements ProfileVisitorService {
         pv.setVisitedUser(visitedUser);
 
         repository.save(pv);
-    }
 
+        // Notify only for the first visit.
+        notificationService.create(
+                visitor.getId(),
+                visitedUser.getId(),
+                NotificationType.VIEW
+        );
+    }
     // =====================================================
     // GET MY VISITORS
     // =====================================================

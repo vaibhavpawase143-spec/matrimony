@@ -3,12 +3,12 @@ import profile1 from "@/assets/profile1.jpg";
 import { interestAPI, profileAPI } from "@/services/api";
 import { useNavigate } from "react-router-dom";
 
-const SentInterests = ()=>{
+const SentInterests = () => {
 
-const navigate = useNavigate();
+    const navigate = useNavigate();
 
-const [profiles,setProfiles] =
-useState([]);
+    const [profiles, setProfiles] = useState([]);
+
 
 useEffect(()=>{
 
@@ -320,27 +320,43 @@ profile.interestStatus==="ACCEPTED"
 </div>
 </div>
 </div>
-<button
+<div className="flex gap-3">
 
-onClick={()=>navigate(
+    <button
+        onClick={() => navigate(`/profile/${profile.id}`)}
+        className="
+        px-4
+        py-2
+        rounded-lg
+        bg-primary
+        text-white
+        "
+    >
+        View Profile
+    </button>
 
-`/profile/${profile.id}`
+    {
+        profile.interestStatus === "ACCEPTED" && (
 
-)}
+            <button
+ onClick={() => {
+     navigate(`/messages?receiverId=${profile.userId}`);
+ }}
+                className="
+                px-4
+                py-2
+                rounded-lg
+                bg-pink-600
+                text-white
+                "
+            >
+                💬 Message
+            </button>
 
-className="
-px-4
-py-2
-rounded-lg
-bg-primary
-text-white
-"
+        )
+    }
 
->
-
-View Profile
-
-</button>
+</div>
 
 </div>
 

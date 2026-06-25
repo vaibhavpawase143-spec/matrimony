@@ -1,6 +1,6 @@
 import EmojiPicker from "emoji-picker-react";
 import React, { useEffect, useState, useRef } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams,useNavigate } from "react-router-dom";
 import {Search,Mic} from "lucide-react";
 import {
     connectCallSocket,
@@ -8,6 +8,7 @@ import {
     disconnectCallSocket,
     sendSignal
 } from "@/services/callSocket";
+import { subscriptionAPI } from "@/services/api";
 import {
 
 connectNotifications,
@@ -25,7 +26,7 @@ import {
     Video
 } from "lucide-react";
 
-import Navbar from "@/components/Navbar";
+
 
 import {
     getConversations,
@@ -50,7 +51,7 @@ import {
 const Messages=()=>{
 
 const [searchParams] = useSearchParams();
-
+const navigate = useNavigate();
 const receiverId = searchParams.get("receiverId");
 
 console.log("receiverId =", receiverId);
@@ -58,8 +59,35 @@ console.log("receiverId =", receiverId);
 const [conversations,setConversations]=useState([]);
 
 const [selected,setSelected]=useState(null);
+useEffect(() => {
 
-const [incomingCall,setIncomingCall] =useState(null);
+    if (selected?.otherUserId) {
+
+        localStorage.setItem(
+            "activeChatUserId",
+            selected.otherUserId
+        );
+
+    } else {
+
+        localStorage.removeItem(
+            "activeChatUserId"
+        );
+
+    }
+
+    return () => {
+
+        localStorage.removeItem(
+            "activeChatUserId"
+        );
+
+    };
+
+}, [selected]);
+const [isPremium, setIsPremium] = useState(false);
+const [showUpgradePopup, setShowUpgradePopup] = useState(false);
+
 
 const [showReactionPicker,setShowReactionPicker] =useState(false);
 
@@ -68,7 +96,9 @@ const [showCallModal,setShowCallModal] =useState(false);
 const [callType,setCallType] =useState(null);
 
 const [messages,setMessages]=useState([]);
+const [incomingCall, setIncomingCall] = useState(null);
 
+const [checkingPremium, setCheckingPremium] = useState(true);
 const [isTyping, setIsTyping] = useState(false);
 
 const typingTimeout = useRef(null);
@@ -194,6 +224,45 @@ const getDateLabel = (dateString) => {
         "en-GB"
     );
 };
+const checkPremium = async () => {
+
+    try {
+
+        const subscription =
+            await subscriptionAPI.getMySubscription();
+
+        if (subscription?.isActive) {
+
+            setIsPremium(true);
+
+            await loadConversations();
+
+        } else {
+
+            setIsPremium(false);
+
+           setShowUpgradePopup(true);
+
+        }
+
+    } catch (err) {
+
+        setIsPremium(false);
+
+        if (receiverId) {
+
+            setShowUpgradePopup(true);
+
+        }
+
+    } finally {
+
+        setCheckingPremium(false);
+
+    }
+
+};
+
 const formatLastSeen = (lastSeen) => {
 
     if (!lastSeen) {
@@ -243,10 +312,15 @@ const formatLastSeen = (lastSeen) => {
 };
 useEffect(() => {
 
-    loadConversations();
+    const load = async () => {
 
-}, [receiverId]);
+        await checkPremium();
 
+    };
+
+    load();
+
+}, []);
 useEffect(() => {
 
     const user = JSON.parse(
@@ -257,15 +331,45 @@ useEffect(() => {
 
     user.profile.userId,
 
-    async()=>{
+(message)=>{
 
-        if(selected){
+    console.log("LIVE MESSAGE =", message);
 
-            await loadChat(selected);
+    if (!selected) {
+
+        return;
+
+    }
+
+    if (
+        Number(message.sender?.id) !== Number(selected.otherUserId) &&
+        Number(message.receiver?.id) !== Number(selected.otherUserId)
+    ) {
+
+        return;
+
+    }
+
+    setMessages(prev => {
+
+        const exists = prev.some(m => m.id === message.id);
+
+        if (exists) {
+
+            return prev;
 
         }
 
-    },
+        return [...prev, message];
+
+    });
+loadConversations();
+
+window.dispatchEvent(
+    new Event("dashboardUpdated")
+);
+
+},
 
     (data)=>{
 
@@ -371,7 +475,7 @@ useEffect(() => {
 
     };
 
-}, []);
+}, [selected]);
 
 useEffect(()=>{
 
@@ -1220,7 +1324,10 @@ console.log(err);
 };
 
 const handleSend = async () => {
-
+if (!isPremium) {
+    setShowUpgradePopup(true);
+    return;
+}
     if (!newMessage.trim() || !selected) {
         return;
     }
@@ -1262,6 +1369,10 @@ const handleSend = async () => {
             setSelected(createdChat);
 
             await loadChat(createdChat);
+            await loadChat(selected);
+window.dispatchEvent(
+    new Event("dashboardUpdated")
+);
 
         }
 
@@ -1285,11 +1396,59 @@ items-center
 gap-3
 text-[16px]
 `;
+if (checkingPremium) {
+
+    return null;
+
+}
+if (!isPremium && receiverId) {
+    return (
+        <>
+            {showUpgradePopup && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[999999]">
+                    <div className="bg-white rounded-3xl p-8 w-[420px] text-center">
+
+                        <div className="text-6xl mb-4">
+                            👑
+                        </div>
+
+                        <h2 className="text-2xl font-bold mb-3">
+                            Premium Required
+                        </h2>
+
+                        <p className="text-gray-600 mb-6">
+                            Chat is available only for Premium members.
+                        </p>
+
+                        <div className="flex justify-center gap-3">
+
+                            <button
+                                onClick={() => navigate("/home")}
+                                className="px-5 py-2 rounded-xl bg-gray-200"
+                            >
+                                Home
+                            </button>
+
+                            <button
+                                onClick={() => navigate("/upgrade")}
+                                className="px-5 py-2 rounded-xl bg-pink-600 text-white"
+                            >
+                                Upgrade Premium
+                            </button>
+
+                        </div>
+
+                    </div>
+                </div>
+            )}
+        </>
+    );
+}
 return(
 
 <div className="min-h-screen bg-gray-100 flex flex-col">
 
-<Navbar/>
+
 
 <div className="flex-1 p-4">
 
@@ -1936,7 +2095,6 @@ message.deletedForEveryone ? (
 
         )
         }
-
     </>
 
 )
@@ -2308,9 +2466,14 @@ onClick={async()=>{
 
 try{
 
-const uploadRes = await uploadImage(
-    selectedImage.file
-);
+    if (!isPremium) {
+        setShowUpgradePopup(true);
+        return;
+    }
+
+    const uploadRes = await uploadImage(
+        selectedImage.file
+    );
 
 console.log(
     "UPLOAD RESPONSE",
@@ -2432,10 +2595,15 @@ onClick={async()=>{
 
 try{
 
-const uploadRes =
-await uploadVideo(
-    selectedVideo.file
-);
+    if (!isPremium) {
+        setShowUpgradePopup(true);
+        return;
+    }
+
+    const uploadRes =
+    await uploadVideo(
+        selectedVideo.file
+    );
 
 console.log(
 "VIDEO RESPONSE =",
@@ -2560,7 +2728,10 @@ onClick={async () => {
     console.log("DOCUMENT SEND CLICKED");
 
     try {
-
+if (!isPremium) {
+    setShowUpgradePopup(true);
+    return;
+}
         const uploadRes = await uploadDocument(selectedDocument);
 
         await fetch(
@@ -2664,7 +2835,10 @@ rounded-lg
 onClick={async () => {
 
     try{
-
+if (!isPremium) {
+    setShowUpgradePopup(true);
+    return;
+}
         console.log("AUDIO FILE =", selectedAudioFile);
 
         const uploadResponse =
@@ -2888,7 +3062,10 @@ src={audioPreview}
 onClick={async () => {
 
     try{
-
+if (!isPremium) {
+    setShowUpgradePopup(true);
+    return;
+}
         const file = new File(
             [audioBlob],
             "voice.webm",
@@ -3061,22 +3238,10 @@ rounded-full
 )
 }
 <button
-
-onClick={handleSend}
-
-className="
-
-bg-pink-600
-text-white
-px-6
-rounded-full
-
-"
-
+    onClick={handleSend}
+    className="bg-pink-600 text-white px-6 rounded-full"
 >
-
-Send
-
+    {isPremium ? "Send" : "👑 Upgrade"}
 </button>
 <button
 ref={micButtonRef}
@@ -3106,6 +3271,80 @@ rounded-full
 </button>
 
 </div>
+{
+
+showUpgradePopup && (
+
+
+
+<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[999999]">
+
+
+
+    <div className="bg-white rounded-3xl p-8 w-[420px] text-center">
+
+
+
+        <div className="text-6xl mb-4">
+
+            👑
+
+        </div>
+
+
+
+        <h2 className="text-2xl font-bold mb-3">
+
+            Premium Required
+
+        </h2>
+
+
+
+        <p className="text-gray-600 mb-6">
+
+            Sending messages is available only for Premium members.
+
+            Upgrade your plan to continue chatting.
+
+        </p>
+
+
+
+      <div className="flex justify-center gap-3">
+
+          <button
+              onClick={() => {
+                  setShowUpgradePopup(false);
+                  navigate("/home");
+              }}
+              className="px-5 py-2 rounded-xl bg-gray-200"
+          >
+              Home
+          </button>
+
+          <button
+              onClick={() => navigate("/upgrade")}
+              className="px-5 py-2 rounded-xl bg-pink-600 text-white"
+          >
+              Upgrade Premium
+          </button>
+
+      </div>
+
+
+    </div>
+
+
+
+</div>
+
+
+
+)
+
+}
+
 {
 showCallModal && (
 
@@ -3238,7 +3477,10 @@ Decline
 onClick={async()=>{
 
     try{
-
+if (!isPremium) {
+    setShowUpgradePopup(true);
+    return;
+}
         const stream =
         await navigator.mediaDevices.getUserMedia({
 

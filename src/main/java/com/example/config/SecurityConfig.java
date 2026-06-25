@@ -75,7 +75,7 @@ public class SecurityConfig {
                                 "/api/users/init-photo-directory",
                                 "/api/user-photos/**",
                                 "/api/reports/**",
-                                "/api/support/**",
+
                                 "/api/support-categories/**",
                                 "/api/blocks/**",
                                 "/api/fields-of-study/**",

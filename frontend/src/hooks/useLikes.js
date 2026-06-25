@@ -1,137 +1,110 @@
 import {
-
-useState,
-
-useCallback
-
-}
-
-from "react";
+  useState,
+  useEffect,
+  useCallback
+} from "react";
 
 import {
+  swipeAPI
+} from "@/services/swipeAPI";
 
-swipeAPI
+const useLikes = () => {
+  const [likedIds, setLikedIds] = useState(
+    () => new Set()
+  );
 
-}
+  const [loading, setLoading] = useState(true);
 
-from "@/services/swipeAPI";
+  const loadMyLikes = useCallback(async () => {
+    try {
+      const likes = await swipeAPI.getMyLikes();
 
-const useLikes=()=>{
+      const ids = new Set(
+        (Array.isArray(likes) ? likes : [])
+          .map((like) => Number(like.toUserId))
+          .filter(Boolean)
+      );
 
-const [
+      setLikedIds(ids);
 
-likedIds,
+      console.log(
+        "MY LIKED PROFILE IDS:",
+        [...ids]
+      );
+    } catch (error) {
+      console.error(
+        "Failed to load my likes:",
+        error
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-setLikedIds
+  useEffect(() => {
+    loadMyLikes();
+  }, [loadMyLikes]);
 
-]=useState(
+  const isLiked = useCallback(
+    (id) => likedIds.has(Number(id)),
+    [likedIds]
+  );
 
-new Set()
+  const toggleLike = useCallback(
+    async (id) => {
+      const userId = Number(id);
 
-);
+      if (!userId) {
+        throw new Error("Invalid user ID for like");
+      }
 
-const isLiked=
+      if (likedIds.has(userId)) {
+        await swipeAPI.remove(userId);
 
-useCallback(
+        setLikedIds((previous) => {
+          const next = new Set(previous);
+          next.delete(userId);
+          return next;
+        });
 
-(id)=>{
+        window.dispatchEvent(
+          new Event("like:updated")
+        );
 
-return likedIds.has(
+        window.dispatchEvent(
+          new Event("dashboardUpdated")
+        );
 
-Number(id)
+        return { liked: false };
+      }
 
-);
+      await swipeAPI.like(userId);
 
-},
+      setLikedIds((previous) => {
+        const next = new Set(previous);
+        next.add(userId);
+        return next;
+      });
 
-[likedIds]
+      window.dispatchEvent(
+        new Event("like:updated")
+      );
 
-);
+      window.dispatchEvent(
+        new Event("dashboardUpdated")
+      );
 
-const toggleLike=
+      return { liked: true };
+    },
+    [likedIds]
+  );
 
-useCallback(
-
-async(id)=>{
-
-const num=
-
-Number(id);
-
-const liked=
-
-likedIds.has(
-
-num
-
-);
-
-if(liked){
-
-await swipeAPI.remove(
-
-num
-
-);
-
-setLikedIds(
-
-prev=>{
-
-const next=
-
-new Set(prev);
-
-next.delete(
-
-num
-
-);
-
-return next;
-
-}
-
-);
-
-}else{
-
-await swipeAPI.like(
-
-num
-
-);
-
-setLikedIds(
-
-prev=>
-
-new Set([
-
-...prev,
-
-num
-
-])
-
-);
-
-}
-
-},
-
-[likedIds]
-
-);
-
-return{
-
-isLiked,
-
-toggleLike
-
-};
-
+  return {
+    isLiked,
+    toggleLike,
+    loading,
+    refreshLikes: loadMyLikes
+  };
 };
 
 export default useLikes;

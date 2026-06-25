@@ -241,7 +241,9 @@ new CustomEvent(
 )
 
 );
-
+window.dispatchEvent(
+    new Event("dashboardUpdated")
+);
 return res;
 
 }finally{
@@ -309,6 +311,9 @@ new CustomEvent(
 
 )
 
+);
+window.dispatchEvent(
+    new Event("dashboardUpdated")
 );
 
 }finally{

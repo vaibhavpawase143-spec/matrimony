@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -25,144 +26,57 @@ public class SupportServiceImpl implements SupportService {
     private final SupportTicketRepository repository;
     private final UserRepository userRepository;
 
+    // ================= USER: CREATE TICKET =================
+
     @Override
     @Transactional
     public SupportResponseDTO createTicket(
             SupportRequestDTO request
     ) {
 
-        User user =
-                getLoggedInUser();
+        User user = getLoggedInUser();
 
-        SupportTicket ticket =
-                new SupportTicket();
+        SupportTicket ticket = new SupportTicket();
 
         ticket.setTicketNumber(
-
                 "SUP-"
-
                         + LocalDate.now().getYear()
-
                         + "-"
-
                         + UUID.randomUUID()
                         .toString()
-                        .substring(0,6)
+                        .substring(0, 6)
                         .toUpperCase()
-
         );
 
         ticket.setUser(user);
+        ticket.setCategory(request.getCategory());
+        ticket.setSubject(request.getSubject());
+        ticket.setMessage(request.getMessage());
+        ticket.setAttachmentUrl(request.getAttachmentUrl());
 
-        ticket.setCategory(
-                request.getCategory()
-        );
-
-        ticket.setSubject(
-                request.getSubject()
-        );
-
-        ticket.setMessage(
-                request.getMessage()
-        );
-
-        ticket.setAttachmentUrl(
-                request.getAttachmentUrl()
-        );
-
-        ticket.setPriority(
-                SupportPriority.MEDIUM
-        );
-
-        ticket.setStatus(
-                SupportStatus.OPEN
-        );
+        ticket.setPriority(SupportPriority.MEDIUM);
+        ticket.setStatus(SupportStatus.OPEN);
 
         repository.save(ticket);
 
         return mapToDTO(ticket);
-
     }
-    private SupportResponseDTO mapToDTO(
-            SupportTicket ticket
-    ) {
 
-        SupportResponseDTO dto =
-                new SupportResponseDTO();
+    // ================= USER: MY TICKETS =================
 
-        dto.setId(
-                ticket.getId()
-        );
-
-        dto.setTicketNumber(
-                ticket.getTicketNumber()
-        );
-
-        dto.setUserId(
-                ticket.getUser().getId()
-        );
-
-        dto.setUserName(
-                ticket.getUser().getFullName()
-        );
-
-        dto.setCategory(
-                ticket.getCategory()
-        );
-
-        dto.setSubject(
-                ticket.getSubject()
-        );
-
-        dto.setMessage(
-                ticket.getMessage()
-        );
-
-        dto.setAttachmentUrl(
-                ticket.getAttachmentUrl()
-        );
-
-        dto.setPriority(
-                ticket.getPriority()
-        );
-
-        dto.setStatus(
-                ticket.getStatus()
-        );
-
-        dto.setAdminReply(
-                ticket.getAdminReply()
-        );
-
-        dto.setCreatedAt(
-                ticket.getCreatedAt()
-        );
-
-        dto.setUpdatedAt(
-                ticket.getUpdatedAt()
-        );
-
-        dto.setResolvedAt(
-                ticket.getResolvedAt()
-        );
-
-        return dto;
-
-    }
     @Override
     @Transactional(readOnly = true)
     public List<SupportResponseDTO> getMyTickets() {
 
-        User user =
-                getLoggedInUser();
+        User user = getLoggedInUser();
 
-        return repository
-                .findByUser(user)
+        return repository.findByUser(user)
                 .stream()
                 .map(this::mapToDTO)
                 .toList();
-
     }
+
+    // ================= USER: TICKET DETAILS =================
 
     @Override
     @Transactional(readOnly = true)
@@ -170,108 +84,182 @@ public class SupportServiceImpl implements SupportService {
             String ticketNumber
     ) {
 
-        User user =
-                getLoggedInUser();
+        User user = getLoggedInUser();
 
-        SupportTicket ticket =
-                repository
-                        .findByTicketNumber(ticketNumber)
-                        .orElseThrow(
-                                () ->
-                                        new RuntimeException(
-                                                "Support ticket not found"
-                                        )
-                        );
+        SupportTicket ticket = findTicketByNumber(ticketNumber);
 
-        // User can only view his own ticket
-        if (
-                !ticket.getUser()
-                        .getId()
-                        .equals(user.getId())
-        ) {
-
-            throw new RuntimeException(
-                    "Access denied"
-            );
-
+        if (!ticket.getUser().getId().equals(user.getId())) {
+            throw new RuntimeException("Access denied");
         }
 
         return mapToDTO(ticket);
-
     }
+
+    // ================= USER: CLOSE TICKET =================
 
     @Override
     @Transactional
     public void closeTicket(
-            Long ticketId
+            String ticketNumber
     ) {
 
-        User user =
-                getLoggedInUser();
+        User user = getLoggedInUser();
 
-        SupportTicket ticket =
-                repository
-                        .findById(ticketId)
-                        .orElseThrow(
-                                () -> new RuntimeException(
-                                        "Support ticket not found"
-                                )
-                        );
+        SupportTicket ticket = findTicketByNumber(ticketNumber);
 
-        // User can close only his own ticket
-        if (
-                !ticket.getUser()
-                        .getId()
-                        .equals(user.getId())
-        ) {
-
-            throw new RuntimeException(
-                    "Access denied"
-            );
-
+        if (!ticket.getUser().getId().equals(user.getId())) {
+            throw new RuntimeException("Access denied");
         }
 
-        ticket.setStatus(
-                SupportStatus.CLOSED
-        );
+        if (ticket.getStatus() == SupportStatus.CLOSED) {
+            return;
+        }
 
-        ticket.setResolvedAt(
-                java.time.LocalDateTime.now()
-        );
+        ticket.setStatus(SupportStatus.CLOSED);
+        ticket.setResolvedAt(LocalDateTime.now());
+
+        repository.save(ticket);
+    }
+
+    // ================= ADMIN: ALL TICKETS =================
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<SupportResponseDTO> getAllTickets() {
+
+        return repository.findAll()
+                .stream()
+                .map(this::mapToDTO)
+                .toList();
+    }
+
+    // ================= ADMIN: ONE TICKET =================
+
+    @Override
+    @Transactional(readOnly = true)
+    public SupportResponseDTO getTicketForAdmin(
+            String ticketNumber
+    ) {
+
+        SupportTicket ticket = findTicketByNumber(ticketNumber);
+
+        return mapToDTO(ticket);
+    }
+
+    // ================= ADMIN: UPDATE STATUS =================
+
+    @Override
+    @Transactional
+    public SupportResponseDTO updateStatus(
+            String ticketNumber,
+            String status
+    ) {
+
+        SupportTicket ticket = findTicketByNumber(ticketNumber);
+
+        try {
+            ticket.setStatus(
+                    SupportStatus.valueOf(
+                            status.trim().toUpperCase()
+                    )
+            );
+        } catch (IllegalArgumentException exception) {
+            throw new RuntimeException("Invalid support ticket status");
+        }
+
+        if (
+                ticket.getStatus() == SupportStatus.RESOLVED
+                        || ticket.getStatus() == SupportStatus.CLOSED
+        ) {
+            ticket.setResolvedAt(LocalDateTime.now());
+        } else {
+            ticket.setResolvedAt(null);
+        }
 
         repository.save(ticket);
 
+        return mapToDTO(ticket);
     }
+
+    // ================= ADMIN: REPLY =================
 
     @Override
-    public List<SupportResponseDTO> getAllTickets() {
-        return List.of();
+    @Transactional
+    public SupportResponseDTO replyTicket(
+            String ticketNumber,
+            String reply
+    ) {
+
+        SupportTicket ticket = findTicketByNumber(ticketNumber);
+
+        ticket.setAdminReply(reply.trim());
+
+        // First reply automatically moves OPEN ticket to IN_PROGRESS
+        if (ticket.getStatus() == SupportStatus.OPEN) {
+            ticket.setStatus(SupportStatus.IN_PROGRESS);
+        }
+
+        repository.save(ticket);
+
+        return mapToDTO(ticket);
     }
 
-    @Override
-    public void updateStatus(Long ticketId, String status) {
+    // ================= HELPERS =================
 
-    }
+    private SupportTicket findTicketByNumber(
+            String ticketNumber
+    ) {
 
-    @Override
-    public void replyTicket(Long ticketId, String reply) {
-
-    }
-    private User getLoggedInUser() {
-
-        String email =
-                SecurityContextHolder
-                        .getContext()
-                        .getAuthentication()
-                        .getName();
-
-        return userRepository
-                .findByEmail(email)
+        return repository.findByTicketNumber(ticketNumber)
                 .orElseThrow(
-                        () ->
-                                new RuntimeException(
-                                        "User not found"
-                                )
+                        () -> new RuntimeException(
+                                "Support ticket not found"
+                        )
                 );
     }
+
+    private SupportResponseDTO mapToDTO(
+            SupportTicket ticket
+    ) {
+
+        SupportResponseDTO dto = new SupportResponseDTO();
+
+        dto.setId(ticket.getId());
+        dto.setTicketNumber(ticket.getTicketNumber());
+
+        dto.setUserId(ticket.getUser().getId());
+        dto.setUserName(ticket.getUser().getFullName());
+
+        dto.setCategory(ticket.getCategory());
+        dto.setSubject(ticket.getSubject());
+        dto.setMessage(ticket.getMessage());
+        dto.setAttachmentUrl(ticket.getAttachmentUrl());
+
+        dto.setPriority(ticket.getPriority());
+        dto.setStatus(ticket.getStatus());
+
+        dto.setAdminReply(ticket.getAdminReply());
+
+        dto.setCreatedAt(ticket.getCreatedAt());
+        dto.setUpdatedAt(ticket.getUpdatedAt());
+        dto.setResolvedAt(ticket.getResolvedAt());
+
+        return dto;
+    }
+
+    private User getLoggedInUser() {
+
+        String email = SecurityContextHolder
+                .getContext()
+                .getAuthentication()
+                .getName();
+
+        return userRepository.findByEmail(email)
+                .orElseThrow(
+                        () -> new RuntimeException(
+                                "User not found"
+                        )
+                );
+    }
+
 }

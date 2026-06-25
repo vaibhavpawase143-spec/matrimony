@@ -4,12 +4,15 @@ from "@/components/RecentActivity";
 import { Link, useNavigate } from "react-router-dom";
 import HeartAnimation
 from "@/components/HeartAnimation";
-import { swipeAPI } from "@/services/swipeAPI";
+
 import useLikes
 from "@/hooks/useLikes";
+import { swipeAPI } from "@/services/swipeAPI";
+import { getConversations } from "@/services/chatApi";
 import { motion } from "framer-motion";
 import ReportModal from "../components/ReportModal";
-import { useState, useEffect } from "react";
+import { useState, useEffect,useCallback  } from "react";
+
 
 import { useAuth } from "@/hooks/useAuth";
 
@@ -40,7 +43,8 @@ profileAPI,
 interestAPI,
 profileVisitorAPI,
 blockAPI,
-reportAPI
+reportAPI,
+subscriptionAPI
 } from "@/services/api";
 
 import {
@@ -51,25 +55,18 @@ shortlistAPI
 
 from "@/services/shortlistAPI";
 
-import {
 
-connectNotifications,
-
-disconnectNotifications
-
-} from "@/services/websocket";
 
 
 const HomeFixed = () => {
 
 const navigate = useNavigate();
 const {
+  isLiked,
+  toggleLike,
+  loading: likesLoading
+} = useLikes();
 
-isLiked,
-
-toggleLike
-
-}=useLikes();
 const [showReportModal, setShowReportModal] = useState(false);
 const [reportedUsers, setReportedUsers] = useState({});
 console.log("showReportModal =", showReportModal);
@@ -77,6 +74,7 @@ const [selectedProfile, setSelectedProfile] = useState(null);
 const [selectedReason, setSelectedReason] = useState("");
 const [customReason, setCustomReason] = useState("");
 const [blockedUsers, setBlockedUsers] = useState([]);
+const [showUpgradePopup, setShowUpgradePopup] = useState(false);
 const { userName, logout } = useAuth();
 
 const { startLoading, stopLoading } =
@@ -96,173 +94,141 @@ useState(true);
 
 const [profiles,setProfiles] =
 useState([]);
-const [visitors, setVisitors] =
-useState([]);
+const [dashboardStats, setDashboardStats] = useState({
+  totalMatches: 0,
+  interestsSent: 0,
+  interestsReceived: 0,
+  shortlists: 0,
+  profileViews: 0,
+  likesReceived: 0,
+  messages: 0
+});
 
-const [receivedInterests,
-setReceivedInterests] =
-useState([]);
-
-const [shortlists,
-setShortlists] =
-useState([]);
+const [visitors, setVisitors] = useState([]);
+const [receivedInterests, setReceivedInterests] = useState([]);
+const [shortlists, setShortlists] = useState([]);
 const [sentInterests, setSentInterests] = useState([]);
 
 
+const refreshDashboard = useCallback(async () => {
+  try {
+    const currentUser = JSON.parse(
+      localStorage.getItem("user") || "{}"
+    );
 
+    const userId = Number(
+      currentUser?.profile?.userId ||
+      currentUser?.userId ||
+      currentUser?.id
+    );
+
+    if (!userId) {
+      console.warn("Dashboard: userId not found");
+      return;
+    }
+
+   const [
+     visitorsResponse,
+     receivedResponse,
+     sentResponse,
+     shortlistResponse,
+     conversationsResponse,
+     likesResponse
+   ] = await Promise.allSettled([
+     profileVisitorAPI.getMyVisitors(),
+     interestAPI.getReceivedInterests(userId),
+     interestAPI.getSentInterests(userId),
+     shortlistAPI.getMyShortlists(),
+     getConversations(),
+     swipeAPI.getReceivedLikes()
+   ]);
+    const safeArray = (response) => {
+      if (response.status !== "fulfilled") {
+        console.warn("Dashboard API failed:", response.reason);
+        return [];
+      }
+
+      const data = response.value;
+
+      if (Array.isArray(data)) {
+        return data;
+      }
+
+      if (Array.isArray(data?.data)) {
+        return data.data;
+      }
+
+      if (Array.isArray(data?.content)) {
+        return data.content;
+      }
+
+      return [];
+    };
+
+    const visitorsData = safeArray(visitorsResponse);
+    const receivedData = safeArray(receivedResponse);
+    const sentData = safeArray(sentResponse);
+    const shortlistsData = safeArray(shortlistResponse);
+    const conversationsData = safeArray(conversationsResponse);
+const likesData = safeArray(likesResponse);
+    setVisitors(visitorsData);
+    setReceivedInterests(receivedData);
+    setSentInterests(sentData);
+    setShortlists(shortlistsData);
+
+    const unreadMessages = conversationsData.reduce(
+      (total, conversation) =>
+        total + Number(
+          conversation.unreadCount ||
+          conversation.unreadMessages ||
+          0
+        ),
+      0
+    );
+
+    const acceptedMatches = receivedData.filter((interest) =>
+      String(
+        interest.status ||
+        interest.interestStatus ||
+        ""
+      ).toUpperCase() === "ACCEPTED"
+    ).length;
+
+    setDashboardStats({
+      totalMatches: acceptedMatches,
+      interestsSent: sentData.length,
+      interestsReceived: receivedData.length,
+      shortlists: shortlistsData.length,
+      profileViews: visitorsData.length,
+    likesReceived: likesData.length,
+      messages: unreadMessages
+    });
+
+  } catch (error) {
+    console.error("Dashboard refresh failed:", error);
+  }
+}, []);
+
+useEffect(() => {
+  refreshDashboard();
+
+  const handleDashboardUpdated = () => {
+    refreshDashboard();
+  };
+
+  window.addEventListener(
+    "dashboardUpdated",
+    handleDashboardUpdated
+  );
+
+  return () => {
+    window.removeEventListener(
+      "dashboardUpdated",
+      handleDashboardUpdated
+    );
+  };
+}, [refreshDashboard]);
 const [
-
-dashboardStats,
-
-setDashboardStats
-
-] = useState({
-
-totalMatches:0,
-
-interestsSent:0,
-
-interestsReceived:0,
-
-shortlists:0,
-
-profileViews:0,
-likesReceived:0,
-messages:0
-
-});
-
-const loadDashboard = async()=>{
-
-try{
-
-const currentUser =
-JSON.parse(
-localStorage.getItem("user")
-);
-
-const senderId =
-currentUser.profile.userId;
-
-const sentInterests =
-await interestAPI.getSentInterests(
-senderId
-);
-setSentInterests(
-  sentInterests || []
-);
-const receivedInterests =
-await interestAPI
-.getReceivedPendingInterests(
-senderId
-);
-
-const shortlistData =
-await shortlistAPI
-.getMyShortlists(
-0,
-100
-);
-const visitors =
-await profileVisitorAPI
-.getMyVisitors();
-setReceivedInterests(
-  receivedInterests || []
-);
-
-setShortlists(
-  shortlistData.content || []
-);
-console.log(
-  "SHORTLIST ITEM",
-  shortlistData.content[0]
-);
-setVisitors(
-  visitors || []
-);
-const likesReceived =
-await swipeAPI.getReceivedLikes();
-setDashboardStats(prev=>({
-
-...prev,
-
-interestsSent:
-sentInterests.length,
-
-interestsReceived:
-receivedInterests.length,
-
-shortlists:
-(
-shortlistData.content ||
-[]
-).length,
-
-likesReceived:
-likesReceived.length,
-
-profileViews:
-visitors.length
-
-}));
-}catch(err){
-
-console.log(err);
-
-}
-
-};
-
-useEffect(()=>{
-
-loadDashboard();
-
-const refreshDashboard=()=>{
-
-loadDashboard();
-
-};
-
-window.addEventListener(
-
-"interestUpdated",
-
-refreshDashboard
-
-);
-
-window.addEventListener(
-
-"shortlist:updated",
-
-refreshDashboard
-
-);
-window.addEventListener(
-"like:updated",
-refreshDashboard
-);
-return ()=>{
-
-window.removeEventListener(
-
-"interestUpdated",
-
-refreshDashboard
-
-);
-
-window.removeEventListener(
-
-"shortlist:updated",
-
-refreshDashboard
-
-);
-
-};
-
-},[]);const [
 
 notificationCount,
 
@@ -524,37 +490,21 @@ return;
 
 }
 await interestAPI.sendInterest(
-
-senderId,
-
-receiverId
-
+    senderId,
+    receiverId
 );
 
-setSentInterests(
-prev => [
+setSentInterests(prev => [
+    ...prev,
+    receiverId
+]);
 
-...prev,
-
-receiverId
-
-]
-);
-
-setDashboardStats(
-prev => ({
-
-...prev,
-
-interestsSent:
-
-prev.interestsSent + 1
-
-})
+window.dispatchEvent(
+    new Event("dashboardUpdated")
 );
 
 toast.success(
-"Interest Sent Successfully ❤️"
+    "Interest Sent Successfully ❤️"
 );
 }catch(err){
 
@@ -662,7 +612,53 @@ return (
 
       </div>
     )}
+{showUpgradePopup && (
 
+<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[99999]">
+
+    <div className="bg-white rounded-3xl p-8 w-[420px] text-center">
+
+        <div className="text-6xl mb-4">
+            👑
+        </div>
+
+        <h2 className="text-2xl font-bold mb-3">
+            Premium Required
+        </h2>
+
+        <p className="text-gray-600 mb-6">
+            Chat is available only for Premium members.
+            Upgrade your plan to continue.
+        </p>
+
+        <div className="flex justify-center gap-3">
+
+            <button
+                onClick={() => {
+                    setShowUpgradePopup(false);
+                }}
+                className="px-5 py-2 rounded-xl bg-gray-200"
+            >
+                Home
+            </button>
+
+            <button
+                onClick={() => {
+                    setShowUpgradePopup(false);
+                    navigate("/upgrade");
+                }}
+                className="px-5 py-2 rounded-xl bg-pink-600 text-white"
+            >
+                Upgrade Premium
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+)}
 
     <div className="min-h-screen bg-muted/30 flex">
       {/* Sidebar */}
@@ -691,22 +687,52 @@ return (
                   ? "/home"
                   : "#"
               }
-              onClick={(e) => {
+             onClick={async (e) => {
 
-                if (
-                  !profileData?.profileCompleted &&
-                  item.label !== "Dashboard" &&
-                  item.label !== "Settings"
-                ) {
+                 // Profile completion check
+                 if (
+                     !profileData?.profileCompleted &&
+                     item.label !== "Dashboard" &&
+                     item.label !== "Settings"
+                 ) {
 
-                  e.preventDefault();
+                     e.preventDefault();
+                     setShowProfilePopup(true);
+                     return;
 
-                  setShowProfilePopup(true);
+                 }
 
-                }
+                 // Premium check only for Messages
+                 if (item.label === "Messages") {
 
-              }}
-              className={`w-full flex items-center px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                     e.preventDefault();
+
+                     try {
+
+                         const subscription =
+                             await subscriptionAPI.getMySubscription();
+
+                         if (subscription?.isActive) {
+
+                             navigate("/messages");
+
+                         } else {
+
+                             setShowUpgradePopup(true);
+
+                         }
+
+                     } catch (error) {
+
+                         setShowUpgradePopup(true);
+
+                     }
+
+                     return;
+
+                 }
+
+             }}              className={`w-full flex items-center px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                 isSidebarOpen ? 'gap-3' : 'justify-center'
               } ${
                 item.active
@@ -895,11 +921,8 @@ p-8
             {/* Dashboard Stats */}
             <div>
               <h3 className="text-lg font-semibold text-foreground mb-4">{t?.home?.overviewTitle || "Overview"}</h3>
-            <DashboardStats
-
-            stats={dashboardStats}
-
-            />            </div>
+         <DashboardStats stats={dashboardStats} />
+                     </div>
 
 
 <RecentActivity
@@ -986,52 +1009,32 @@ h-[320px]
 
 
 "
-onDoubleClick={async(e)=>{
+onDoubleClick={async (e) => {
+  e.stopPropagation();
 
-e.stopPropagation();
+  if (likesLoading) {
+    toast("Loading likes...");
+    return;
+  }
 
-try{
+  try {
+    const likedBefore = isLiked(profile.userId);
 
-if(
+    if (!likedBefore) {
+      setShowHeart(profile.userId);
+    }
 
-!isLiked(
-profile.userId
-)
+    await toggleLike(profile.userId);
 
-){
-
-setShowHeart(
-profile.userId
-);
-
-await toggleLike(
-profile.userId
-);
-window.dispatchEvent(
-new Event(
-"like:updated"
-)
-);
-toast.success(
-"Liked ❤️"
-);
-
-}else{
-
-toast(
-"Already liked ❤️"
-);
-
-}
-
-}catch(err){
-
-toast.error(
-"Failed"
-);
-
-}
-
+    if (likedBefore) {
+      toast("Like removed");
+    } else {
+      toast.success("Liked ❤️");
+    }
+  } catch (error) {
+    console.error("Double-click like failed:", error);
+    toast.error("Failed to update like");
+  }
 }}
 >
 
@@ -1271,138 +1274,65 @@ No Image
 <div className="mt-5 flex justify-center gap-3">
 
 <button
+  title="Like"
+  disabled={likesLoading}
+  onClick={async (e) => {
+    e.stopPropagation();
 
-title="Like"
+    if (likesLoading) {
+      toast("Loading likes...");
+      return;
+    }
 
-onClick={async(e)=>{
+    try {
+      const likedBefore = isLiked(profile.userId);
 
-e.stopPropagation();
+      if (!likedBefore) {
+        setShowHeart(profile.userId);
+      }
 
-try{
+      await toggleLike(profile.userId);
 
-const likedBefore =
-
-isLiked(
-profile.userId
-);
-
-setShowHeart(
-profile.userId
-);
-
-await toggleLike(
-profile.userId
-);
-
-if(
-
-likedBefore
-
-){
-
-toast(
-"Like removed"
-);
-
-}else{
-
-toast.success(
-"Liked ❤️"
-);
-
-}
-
-}catch{
-
-toast.error(
-"Failed"
-);
-
-}
-
-}}
-className="
-
-group
-
-w-12
-h-12
-
-rounded-full
-
-bg-gradient-to-br
-
-from-pink-500
-
-to-rose-600
-
-shadow-lg
-
-hover:scale-125
-
-active:scale-95
-
-transition-all
-
-duration-300
-
-flex
-
-items-center
-
-justify-center
-
-"
-
+      if (likedBefore) {
+        toast("Like removed");
+      } else {
+        toast.success("Liked ❤️");
+      }
+    } catch (error) {
+      console.error("Like update failed:", error);
+      toast.error("Failed to update like");
+    }
+  }}
+  className="
+    group
+    w-12
+    h-12
+    rounded-full
+    bg-gradient-to-br
+    from-pink-500
+    to-rose-600
+    shadow-lg
+    hover:scale-125
+    active:scale-95
+    transition-all
+    duration-300
+    disabled:opacity-50
+    disabled:cursor-not-allowed
+    flex
+    items-center
+    justify-center
+  "
 >
-
-<span
-
-className={`
-
-text-2xl
-
-transition-all
-
-duration-300
-
-${
-
-isLiked(
-profile.userId
-)
-
-?
-
-"scale-125"
-
-:
-
-""
-
-}
-
-`}
-
->
-
-{
-
-isLiked(
-profile.userId
-)
-
-?
-
-"❤️"
-
-:
-
-"🤍"
-
-}
-
-</span>
+  <span
+    className={`
+      text-2xl
+      transition-all
+      duration-300
+      ${isLiked(profile.userId) ? "scale-125" : ""}
+    `}
+  >
+    {isLiked(profile.userId) ? "❤️" : "🤍"}
+  </span>
 </button>
 <div
 className="
@@ -1432,83 +1362,73 @@ showLabel={false}
 
 </div>
 <button
-title="Block User"
-onClick={async (e) => {
-  e.stopPropagation();
+  title="Block User"
+  onClick={async (e) => {
+    e.stopPropagation();
 
-  const confirmBlock = window.confirm(
-    "Are you sure you want to block this user?"
-  );
-
-  if (!confirmBlock) return;
-
-  try {
-
-    const currentUser = JSON.parse(
-      localStorage.getItem("user")
+    const confirmBlock = window.confirm(
+      "Are you sure you want to block this user?"
     );
 
-    const blockerId =
-      Number(currentUser.profile.userId);
+    if (!confirmBlock) {
+      return;
+    }
 
-    const blockedId =
-      Number(profile.userId);
-
-    console.log("BLOCKER:", blockerId);
-    console.log("BLOCKED:", blockedId);
-
-    const result =
-      await blockAPI.blockUser(
-        blockerId,
-        blockedId
+    try {
+      const currentUser = JSON.parse(
+        localStorage.getItem("user") || "{}"
       );
 
-    console.log("BLOCK API RESULT:", result);
+      const blockerId = Number(
+        currentUser?.profile?.userId ||
+        currentUser?.userId ||
+        currentUser?.id
+      );
 
- toast.success(
-   "User blocked successfully"
- );
+      const blockedId = Number(profile.userId);
 
- setBlockedUsers(prev => [
-   ...prev,
-   profile.userId
- ]);
-setProfiles(prev =>
-  prev.filter(
-    p => p.userId !== profile.userId
-  )
-);
-  } catch (err) {
+      if (!blockerId || !blockedId) {
+        toast.error("User information not found");
+        return;
+      }
 
-    console.error("BLOCK ERROR:", err);
+      await blockAPI.blockUser(blockerId, blockedId);
 
-    toast.error(
-      err.message || "Failed to block user"
-    );
+      toast.success("User blocked successfully");
 
-  }
-}}
-
-className="
-group
-w-12
-h-12
-rounded-full
-bg-red-100
-border
-border-red-200
-shadow-lg
-hover:scale-125
-active:scale-95
-transition-all
-duration-300
-flex
-items-center
-justify-center
-"
+      setProfiles((previousProfiles) =>
+        previousProfiles.filter(
+          (item) => Number(item.userId) !== blockedId
+        )
+      );
+    } catch (error) {
+      console.error("Block failed:", error);
+      toast.error(
+        error?.message || "Failed to block user"
+      );
+    }
+  }}
+  className="
+    group
+    w-12
+    h-12
+    rounded-full
+    bg-red-100
+    border
+    border-red-200
+    shadow-lg
+    hover:scale-125
+    active:scale-95
+    transition-all
+    duration-300
+    flex
+    items-center
+    justify-center
+  "
 >
-🚫
+  🚫
 </button>
+
 <button
   title={
     reportedUsers[profile.userId]

@@ -2,7 +2,10 @@ package com.example.serviceimpl;
 
 import com.example.dto.request.InterestRequestDTO;
 import com.example.dto.response.InterestResponseDTO;
-import com.example.model.*;
+import com.example.model.Interest;
+import com.example.model.Match;
+import com.example.model.NotificationType;
+import com.example.model.User;
 import com.example.repository.InterestRepository;
 import com.example.repository.MatchRepository;
 import com.example.repository.UserRepository;
@@ -13,8 +16,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -165,57 +166,45 @@ public class InterestServiceImpl implements InterestService {
         // ✅ ACCEPT
         if (status.equalsIgnoreCase("ACCEPTED")) {
 
-            // 🔥 MATCH NOTIFICATION (BOTH USERS)
-
-            notificationService.create(
-                    existing.getSender().getId(),
-                    existing.getReceiver().getId(),
-                    NotificationType.MATCH
-            );
-
-            notificationService.create(
-                    existing.getReceiver().getId(),
-                    existing.getSender().getId(),
-                    NotificationType.MATCH
-            );
-
             User sender = existing.getSender();
             User receiver = existing.getReceiver();
 
-            Long u1 = Math.min(
+            // 1. Sender ला: receiver ने request accept केली
+            notificationService.create(
+                    receiver.getId(),
                     sender.getId(),
-                    receiver.getId()
+                    NotificationType.ACCEPT
             );
 
-            Long u2 = Math.max(
+            // 2. दोघांना match notification
+            notificationService.create(
                     sender.getId(),
-                    receiver.getId()
+                    receiver.getId(),
+                    NotificationType.MATCH
             );
+
+            notificationService.create(
+                    receiver.getId(),
+                    sender.getId(),
+                    NotificationType.MATCH
+            );
+
+            Long u1 = Math.min(sender.getId(), receiver.getId());
+            Long u2 = Math.max(sender.getId(), receiver.getId());
 
             boolean exists = matchRepository
-                    .findByUser1_IdAndUser2_Id(
-                            u1,
-                            u2
-                    )
+                    .findByUser1_IdAndUser2_Id(u1, u2)
                     .isPresent();
 
             if (!exists) {
 
                 Match match = new Match();
 
-                match.setUsers(
-                        sender,
-                        receiver
-                );
+                match.setUsers(sender, receiver);
 
-                matchRepository.save(
-                        match
-                );
-
+                matchRepository.save(match);
             }
-
         }
-
 // ❌ REJECT
         else if (status.equalsIgnoreCase("REJECTED")) {
             System.out.println("🔥 REJECT BLOCK ENTERED");

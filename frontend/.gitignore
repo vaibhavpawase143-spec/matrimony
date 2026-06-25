@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+api_*.js
+*_api.js
+src/services/api_backup.js

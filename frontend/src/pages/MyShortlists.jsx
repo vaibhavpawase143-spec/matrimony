@@ -101,7 +101,9 @@ await remove(profileId);
 toast.success(
 'Removed from shortlists'
 );
-
+window.dispatchEvent(
+    new Event("dashboardUpdated")
+);
 }catch(err){
 
 console.error(err);

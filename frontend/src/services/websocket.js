@@ -67,22 +67,25 @@ client = new Client({
 
     // ================= NOTIFICATIONS =================
 
-    client.subscribe(
+   client.subscribe(
 
-        `/topic/notifications/${userId}`,
+       `/topic/notifications/${userId}`,
 
-        (message) => {
+       (message) => {
 
-            onMessage({
+           const body = JSON.parse(message.body);
 
-                message: message.body
+           console.log("LIVE NOTIFICATION =", body);
 
-            });
+           if (onMessage) {
 
-        }
+               onMessage(body);
 
-    );
+           }
 
+       }
+
+   );
     // ================= TYPING =================
 
     typingCallback = onTyping;
@@ -126,7 +129,27 @@ client = new Client({
         }
 
     );
+// ================= LIVE CHAT =================
 
+client.subscribe(
+
+    "/user/queue/messages",
+
+    (message) => {
+
+        const body = JSON.parse(message.body);
+
+        console.log("NEW MESSAGE =", body);
+
+        if (onMessage) {
+
+            onMessage(body);
+
+        }
+
+    }
+
+);
     console.log("SUBSCRIBED SUCCESS");
 
    // ================= HEARTBEAT =================

@@ -41,7 +41,6 @@ import SettingsPage from "./pages/SettingsPage";
 import Account from "./pages/Account";
 import UpgradePremium from "./pages/UpgradePremium";
 import Likes from "@/pages/Likes";
-
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsConditions from "./pages/TermsConditions";
 import FAQ from "./pages/FAQ";
@@ -145,6 +144,7 @@ useEffect(() => {
 
   return (
   <QueryClientProvider client={queryClient}>
+
     <LanguageProvider>
       <ThemeProvider>
         <LoadingProvider>
@@ -383,8 +383,10 @@ element={<Likes />}
         </LoadingProvider>
       </ThemeProvider>
     </LanguageProvider>
+
   </QueryClientProvider>
   );
+
 
   };
 

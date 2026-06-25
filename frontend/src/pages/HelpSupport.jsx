@@ -5,8 +5,9 @@ import toast from "react-hot-toast";
 import { supportAPI } from "@/services/api";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-
+import { useNavigate } from "react-router-dom";
 const HelpSupport = () => {
+    const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -45,7 +46,7 @@ const HelpSupport = () => {
       });
 
       toast.success("Support ticket submitted successfully.");
-
+navigate("/support/tickets");
       setFormData({
 
         name: "",
@@ -385,17 +386,34 @@ const HelpSupport = () => {
                 ></textarea>
               </div>
 
+
              <button
                type="submit"
                disabled={loading}
                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-3 px-6 rounded-lg"
              >
-
                {loading
-                   ? "Submitting..."
-                   : "Submit Support Ticket"}
-
-             </button>
+                 ? "Submitting..."
+                 : "Submit Support Ticket"}
+             </button><button
+                        type="button"
+                        onClick={() => navigate("/support/tickets")}
+                        className="
+                          w-full
+                          mt-4
+                          border
+                          border-primary
+                          text-primary
+                          hover:bg-primary/10
+                          font-semibold
+                          py-3
+                          px-6
+                          rounded-lg
+                          transition
+                        "
+                      >
+                        🎫 View My Support Tickets
+                      </button>
             </form>
           </motion.div>
         </div>

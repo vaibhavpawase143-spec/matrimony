@@ -1,6 +1,7 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link,useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import ShortlistButton from "@/components/ShortlistButton";
+
 import {
 Heart,
 MapPin,
@@ -12,14 +13,15 @@ Star,
 MessageSquare
 } from "lucide-react";
 import { photoAPI } from "@/services/api";
-import { useNavigate } from "react-router-dom";
+
 
 import { useLanguage } from "@/context/LanguageContext";
 import {
   profileAPI,
   interestAPI,
   profileVisitorAPI,
-    blockAPI
+    blockAPI,
+    subscriptionAPI
 } from "@/services/api";
 import toast from "react-hot-toast";
 
@@ -60,7 +62,7 @@ text-right
 );
 
 const ProfileDetails=()=>{
-
+const navigate = useNavigate();
 const {t}=useLanguage();
 const [currentPhotoIndex, setCurrentPhotoIndex] =
 useState(0);
@@ -116,6 +118,7 @@ const [canViewContact,setCanViewContact] =
 useState(false);
 const [isPremiumUser, setIsPremiumUser] =
 useState(false);
+const [showUpgradePopup, setShowUpgradePopup] = useState(false);
 useEffect(()=>{
 
 const loadProfile =
@@ -213,10 +216,12 @@ if (
     data.userId
   );
 
-//   await profileVisitorAPI.saveVisit(
-//     data.userId
-//   );
-
+await profileVisitorAPI.saveVisit(
+    data.userId
+);
+window.dispatchEvent(
+    new Event("dashboardUpdated")
+);
   console.log(
     "VISITOR SAVE SUCCESS"
   );
@@ -289,6 +294,30 @@ loadProfile();
 }
 
 },[id]);
+
+const handleMessageClick = async () => {
+
+    try {
+
+        const subscription =
+            await subscriptionAPI.getMySubscription();
+
+        if (subscription?.isActive) {
+
+            navigate(`/messages?receiverId=${profile.userId}`);
+
+       } else {
+
+           setShowUpgradePopup(true);
+
+       }
+   } catch {
+
+       setShowUpgradePopup(true);
+
+   }
+};
+
 const handleSendInterest = async () => {
 
   try {
@@ -543,27 +572,26 @@ ${interestSent
 >
 
 <Heart size={18}/>
-
-{
-
-interestSent
-
-? "Interest Sent"
-
-: "Send Interest"
-
-}
-
+{interestSent ? "Interest Sent" : "Send Interest"}
 </button>
-<button className="
+
+
+
+<button
+onClick={handleMessageClick}
+className="
 w-full
 bg-purple-700
+hover:bg-purple-800
+text-white
 rounded-lg
 py-3
 flex
 justify-center
 gap-2
-">
+transition
+"
+>
 
 <MessageSquare size={18}/>
 
@@ -1202,6 +1230,55 @@ rounded-lg
 
 </div>
 </div>
+
+</div>
+
+)
+}
+{
+showUpgradePopup && (
+
+<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[999999]">
+
+    <div className="bg-white rounded-3xl p-8 w-[420px] text-center">
+
+        <div className="text-6xl mb-4">
+            👑
+        </div>
+
+        <h2 className="text-2xl font-bold mb-3">
+            Premium Required
+        </h2>
+
+        <p className="text-gray-600 mb-6">
+            Chat is available only for Premium members.
+        </p>
+
+        <div className="flex justify-center gap-3">
+
+            <button
+                onClick={() => {
+                    setShowUpgradePopup(false);
+                    navigate("/home");
+                }}
+                className="px-5 py-2 rounded-xl bg-gray-200"
+            >
+                Home
+            </button>
+
+            <button
+                onClick={() => {
+                    setShowUpgradePopup(false);
+                    navigate("/upgrade");
+                }}
+                className="px-5 py-2 rounded-xl bg-pink-600 text-white"
+            >
+                Upgrade Premium
+            </button>
+
+        </div>
+
+    </div>
 
 </div>
 

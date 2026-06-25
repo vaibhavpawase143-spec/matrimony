@@ -7,21 +7,21 @@ import com.example.model.Message;
 import com.example.model.User;
 import com.example.repository.UserRepository;
 import com.example.service.ChatService;
-
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.security.Principal;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
-
-import org.springframework.web.multipart.MultipartFile;
-import java.nio.file.*;
 import java.util.UUID;
 
 @RestController
@@ -66,7 +66,19 @@ public class ChatController {
 
 
         ChatMessageDTO dto = mapToDTO(message);
+// Send live message to receiver
+        messagingTemplate.convertAndSendToUser(
+                message.getReceiver().getEmail(),
+                "/queue/messages",
+                dto
+        );
 
+// Send live message back to sender
+        messagingTemplate.convertAndSendToUser(
+                message.getSender().getEmail(),
+                "/queue/messages",
+                dto
+        );
         return ApiResponse.<ChatMessageDTO>builder()
                 .success(true)
                 .message("Message sent successfully")

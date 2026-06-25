@@ -6,16 +6,15 @@ import com.example.repository.*;
 import com.example.service.ChatService;
 import com.example.service.NotificationService;
 import com.example.service.UserBlockService;
-
 import lombok.RequiredArgsConstructor;
-
-import org.springframework.data.domain.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
-import java.util.Base64;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -24,7 +23,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Transactional
 public class ChatServiceImpl implements ChatService {
-
+    private final SimpMessagingTemplate messagingTemplate;
     private final UserRepository userRepository;
     private final MessageRepository messageRepository;
     private final ConversationRepository conversationRepository;
@@ -32,7 +31,7 @@ public class ChatServiceImpl implements ChatService {
     private final NotificationService notificationService;
     private final MatchRepository matchRepository;
     private final DeletedMessageRepository deletedMessageRepository;
-
+    private final UserSubscriptionRepository userSubscriptionRepository;
     // ================= USER =================
 
     @Override
@@ -156,9 +155,13 @@ public class ChatServiceImpl implements ChatService {
         User sender = getUserByEmail(senderEmail);
         User receiver = getUser(receiverId);
 
+// Premium Validation
+        validatePremium(sender.getId());
+
+
+// Existing validations
         validateMatch(sender.getId(), receiver.getId());
         validateNotBlocked(sender.getId(), receiver.getId());
-
         Message replyTo = null;
         if (replyToId != null) {
             replyTo = messageRepository.findById(replyToId)
@@ -168,6 +171,20 @@ public class ChatServiceImpl implements ChatService {
         Message saved = createTextMessage(sender, receiver, content, replyTo);
 
         saved.setContent(decrypt(saved.getContent()));
+
+// 🔥 Send message instantly to receiver
+        messagingTemplate.convertAndSendToUser(
+                receiver.getEmail(),
+                "/queue/messages",
+                saved
+        );
+
+// 🔥 Also send to sender (so sender updates instantly too)
+        messagingTemplate.convertAndSendToUser(
+                sender.getEmail(),
+                "/queue/messages",
+                saved
+        );
 
         return saved;
     }
@@ -180,15 +197,17 @@ public class ChatServiceImpl implements ChatService {
         User sender = getUserByEmail(email);
         User receiver = getUser(receiverId);
 
+        validatePremium(sender.getId());
+
+
         validateMatch(sender.getId(), receiver.getId());
         validateNotBlocked(sender.getId(), receiver.getId());
-
-        Conversation c = getOrCreateConversation(sender, receiver);
 
         Message m = new Message();
         m.setSender(sender);
         m.setReceiver(receiver);
-        m.setConversation(c);
+        Conversation conversation = getOrCreateConversation(sender, receiver);
+        m.setConversation(conversation);
         m.setMediaUrl(mediaUrl);
         m.setMediaType(mediaType);
         m.setMessageType("MEDIA");
@@ -540,9 +559,12 @@ public class ChatServiceImpl implements ChatService {
         User receiver = getUser(receiverId);
 
         // 🔒 Validation
+        // 🔒 Validation
+        validatePremium(sender.getId());
+     //   validatePremium(receiver.getId());
+
         validateMatch(sender.getId(), receiver.getId());
         validateNotBlocked(sender.getId(), receiver.getId());
-
         // 📩 Get original message
         Message original = messageRepository.findById(messageId)
                 .orElseThrow(() -> new RuntimeException("Original message not found"));
@@ -568,7 +590,11 @@ public class ChatServiceImpl implements ChatService {
 
         // 💾 Save
         Message saved = messageRepository.save(newMessage);
-
+        notificationService.create(
+                sender.getId(),
+                receiver.getId(),
+                NotificationType.MESSAGE
+        );
         // 🔓 Decrypt before sending response
         saved.setContent(decrypt(saved.getContent()));
 
@@ -671,5 +697,22 @@ public class ChatServiceImpl implements ChatService {
             case "AUDIO" -> "[Audio]";
             default -> "[Media]";
         };
+    }
+    private void validatePremium(Long userId) {
+
+        boolean premium =
+                userSubscriptionRepository
+                        .findFirstByUser_IdAndIsActiveTrueAndStatusAndEndDateAfter(
+                                userId,
+                                "ACTIVE",
+                                LocalDateTime.now()
+                        )
+                        .isPresent();
+
+        if (!premium) {
+            throw new RuntimeException(
+                    "Chat is available only for Premium members."
+            );
+        }
     }
 }

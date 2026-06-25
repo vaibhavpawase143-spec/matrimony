@@ -1,5 +1,6 @@
 package com.example.serviceimpl;
 
+import com.example.dto.response.NotificationResponse;
 import com.example.model.Notification;
 import com.example.model.NotificationType;
 import com.example.model.User;
@@ -52,9 +53,27 @@ public class NotificationServiceImpl implements NotificationService {
         System.out.println("Notification Message: " + saved.getMessage());
         System.out.println("==========================================");
 
+        NotificationResponse response = new NotificationResponse();
+
+        response.setId(saved.getId());
+
+        response.setSenderId(senderId);
+
+        response.setReceiverId(receiverId);
+
+        response.setSenderName(senderName);
+
+        response.setMessage(saved.getMessage());
+
+        response.setType(saved.getType().name());
+
+        response.setRead(saved.isRead());
+
+        response.setCreatedAt(saved.getCreatedAt());
+
         messagingTemplate.convertAndSend(
                 "/topic/notifications/" + receiverId,
-                saved.getMessage()
+                response
         );
 
         System.out.println("WEBSOCKET MESSAGE SENT");

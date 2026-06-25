@@ -169,11 +169,11 @@ item.interestId !== interestId
 // refresh dashboard values
 
 window.dispatchEvent(
+    new Event("interestUpdated")
+);
 
-new Event(
-"interestUpdated"
-)
-
+window.dispatchEvent(
+    new Event("dashboardUpdated")
 );
 
 }

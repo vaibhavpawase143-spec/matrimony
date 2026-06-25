@@ -67,4 +67,9 @@ public interface UserSubscriptionRepository extends JpaRepository<UserSubscripti
     List<UserSubscription> findByIsActiveFalse();
 
     List<UserSubscription> findByUserIdAndIsActiveFalse(Long userId);
+    Optional<UserSubscription> findFirstByUser_IdAndIsActiveTrueAndStatusAndEndDateAfter(
+            Long userId,
+            String status,
+            java.time.LocalDateTime now
+    );
 }

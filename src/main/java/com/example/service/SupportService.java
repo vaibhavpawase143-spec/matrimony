@@ -7,7 +7,8 @@ import java.util.List;
 
 public interface SupportService {
 
-    // User
+    // ================= USER =================
+
     SupportResponseDTO createTicket(
             SupportRequestDTO request
     );
@@ -19,19 +20,24 @@ public interface SupportService {
     );
 
     void closeTicket(
-            Long ticketNumber
+            String ticketNumber
     );
 
-    // Admin (used later)
+    // ================= ADMIN =================
+
     List<SupportResponseDTO> getAllTickets();
 
-    void updateStatus(
-            Long ticketId,
+    SupportResponseDTO getTicketForAdmin(
+            String ticketNumber
+    );
+
+    SupportResponseDTO updateStatus(
+            String ticketNumber,
             String status
     );
 
-    void replyTicket(
-            Long ticketId,
+    SupportResponseDTO replyTicket(
+            String ticketNumber,
             String reply
     );
 
