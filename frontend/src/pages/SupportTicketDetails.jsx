@@ -12,40 +12,32 @@ const SupportTicketDetails = () => {
     const [ticket, setTicket] = useState(null);
 
     const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-
-        loadTicket();
-
-    }, []);
+const [error, setError] = useState("");
+   useEffect(() => {
+       loadTicket();
+   }, [ticketNumber]);
 
     const loadTicket = async () => {
+      try {
+        setLoading(true);
+        setError("");
 
-        try {
+        const data = await supportAPI.getTicket(ticketNumber);
 
-            const data =
-                await supportAPI.getTicket(ticketNumber);
+        console.log("TICKET DATA =", data);
+        setTicket(data);
+      } catch (error) {
+        console.error("Failed to load ticket:", error);
 
-            console.log("DATA =", data);
-
-            setTicket(data);
-
-        } catch (error) {
-
-            console.log(error);
-
-            toast.error(
-                "Failed to load ticket"
-            );
-
-        } finally {
-
-            setLoading(false);
-
-        }
-
+        setTicket(null);
+        setError(
+          error?.message ||
+          "Ticket not found or you do not have permission to view it."
+        );
+      } finally {
+        setLoading(false);
+      }
     };
-
     const closeTicket = async () => {
 
         try {
@@ -106,7 +98,28 @@ console.log("Current Ticket =", ticket);
         );
 
     }
+if (error || !ticket) {
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+      <div className="bg-white border rounded-2xl shadow p-8 max-w-md w-full text-center">
+        <h1 className="text-xl font-bold text-gray-900">
+          Ticket unavailable
+        </h1>
 
+        <p className="text-gray-500 mt-3">
+          {error || "This support ticket could not be found."}
+        </p>
+
+        <button
+          onClick={() => navigate("/support/tickets")}
+          className="mt-6 bg-pink-600 hover:bg-pink-700 text-white px-5 py-2 rounded-xl"
+        >
+          Back to My Tickets
+        </button>
+      </div>
+    </div>
+  );
+}
 return (
 
     <div className="min-h-screen bg-gray-50">
@@ -268,7 +281,7 @@ return (
 
                 {
 
-                    ticket.status !== "CLOSED" && (
+   !["CLOSED", "RESOLVED"].includes(ticket.status) && (
 
                         <div className="mt-10 flex justify-end">
 
