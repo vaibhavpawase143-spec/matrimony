@@ -3276,12 +3276,12 @@ text-foreground
                 <h3 className="text-sm font-semibold text-foreground mb-3 pb-2 border-b border-border">About Me</h3>
                 <div>
                   <label className="text-xs font-medium text-foreground mb-1 block">About Me</label>
-                  <textarea 
-                    rows={4} 
+                  <textarea
+                    rows={4}
                     value={formData.aboutMe}
                     onChange={(e) => handleInputChange("aboutMe", e.target.value)}
-                    placeholder="Tell us about yourself, your interests, personality and what you are looking for..." 
-                    className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none" 
+                    placeholder="Tell us about yourself, your interests, personality and what you are looking for..."
+                    className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none"
                   />
                 </div>
               </div>
@@ -3396,12 +3396,12 @@ text-foreground
               ].map((field) => (
                 <div key={field.key}>
                   <label className="text-xs font-medium text-foreground mb-1 block">{field.label}</label>
-                  <input 
-                    type="password" 
+                  <input
+                    type="password"
                     value={passwordData[field.key]}
                     onChange={(e) => setPasswordData({...passwordData, [field.key]: e.target.value})}
-                    placeholder="••••••••" 
-                    className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" 
+                    placeholder="••••••••"
+                    className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                   />
                 </div>
               ))}
@@ -3427,11 +3427,11 @@ text-foreground
                     <p className="text-xs text-muted-foreground">{n.desc}</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
-                    <input 
-                      type="checkbox" 
-                      defaultChecked={i < 3} 
+                    <input
+                      type="checkbox"
+                      defaultChecked={i < 3}
                       onChange={(e) => handleNotificationToggle(n.label, e.target.checked)}
-                      className="sr-only peer" 
+                      className="sr-only peer"
                     />
                     <div className="w-9 h-5 bg-muted rounded-full peer peer-checked:bg-primary transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-background after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4" />
                   </label>
