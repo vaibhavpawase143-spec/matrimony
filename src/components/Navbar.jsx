@@ -54,6 +54,90 @@ const user =
 
 const currentUserId =
   user?.profile?.userId;
+  const getNotificationMeta = (type) => {
+    const map = {
+      REQUEST: {
+        icon: "💌",
+        label: "Interest request",
+        route: "/received-interests",
+        accent: "border-pink-500",
+        iconBg: "bg-pink-100 dark:bg-pink-500/15"
+      },
+      ACCEPT: {
+        icon: "✅",
+        label: "Interest accepted",
+        route: "/sent-interests",
+        accent: "border-emerald-500",
+        iconBg: "bg-emerald-100 dark:bg-emerald-500/15"
+      },
+      REJECT: {
+        icon: "❌",
+        label: "Interest declined",
+        route: "/sent-interests",
+        accent: "border-red-500",
+        iconBg: "bg-red-100 dark:bg-red-500/15"
+      },
+      MATCH: {
+        icon: "🎉",
+        label: "New match",
+        route: "/matches",
+        accent: "border-violet-500",
+        iconBg: "bg-violet-100 dark:bg-violet-500/15"
+      },
+      VIEW: {
+        icon: "👀",
+        label: "Profile visitor",
+        route: "/profile-visitors",
+        accent: "border-sky-500",
+        iconBg: "bg-sky-100 dark:bg-sky-500/15"
+      },
+      SHORTLIST: {
+        icon: "⭐",
+        label: "Shortlisted you",
+        route: "/shortlists",
+        accent: "border-amber-500",
+        iconBg: "bg-amber-100 dark:bg-amber-500/15"
+      },
+      LIKE: {
+        icon: "❤️",
+        label: "New like",
+        route: "/likes",
+        accent: "border-rose-500",
+        iconBg: "bg-rose-100 dark:bg-rose-500/15"
+      },
+      MESSAGE: {
+        icon: "💬",
+        label: "New message",
+        route: "/messages",
+        accent: "border-cyan-500",
+        iconBg: "bg-cyan-100 dark:bg-cyan-500/15"
+      }
+    };
+
+    return map[type] || {
+      icon: "🔔",
+      label: "Notification",
+      route: "/home",
+      accent: "border-primary",
+      iconBg: "bg-primary/10"
+    };
+  };
+
+  const refreshNotifications = async () => {
+    if (!currentUserId) return;
+
+    try {
+      const [list, count] = await Promise.all([
+        notificationAPI.getAll(currentUserId),
+        notificationAPI.unreadCount(currentUserId)
+      ]);
+
+      setNotifications(Array.isArray(list) ? list : []);
+      setUnreadCount(Number(count) || 0);
+    } catch (err) {
+      console.error("Notification refresh failed:", err);
+    }
+  };
   const [mobileOpen, setMobileOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -66,50 +150,16 @@ const currentUserId =
   const [showNotifications,
   setShowNotifications] =
   useState(false);
+
+  const [livePopup, setLivePopup] = useState(null);
+
+const { isLoggedIn, userName, logout } = useAuth();
+const navigate = useNavigate();
+const { language, setLanguage, t } = useLanguage();
+
 useEffect(() => {
-
-  const loadNotifications =
-    async () => {
-
-      try {
-
-        const user =
-          JSON.parse(
-            localStorage.getItem("user")
-          );
-
-        if (!user?.profile?.userId)
-          return;
-
-        const list =
-          await notificationAPI.getAll(
-            user.profile.userId
-          );
-
-        const count =
-          await notificationAPI.unreadCount(
-            user.profile.userId
-          );
-
-        setNotifications(list);
-
-        setUnreadCount(count);
-
-      } catch(err) {
-
-        console.log(err);
-
-      }
-
-    };
-
-  loadNotifications();
-
-}, []);
-  const { isLoggedIn, userName, logout } = useAuth();
-  const navigate = useNavigate();
-  const { language, setLanguage, t } = useLanguage();
-
+  refreshNotifications();
+}, [currentUserId]);
   const publicLinks = [
     { label: t.navbar.home, to: "/" },
     { label: t.navbar.about, to: "/about" },
@@ -254,9 +304,36 @@ useEffect(() => {
   ) {
       return;
   }
-if (data.receiverId !== user.profile.userId) {
-    return;
+const loggedInUser = JSON.parse(
+  localStorage.getItem("user") || "{}"
+);
+
+const loggedInUserId = Number(
+  loggedInUser?.profile?.userId ||
+  loggedInUser?.userId ||
+  loggedInUser?.id
+);
+
+const notificationReceiverId = Number(data?.receiverId);
+
+console.log("NOTIFICATION RECEIVER CHECK:", {
+  loggedInUserId,
+  notificationReceiverId,
+  senderId: Number(data?.senderId),
+  type: data?.type
+});
+
+if (!loggedInUserId || notificationReceiverId !== loggedInUserId) {
+  console.log("IGNORED: notification belongs to another user");
+  return;
 }
+
+setLivePopup(data);
+
+setTimeout(() => {
+  setLivePopup(null);
+}, 5000);
+
    if (notificationAudio.current) {
 
      notificationAudio.current.currentTime = 0;
@@ -336,20 +413,7 @@ if (data.receiverId !== user.profile.userId) {
          );
 
      }
-      const list =
-        await notificationAPI.getAll(
-          user.profile.userId
-        );
-
-      const count =
-        await notificationAPI.unreadCount(
-          user.profile.userId
-        );
-
-      setNotifications(list);
-
-      setUnreadCount(count);
-
+     await refreshNotifications();
       window.dispatchEvent(
         new Event("interestUpdated")
       );
@@ -378,7 +442,10 @@ window.dispatchEvent(
     disconnectNotifications();
   };
 
-}, []);useEffect(() => {
+}, [currentUserId]);
+
+
+useEffect(() => {
 
   if (
     "Notification" in window &&
@@ -391,21 +458,81 @@ window.dispatchEvent(
 
 }, []);
 
-useEffect(() => {
-
-  if (
-    "Notification" in window &&
-    Notification.permission === "default"
-  ) {
-
-    Notification.requestPermission();
-
-  }
-
-}, []);
 
   return (
-    <motion.nav 
+      <>
+        {livePopup && (() => {
+          const meta = getNotificationMeta(livePopup.type);
+
+          return (
+            <div
+              onClick={() => {
+                setLivePopup(null);
+                navigate(meta.route);
+              }}
+              className={`
+                fixed
+                top-20
+                right-4
+                z-[999999]
+                w-[calc(100vw-2rem)]
+                max-w-sm
+                cursor-pointer
+                rounded-2xl
+                border-l-4
+                ${meta.accent}
+                bg-white
+                p-4
+                shadow-2xl
+                transition-all
+                duration-300
+                dark:bg-slate-900
+              `}
+            >
+              <div className="flex items-start gap-3">
+                <div
+                  className={`
+                    flex
+                    h-11
+                    w-11
+                    shrink-0
+                    items-center
+                    justify-center
+                    rounded-full
+                    text-xl
+                    ${meta.iconBg}
+                  `}
+                >
+                  {meta.icon}
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-bold text-slate-900 dark:text-white">
+                    {meta.label}
+                  </p>
+
+                  <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+                    {livePopup.message}
+                  </p>
+                </div>
+
+                <button
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setLivePopup(null);
+                  }}
+                  className="text-lg text-slate-400 hover:text-red-500"
+                  title="Close"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+          );
+        })()}
+
+        <motion.nav
+
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
@@ -660,52 +787,11 @@ onClick={async () => {
 
 setUnreadCount(count);
 
-if(item.type === "REQUEST"){
+const meta = getNotificationMeta(item.type);
 
-  navigate("/received-interests");
+setShowNotifications(false);
 
-}
-
-else if(item.type === "ACCEPT"){
-
-  navigate("/sent-interests");
-
-}
-
-else if(item.type === "SHORTLIST"){
-
-  navigate("/shortlists");
-
-}
-
-else if(item.type === "VIEW"){
-
-  navigate("/profile-visitors");
-
-}
-else if(item.type === "LIKE"){
-
-  navigate("/likes");
-
-}
-
-else if(item.type === "REJECT"){
-
-  navigate("/sent-interests");
-
-}
-else if(item.type === "MESSAGE"){
-
-  navigate("/messages");
-
-}
-
-else if(item.type === "MATCH"){
-
-  navigate("/matches");
-
-}
-
+navigate(meta.route);
 } catch(err) {
 
     console.log(err);
@@ -725,8 +811,8 @@ duration-200
 hover:scale-[1.01]
 
 ${item.read
-? "bg-slate-950 opacity-60"
-: "bg-slate-800 border-l-4 border-pink-500"}
+  ? "bg-slate-950 opacity-60"
+  : `bg-slate-800 border-l-4 ${getNotificationMeta(item.type).accent}`}
 
 hover:bg-slate-700
 `}
@@ -735,16 +821,11 @@ hover:bg-slate-700
 
   <div className="flex gap-3 flex-1">
 
-    <div className="text-xl">
-      {item.type === "MATCH" && "🎉"}
-      {item.type === "REQUEST" && "💌"}
-      {item.type === "ACCEPT" && "✅"}
-      {item.type === "REJECT" && "❌"}
-      {item.type === "SHORTLIST" && "⭐"}
-      {item.type === "LIKE" && "❤️"}
-      {item.type === "VIEW" && "👀"}
-      {item.type === "MESSAGE" && "💬"}
-    </div>
+  <div
+    className={`h-10 w-10 shrink-0 rounded-full flex items-center justify-center text-lg ${getNotificationMeta(item.type).iconBg}`}
+  >
+    {getNotificationMeta(item.type).icon}
+  </div>
 
     <div>
 
@@ -956,6 +1037,7 @@ hover:bg-slate-700
         </motion.div>
       )}
     </motion.nav>
+    </>
   );
 };
 

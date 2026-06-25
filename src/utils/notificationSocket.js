@@ -3,127 +3,134 @@ import { Client } from "@stomp/stompjs";
 
 let client = null;
 
+const playNotificationSound = () => {
+  const audio = new Audio(
+    "/microsammy-ak-47-firing-8760.mp3"
+  );
+
+  audio.volume = 0.35;
+
+  audio.play().catch((error) => {
+    console.warn(
+      "Notification sound blocked by browser:",
+      error
+    );
+  });
+};
+
 export const connectNotifications = (
   userId,
   onMessage
 ) => {
-
   console.log(
     "CONNECTING TO WS:",
     userId
   );
 
   if (client) {
-
     client.deactivate();
-
     client = null;
-
   }
 
-  const token =
-    localStorage.getItem("token");
+  const token = localStorage.getItem("token");
+
+  if (!token || !userId) {
+    console.warn(
+      "WebSocket connection skipped: token or userId missing"
+    );
+    return;
+  }
 
   const socket = new SockJS(
-    `http://localhost:9090/ws?token=${token}`
+    `http://localhost:9090/ws?token=${token}`,
+    null,
+    {
+      transports: ["websocket"]
+    }
   );
 
   client = new Client({
-
     webSocketFactory: () => socket,
 
     reconnectDelay: 5000,
 
     debug: (msg) => {
-
-      console.log(
-        "STOMP:",
-        msg
-      );
-
+      console.log("STOMP:", msg);
     },
 
     onConnect: () => {
-
-      console.log(
-        "CONNECTED"
-      );
+      console.log("CONNECTED");
 
       console.log(
         "SUBSCRIBING TO:",
         `/topic/notifications/${userId}`
       );
 
-     client.subscribe(
+      client.subscribe(
+        `/topic/notifications/${userId}`,
+        (message) => {
+          try {
+            const notification = JSON.parse(
+              message.body
+            );
 
-       `/topic/notifications/${userId}`,
+            console.log(
+              "🔥 LIVE NOTIFICATION OBJECT:",
+              notification
+            );
 
-       (message) => {
+          const currentUser = JSON.parse(
+            localStorage.getItem("user") || "{}"
+          );
 
-         alert(
-           "MESSAGE RECEIVED = " +
-           message.body
-         );
+          const currentUserId = Number(
+            currentUser?.profile?.userId ||
+            currentUser?.userId ||
+            currentUser?.id
+          );
 
-         console.log(
-           "🔥 MESSAGE RECEIVED:",
-           message.body
-         );
+          if (
+            currentUserId &&
+            Number(notification.receiverId) === currentUserId
+          ) {
+            playNotificationSound();
+          }
 
-         onMessage({
-           message: message.body
-         });
-
-       }
-
-     );
-      console.log(
-        "SUBSCRIBED SUCCESS"
+          if (onMessage) {
+            onMessage(notification);
+          }
+          } catch (error) {
+            console.error(
+              "Notification JSON parse failed:",
+              error,
+              message.body
+            );
+          }
+        }
       );
 
+      console.log("SUBSCRIBED SUCCESS");
     },
 
     onWebSocketClose: (event) => {
-
-      console.log(
-        "WS CLOSED:",
-        event
-      );
-
+      console.log("WS CLOSED:", event);
     },
 
     onWebSocketError: (err) => {
-
-      console.log(
-        "WS ERROR:",
-        err
-      );
-
+      console.log("WS ERROR:", err);
     },
 
     onStompError: (frame) => {
-
-      console.log(
-        "STOMP ERROR:",
-        frame
-      );
-
+      console.log("STOMP ERROR:", frame);
     }
-
   });
 
   client.activate();
-
 };
 
-export const disconnectNotifications = () => {
-
+export const disconnectNotifications = async () => {
   if (client) {
-
-    client.deactivate();
-
+    await client.deactivate();
     client = null;
-
   }
-
 };

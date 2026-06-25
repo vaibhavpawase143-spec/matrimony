@@ -55,22 +55,18 @@ shortlistAPI
 
 from "@/services/shortlistAPI";
 
-import {
-  connectNotifications,
-  disconnectNotifications
-} from "@/utils/notificationSocket";
+
 
 
 const HomeFixed = () => {
 
 const navigate = useNavigate();
 const {
+  isLiked,
+  toggleLike,
+  loading: likesLoading
+} = useLikes();
 
-isLiked,
-
-toggleLike
-
-}=useLikes();
 const [showReportModal, setShowReportModal] = useState(false);
 const [reportedUsers, setReportedUsers] = useState({});
 console.log("showReportModal =", showReportModal);
@@ -230,48 +226,6 @@ useEffect(() => {
       "dashboardUpdated",
       handleDashboardUpdated
     );
-  };
-}, [refreshDashboard]);
-useEffect(() => {
-  const currentUser = JSON.parse(
-    localStorage.getItem("user") || "{}"
-  );
-
-  const userId = Number(
-    currentUser?.profile?.userId ||
-    currentUser?.userId ||
-    currentUser?.id
-  );
-
-  if (!userId) {
-    console.warn("Home WebSocket: userId not found");
-    return;
-  }
-
-  connectNotifications(userId, (notification) => {
-    console.log(
-      "HOME LIVE NOTIFICATION:",
-      notification
-    );
-
-    if (
-      notification?.receiverId &&
-      Number(notification.receiverId) !== userId
-    ) {
-      return;
-    }
-
-    refreshDashboard();
-
-    window.dispatchEvent(
-      new CustomEvent("dashboardUpdated", {
-        detail: notification
-      })
-    );
-  });
-
-  return () => {
-    disconnectNotifications();
   };
 }, [refreshDashboard]);
 const [
@@ -1055,55 +1009,32 @@ h-[320px]
 
 
 "
-onDoubleClick={async(e)=>{
+onDoubleClick={async (e) => {
+  e.stopPropagation();
 
-e.stopPropagation();
+  if (likesLoading) {
+    toast("Loading likes...");
+    return;
+  }
 
-try{
+  try {
+    const likedBefore = isLiked(profile.userId);
 
-if(
+    if (!likedBefore) {
+      setShowHeart(profile.userId);
+    }
 
-!isLiked(
-profile.userId
-)
+    await toggleLike(profile.userId);
 
-){
-
-setShowHeart(
-profile.userId
-);
-
-await toggleLike(
-profile.userId
-);
-window.dispatchEvent(
-  new Event("dashboardUpdated")
-);
-window.dispatchEvent(
-new Event(
-"like:updated"
-)
-);
-toast.success(
-"Liked ❤️"
-);
-
-}else{
-
-toast(
-"Already liked ❤️"
-);
-
-}
-
-}catch(err){
-
-toast.error(
-"Failed"
-);
-
-}
-
+    if (likedBefore) {
+      toast("Like removed");
+    } else {
+      toast.success("Liked ❤️");
+    }
+  } catch (error) {
+    console.error("Double-click like failed:", error);
+    toast.error("Failed to update like");
+  }
 }}
 >
 
@@ -1343,140 +1274,65 @@ No Image
 <div className="mt-5 flex justify-center gap-3">
 
 <button
+  title="Like"
+  disabled={likesLoading}
+  onClick={async (e) => {
+    e.stopPropagation();
 
-title="Like"
+    if (likesLoading) {
+      toast("Loading likes...");
+      return;
+    }
 
-onClick={async(e)=>{
+    try {
+      const likedBefore = isLiked(profile.userId);
 
-e.stopPropagation();
+      if (!likedBefore) {
+        setShowHeart(profile.userId);
+      }
 
-try{
+      await toggleLike(profile.userId);
 
-const likedBefore =
-
-isLiked(
-profile.userId
-);
-
-setShowHeart(
-profile.userId
-);
-
-await toggleLike(
-profile.userId
-);
-window.dispatchEvent(
-  new Event("dashboardUpdated")
-);
-if(
-
-likedBefore
-
-){
-
-toast(
-"Like removed"
-);
-
-}else{
-
-toast.success(
-"Liked ❤️"
-);
-
-}
-
-}catch{
-
-toast.error(
-"Failed"
-);
-
-}
-
-}}
-className="
-
-group
-
-w-12
-h-12
-
-rounded-full
-
-bg-gradient-to-br
-
-from-pink-500
-
-to-rose-600
-
-shadow-lg
-
-hover:scale-125
-
-active:scale-95
-
-transition-all
-
-duration-300
-
-flex
-
-items-center
-
-justify-center
-
-"
-
+      if (likedBefore) {
+        toast("Like removed");
+      } else {
+        toast.success("Liked ❤️");
+      }
+    } catch (error) {
+      console.error("Like update failed:", error);
+      toast.error("Failed to update like");
+    }
+  }}
+  className="
+    group
+    w-12
+    h-12
+    rounded-full
+    bg-gradient-to-br
+    from-pink-500
+    to-rose-600
+    shadow-lg
+    hover:scale-125
+    active:scale-95
+    transition-all
+    duration-300
+    disabled:opacity-50
+    disabled:cursor-not-allowed
+    flex
+    items-center
+    justify-center
+  "
 >
-
-<span
-
-className={`
-
-text-2xl
-
-transition-all
-
-duration-300
-
-${
-
-isLiked(
-profile.userId
-)
-
-?
-
-"scale-125"
-
-:
-
-""
-
-}
-
-`}
-
->
-
-{
-
-isLiked(
-profile.userId
-)
-
-?
-
-"❤️"
-
-:
-
-"🤍"
-
-}
-
-</span>
+  <span
+    className={`
+      text-2xl
+      transition-all
+      duration-300
+      ${isLiked(profile.userId) ? "scale-125" : ""}
+    `}
+  >
+    {isLiked(profile.userId) ? "❤️" : "🤍"}
+  </span>
 </button>
 <div
 className="
@@ -1506,83 +1362,73 @@ showLabel={false}
 
 </div>
 <button
-title="Block User"
-onClick={async (e) => {
-  e.stopPropagation();
+  title="Block User"
+  onClick={async (e) => {
+    e.stopPropagation();
 
-  const confirmBlock = window.confirm(
-    "Are you sure you want to block this user?"
-  );
-
-  if (!confirmBlock) return;
-
-  try {
-
-    const currentUser = JSON.parse(
-      localStorage.getItem("user")
+    const confirmBlock = window.confirm(
+      "Are you sure you want to block this user?"
     );
 
-    const blockerId =
-      Number(currentUser.profile.userId);
+    if (!confirmBlock) {
+      return;
+    }
 
-    const blockedId =
-      Number(profile.userId);
-
-    console.log("BLOCKER:", blockerId);
-    console.log("BLOCKED:", blockedId);
-
-    const result =
-      await blockAPI.blockUser(
-        blockerId,
-        blockedId
+    try {
+      const currentUser = JSON.parse(
+        localStorage.getItem("user") || "{}"
       );
 
-    console.log("BLOCK API RESULT:", result);
+      const blockerId = Number(
+        currentUser?.profile?.userId ||
+        currentUser?.userId ||
+        currentUser?.id
+      );
 
- toast.success(
-   "User blocked successfully"
- );
+      const blockedId = Number(profile.userId);
 
- setBlockedUsers(prev => [
-   ...prev,
-   profile.userId
- ]);
-setProfiles(prev =>
-  prev.filter(
-    p => p.userId !== profile.userId
-  )
-);
-  } catch (err) {
+      if (!blockerId || !blockedId) {
+        toast.error("User information not found");
+        return;
+      }
 
-    console.error("BLOCK ERROR:", err);
+      await blockAPI.blockUser(blockerId, blockedId);
 
-    toast.error(
-      err.message || "Failed to block user"
-    );
+      toast.success("User blocked successfully");
 
-  }
-}}
-
-className="
-group
-w-12
-h-12
-rounded-full
-bg-red-100
-border
-border-red-200
-shadow-lg
-hover:scale-125
-active:scale-95
-transition-all
-duration-300
-flex
-items-center
-justify-center
-"
+      setProfiles((previousProfiles) =>
+        previousProfiles.filter(
+          (item) => Number(item.userId) !== blockedId
+        )
+      );
+    } catch (error) {
+      console.error("Block failed:", error);
+      toast.error(
+        error?.message || "Failed to block user"
+      );
+    }
+  }}
+  className="
+    group
+    w-12
+    h-12
+    rounded-full
+    bg-red-100
+    border
+    border-red-200
+    shadow-lg
+    hover:scale-125
+    active:scale-95
+    transition-all
+    duration-300
+    flex
+    items-center
+    justify-center
+  "
 >
-🚫
+  🚫
 </button>
+
 <button
   title={
     reportedUsers[profile.userId]
