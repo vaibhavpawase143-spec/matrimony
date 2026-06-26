@@ -652,7 +652,45 @@ export const supportAPI = {
   }
 
 };
+export const adminSupportAPI = {
 
+  // All tickets
+  getAllTickets: async () => {
+    return await apiClient(
+      "/admin/support"
+    );
+  },
+
+  // Ticket details
+  getTicket: async (ticketNumber) => {
+    return await apiClient(
+      `/admin/support/${ticketNumber}`
+    );
+  },
+
+  // Update status
+  updateStatus: async (ticketNumber, status) => {
+    return await apiClient(
+      `/admin/support/${ticketNumber}/status`,
+      {
+        method: "PUT",
+        body: JSON.stringify({ status })
+      }
+    );
+  },
+
+  // Reply to ticket
+  replyTicket: async (ticketNumber, reply) => {
+    return await apiClient(
+      `/admin/support/${ticketNumber}/reply`,
+      {
+        method: "PUT",
+        body: JSON.stringify({ reply })
+      }
+    );
+  }
+
+};
  export const interestAPI = {
 
 getReceivedPendingInterests:

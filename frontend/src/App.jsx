@@ -9,8 +9,10 @@ import { ToastProvider } from "@/components/Toast";
 import { LanguageProvider } from "@/context/LanguageContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import AdminRoute from "@/routes/AdminRoute";
+import AdminSupportTickets from "./pages/admin/AdminSupportTickets";
 import SupportTickets from "./pages/SupportTickets";
 import SupportTicketDetails from "./pages/SupportTicketDetails";
+import AdminSupportTicketDetails from "@/pages/admin/AdminSupportTicketDetails";
 import LoadingSpinner from "./components/LoadingSpinner";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import AuthenticatedLayout from "@/components/AuthenticatedLayout";
@@ -342,6 +344,22 @@ element={<EmailVerified />}
                       element={
                         <AdminRoute>
                           <AdminDashboard />
+                        </AdminRoute>
+                      }
+                    />
+                    <Route
+                      path="/admin/support"
+                      element={
+                        <AdminRoute>
+                          <AdminSupportTickets />
+                        </AdminRoute>
+                      }
+                    />
+                    <Route
+                      path="/admin/support/:ticketNumber"
+                      element={
+                        <AdminRoute>
+                          <AdminSupportTicketDetails />
                         </AdminRoute>
                       }
                     />

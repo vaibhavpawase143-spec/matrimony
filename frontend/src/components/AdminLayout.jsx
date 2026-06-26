@@ -47,7 +47,13 @@ const AdminLayout = ({ children }) => {
             <Users size={18} />
             {open && t.admin.verification}
           </Link>
-
+<Link
+  to="/admin/support"
+  className="flex gap-2 hover:bg-white/20 p-2 rounded"
+>
+  <Users size={18} />
+  {open && "Support Tickets"}
+</Link>
 
           
 
