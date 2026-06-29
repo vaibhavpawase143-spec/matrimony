@@ -31,21 +31,33 @@ public class ReportSpecification {
                         "%" + filter.getSearch().toLowerCase() + "%";
 
                 predicates.add(
-
                         cb.or(
-
                                 cb.like(
                                         cb.lower(root.get("reason")),
                                         search
                                 ),
-
                                 cb.like(
-                                        cb.lower(root.get("reporter").get("fullName")),
+                                        cb.lower(root.get("reporter").get("firstName")),
                                         search
                                 ),
-
                                 cb.like(
-                                        cb.lower(root.get("reportedUser").get("fullName")),
+                                        cb.lower(root.get("reporter").get("lastName")),
+                                        search
+                                ),
+                                cb.like(
+                                        cb.lower(cb.concat(cb.concat(root.get("reporter").get("firstName"), " "), root.get("reporter").get("lastName"))),
+                                        search
+                                ),
+                                cb.like(
+                                        cb.lower(root.get("reportedUser").get("firstName")),
+                                        search
+                                ),
+                                cb.like(
+                                        cb.lower(root.get("reportedUser").get("lastName")),
+                                        search
+                                ),
+                                cb.like(
+                                        cb.lower(cb.concat(cb.concat(root.get("reportedUser").get("firstName"), " "), root.get("reportedUser").get("lastName"))),
                                         search
                                 )
                         )
@@ -69,17 +81,22 @@ public class ReportSpecification {
             if (filter.getReporterName() != null &&
                     !filter.getReporterName().trim().isEmpty()) {
 
+                String reporterSearch = "%" + filter.getReporterName().toLowerCase() + "%";
+
                 predicates.add(
-
-                        cb.like(
-
-                                cb.lower(
-                                        root.get("reporter").get("fullName")
+                        cb.or(
+                                cb.like(
+                                        cb.lower(root.get("reporter").get("firstName")),
+                                        reporterSearch
                                 ),
-
-                                "%" +
-                                        filter.getReporterName().toLowerCase()
-                                        + "%"
+                                cb.like(
+                                        cb.lower(root.get("reporter").get("lastName")),
+                                        reporterSearch
+                                ),
+                                cb.like(
+                                        cb.lower(cb.concat(cb.concat(root.get("reporter").get("firstName"), " "), root.get("reporter").get("lastName"))),
+                                        reporterSearch
+                                )
                         )
                 );
             }
@@ -89,17 +106,22 @@ public class ReportSpecification {
             if (filter.getReportedUserName() != null &&
                     !filter.getReportedUserName().trim().isEmpty()) {
 
+                String reportedUserSearch = "%" + filter.getReportedUserName().toLowerCase() + "%";
+
                 predicates.add(
-
-                        cb.like(
-
-                                cb.lower(
-                                        root.get("reportedUser").get("fullName")
+                        cb.or(
+                                cb.like(
+                                        cb.lower(root.get("reportedUser").get("firstName")),
+                                        reportedUserSearch
                                 ),
-
-                                "%" +
-                                        filter.getReportedUserName().toLowerCase()
-                                        + "%"
+                                cb.like(
+                                        cb.lower(root.get("reportedUser").get("lastName")),
+                                        reportedUserSearch
+                                ),
+                                cb.like(
+                                        cb.lower(cb.concat(cb.concat(root.get("reportedUser").get("firstName"), " "), root.get("reportedUser").get("lastName"))),
+                                        reportedUserSearch
+                                )
                         )
                 );
             }

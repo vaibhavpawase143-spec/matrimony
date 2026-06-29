@@ -5,10 +5,13 @@ import com.example.dto.response.AdminReportResponseDTO;
 import com.example.dto.response.AdminReportStatsDTO;
 import com.example.exception.ResourceNotFoundException;
 import com.example.mapper.AdminReportMapper;
+import com.example.model.Admin;
 import com.example.model.ReportStatus;
 import com.example.model.UserReport;
 import com.example.repository.UserReportRepository;
+import com.example.service.AdminAuditLogService;
 import com.example.service.AdminReportService;
+import com.example.service.CurrentAdminService;
 import com.example.specification.ReportSpecification;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -18,6 +21,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -28,6 +32,8 @@ public class AdminReportServiceImpl implements AdminReportService {
 
     private final UserReportRepository userReportRepository;
     private final AdminReportMapper adminReportMapper;
+    private final CurrentAdminService currentAdminService;
+    private final AdminAuditLogService adminAuditLogService;
 
     @Override
     @Transactional(readOnly = true)
@@ -86,9 +92,27 @@ public class AdminReportServiceImpl implements AdminReportService {
                                 "Report not found with ID: " + id
                         ));
 
+        Admin admin = currentAdminService.getCurrentAdmin();
+        ReportStatus oldStatus = report.getStatus();
         report.setStatus(ReportStatus.UNDER_REVIEW);
+        report.setReviewedBy(admin);
+        report.setReviewedAt(LocalDateTime.now());
+        report.setUpdatedAt(LocalDateTime.now());
 
         UserReport updatedReport = userReportRepository.save(report);
+
+        adminAuditLogService.log(
+                admin.getId(),
+                "REPORT_MANAGEMENT",
+                "REPORT_MARKED_UNDER_REVIEW",
+                "USER_REPORT",
+                updatedReport.getId(),
+                "Marked report " + id + " as under review",
+                "Status = " + oldStatus,
+                "Status = " + ReportStatus.UNDER_REVIEW,
+                "SYSTEM",
+                "SYSTEM"
+        );
 
         return adminReportMapper.toDTO(updatedReport);
     }
@@ -108,9 +132,27 @@ public class AdminReportServiceImpl implements AdminReportService {
             );
         }
 
+        Admin admin = currentAdminService.getCurrentAdmin();
+        ReportStatus oldStatus = report.getStatus();
         report.setStatus(ReportStatus.APPROVED);
+        report.setReviewedBy(admin);
+        report.setReviewedAt(LocalDateTime.now());
+        report.setUpdatedAt(LocalDateTime.now());
 
         UserReport updatedReport = userReportRepository.save(report);
+
+        adminAuditLogService.log(
+                admin.getId(),
+                "REPORT_MANAGEMENT",
+                "REPORT_APPROVED",
+                "USER_REPORT",
+                updatedReport.getId(),
+                "Approved report " + id,
+                "Status = " + oldStatus,
+                "Status = " + ReportStatus.APPROVED,
+                "SYSTEM",
+                "SYSTEM"
+        );
 
         return adminReportMapper.toDTO(updatedReport);
     }
@@ -130,15 +172,40 @@ public class AdminReportServiceImpl implements AdminReportService {
             );
         }
 
+        Admin admin = currentAdminService.getCurrentAdmin();
+        ReportStatus oldStatus = report.getStatus();
         report.setStatus(ReportStatus.REJECTED);
+        report.setReviewedBy(admin);
+        report.setReviewedAt(LocalDateTime.now());
+        report.setUpdatedAt(LocalDateTime.now());
 
         UserReport updatedReport = userReportRepository.save(report);
+
+        adminAuditLogService.log(
+                admin.getId(),
+                "REPORT_MANAGEMENT",
+                "REPORT_REJECTED",
+                "USER_REPORT",
+                updatedReport.getId(),
+                "Rejected report " + id,
+                "Status = " + oldStatus,
+                "Status = " + ReportStatus.REJECTED,
+                "SYSTEM",
+                "SYSTEM"
+        );
 
         return adminReportMapper.toDTO(updatedReport);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public AdminReportStatsDTO getReportStatistics() {
-        return null;
+        return AdminReportStatsDTO.builder()
+                .totalReports(userReportRepository.count())
+                .pendingReports(userReportRepository.countByStatus(ReportStatus.PENDING))
+                .reviewedReports(userReportRepository.countByStatus(ReportStatus.UNDER_REVIEW))
+                .approvedReports(userReportRepository.countByStatus(ReportStatus.APPROVED))
+                .rejectedReports(userReportRepository.countByStatus(ReportStatus.REJECTED))
+                .build();
     }
 }

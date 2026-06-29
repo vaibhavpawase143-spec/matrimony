@@ -32,4 +32,9 @@ public class AdminReportResponseDTO {
 
     // Audit
     private LocalDateTime createdAt;
+
+    // Reviewer Details
+    private Long reviewedById;
+    private String reviewedByName;
+    private LocalDateTime reviewedAt;
 }

@@ -35,6 +35,13 @@ public class AdminReportMapper {
         dto.setStatus(report.getStatus());
         dto.setCreatedAt(report.getCreatedAt());
 
+        // Reviewer
+        if (report.getReviewedBy() != null) {
+            dto.setReviewedById(report.getReviewedBy().getId());
+            dto.setReviewedByName(report.getReviewedBy().getName());
+        }
+        dto.setReviewedAt(report.getReviewedAt());
+
         return dto;
     }
 }
