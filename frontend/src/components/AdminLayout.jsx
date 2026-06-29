@@ -8,11 +8,19 @@ const AdminLayout = ({ children }) => {
   const [open, setOpen] = useState(true);
   const navigate = useNavigate();
 
-  const logout = () => {
-    localStorage.removeItem("role");
-    navigate("/login");
-  };
+ const logout = () => {
 
+     localStorage.removeItem("token");
+
+     localStorage.removeItem("user");
+
+     localStorage.removeItem("adminRole");
+
+     localStorage.removeItem("isAdmin");
+
+     navigate("/login");
+
+ };
   return (
     <div className="flex min-h-screen">
 

@@ -8,5 +8,10 @@ public class UserFilterDTO {
     private String search;      // name/email
     private Boolean isActive;
     private Boolean isDeleted;
-    private String role;        // ROLE_USER, ROLE_ADMIN
+    private String role;
+    private Boolean isBlocked;
+
+    private Boolean emailVerified;
+
+    private Boolean phoneVerified;// ROLE_USER, ROLE_ADMIN
 }

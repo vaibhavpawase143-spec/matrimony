@@ -162,11 +162,12 @@ AND u.lastHeartbeat < :time
     // ================= MATCH =================
 
     @Query("""
-        SELECT u FROM User u
-        WHERE u.id != :userId
-        AND u.isActive = true
-        ORDER BY u.createdAt DESC
-    """)
+    SELECT u FROM User u
+    WHERE u.id != :userId
+      AND u.isActive = true
+      AND u.isDeleted = false
+    ORDER BY u.createdAt DESC
+""")
     List<User> findTopMatches(
             @Param("userId") Long userId,
             Pageable pageable
@@ -178,9 +179,9 @@ AND u.lastHeartbeat < :time
     LEFT JOIN FETCH p.religion
     LEFT JOIN FETCH p.caste
     WHERE u.id = :id
+      AND u.isDeleted = false
 """)
     Optional<User> findByIdWithProfile(@Param("id") Long id);
-
     // ================= ADMIN DASHBOARD QUERIES =================
 
     @Query("SELECT COUNT(u) FROM User u WHERE u.createdAt > :date")
@@ -209,5 +210,61 @@ AND u.lastHeartbeat < :time
 
     @Query("SELECT e.name, COUNT(u) FROM User u LEFT JOIN u.profile p LEFT JOIN p.educationLevel e GROUP BY e.name")
     Map<String, Long> countUsersByEducation();
+    @Query("""
+    SELECT DISTINCT u
+    FROM User u
+    LEFT JOIN FETCH u.profile p
+    LEFT JOIN FETCH p.gender
+    LEFT JOIN FETCH p.religion
+    LEFT JOIN FETCH p.caste
+    LEFT JOIN FETCH p.city
+    LEFT JOIN FETCH p.educationLevel
+    LEFT JOIN FETCH p.maritalStatus
+    WHERE u.isDeleted = false
+    ORDER BY u.createdAt DESC
+""")
+    List<User> findAllUsersWithProfile();
+    @Query("""
+SELECT u
+FROM User u
+LEFT JOIN FETCH u.profile
+WHERE u.isActive = true
+AND u.isDeleted = false
+""")
+    List<User> findActiveUsersWithProfile();
+
+    @Query("""
+SELECT DISTINCT u
+FROM User u
+LEFT JOIN FETCH u.profile p
+WHERE u.isDeleted = false
+AND (
+    LOWER(COALESCE(u.firstName, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))
+    OR LOWER(COALESCE(u.lastName, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))
+    OR LOWER(COALESCE(u.email, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))
+)
+ORDER BY u.createdAt DESC
+""")
+    List<User> searchUsers(@Param("keyword") String keyword);
+
+    @Query(
+            value = """
+        SELECT DISTINCT u
+        FROM User u
+        LEFT JOIN FETCH u.profile p
+        WHERE u.isDeleted = false
+        """,
+            countQuery = """
+        SELECT COUNT(u)
+        FROM User u
+        WHERE u.isDeleted = false
+        """
+    )
+    Page<User> findAllUsersWithProfile(Pageable pageable);
+    // ================= ADMIN USER MANAGEMENT =================
+    Long countByIsActiveTrueAndIsDeletedFalse();
+    Long countByIsBlockedTrueAndIsDeletedFalse();
+    Long countByIsDeletedTrue();
+
 
 }

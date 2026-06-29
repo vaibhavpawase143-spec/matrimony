@@ -220,6 +220,19 @@ public class ProfileServiceImpl implements ProfileService {
                         .orElseThrow(() ->
                                 new RuntimeException("Profile not found"));
 
+        // ================= SECURITY CHECK =================
+
+        User profileUser = profile.getUser();
+
+        if (Boolean.TRUE.equals(profileUser.getIsDeleted())
+                || !Boolean.TRUE.equals(profileUser.getIsActive())
+                || Boolean.TRUE.equals(profileUser.getIsBlocked())) {
+
+            throw new RuntimeException("Profile not found");
+        }
+
+        // ================= CREATE DTO =================
+
         ProfileResponseDTO dto =
                 mapToDTO(profile);
 
@@ -230,21 +243,15 @@ public class ProfileServiceImpl implements ProfileService {
                         .findByUserId(currentUser.getId())
                         .orElse(null);
 
-        if (
-                currentProfile != null &&
-                        !subscriptionService.hasActiveSubscription(currentUser.getId())
-        )
-        {
+        if (currentProfile != null
+                && !subscriptionService.hasActiveSubscription(currentUser.getId())) {
 
             dto.setPhone(null);
-
             dto.setEmail(null);
-
         }
 
         return dto;
     }
-
     // =====================================================
     // DELETE
     // =====================================================

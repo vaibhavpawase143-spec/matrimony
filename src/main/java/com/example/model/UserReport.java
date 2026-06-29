@@ -35,4 +35,13 @@ public class UserReport {
     // ✅ NEW (for admin handling)
     @Enumerated(EnumType.STRING)
     private ReportStatus status;
+    private String description;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "reviewed_by")
+    private Admin reviewedBy;
+
+    private LocalDateTime reviewedAt;
+
+    private LocalDateTime updatedAt;
 }

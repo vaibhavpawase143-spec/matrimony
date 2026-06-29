@@ -107,6 +107,7 @@ const {id}=useParams();
 
 const [profile,setProfile]=
 useState(null);
+const [profileNotFound, setProfileNotFound] = useState(false);
 const [blockedProfile,
 setBlockedProfile] =
 useState(false);
@@ -279,11 +280,14 @@ setInterestSent(
 alreadySent
 );
 setProfile(data);
-}catch(err){
-
-console.log(err);
-
 }
+catch (err) {
+
+     console.log(err);
+
+     setProfileNotFound(true);
+
+ }
 
 };
 
@@ -430,24 +434,52 @@ if (blockedProfile) {
   );
 
 }
+if (profileNotFound) {
+
+    return (
+
+        <div className="min-h-screen flex items-center justify-center">
+
+            <div className="text-center">
+
+                <h1 className="text-3xl font-bold mb-3">
+
+                    Profile Not Found
+
+                </h1>
+
+                <p className="text-gray-500 mb-5">
+
+                    This profile is unavailable or has been removed.
+
+                </p>
+
+                <button
+                    onClick={() => navigate("/home")}
+                    className="bg-pink-600 text-white px-5 py-2 rounded-lg"
+                >
+                    Go Home
+                </button>
+
+            </div>
+
+        </div>
+
+    );
+
+}
+
 if (!profile) {
 
-  return (
+    return (
 
-    <div
-      className="
-      min-h-screen
-      flex
-      items-center
-      justify-center
-      "
-    >
+        <div className="min-h-screen flex items-center justify-center">
 
-      Loading Profile...
+            Loading Profile...
 
-    </div>
+        </div>
 
-  );
+    );
 
 }
 return(

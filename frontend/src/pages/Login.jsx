@@ -59,27 +59,19 @@ const Login = () => {
       if (!response.success) {
         throw new Error(response.message || 'Login failed');
       }
-
+console.log("LOGIN RESPONSE", response);
+console.log("LOGIN DATA", response.data);
       // Try to get user profile after login
-      let userData = response.data;
-      try {
-        const profileData = await authAPI.getCurrentUser();
-        if (profileData) {
-          userData = { ...userData, ...profileData };
-        }
-      } catch (profileErr) {
-        // Profile not found, user may need to create profile
-        userData = {
-          ...userData,
-          needsProfile: true
-        };
-      }
-
-      // Update auth context
-      const userRole = userData?.role || "USER";
-      const token = response.token;
+  const userData = response.data;
+  const token = response.token;
+  const userRole = userData.role;
       login(userData, token, userRole);
-
+      console.log("TOKEN =", localStorage.getItem("token"));
+      console.log("ROLE =", localStorage.getItem("role"));
+      console.log("USER =", localStorage.getItem("user"));
+     if (isAdmin) {
+         localStorage.setItem("adminRole", userData.role);
+     }
       if (rememberMe) {
         localStorage.setItem("rememberedEmail", email.trim());
       } else {
@@ -90,15 +82,17 @@ const Login = () => {
       stopLoading();
 
       // Navigate based on login type and profile status
-      setTimeout(() => {
-        if (isAdmin) {
+      console.log("Before Navigation");
+      console.log("isAdmin =", isAdmin);
+
+      if (isAdmin) {
+          console.log("Navigating to /admin");
           navigate("/admin");
-        } else if (userData?.needsProfile) {
-          navigate("/profile/create"); // Redirect to profile creation
-        } else {
+      } else if (userData?.needsProfile) {
+          navigate("/profile/create");
+      } else {
           navigate("/home");
-        }
-      }, 100);
+      }
 
     } catch (err) {
       stopLoading();

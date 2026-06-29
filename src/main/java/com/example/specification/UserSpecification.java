@@ -38,7 +38,27 @@ public class UserSpecification {
                 predicate = cb.and(predicate,
                         cb.equal(root.get("isActive"), filter.getIsActive()));
             }
+            if (filter.getIsBlocked() != null) {
 
+                predicate = cb.and(
+                        predicate,
+                        cb.equal(root.get("isBlocked"), filter.getIsBlocked())
+                );
+            }
+            if (filter.getEmailVerified() != null) {
+
+                predicate = cb.and(
+                        predicate,
+                        cb.equal(root.get("emailVerified"), filter.getEmailVerified())
+                );
+            }
+            if (filter.getPhoneVerified() != null) {
+
+                predicate = cb.and(
+                        predicate,
+                        cb.equal(root.get("phoneVerified"), filter.getPhoneVerified())
+                );
+            }
             // 🗑️ DELETED
             if (filter.getIsDeleted() != null) {
                 predicate = cb.and(predicate,

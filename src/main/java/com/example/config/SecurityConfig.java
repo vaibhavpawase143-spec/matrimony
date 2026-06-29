@@ -91,12 +91,14 @@ public class SecurityConfig {
                                 "/uploads/**"
 
                         ).permitAll()
-
-                        // ADMIN LOGIN
-                        .requestMatchers("/api/admin/auth/login", "/api/admin/auth/refresh","/api/master/**",
-                                "/api/admins/*/castes/**")
+// ADMIN login
+                        .requestMatchers(
+                                "/api/admins/login",
+                                "/api/admins/refresh",
+                                "/api/master/**",
+                                "/api/admins/*/castes/**"
+                        )
                         .permitAll()
-
                         // ADMIN
                         .requestMatchers("/api/admin/**", "/api/admins/**")
                         .hasAnyRole("ADMIN", "SUPER_ADMIN")

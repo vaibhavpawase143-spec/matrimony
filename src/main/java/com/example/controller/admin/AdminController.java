@@ -11,7 +11,6 @@ import com.example.service.AdminService;
 import com.example.service.RefreshTokenService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -164,9 +163,11 @@ public class AdminController {
 
         RefreshToken refreshToken = refreshTokenService.verifyToken(token);
 
+        Admin admin = adminService.findByEmail(refreshToken.getEmail());
+
         String newAccessToken = jwtUtil.generateToken(
-                refreshToken.getEmail(),
-                List.of("ROLE_ADMIN")
+                admin.getEmail(),
+                List.of(admin.getRole().getName())
         );
 
         return new ApiResponse<>(true, "Token refreshed", newAccessToken);
@@ -179,15 +180,15 @@ public class AdminController {
                 .getAuthentication()
                 .getName();
     }
-    @PutMapping("/block/{userId}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<String> blockUser(@PathVariable Long userId) {
-        return ResponseEntity.ok(adminService.blockUser(userId));
-    }
-
-    @PutMapping("/unblock/{userId}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<String> unblockUser(@PathVariable Long userId) {
-        return ResponseEntity.ok(adminService.unblockUser(userId));
-    }
+//    @PutMapping("/block/{userId}")
+//    @PreAuthorize("hasRole('ADMIN')")
+//    public ResponseEntity<String> blockUser(@PathVariable Long userId) {
+//        return ResponseEntity.ok(adminService.blockUser(userId));
+//    }
+//
+//    @PutMapping("/unblock/{userId}")
+//    @PreAuthorize("hasRole('ADMIN')")
+//    public ResponseEntity<String> unblockUser(@PathVariable Long userId) {
+//        return ResponseEntity.ok(adminService.unblockUser(userId));
+//    }
 }
