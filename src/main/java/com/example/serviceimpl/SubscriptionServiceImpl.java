@@ -240,4 +240,8 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                 .orElseThrow(() ->
                         new RuntimeException("User not found"));
     }
+    @Override
+    public Optional<UserSubscription> getSubscriptionById(Long id) {
+        return subscriptionRepository.findById(id);
+    }
 }

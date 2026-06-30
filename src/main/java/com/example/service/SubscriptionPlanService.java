@@ -1,6 +1,10 @@
 package com.example.service;
 
+import com.example.dto.request.SubscriptionPlanFilterDTO;
+import com.example.dto.response.SubscriptionPlanResponseDTO;
+import com.example.dto.response.SubscriptionPlanStatsDTO;
 import com.example.model.SubscriptionPlan;
+import org.springframework.data.domain.Page;
 
 import java.util.List;
 import java.util.Optional;
@@ -32,4 +36,12 @@ public interface SubscriptionPlanService {
 
     // ❌ Soft delete
     void delete(Long id);
+    SubscriptionPlanStatsDTO getStatistics();
+    Page<SubscriptionPlanResponseDTO> getAllPlans(
+            SubscriptionPlanFilterDTO filter,
+            int page,
+            int size,
+            String sortBy,
+            String direction
+    );
 }

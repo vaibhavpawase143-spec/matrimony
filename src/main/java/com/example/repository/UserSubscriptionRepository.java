@@ -2,7 +2,12 @@ package com.example.repository;
 
 import com.example.model.User;
 import com.example.model.UserSubscription;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -11,7 +16,9 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface UserSubscriptionRepository extends JpaRepository<UserSubscription, Long> {
+public interface UserSubscriptionRepository extends
+        JpaRepository<UserSubscription, Long>,
+        JpaSpecificationExecutor<UserSubscription> {
 
     UserSubscription findByUser(User user);
 
@@ -72,4 +79,36 @@ public interface UserSubscriptionRepository extends JpaRepository<UserSubscripti
             String status,
             java.time.LocalDateTime now
     );
+    @EntityGraph(attributePaths = {
+            "user",
+            "subscriptionPlan"
+    })
+    Page<UserSubscription> findAll(
+            Specification<UserSubscription> specification,
+            Pageable pageable
+    );
+    @EntityGraph(attributePaths = {
+            "user",
+            "subscriptionPlan"
+    })
+    Optional<UserSubscription> findWithDetailsById(Long id);
+    long countByIsActiveTrue();
+
+    long countByIsActiveFalse();
+
+    long countByStatus(String status);
+    @Query(value = """
+SELECT COUNT(*)
+FROM user_subscriptions
+WHERE created_at >= DATE_TRUNC('month', CURRENT_DATE)
+""", nativeQuery = true)
+    Long countCurrentMonthSubscriptions();
+
+    @Query(value = """
+SELECT COUNT(*)
+FROM user_subscriptions
+WHERE created_at >= DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')
+AND created_at < DATE_TRUNC('month', CURRENT_DATE)
+""", nativeQuery = true)
+    Long countPreviousMonthSubscriptions();
 }

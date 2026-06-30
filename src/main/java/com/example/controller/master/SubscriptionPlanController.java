@@ -7,6 +7,7 @@ import com.example.model.SubscriptionPlan;
 import com.example.service.SubscriptionPlanService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,6 +24,7 @@ public class SubscriptionPlanController {
     // CREATE
     // =========================
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     public SubscriptionPlanResponseDTO create(
             @Valid @RequestBody SubscriptionPlanRequestDTO dto) {
 
@@ -37,6 +39,7 @@ public class SubscriptionPlanController {
     // UPDATE
     // =========================
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     public SubscriptionPlanResponseDTO update(
             @PathVariable Long id,
             @Valid @RequestBody SubscriptionPlanRequestDTO dto) {
@@ -52,6 +55,7 @@ public class SubscriptionPlanController {
     // GET BY ID
     // =========================
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     public SubscriptionPlanResponseDTO getById(@PathVariable Long id) {
 
         SubscriptionPlan plan = service.getById(id)
@@ -64,6 +68,7 @@ public class SubscriptionPlanController {
     // GET ALL
     // =========================
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     public List<SubscriptionPlanResponseDTO> getAll() {
 
         return service.getAll()
@@ -77,6 +82,7 @@ public class SubscriptionPlanController {
     // =========================
 
     @GetMapping("/admin/{adminId}")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     public List<SubscriptionPlanResponseDTO> getByAdmin(@PathVariable Long adminId) {
 
         return service.getByAdmin(adminId)
@@ -86,6 +92,7 @@ public class SubscriptionPlanController {
     }
 
     @GetMapping("/admin/{adminId}/active")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     public List<SubscriptionPlanResponseDTO> getActive(@PathVariable Long adminId) {
 
         return service.getActiveByAdmin(adminId)
@@ -95,6 +102,7 @@ public class SubscriptionPlanController {
     }
 
     @GetMapping("/admin/{adminId}/inactive")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     public List<SubscriptionPlanResponseDTO> getInactive(@PathVariable Long adminId) {
 
         return service.getInactiveByAdmin(adminId)
@@ -107,6 +115,7 @@ public class SubscriptionPlanController {
     // SEARCH
     // =========================
     @GetMapping("/admin/{adminId}/search")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     public List<SubscriptionPlanResponseDTO> search(
             @PathVariable Long adminId,
             @RequestParam String keyword) {
@@ -121,6 +130,7 @@ public class SubscriptionPlanController {
     // DELETE (SOFT)
     // =========================
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     public String delete(@PathVariable Long id) {
         service.delete(id);
         return "Subscription plan deactivated successfully";

@@ -265,6 +265,86 @@ ORDER BY u.createdAt DESC
     Long countByIsActiveTrueAndIsDeletedFalse();
     Long countByIsBlockedTrueAndIsDeletedFalse();
     Long countByIsDeletedTrue();
+    Long countByIsDeletedFalse();
 
+    Long countByIsActiveFalseAndIsDeletedFalse();
+
+    // ==========================================
+// DASHBOARD - MONTHLY USER REGISTRATIONS
+// ==========================================
+
+    @Query(value = """
+        SELECT TO_CHAR(created_at, 'YYYY-MM') AS month,
+               COUNT(*) AS total
+        FROM users
+        WHERE is_deleted = false
+        GROUP BY TO_CHAR(created_at, 'YYYY-MM')
+        ORDER BY month
+        """, nativeQuery = true)
+    List<Object[]> getMonthlyUserRegistrations();
+
+    // ==========================================
+// DASHBOARD - MONTHLY REPORTS
+// ==========================================
+
+    @Query(value = """
+        SELECT TO_CHAR(created_at, 'YYYY-MM') AS month,
+               COUNT(*) AS total
+        FROM user_reports
+        GROUP BY TO_CHAR(created_at, 'YYYY-MM')
+        ORDER BY month
+        """, nativeQuery = true)
+    List<Object[]> getMonthlyReports();
+    // ==========================================
+// DASHBOARD - TOP CITIES
+// ==========================================
+
+    @Query(value = """
+SELECT
+    c.id,
+    c.name,
+    COUNT(p.id)
+FROM profiles p
+JOIN cities c
+ON p.city_id = c.id
+GROUP BY c.id,c.name
+ORDER BY COUNT(p.id) DESC
+LIMIT 10
+""", nativeQuery = true)
+    List<Object[]> getTopCities();
+    // ==========================================
+// DASHBOARD - TOP RELIGIONS
+// ==========================================
+
+    @Query(value = """
+SELECT
+    r.id,
+    r.name,
+    COUNT(p.id)
+FROM profiles p
+JOIN religions r
+ON p.religion_id=r.id
+GROUP BY r.id,r.name
+ORDER BY COUNT(p.id) DESC
+LIMIT 10
+""", nativeQuery = true)
+    List<Object[]> getTopReligions();
+
+    @Query(value = """
+SELECT COUNT(*)
+FROM users
+WHERE created_at >= DATE_TRUNC('month', CURRENT_DATE)
+AND is_deleted = false
+""", nativeQuery = true)
+    Long countCurrentMonthUsers();
+
+    @Query(value = """
+SELECT COUNT(*)
+FROM users
+WHERE created_at >= DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')
+AND created_at < DATE_TRUNC('month', CURRENT_DATE)
+AND is_deleted = false
+""", nativeQuery = true)
+    Long countPreviousMonthUsers();
 
 }
