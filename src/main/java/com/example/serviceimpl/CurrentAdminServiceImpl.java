@@ -1,5 +1,6 @@
 package com.example.serviceimpl;
 
+import com.example.exception.ResourceNotFoundException;
 import com.example.model.Admin;
 import com.example.repository.AdminRepository;
 import com.example.service.CurrentAdminService;
@@ -22,6 +23,6 @@ public class CurrentAdminServiceImpl implements CurrentAdminService {
 
         return adminRepository.findByEmailWithRole(email)
                 .orElseThrow(() ->
-                        new RuntimeException("Logged-in admin not found"));
+                        new ResourceNotFoundException("Logged-in admin not found"));
     }
 }
