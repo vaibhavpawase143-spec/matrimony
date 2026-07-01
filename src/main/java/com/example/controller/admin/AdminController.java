@@ -1,8 +1,12 @@
 package com.example.controller.admin;
 
 import com.example.dto.other.AdminLoginDTO;
+import com.example.dto.request.AdminFilterDTO;
 import com.example.dto.request.AdminRequestDTO;
+import com.example.dto.request.AdminResetPasswordDTO;
+import com.example.dto.request.AdminUpdateDTO;
 import com.example.dto.response.AdminResponseDTO;
+import com.example.dto.response.AdminStatsDTO;
 import com.example.dto.response.ApiResponse;
 import com.example.model.Admin;
 import com.example.model.RefreshToken;
@@ -11,6 +15,7 @@ import com.example.service.AdminService;
 import com.example.service.RefreshTokenService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -191,4 +196,85 @@ public class AdminController {
 //    public ResponseEntity<String> unblockUser(@PathVariable Long userId) {
 //        return ResponseEntity.ok(adminService.unblockUser(userId));
 //    }
+
+    @GetMapping("/statistics")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public ApiResponse<AdminStatsDTO> getStatistics() {
+
+        return ApiResponse.<AdminStatsDTO>builder()
+                .success(true)
+                .message("Admin statistics retrieved successfully")
+                .data(adminService.getStatistics())
+                .build();
+    }
+    @GetMapping("/manage")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public ApiResponse<Page<AdminResponseDTO>> getAllAdmins(
+            @ModelAttribute AdminFilterDTO filter
+    ) {
+
+        return ApiResponse.<Page<AdminResponseDTO>>builder()
+                .success(true)
+                .message("Admins retrieved successfully")
+                .data(adminService.getAllAdmins(filter))
+                .build();
+    }
+    @PutMapping("/{id}/manage")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public ApiResponse<AdminResponseDTO> updateAdmin(
+            @PathVariable Long id,
+            @Valid @RequestBody AdminUpdateDTO dto
+    ) {
+
+        return ApiResponse.<AdminResponseDTO>builder()
+                .success(true)
+                .message("Admin updated successfully")
+                .data(adminService.updateAdmin(id, dto))
+                .build();
+    }
+    @PutMapping("/{id}/activate")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public ApiResponse<String> activateAdmin(
+            @PathVariable Long id
+    ) {
+
+        adminService.activateAdmin(id);
+
+        return ApiResponse.<String>builder()
+                .success(true)
+                .message("Admin activated successfully")
+                .data("Admin activated successfully")
+                .build();
+    }
+    @PutMapping("/{id}/deactivate")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public ApiResponse<String> deactivateAdmin(
+            @PathVariable Long id
+    ) {
+
+        adminService.deactivateAdmin(id);
+
+        return ApiResponse.<String>builder()
+                .success(true)
+                .message("Admin deactivated successfully")
+                .data("Admin deactivated successfully")
+                .build();
+    }
+    @PutMapping("/{id}/reset-password")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public ApiResponse<String> resetPassword(
+            @PathVariable Long id,
+            @Valid @RequestBody AdminResetPasswordDTO dto
+    ) {
+
+        adminService.resetPassword(id, dto);
+
+        return ApiResponse.<String>builder()
+                .success(true)
+                .message("Password reset successfully")
+                .data("Password reset successfully")
+                .build();
+    }
+
+
 }
