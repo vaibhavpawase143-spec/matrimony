@@ -89,7 +89,8 @@ public class SecurityConfig {
                                 "/api/image/**",
                                 "/ws/**",
                                 "/uploads/**",
-                                "/api/cms/**"
+                                "/api/cms/**",
+                                "/api/faqs/**"
 
                         ).permitAll()
 // ADMIN login
