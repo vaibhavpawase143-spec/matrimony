@@ -1,35 +1,82 @@
 package com.example.service;
 
-import com.example.model.Religion;
+import com.example.dto.request.ReligionRequestDTO;
+import com.example.dto.response.ReligionResponseDTO;
 
 import java.util.List;
-import java.util.Optional;
 
+/**
+ * Service interface for Religion master data.
+ * Handles CRUD operations, soft delete, and search functionality.
+ */
 public interface ReligionService {
 
-    // ✅ Create / Save
-    Religion save(Religion religion);
+    // ================= CRUD OPERATIONS =================
 
-    // ✅ Get by ID
-    Optional<Religion> getById(Long id);
+    /**
+     * Create or save a religion
+     */
+    ReligionResponseDTO create(ReligionRequestDTO dto, Long adminId);
 
-    // 🔍 Get all
-    List<Religion> getAll();
+    /**
+     * Fetch religion by ID (non-deleted only)
+     */
+    ReligionResponseDTO getById(Long id);
 
-    // 🔍 Get by admin
-    List<Religion> getByAdmin(Long adminId);
+    /**
+     * Fetch all active religions
+     */
+    List<ReligionResponseDTO> getAll();
 
-    // 🔍 Active / Inactive
-    List<Religion> getActiveByAdmin(Long adminId);
+    /**
+     * Update an existing religion
+     */
+    ReligionResponseDTO update(Long id, ReligionRequestDTO dto);
 
-    List<Religion> getInactiveByAdmin(Long adminId);
+    /**
+     * Soft delete a religion
+     */
+    void delete(Long id, Long deletedBy);
 
-    // 🔍 Search
-    List<Religion> searchByAdmin(Long adminId, String keyword);
+    /**
+     * Permanently delete a religion (hard delete)
+     */
+    void hardDelete(Long id);
 
-    // 🔍 Find by name (admin-specific)
-    Optional<Religion> getByNameAndAdmin(String name, Long adminId);
+    // ================= ADMIN-SPECIFIC QUERIES =================
 
-    // ✅ Delete
-    void delete(Long id);
+    /**
+     * Get all religions by admin (non-deleted)
+     */
+    List<ReligionResponseDTO> getByAdmin(Long adminId);
+
+    /**
+     * Get active religions by admin
+     */
+    List<ReligionResponseDTO> getActiveByAdmin(Long adminId);
+
+    /**
+     * Get inactive religions by admin (non-deleted)
+     */
+    List<ReligionResponseDTO> getInactiveByAdmin(Long adminId);
+
+    /**
+     * Search religions by admin
+     */
+    List<ReligionResponseDTO> searchByAdmin(Long adminId, String keyword);
+
+    /**
+     * Get deleted religions by admin
+     */
+    List<ReligionResponseDTO> getDeletedByAdmin(Long adminId);
+
+    /**
+     * Check if religion exists for admin
+     */
+    boolean existsForAdmin(String name, Long adminId);
+
+    /**
+     * Restore soft-deleted religion
+     */
+    ReligionResponseDTO restore(Long id);
 }

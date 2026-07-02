@@ -1,5 +1,7 @@
 package com.example.serviceimpl;
 
+
+import com.example.dto.request.AdminNotificationRequestDTO;
 import com.example.dto.response.NotificationResponse;
 import com.example.model.Notification;
 import com.example.model.NotificationType;
@@ -8,6 +10,8 @@ import com.example.repository.NotificationRepository;
 import com.example.repository.UserRepository;
 import com.example.service.NotificationService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
@@ -80,6 +84,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     // 🔥 Dynamic Message Generator
+    // 🔥 Dynamic Message Generator
     private String generateMessage(
             String senderName,
             NotificationType type
@@ -110,9 +115,25 @@ public class NotificationServiceImpl implements NotificationService {
 
             case LIKE ->
                     "❤️ " + senderName + " liked your profile";
+
+            // ===== ADMIN NOTIFICATIONS =====
+
+            case ANNOUNCEMENT ->
+                    "📢 " + senderName + " posted an announcement";
+
+            case SYSTEM ->
+                    "⚙️ System notification";
+
+            case MAINTENANCE ->
+                    "🛠️ Scheduled maintenance notification";
+
+            case SUBSCRIPTION ->
+                    "💳 Subscription notification";
+
+            case WARNING ->
+                    "⚠️ Warning notification";
         };
     }
-
     // 📥 GET ALL
     @Override
     public List<Notification> getAll(Long userId) {
@@ -154,5 +175,23 @@ public class NotificationServiceImpl implements NotificationService {
 
         n.setDeleted(true);
         repo.save(n);
+    }
+    // ==========================
+// ADMIN NOTIFICATIONS
+// ==========================
+
+    @Override
+    public void sendNotification(AdminNotificationRequestDTO request) {
+
+    }
+
+    @Override
+    public void broadcastNotification(AdminNotificationRequestDTO request) {
+
+    }
+
+    @Override
+    public Page<NotificationResponse> getNotificationHistory(Pageable pageable) {
+        return Page.empty(pageable);
     }
 }

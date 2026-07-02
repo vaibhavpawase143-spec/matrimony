@@ -892,8 +892,11 @@ getReligions: async () => {
       result
     );
 
-    return Array.isArray(result)
-      ? result
+    // Extract data from ApiResponse wrapper
+    const religions = result?.data || result;
+
+    return Array.isArray(religions)
+      ? religions
       : [];
 
    } catch(error){

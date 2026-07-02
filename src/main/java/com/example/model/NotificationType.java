@@ -8,5 +8,10 @@ public enum NotificationType {
     ACCEPT,
     REJECT,
     LIKE,
-    MATCH
+    MATCH,
+    ANNOUNCEMENT,
+    SYSTEM,
+    MAINTENANCE,
+    SUBSCRIPTION,
+    WARNING
 }
