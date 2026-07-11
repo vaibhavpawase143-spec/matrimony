@@ -22,7 +22,6 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.example.service.MatchNotificationService;
 
 import java.util.List;
 import java.util.Optional;
@@ -95,7 +94,6 @@ public class ProfileServiceImpl implements ProfileService {
 
     private final DrinkingRepository drinkingRepository;
     private final CacheService cacheService;
-    private final MatchNotificationService matchNotificationService;
 
     // =====================================================
     // CURRENT USER
@@ -144,13 +142,10 @@ public class ProfileServiceImpl implements ProfileService {
 
         userRepository.save(user);
 
-        Profile saved = repository.save(profile);
+        Profile saved =
+                repository.save(profile);
 
         safeRedis(user.getId());
-
-        if (saved.getProfileCompleted()) {
-            matchNotificationService.generateForProfileUpdate(user.getId());
-        }
 
         return mapToDTO(saved);
     }
@@ -180,13 +175,10 @@ public class ProfileServiceImpl implements ProfileService {
 
         userRepository.save(user);
 
-        Profile saved = repository.save(profile);
+        Profile saved =
+                repository.save(profile);
 
         safeRedis(user.getId());
-
-        if (saved.getProfileCompleted()) {
-            matchNotificationService.generateForProfileUpdate(user.getId());
-        }
 
         return mapToDTO(saved);
     }
@@ -228,6 +220,19 @@ public class ProfileServiceImpl implements ProfileService {
                         .orElseThrow(() ->
                                 new RuntimeException("Profile not found"));
 
+        // ================= SECURITY CHECK =================
+
+        User profileUser = profile.getUser();
+
+        if (Boolean.TRUE.equals(profileUser.getIsDeleted())
+                || !Boolean.TRUE.equals(profileUser.getIsActive())
+                || Boolean.TRUE.equals(profileUser.getIsBlocked())) {
+
+            throw new RuntimeException("Profile not found");
+        }
+
+        // ================= CREATE DTO =================
+
         ProfileResponseDTO dto =
                 mapToDTO(profile);
 
@@ -238,21 +243,15 @@ public class ProfileServiceImpl implements ProfileService {
                         .findByUserId(currentUser.getId())
                         .orElse(null);
 
-        if (
-                currentProfile != null &&
-                        !subscriptionService.hasActiveSubscription(currentUser.getId())
-        )
-        {
+        if (currentProfile != null
+                && !subscriptionService.hasActiveSubscription(currentUser.getId())) {
 
             dto.setPhone(null);
-
             dto.setEmail(null);
-
         }
 
         return dto;
     }
-
     // =====================================================
     // DELETE
     // =====================================================
@@ -371,17 +370,17 @@ public class ProfileServiceImpl implements ProfileService {
     // =====================================================
     // GET ALL
     // =====================================================
-
     @Override
     @Transactional(readOnly = true)
     public List<Profile> getAll() {
 
         User currentUser = getCurrentUser();
 
-        return repository.findDiscoverProfiles(
-                currentUser.getId()
-        );
-
+        return repository.findAllWithUser()
+                .stream()
+                .filter(profile ->
+                        !profile.getUser().getId().equals(currentUser.getId()))
+                .toList();
     }
     public ProfileResponseDTO
 

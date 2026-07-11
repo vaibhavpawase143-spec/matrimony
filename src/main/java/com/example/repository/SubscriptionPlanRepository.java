@@ -2,13 +2,15 @@ package com.example.repository;
 
 import com.example.model.SubscriptionPlan;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
-
 @Repository
-public interface SubscriptionPlanRepository extends JpaRepository<SubscriptionPlan, Long> {
+public interface SubscriptionPlanRepository
+        extends JpaRepository<SubscriptionPlan, Long>,
+        JpaSpecificationExecutor<SubscriptionPlan> {
 
     // 🔍 Find by name (admin-specific)
     Optional<SubscriptionPlan> findByNameIgnoreCaseAndAdminId(String name, Long adminId);
@@ -30,4 +32,8 @@ public interface SubscriptionPlanRepository extends JpaRepository<SubscriptionPl
 
     // 🔍 Search (admin + keyword)
     List<SubscriptionPlan> findByAdminIdAndNameContainingIgnoreCase(Long adminId, String keyword);
+    // 📊 Statistics
+    long countByIsActiveTrue();
+
+    long countByIsActiveFalse();
 }

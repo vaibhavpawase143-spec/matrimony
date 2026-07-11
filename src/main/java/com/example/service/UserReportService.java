@@ -108,7 +108,7 @@ public class UserReportService {
         UserReport report = userReportRepository.findById(reportId)
                 .orElseThrow(() -> new RuntimeException("Report not found"));
 
-        report.setStatus(ReportStatus.REVIEWED);
+        report.setStatus(ReportStatus.UNDER_REVIEW);
         userReportRepository.save(report);
 
         return "Report marked as reviewed";

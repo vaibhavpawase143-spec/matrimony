@@ -3,12 +3,19 @@ package com.example.model;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
+/**
+ * Religion Master Data Entity
+ * Represents religious denominations available in the matrimonial system.
+ * Supports soft delete and audit trail for compliance.
+ */
 @Entity
 @Table(
         name = "religions",
         uniqueConstraints = @UniqueConstraint(columnNames = {"admin_id", "name"}),
         indexes = {
-                @Index(name = "idx_religion_name", columnList = "name")
+                @Index(name = "idx_religion_name", columnList = "name"),
+                @Index(name = "idx_religion_is_active", columnList = "is_active"),
+                @Index(name = "idx_religion_deleted_at", columnList = "deleted_at")
         }
 )
 public class Religion {
@@ -33,9 +40,16 @@ public class Religion {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    // ================= SOFT DELETE FIELDS =================
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
+    @Column(name = "deleted_by")
+    private Long deletedBy;
+
     public Religion() {}
 
-    // 🔥 Lifecycle hooks (improved)
+    // ================= LIFECYCLE CALLBACKS =================
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
@@ -50,6 +64,8 @@ public class Religion {
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
     }
+
+    // ================= GETTERS & SETTERS =================
 
     public Long getId() {
         return id;
@@ -97,5 +113,21 @@ public class Religion {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public LocalDateTime getDeletedAt() {
+        return deletedAt;
+    }
+
+    public void setDeletedAt(LocalDateTime deletedAt) {
+        this.deletedAt = deletedAt;
+    }
+
+    public Long getDeletedBy() {
+        return deletedBy;
+    }
+
+    public void setDeletedBy(Long deletedBy) {
+        this.deletedBy = deletedBy;
     }
 }

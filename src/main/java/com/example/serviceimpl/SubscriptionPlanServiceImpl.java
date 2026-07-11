@@ -1,9 +1,21 @@
 package com.example.serviceimpl;
 
+import com.example.dto.request.SubscriptionPlanFilterDTO;
+import com.example.dto.response.SubscriptionPlanResponseDTO;
+import com.example.dto.response.SubscriptionPlanStatsDTO;
+import com.example.model.Admin;
 import com.example.model.SubscriptionPlan;
 import com.example.repository.SubscriptionPlanRepository;
+import com.example.service.AdminAuditLogService;
+import com.example.service.CurrentAdminService;
 import com.example.service.SubscriptionPlanService;
+import com.example.specification.SubscriptionPlanSpecification;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -12,9 +24,16 @@ import java.util.Optional;
 public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
 
     private final SubscriptionPlanRepository repository;
+    private final CurrentAdminService currentAdminService;
+    private final AdminAuditLogService auditLogService;
 
-    public SubscriptionPlanServiceImpl(SubscriptionPlanRepository repository) {
+    public SubscriptionPlanServiceImpl(
+            SubscriptionPlanRepository repository,
+            CurrentAdminService currentAdminService,
+            AdminAuditLogService auditLogService) {
         this.repository = repository;
+        this.currentAdminService = currentAdminService;
+        this.auditLogService = auditLogService;
     }
 
     // ✅ Create
@@ -29,7 +48,23 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
         }
 
         plan.setIsActive(true);
-        return repository.save(plan);
+        SubscriptionPlan saved = repository.save(plan);
+
+        Admin currentAdmin = currentAdminService.getCurrentAdmin();
+        auditLogService.log(
+                currentAdmin.getId(),
+                "SUBSCRIPTION_MANAGEMENT",
+                "PLAN_CREATED",
+                "SUBSCRIPTION_PLAN",
+                saved.getId(),
+                "Created subscription plan: " + saved.getName(),
+                null,
+                "Name=" + saved.getName() + ", Price=" + saved.getPrice() + ", Duration=" + saved.getDuration() + " days, Active=" + saved.getIsActive(),
+                "SYSTEM",
+                "SYSTEM"
+        );
+
+        return saved;
     }
 
     // 🔍 Get by ID
@@ -86,13 +121,44 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
             throw new RuntimeException("Subscription plan already exists!");
         }
 
+        // Capture transitions for active status
+        String action = "PLAN_UPDATED";
+        boolean wasActive = Boolean.TRUE.equals(existing.getIsActive());
+        boolean nowActive = plan.getIsActive() != null ? plan.getIsActive() : true;
+
+        if (!wasActive && nowActive) {
+            action = "PLAN_ACTIVATED";
+        } else if (wasActive && !nowActive) {
+            action = "PLAN_DEACTIVATED";
+        }
+
+        String oldValueDescription = "Name=" + existing.getName() + ", Price=" + existing.getPrice() + ", Duration=" + existing.getDuration() + " days, Active=" + existing.getIsActive();
+
         existing.setName(plan.getName());
         existing.setPrice(plan.getPrice());
         existing.setDuration(plan.getDuration());
         existing.setDescription(plan.getDescription());
         existing.setIsActive(plan.getIsActive());
 
-        return repository.save(existing);
+        SubscriptionPlan saved = repository.save(existing);
+
+        String newValueDescription = "Name=" + saved.getName() + ", Price=" + saved.getPrice() + ", Duration=" + saved.getDuration() + " days, Active=" + saved.getIsActive();
+
+        Admin currentAdmin = currentAdminService.getCurrentAdmin();
+        auditLogService.log(
+                currentAdmin.getId(),
+                "SUBSCRIPTION_MANAGEMENT",
+                action,
+                "SUBSCRIPTION_PLAN",
+                saved.getId(),
+                "Updated subscription plan: " + saved.getName(),
+                oldValueDescription,
+                newValueDescription,
+                "SYSTEM",
+                "SYSTEM"
+        );
+
+        return saved;
     }
 
     // ❌ Soft delete
@@ -102,7 +168,66 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
         SubscriptionPlan plan = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Plan not found!"));
 
+        boolean wasActive = Boolean.TRUE.equals(plan.getIsActive());
         plan.setIsActive(false);
-        repository.save(plan);
+        SubscriptionPlan saved = repository.save(plan);
+
+        if (wasActive) {
+            Admin currentAdmin = currentAdminService.getCurrentAdmin();
+            auditLogService.log(
+                    currentAdmin.getId(),
+                    "SUBSCRIPTION_MANAGEMENT",
+                    "PLAN_DEACTIVATED",
+                    "SUBSCRIPTION_PLAN",
+                    saved.getId(),
+                    "Soft deleted (deactivated) subscription plan: " + saved.getName(),
+                    "Active=true",
+                    "Active=false",
+                    "SYSTEM",
+                    "SYSTEM"
+            );
+        }
+    }
+    // 📊 Statistics
+    @Override
+    @Transactional(readOnly = true)
+    public SubscriptionPlanStatsDTO getStatistics() {
+
+        return SubscriptionPlanStatsDTO.builder()
+                .totalPlans(repository.count())
+                .activePlans(repository.countByIsActiveTrue())
+                .inactivePlans(repository.countByIsActiveFalse())
+                .build();
+    }
+    @Override
+    public Page<SubscriptionPlanResponseDTO> getAllPlans(
+            SubscriptionPlanFilterDTO filter,
+            int page,
+            int size,
+            String sortBy,
+            String direction
+    ) {
+
+        Sort sort = direction.equalsIgnoreCase("DESC")
+                ? Sort.by(sortBy).descending()
+                : Sort.by(sortBy).ascending();
+
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        return repository.findAll(
+                SubscriptionPlanSpecification.getPlans(filter),
+                pageable
+        ).map(plan -> SubscriptionPlanResponseDTO.builder()
+                .id(plan.getId())
+                .adminId(plan.getAdmin() != null ? plan.getAdmin().getId() : null)
+                .adminName(plan.getAdmin() != null ? plan.getAdmin().getName() : null)
+                .name(plan.getName())
+                .price(plan.getPrice())
+                .duration(plan.getDuration())
+                .description(plan.getDescription())
+                .isActive(plan.getIsActive())
+                .createdAt(plan.getCreatedAt())
+                .updatedAt(plan.getUpdatedAt())
+                .build());
     }
 }

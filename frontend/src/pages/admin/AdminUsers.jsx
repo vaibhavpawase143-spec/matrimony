@@ -1,7 +1,11 @@
 import { useState, useEffect } from "react";
 import AdminLayout from "@/components/AdminLayout";
 import { Users, Search, Filter, Eye, Ban, CheckCircle, XCircle } from "lucide-react";
+const adminRole =
+    localStorage.getItem("adminRole");
 
+const isSuperAdmin =
+    adminRole === "ROLE_SUPER_ADMIN";
 const AdminUsers = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);

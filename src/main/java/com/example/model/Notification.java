@@ -16,18 +16,28 @@ public class Notification {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // Sender (User/Admin)
     private Long senderId;
+
+    // Receiver (User)
     private Long receiverId;
     private Long matchedUserId;
 
     private Integer matchPercentage;
 
+    // NEW FIELD
+    @Column(length = 255)
+    private String title;
+
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String message;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private NotificationType type;
 
     private boolean read = false;
+
     private boolean deleted = false;
 
     private LocalDateTime createdAt = LocalDateTime.now();

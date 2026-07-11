@@ -162,109 +162,26 @@ AND u.lastHeartbeat < :time
     // ================= MATCH =================
 
     @Query("""
-        SELECT u FROM User u
-        WHERE u.id != :userId
-        AND u.isActive = true
-        ORDER BY u.createdAt DESC
-    """)
+    SELECT u FROM User u
+    WHERE u.id != :userId
+      AND u.isActive = true
+      AND u.isDeleted = false
+    ORDER BY u.createdAt DESC
+""")
     List<User> findTopMatches(
             @Param("userId") Long userId,
             Pageable pageable
     );
     @Query("""
-SELECT DISTINCT u
-FROM User u
-
-LEFT JOIN FETCH u.profile p
-
-
-LEFT JOIN FETCH p.city
-LEFT JOIN FETCH p.religion
-LEFT JOIN FETCH p.caste
-LEFT JOIN FETCH p.educationLevel
-LEFT JOIN FETCH p.occupation
-LEFT JOIN FETCH p.height
-LEFT JOIN FETCH p.weight
-LEFT JOIN FETCH p.maritalStatus
-LEFT JOIN FETCH p.smoking
-LEFT JOIN FETCH p.drinking
-LEFT JOIN FETCH p.diet
-
-WHERE u.id = :id
+    SELECT u FROM User u
+    LEFT JOIN FETCH u.profile p
+    LEFT JOIN FETCH p.city
+    LEFT JOIN FETCH p.religion
+    LEFT JOIN FETCH p.caste
+    WHERE u.id = :id
+      AND u.isDeleted = false
 """)
-    Optional<User> findByIdWithProfile(
-            @Param("id") Long id
-    );
-
-    @Query("""
-SELECT DISTINCT u
-FROM User u
-
-LEFT JOIN FETCH u.profile p
-
-LEFT JOIN FETCH p.city
-LEFT JOIN FETCH p.religion
-LEFT JOIN FETCH p.caste
-LEFT JOIN FETCH p.educationLevel
-LEFT JOIN FETCH p.occupation
-LEFT JOIN FETCH p.height
-LEFT JOIN FETCH p.weight
-LEFT JOIN FETCH p.maritalStatus
-LEFT JOIN FETCH p.smoking
-LEFT JOIN FETCH p.drinking
-LEFT JOIN FETCH p.diet
-
-LEFT JOIN FETCH u.partnerPreference pp
-
-LEFT JOIN FETCH pp.religion
-LEFT JOIN FETCH pp.caste
-LEFT JOIN FETCH pp.city
-LEFT JOIN FETCH pp.educationLevel
-LEFT JOIN FETCH pp.occupation
-LEFT JOIN FETCH pp.maritalStatus
-LEFT JOIN FETCH pp.smoking
-LEFT JOIN FETCH pp.drinking
-LEFT JOIN FETCH pp.diet
-
-WHERE u.isActive = true
-""")
-    List<User> findAllActiveWithProfileAndPreference();
-    @Query("""
-SELECT DISTINCT u
-FROM User u
-
-LEFT JOIN FETCH u.profile p
-
-LEFT JOIN FETCH p.city
-LEFT JOIN FETCH p.religion
-LEFT JOIN FETCH p.caste
-LEFT JOIN FETCH p.educationLevel
-LEFT JOIN FETCH p.occupation
-LEFT JOIN FETCH p.height
-LEFT JOIN FETCH p.weight
-LEFT JOIN FETCH p.maritalStatus
-LEFT JOIN FETCH p.smoking
-LEFT JOIN FETCH p.drinking
-LEFT JOIN FETCH p.diet
-
-LEFT JOIN FETCH u.partnerPreference pp
-
-LEFT JOIN FETCH pp.religion
-LEFT JOIN FETCH pp.caste
-LEFT JOIN FETCH pp.city
-LEFT JOIN FETCH pp.educationLevel
-LEFT JOIN FETCH pp.occupation
-LEFT JOIN FETCH pp.maritalStatus
-LEFT JOIN FETCH pp.smoking
-LEFT JOIN FETCH pp.drinking
-LEFT JOIN FETCH pp.diet
-
-WHERE u.id = :id
-""")
-    Optional<User> findByIdWithProfileAndPreference(
-            @Param("id") Long id
-    );
-
+    Optional<User> findByIdWithProfile(@Param("id") Long id);
     // ================= ADMIN DASHBOARD QUERIES =================
 
     @Query("SELECT COUNT(u) FROM User u WHERE u.createdAt > :date")
@@ -293,5 +210,141 @@ WHERE u.id = :id
 
     @Query("SELECT e.name, COUNT(u) FROM User u LEFT JOIN u.profile p LEFT JOIN p.educationLevel e GROUP BY e.name")
     Map<String, Long> countUsersByEducation();
+    @Query("""
+    SELECT DISTINCT u
+    FROM User u
+    LEFT JOIN FETCH u.profile p
+    LEFT JOIN FETCH p.gender
+    LEFT JOIN FETCH p.religion
+    LEFT JOIN FETCH p.caste
+    LEFT JOIN FETCH p.city
+    LEFT JOIN FETCH p.educationLevel
+    LEFT JOIN FETCH p.maritalStatus
+    WHERE u.isDeleted = false
+    ORDER BY u.createdAt DESC
+""")
+    List<User> findAllUsersWithProfile();
+    @Query("""
+SELECT u
+FROM User u
+LEFT JOIN FETCH u.profile
+WHERE u.isActive = true
+AND u.isDeleted = false
+""")
+    List<User> findActiveUsersWithProfile();
+
+    @Query("""
+SELECT DISTINCT u
+FROM User u
+LEFT JOIN FETCH u.profile p
+WHERE u.isDeleted = false
+AND (
+    LOWER(COALESCE(u.firstName, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))
+    OR LOWER(COALESCE(u.lastName, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))
+    OR LOWER(COALESCE(u.email, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))
+)
+ORDER BY u.createdAt DESC
+""")
+    List<User> searchUsers(@Param("keyword") String keyword);
+
+    @Query(
+            value = """
+        SELECT DISTINCT u
+        FROM User u
+        LEFT JOIN FETCH u.profile p
+        WHERE u.isDeleted = false
+        """,
+            countQuery = """
+        SELECT COUNT(u)
+        FROM User u
+        WHERE u.isDeleted = false
+        """
+    )
+    Page<User> findAllUsersWithProfile(Pageable pageable);
+    // ================= ADMIN USER MANAGEMENT =================
+    Long countByIsActiveTrueAndIsDeletedFalse();
+    Long countByIsBlockedTrueAndIsDeletedFalse();
+    Long countByIsDeletedTrue();
+    Long countByIsDeletedFalse();
+
+    Long countByIsActiveFalseAndIsDeletedFalse();
+
+    // ==========================================
+// DASHBOARD - MONTHLY USER REGISTRATIONS
+// ==========================================
+
+    @Query(value = """
+        SELECT TO_CHAR(created_at, 'YYYY-MM') AS month,
+               COUNT(*) AS total
+        FROM users
+        WHERE is_deleted = false
+        GROUP BY TO_CHAR(created_at, 'YYYY-MM')
+        ORDER BY month
+        """, nativeQuery = true)
+    List<Object[]> getMonthlyUserRegistrations();
+
+    // ==========================================
+// DASHBOARD - MONTHLY REPORTS
+// ==========================================
+
+    @Query(value = """
+        SELECT TO_CHAR(created_at, 'YYYY-MM') AS month,
+               COUNT(*) AS total
+        FROM user_reports
+        GROUP BY TO_CHAR(created_at, 'YYYY-MM')
+        ORDER BY month
+        """, nativeQuery = true)
+    List<Object[]> getMonthlyReports();
+    // ==========================================
+// DASHBOARD - TOP CITIES
+// ==========================================
+
+    @Query(value = """
+SELECT
+    c.id,
+    c.name,
+    COUNT(p.id)
+FROM profiles p
+JOIN cities c
+ON p.city_id = c.id
+GROUP BY c.id,c.name
+ORDER BY COUNT(p.id) DESC
+LIMIT 10
+""", nativeQuery = true)
+    List<Object[]> getTopCities();
+    // ==========================================
+// DASHBOARD - TOP RELIGIONS
+// ==========================================
+
+    @Query(value = """
+SELECT
+    r.id,
+    r.name,
+    COUNT(p.id)
+FROM profiles p
+JOIN religions r
+ON p.religion_id=r.id
+GROUP BY r.id,r.name
+ORDER BY COUNT(p.id) DESC
+LIMIT 10
+""", nativeQuery = true)
+    List<Object[]> getTopReligions();
+
+    @Query(value = """
+SELECT COUNT(*)
+FROM users
+WHERE created_at >= DATE_TRUNC('month', CURRENT_DATE)
+AND is_deleted = false
+""", nativeQuery = true)
+    Long countCurrentMonthUsers();
+
+    @Query(value = """
+SELECT COUNT(*)
+FROM users
+WHERE created_at >= DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')
+AND created_at < DATE_TRUNC('month', CURRENT_DATE)
+AND is_deleted = false
+""", nativeQuery = true)
+    Long countPreviousMonthUsers();
 
 }

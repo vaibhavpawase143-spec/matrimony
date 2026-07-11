@@ -68,4 +68,5 @@ public interface SubscriptionService {
 // =====================================
 List<UserSubscription> getMySubscriptionHistory();
     boolean isCurrentUserPremium();
+    Optional<UserSubscription> getSubscriptionById(Long id);
 }

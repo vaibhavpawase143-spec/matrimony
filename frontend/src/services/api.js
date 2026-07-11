@@ -246,15 +246,17 @@ markAllRead: async(userId)=>{
 export const authAPI = {
   login: async (data, isAdmin = false) => {
     try {
-      const endpoint = isAdmin ? '/admin/auth/login' : '/auth/login';
+    const endpoint = isAdmin ? '/admins/login' : '/auth/login';
       const result = await apiClient(endpoint, {
         method: 'POST',
         body: JSON.stringify(data),
       });
-
+console.log(result);
       // Handle different response formats
       const token = result.accessToken || result.token || result.data?.accessToken || result.data?.token;
-      const userData = result.user || result.data || result;
+      const userData = isAdmin
+          ? result.data.admin
+          : (result.user || result.data || result);
 
       if (token) {
         localStorage.setItem('token', token);
@@ -323,15 +325,33 @@ export const authAPI = {
     }
   },
 
-  getCurrentUser: async () => {
-    try {
-      validateToken(); // Validate token before making request
-      return await apiClient('/profiles/me');
-    } catch (error) {
-      // Return null instead of throwing for getCurrentUser
-      return null;
+getCurrentUser: async () => {
+
+    const isAdmin =
+        localStorage.getItem("isAdmin") === "true";
+
+    if (isAdmin) {
+
+        const admin =
+            localStorage.getItem("user");
+
+        return admin
+            ? JSON.parse(admin)
+            : null;
     }
-  },
+
+    try {
+
+        validateToken();
+
+        return await apiClient("/profiles/me");
+
+    } catch {
+
+        return null;
+
+    }
+},
  forgotPassword: async (email) => {
 
    return await apiClient(
@@ -658,7 +678,45 @@ export const supportAPI = {
   }
 
 };
+export const adminSupportAPI = {
 
+  // All tickets
+  getAllTickets: async () => {
+    return await apiClient(
+      "/admin/support"
+    );
+  },
+
+  // Ticket details
+  getTicket: async (ticketNumber) => {
+    return await apiClient(
+      `/admin/support/${ticketNumber}`
+    );
+  },
+
+  // Update status
+  updateStatus: async (ticketNumber, status) => {
+    return await apiClient(
+      `/admin/support/${ticketNumber}/status`,
+      {
+        method: "PUT",
+        body: JSON.stringify({ status })
+      }
+    );
+  },
+
+  // Reply to ticket
+  replyTicket: async (ticketNumber, reply) => {
+    return await apiClient(
+      `/admin/support/${ticketNumber}/reply`,
+      {
+        method: "PUT",
+        body: JSON.stringify({ reply })
+      }
+    );
+  }
+
+};
  export const interestAPI = {
 
 getReceivedPendingInterests:
@@ -840,8 +898,11 @@ getReligions: async () => {
       result
     );
 
-    return Array.isArray(result)
-      ? result
+    // Extract data from ApiResponse wrapper
+    const religions = result?.data || result;
+
+    return Array.isArray(religions)
+      ? religions
       : [];
 
    } catch(error){
