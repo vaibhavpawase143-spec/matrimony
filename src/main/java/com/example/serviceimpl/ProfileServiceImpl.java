@@ -370,13 +370,17 @@ public class ProfileServiceImpl implements ProfileService {
     // =====================================================
     // GET ALL
     // =====================================================
-
     @Override
     @Transactional(readOnly = true)
     public List<Profile> getAll() {
 
-        return repository.findAllWithUser();
+        User currentUser = getCurrentUser();
 
+        return repository.findAllWithUser()
+                .stream()
+                .filter(profile ->
+                        !profile.getUser().getId().equals(currentUser.getId()))
+                .toList();
     }
     public ProfileResponseDTO
 
