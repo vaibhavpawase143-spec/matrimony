@@ -1,17 +1,18 @@
 import { useState, useEffect } from "react";
-import { User, Lock, Bell, Save, Upload, X } from "lucide-react";
+import { User, Lock, Bell, Save, Upload, X ,Ban, } from "lucide-react";
 import { motion } from "framer-motion";
 
 import { useToast } from "@/components/Toast";
 import { useProfileData } from "@/hooks/useProfileData";
 import { partnerPreferenceAPI } from "@/services/api";
 import { masterDataAPI } from "@/services/api";
-import { photoAPI } from "@/services/api";
+import { photoAPI, blockAPI } from "@/services/api";
 
 const tabs = [
   { id: "profile", label: "Profile", icon: <User className="h-4 w-4" /> },
   { id: "password", label: "Password", icon: <Lock className="h-4 w-4" /> },
   { id: "notifications", label: "Notifications", icon: <Bell className="h-4 w-4" /> },
+  { id: "blocked", label: "Blocked Users", icon: <Ban className="h-4 w-4" /> },
 ];
 
 const SettingsPage = () => {
@@ -144,6 +145,7 @@ bloodGroupId:null,
     newPassword: "",
     confirmPassword: ""
   });
+const [blockedUsers, setBlockedUsers] = useState([]);
 const [partnerPreferenceId, setPartnerPreferenceId] = useState(null);
 const [partnerPreference,setPartnerPreference]=
 useState({
@@ -1735,7 +1737,89 @@ console.log(
   const handleNotificationToggle = (label, isChecked) => {
     info(`${label} ${isChecked ? 'enabled' : 'disabled'}`);
   };
+const loadBlockedUsers = async () => {
 
+  try {
+
+    const blockerId =
+      savedProfileData?.userId ||
+      savedProfileData?.id;
+
+    if (!blockerId) return;
+
+    const response =
+      await blockAPI.getMyBlockedUsers(
+        blockerId
+      );
+
+    console.log(
+      "Blocked Users:",
+      response
+    );
+
+    setBlockedUsers(response);
+
+  } catch (err) {
+
+    console.error(
+      "Failed to load blocked users",
+      err
+    );
+
+    setBlockedUsers([]);
+
+  }
+
+};
+useEffect(() => {
+
+  if (
+    savedProfileData?.userId ||
+    savedProfileData?.id
+  ) {
+
+    loadBlockedUsers();
+
+  }
+
+}, [savedProfileData]);
+const handleUnblock = async (blockedUserId) => {
+
+  const confirmed = window.confirm(
+    "Are you sure you want to unblock this user?"
+  );
+
+  if (!confirmed) return;
+
+  try {
+
+    const blockerId =
+      savedProfileData?.userId ||
+      savedProfileData?.id;
+
+    await blockAPI.unblockUser(
+      blockerId,
+      blockedUserId
+    );
+
+    setBlockedUsers((prev) =>
+      prev.filter(
+        (user) =>
+          user.blockedUserId !== blockedUserId
+      )
+    );
+
+    success("User unblocked successfully");
+
+  } catch (err) {
+
+    console.error(err);
+
+    error("Failed to unblock user");
+
+  }
+
+};
   // Helper function to render form fields
 const renderField = (field) => {
 
@@ -3443,6 +3527,79 @@ text-foreground
               ))}
             </div>
           )}
+      {activeTab === "blocked" && (
+        <div className="space-y-5">
+
+          <h2 className="text-lg font-display font-bold text-foreground">
+            Blocked Users
+          </h2>
+
+          <p className="text-sm text-muted-foreground">
+            Users you have blocked cannot message or view your profile.
+          </p>
+
+          {blockedUsers.length === 0 ? (
+
+            <div className="text-center py-10">
+
+              <Ban className="mx-auto h-12 w-12 text-muted-foreground" />
+
+              <p className="mt-4 text-muted-foreground">
+                You haven't blocked anyone yet.
+              </p>
+
+            </div>
+
+          ) : (
+
+            <div className="space-y-4">
+
+              {blockedUsers.map((user) => (
+
+                <div
+                 key={user.blockedUserId}
+                  className="flex items-center justify-between border border-border rounded-xl p-4"
+                >
+
+                  <div className="flex items-center gap-4">
+
+                    <img
+                      src={user.photoUrl}
+                      alt={user.fullName}
+                      className="w-14 h-14 rounded-full object-cover"
+                    />
+
+                    <div>
+
+                      <h3 className="font-semibold">
+                        {user.fullName}
+                      </h3>
+
+                      <p className="text-xs text-muted-foreground">
+                        Blocked on {user.blockedDate}
+                      </p>
+
+                    </div>
+
+                  </div>
+
+                  <button
+                    onClick={() => handleUnblock(user.blockedUserId)}
+                    className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm"
+                  >
+                    Unblock
+                  </button>
+
+                </div>
+
+              ))}
+
+            </div>
+
+          )}
+
+        </div>
+      )}
           </motion.div>
       </div>
     </div>

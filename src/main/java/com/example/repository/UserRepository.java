@@ -172,14 +172,98 @@ AND u.lastHeartbeat < :time
             Pageable pageable
     );
     @Query("""
-    SELECT u FROM User u
-    LEFT JOIN FETCH u.profile p
-    LEFT JOIN FETCH p.city
-    LEFT JOIN FETCH p.religion
-    LEFT JOIN FETCH p.caste
-    WHERE u.id = :id
+SELECT DISTINCT u
+FROM User u
+
+LEFT JOIN FETCH u.profile p
+
+
+LEFT JOIN FETCH p.city
+LEFT JOIN FETCH p.religion
+LEFT JOIN FETCH p.caste
+LEFT JOIN FETCH p.educationLevel
+LEFT JOIN FETCH p.occupation
+LEFT JOIN FETCH p.height
+LEFT JOIN FETCH p.weight
+LEFT JOIN FETCH p.maritalStatus
+LEFT JOIN FETCH p.smoking
+LEFT JOIN FETCH p.drinking
+LEFT JOIN FETCH p.diet
+
+WHERE u.id = :id
 """)
-    Optional<User> findByIdWithProfile(@Param("id") Long id);
+    Optional<User> findByIdWithProfile(
+            @Param("id") Long id
+    );
+
+    @Query("""
+SELECT DISTINCT u
+FROM User u
+
+LEFT JOIN FETCH u.profile p
+
+LEFT JOIN FETCH p.city
+LEFT JOIN FETCH p.religion
+LEFT JOIN FETCH p.caste
+LEFT JOIN FETCH p.educationLevel
+LEFT JOIN FETCH p.occupation
+LEFT JOIN FETCH p.height
+LEFT JOIN FETCH p.weight
+LEFT JOIN FETCH p.maritalStatus
+LEFT JOIN FETCH p.smoking
+LEFT JOIN FETCH p.drinking
+LEFT JOIN FETCH p.diet
+
+LEFT JOIN FETCH u.partnerPreference pp
+
+LEFT JOIN FETCH pp.religion
+LEFT JOIN FETCH pp.caste
+LEFT JOIN FETCH pp.city
+LEFT JOIN FETCH pp.educationLevel
+LEFT JOIN FETCH pp.occupation
+LEFT JOIN FETCH pp.maritalStatus
+LEFT JOIN FETCH pp.smoking
+LEFT JOIN FETCH pp.drinking
+LEFT JOIN FETCH pp.diet
+
+WHERE u.isActive = true
+""")
+    List<User> findAllActiveWithProfileAndPreference();
+    @Query("""
+SELECT DISTINCT u
+FROM User u
+
+LEFT JOIN FETCH u.profile p
+
+LEFT JOIN FETCH p.city
+LEFT JOIN FETCH p.religion
+LEFT JOIN FETCH p.caste
+LEFT JOIN FETCH p.educationLevel
+LEFT JOIN FETCH p.occupation
+LEFT JOIN FETCH p.height
+LEFT JOIN FETCH p.weight
+LEFT JOIN FETCH p.maritalStatus
+LEFT JOIN FETCH p.smoking
+LEFT JOIN FETCH p.drinking
+LEFT JOIN FETCH p.diet
+
+LEFT JOIN FETCH u.partnerPreference pp
+
+LEFT JOIN FETCH pp.religion
+LEFT JOIN FETCH pp.caste
+LEFT JOIN FETCH pp.city
+LEFT JOIN FETCH pp.educationLevel
+LEFT JOIN FETCH pp.occupation
+LEFT JOIN FETCH pp.maritalStatus
+LEFT JOIN FETCH pp.smoking
+LEFT JOIN FETCH pp.drinking
+LEFT JOIN FETCH pp.diet
+
+WHERE u.id = :id
+""")
+    Optional<User> findByIdWithProfileAndPreference(
+            @Param("id") Long id
+    );
 
     // ================= ADMIN DASHBOARD QUERIES =================
 

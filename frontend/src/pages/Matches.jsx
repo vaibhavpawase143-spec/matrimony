@@ -1,16 +1,17 @@
 import { Heart, MessageSquare, X } from "lucide-react";
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 
 import { useLanguage } from "@/context/LanguageContext";
 import { useToast } from "@/components/Toast";
-import { profileAPI } from "@/services/api";
+import { matchAPI } from "@/services/api";
 import profile1 from "@/assets/profile1.jpg";
 
 const Matches = () => {
   const { t } = useLanguage();
   const { success, error } = useToast();
+  const navigate = useNavigate();
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -23,8 +24,22 @@ const Matches = () => {
     try {
       setLoading(true);
       // Get profiles that match current user's preferences
-      const response = await profileAPI.getProfiles(0, 20, { matches: true });
-      setMatches(response.content || []);
+      const currentUser = JSON.parse(
+        localStorage.getItem("user")
+      );
+
+      const userId = Number(
+        currentUser.profile.userId
+      );
+
+      const response = await matchAPI.getTopMatches(userId, 50);
+
+      const filteredMatches = response.filter(
+        (match) => match.matchScore >= 75
+      );
+    console.log("MATCHES =", filteredMatches);
+
+      setMatches(filteredMatches);
     } catch (err) {
       console.warn('Failed to load matches:', err.message);
       error('Failed to load matches. Please try again.');
@@ -67,7 +82,7 @@ const Matches = () => {
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
           {matches.map((m, i) => (
             <motion.div
               key={m.id}
@@ -76,7 +91,7 @@ const Matches = () => {
               transition={{ delay: i * 0.1 }}
               className="bg-card rounded-xl border border-border overflow-hidden hover:shadow-lg transition-shadow group"
             >
-              <div className="aspect-[4/3] overflow-hidden relative">
+              <div className="h-40 overflow-hidden relative">
                 <img 
                   src={m.profilePhotoUrl || m.imageUrl || profile1} 
                   alt={m.fullName || m.name} 
@@ -86,10 +101,10 @@ const Matches = () => {
                   }}
                 />
                 <div className="absolute top-3 right-3 bg-emerald-badge text-primary-foreground text-xs font-bold px-2.5 py-1 rounded-full">
-                  {m.compatibility || Math.floor(Math.random() * 20) + 80}% Match
+                 {m.matchPercentage}
                 </div>
               </div>
-              <div className="p-4">
+              <div className="p-3">
                 <h3 className="text-base font-semibold text-foreground">
                   {m.fullName || m.name}, <span className="text-primary">{m.age || '?'}</span>
                 </h3>
@@ -98,18 +113,22 @@ const Matches = () => {
                 </p>
 
                 <div className="flex gap-2 mt-4">
-                  <Link 
-                    to={`/profile/${m.id}`}
-                    className="flex-1 flex items-center justify-center gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold py-2 rounded-lg transition-colors text-center"
+                  <Link
+                    to={`/profile/${m.profileId || m.id}`}
+                    className="flex-1 flex items-center justify-center gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold py-1.5 rounded-lg transition-colors text-center"
                   >
-                    <Heart className="h-3.5 w-3.5" /> {t.matches.connect || 'View'}
+                     View Profile
                   </Link>
-                  <button className="flex-1 flex items-center justify-center gap-1.5 bg-accent/10 text-accent text-xs font-semibold py-2 rounded-lg hover:bg-accent/20 transition-colors">
-                    <MessageSquare className="h-3.5 w-3.5" /> {t.matches.message || 'Message'}
+                  <button
+                      onClick={() =>
+                          navigate(`/match-details/${m.userId}`)
+                      }
+                      className="flex-1 flex items-center justify-center gap-1.5 bg-accent/10 text-accent text-xs font-semibold py-1.5 rounded-lg hover:bg-accent/20 transition-colors"
+                  >
+
+                      View Match Details
                   </button>
-                  <button className="h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-destructive hover:border-destructive transition-colors">
-                    <X className="h-4 w-4" />
-                  </button>
+
                 </div>
               </div>
             </motion.div>

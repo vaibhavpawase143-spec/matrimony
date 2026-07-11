@@ -1,6 +1,7 @@
 package com.example.repository;
 
 import com.example.model.Notification;
+import com.example.model.NotificationType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -17,4 +18,9 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     );
     // ✅ Count unread notifications
     long countByReceiverIdAndReadFalseAndDeletedFalse(Long userId);
+    boolean existsByReceiverIdAndMatchedUserIdAndTypeAndDeletedFalse(
+            Long receiverId,
+            Long matchedUserId,
+            NotificationType type
+    );
 }

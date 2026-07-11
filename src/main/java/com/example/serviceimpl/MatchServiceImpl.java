@@ -4,9 +4,7 @@ import com.example.dto.response.MatchExplanationResponseDTO;
 import com.example.dto.response.MatchResponseDTO;
 import com.example.dto.response.PageResponse;
 import com.example.model.*;
-import com.example.repository.MatchRepository;
-import com.example.repository.SwipeRepository;
-import com.example.repository.UserRepository;
+import com.example.repository.*;
 import com.example.service.MatchService;
 import com.example.service.NotificationService;
 
@@ -17,8 +15,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.Objects;
+import com.example.dto.response.MatchDetailsResponseDTO;
+import com.example.dto.response.FieldMatchDTO;
+import com.example.exception.PremiumRequiredException;
+import com.example.repository.UserSubscriptionRepository;
 
 @Service
 @RequiredArgsConstructor
@@ -29,6 +33,10 @@ public class MatchServiceImpl implements MatchService {
     private final SwipeRepository swipeRepository;
     private final UserRepository userRepository;
     private final NotificationService notificationService;
+    private final HeightRepository heightRepository;
+    private final WeightRepository weightRepository;
+    private final UserBlockRepository userBlockRepository;
+    private final UserSubscriptionRepository userSubscriptionRepository;
 
     // ================= SWIPE =================
 
@@ -119,7 +127,208 @@ public class MatchServiceImpl implements MatchService {
     // ================= GET MATCHES =================
 
     @Override
+    public MatchDetailsResponseDTO getMatchDetails(Long userId, Long partnerId) {
+
+
+        User currentUser = userRepository.findByIdWithProfileAndPreference(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        User partner = userRepository.findByIdWithProfile(partnerId)
+                .orElseThrow(() -> new RuntimeException("Partner not found"));
+
+        Profile partnerProfile = partner.getProfile();
+        PartnerPreference preference = currentUser.getPartnerPreference();
+
+        if (partnerProfile == null) {
+            throw new RuntimeException("Partner profile not found");
+        }
+
+        if (preference == null) {
+            throw new RuntimeException("Partner preference not found");
+        }
+
+        List<FieldMatchDTO> fields = new ArrayList<>();
+
+        // ================= AGE =================
+
+        int partnerAge =
+                LocalDate.now().getYear() - partnerProfile.getDateOfBirth().getYear();
+
+        fields.add(
+                FieldMatchDTO.builder()
+                        .fieldName("Age")
+                        .myValue(getAgeRange(preference))
+                        .partnerValue(String.valueOf(partnerAge))
+                        .matched(isAgeMatched(preference, partnerProfile))
+                        .build()
+        );
+
+        // ================= HEIGHT =================
+
+        fields.add(
+                FieldMatchDTO.builder()
+                        .fieldName("Height")
+                        .myValue(getHeightRange(preference))
+                        .partnerValue(
+                                partnerProfile.getHeight() != null
+                                        ? partnerProfile.getHeight().getHeight()
+                                        : "-"
+                        )
+                        .matched(isHeightMatched(preference, partnerProfile))
+                        .build()
+        );
+        // ================= WEIGHT =================
+
+        fields.add(
+                FieldMatchDTO.builder()
+                        .fieldName("Weight")
+                        .myValue(getWeightRange(preference))
+                        .partnerValue(
+                                partnerProfile.getWeight() != null
+                                        ? partnerProfile.getWeight().getValue()
+                                        : "-"
+                        )
+                        .matched(isWeightMatched(preference, partnerProfile))
+                        .build()
+        );
+
+        // ================= SIMPLE FIELDS =================
+
+        addField(
+                fields,
+                "Religion",
+                preference.getReligion() != null
+                        ? preference.getReligion().getName()
+                        : null,
+                partnerProfile.getReligion() != null
+                        ? partnerProfile.getReligion().getName()
+                        : null,
+                isReligionMatched(preference, partnerProfile)
+        );
+
+        addField(
+                fields,
+                "Caste",
+                preference.getCaste() != null
+                        ? preference.getCaste().getName()
+                        : null,
+                partnerProfile.getCaste() != null
+                        ? partnerProfile.getCaste().getName()
+                        : null,
+                isCasteMatched(preference, partnerProfile)
+        );
+
+        addField(
+                fields,
+                "City",
+                preference.getCity() != null
+                        ? preference.getCity().getName()
+                        : null,
+                partnerProfile.getCity() != null
+                        ? partnerProfile.getCity().getName()
+                        : null,
+                isCityMatched(preference, partnerProfile)
+        );
+
+        addField(
+                fields,
+                "Education",
+                preference.getEducationLevel() != null
+                        ? preference.getEducationLevel().getName()
+                        : null,
+                partnerProfile.getEducationLevel() != null
+                        ? partnerProfile.getEducationLevel().getName()
+                        : null,
+                isEducationMatched(preference, partnerProfile)
+        );
+
+        addField(
+                fields,
+                "Occupation",
+                preference.getOccupation() != null
+                        ? preference.getOccupation().getName()
+                        : null,
+                partnerProfile.getOccupation() != null
+                        ? partnerProfile.getOccupation().getName()
+                        : null,
+                isOccupationMatched(preference, partnerProfile)
+        );
+
+        addField(
+                fields,
+                "Marital Status",
+                preference.getMaritalStatus() != null
+                        ? preference.getMaritalStatus().getName()
+                        : null,
+                partnerProfile.getMaritalStatus() != null
+                        ? partnerProfile.getMaritalStatus().getName()
+                        : null,
+                isMaritalMatched(preference, partnerProfile)
+        );
+
+        addField(
+                fields,
+                "Smoking",
+                preference.getSmoking() != null
+                        ? preference.getSmoking().getValue()
+                        : null,
+                partnerProfile.getSmoking() != null
+                        ? partnerProfile.getSmoking().getValue()
+                        : null,
+                isSmokingMatched(preference, partnerProfile)
+        );
+
+        addField(
+                fields,
+                "Drinking",
+                preference.getDrinking() != null
+                        ? preference.getDrinking().getValue()
+                        : null,
+                partnerProfile.getDrinking() != null
+                        ? partnerProfile.getDrinking().getValue()
+                        : null,
+                isDrinkingMatched(preference, partnerProfile)
+        );
+
+        addField(
+                fields,
+                "Diet",
+                preference.getDiet() != null
+                        ? preference.getDiet().getName()
+                        : null,
+                partnerProfile.getDiet() != null
+                        ? partnerProfile.getDiet().getName()
+                        : null,
+                isDietMatched(preference, partnerProfile)
+        );
+
+        int totalFields = fields.size();
+
+        int matchedFields = (int) fields.stream()
+                .filter(FieldMatchDTO::isMatched)
+                .count();
+
+        int percentage = totalFields == 0
+                ? 0
+                : (matchedFields * 100) / totalFields;
+
+
+
+        return MatchDetailsResponseDTO.builder()
+                .userId(partner.getId())
+                .fullName(partner.getFullName())
+                .profilePhoto(partnerProfile.getImageUrl())
+                .matchPercentage(percentage)
+                .totalFields(totalFields)
+                .matchedFields(matchedFields)
+                .fieldMatches(fields)
+                .build();
+    }
+
+    @Override
     public PageResponse<MatchResponseDTO> getMatches(Long userId, int page, int size) {
+
+        validatePremium(userId);
 
         User currentUser = userRepository.findByIdWithProfile(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -142,168 +351,443 @@ public class MatchServiceImpl implements MatchService {
                 matchPage.isLast()
         );
     }
-
     // ================= TOP MATCHES =================
 
     @Override
     public List<MatchResponseDTO> getTopMatches(Long userId, int limit) {
 
-        User currentUser = userRepository.findByIdWithProfile(userId)
+
+        User currentUser = userRepository.findByIdWithProfileAndPreference(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        List<User> users = userRepository.findTopMatches(userId, PageRequest.of(0, limit));
+        List<Long> blockedIds =
+                userBlockRepository.findBlockedUserIds(userId);
+
+        List<User> users =
+                userRepository.findTopMatches(
+                        userId,
+                        PageRequest.of(0, limit + blockedIds.size() + 20)
+                );
 
         return users.stream()
-                .map(u -> userRepository.findByIdWithProfile(u.getId()).orElse(u)) // 🔥 FIX
-                .sorted((u1, u2) ->
-                        calculateMatchScore(currentUser, u2) -
-                                calculateMatchScore(currentUser, u1)
+
+                .filter(user -> !blockedIds.contains(user.getId()))
+
+                .filter(user -> !user.getId().equals(userId))
+
+                .map(u ->
+                        userRepository
+                                .findByIdWithProfileAndPreference(u.getId())
+                                .orElse(u)
                 )
+
+                .sorted((u1, u2) ->
+                        calculateMatchScore(currentUser, u2)
+                                - calculateMatchScore(currentUser, u1)
+                )
+
                 .map(user -> mapUserToDTO(user, currentUser))
+
+                .limit(limit)
+
                 .collect(Collectors.toList());
     }
-
     // ================= EXPLANATION =================
 
     @Override
     public MatchExplanationResponseDTO getMatchExplanation(Long userId, Long profileId) {
 
-        User u1 = userRepository.findByIdWithProfile(userId)
+
+        User u1 = userRepository.findByIdWithProfileAndPreference(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        User u2 = userRepository.findByIdWithProfile(profileId)
+        User u2 = userRepository.findByIdWithProfileAndPreference(profileId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        int score = calculateMatchScore(u1, u2);
+        PartnerPreference pref = u1.getPartnerPreference();
+        Profile profile = u2.getProfile();
 
         return MatchExplanationResponseDTO.builder()
                 .profileId(profileId)
-                .totalScore(score)
-                .matchPercentage(score + "%")
+                .totalScore(calculateMatchScore(u1, u2))
+                .matchPercentage(calculateMatchScore(u1, u2) + "%")
+
+                .ageMatch(isAgeMatched(pref, profile))
+                .heightMatch(isHeightMatched(pref, profile))
+                .weightMatch(isWeightMatched(pref, profile))
+                .religionMatch(isReligionMatched(pref, profile))
+                .casteMatch(isCasteMatched(pref, profile))
+                .cityMatch(isCityMatched(pref, profile))
+                .educationMatch(isEducationMatched(pref, profile))
+                .occupationMatch(isOccupationMatched(pref, profile))
+                .maritalMatch(isMaritalMatched(pref, profile))
+                .smokingMatch(isSmokingMatched(pref, profile))
+                .drinkingMatch(isDrinkingMatched(pref, profile))
+                .dietMatch(isDietMatched(pref, profile))
+
                 .reason("Compatibility based on profile & partner preferences")
-                .cityMatch(false)
-                .religionMatch(false)
-                .casteMatch(false)
-                .ageMatch(false)
                 .build();
     }
 
     // ================= DYNAMIC SCORE =================
 
-    private int calculateMatchScore(User u1, User u2) {
+    private int calculateMatchScore(User currentUser,
+                                    User candidateUser) {
 
-        int score = 0;
+        PartnerPreference pref = currentUser.getPartnerPreference();
+        Profile profile = candidateUser.getProfile();
 
-        Profile p1 = u1.getProfile();
-        Profile p2 = u2.getProfile();
-
-        if (p1 == null || p2 == null) return score;
-
-        // BASIC MATCH
-        if (p1.getCity() != null && p2.getCity() != null &&
-                p1.getCity().getId().equals(p2.getCity().getId())) score += 20;
-
-        if (p1.getReligion() != null && p2.getReligion() != null &&
-                p1.getReligion().getId().equals(p2.getReligion().getId())) score += 20;
-
-        if (p1.getCaste() != null && p2.getCaste() != null &&
-                p1.getCaste().getId().equals(p2.getCaste().getId())) score += 20;
-
-        // AGE MATCH
-        if (p1.getDateOfBirth() != null && p2.getDateOfBirth() != null) {
-            int age1 = LocalDate.now().getYear() - p1.getDateOfBirth().getYear();
-            int age2 = LocalDate.now().getYear() - p2.getDateOfBirth().getYear();
-            if (Math.abs(age1 - age2) <= 3) score += 20;
+        if (pref == null || profile == null) {
+            return 0;
         }
 
-        // PARTNER PREFERENCE
-        PartnerPreference pref = u1.getPartnerPreference();
+        int matched = 0;
+        int total = 0;
 
-        if (pref != null) {
-
-            if (pref.getCity() != null && p2.getCity() != null &&
-                    pref.getCity().getId().equals(p2.getCity().getId())) score += 10;
-
-            if (pref.getReligion() != null && p2.getReligion() != null &&
-                    pref.getReligion().getId().equals(p2.getReligion().getId())) score += 10;
-
-            if (pref.getCaste() != null && p2.getCaste() != null &&
-                    pref.getCaste().getId().equals(p2.getCaste().getId())) score += 10;
-            if (
-                    pref.getEducationLevel()!=null &&
-                            p2.getEducationLevel()!=null &&
-                            pref.getEducationLevel().getId()
-                                    .equals(
-                                            p2.getEducationLevel().getId()
-                                    )
-            ){
-                score += 10;
-            }
-
-            if (
-                    pref.getOccupation()!=null &&
-                            p2.getOccupation()!=null &&
-                            pref.getOccupation().getId()
-                                    .equals(
-                                            p2.getOccupation().getId()
-                                    )
-            ){
-                score += 10;
-            }
-
-            if (
-                    pref.getMaritalStatus()!=null &&
-                            p2.getMaritalStatus()!=null &&
-                            pref.getMaritalStatus().getId()
-                                    .equals(
-                                            p2.getMaritalStatus().getId()
-                                    )
-            ){
-                score += 10;
-            }
-
-            if (
-                    pref.getSmoking()!=null &&
-                            p2.getSmoking()!=null &&
-                            pref.getSmoking().getId()
-                                    .equals(
-                                            p2.getSmoking().getId()
-                                    )
-            ){
-                score += 5;
-            }
-
-            if (
-                    pref.getDrinking()!=null &&
-                            p2.getDrinking()!=null &&
-                            pref.getDrinking().getId()
-                                    .equals(
-                                            p2.getDrinking().getId()
-                                    )
-            ){
-                score += 5;
-            }
-
-            if (
-                    pref.getDiet()!=null &&
-                            p2.getDiet()!=null &&
-                            pref.getDiet().getId()
-                                    .equals(
-                                            p2.getDiet().getId()
-                                    )
-            ){
-                score += 5;
-            }
-            if (pref.getMinAge() != null && pref.getMaxAge() != null &&
-                    p2.getDateOfBirth() != null) {
-
-                int age2 = LocalDate.now().getYear() - p2.getDateOfBirth().getYear();
-
-                if (age2 >= pref.getMinAge() && age2 <= pref.getMaxAge()) score += 10;
+        // Age
+        if (pref.getMinAge() != null && pref.getMaxAge() != null) {
+            total++;
+            if (isAgeMatched(pref, profile)) {
+                matched++;
             }
         }
 
-        return Math.min(score, 100);
+        // Height
+        if (pref.getMinHeight() != null && pref.getMaxHeight() != null) {
+            total++;
+            if (isHeightMatched(pref, profile)) {
+                matched++;
+            }
+        }
+
+        // Weight
+        if (pref.getMinWeight() != null && pref.getMaxWeight() != null) {
+            total++;
+            if (isWeightMatched(pref, profile)) {
+                matched++;
+            }
+        }
+
+        // Religion
+        if (pref.getReligion() != null) {
+            total++;
+            if (isReligionMatched(pref, profile)) {
+                matched++;
+            }
+        }
+
+        // Caste
+        if (pref.getCaste() != null) {
+            total++;
+            if (isCasteMatched(pref, profile)) {
+                matched++;
+            }
+        }
+
+        // City
+        if (pref.getCity() != null) {
+            total++;
+            if (isCityMatched(pref, profile)) {
+                matched++;
+            }
+        }
+
+        // Education
+        if (pref.getEducationLevel() != null) {
+            total++;
+            if (isEducationMatched(pref, profile)) {
+                matched++;
+            }
+        }
+
+        // Occupation
+        if (pref.getOccupation() != null) {
+            total++;
+            if (isOccupationMatched(pref, profile)) {
+                matched++;
+            }
+        }
+
+        // Marital Status
+        if (pref.getMaritalStatus() != null) {
+            total++;
+            if (isMaritalMatched(pref, profile)) {
+                matched++;
+            }
+        }
+
+        // Smoking
+        if (pref.getSmoking() != null) {
+            total++;
+            if (isSmokingMatched(pref, profile)) {
+                matched++;
+            }
+        }
+
+        // Drinking
+        if (pref.getDrinking() != null) {
+            total++;
+            if (isDrinkingMatched(pref, profile)) {
+                matched++;
+            }
+        }
+
+        // Diet
+        if (pref.getDiet() != null) {
+            total++;
+            if (isDietMatched(pref, profile)) {
+                matched++;
+            }
+        }
+
+        if (total == 0) {
+            return 0;
+        }
+
+        return (matched * 100) / total;
+    }
+    @Override
+    public int calculateMatchScore(
+            Long currentUserId,
+            Long candidateUserId
+    ) {
+
+        User currentUser =
+                userRepository.findByIdWithProfileAndPreference(currentUserId)
+                        .orElseThrow(() ->
+                                new RuntimeException("Current user not found"));
+
+        User candidateUser =
+                userRepository.findByIdWithProfileAndPreference(candidateUserId)
+                        .orElseThrow(() ->
+                                new RuntimeException("Candidate user not found"));
+
+        return calculateMatchScore(currentUser, candidateUser);
+    }
+    private int getMatchedFieldCount(User currentUser, User partner) {
+
+        PartnerPreference pref = currentUser.getPartnerPreference();
+        Profile profile = partner.getProfile();
+
+        if (pref == null || profile == null) {
+            return 0;
+        }
+
+        int matched = 0;
+
+        if (pref.getMinAge() != null && pref.getMaxAge() != null && isAgeMatched(pref, profile))
+            matched++;
+
+        if (pref.getMinHeight() != null && pref.getMaxHeight() != null && isHeightMatched(pref, profile))
+            matched++;
+
+        if (pref.getMinWeight() != null && pref.getMaxWeight() != null && isWeightMatched(pref, profile))
+            matched++;
+
+        if (pref.getReligion() != null && isReligionMatched(pref, profile))
+            matched++;
+
+        if (pref.getCaste() != null && isCasteMatched(pref, profile))
+            matched++;
+
+        if (pref.getCity() != null && isCityMatched(pref, profile))
+            matched++;
+
+        if (pref.getEducationLevel() != null && isEducationMatched(pref, profile))
+            matched++;
+
+        if (pref.getOccupation() != null && isOccupationMatched(pref, profile))
+            matched++;
+
+        if (pref.getMaritalStatus() != null && isMaritalMatched(pref, profile))
+            matched++;
+
+        if (pref.getSmoking() != null && isSmokingMatched(pref, profile))
+            matched++;
+
+        if (pref.getDrinking() != null && isDrinkingMatched(pref, profile))
+            matched++;
+
+        if (pref.getDiet() != null && isDietMatched(pref, profile))
+            matched++;
+
+        return matched;
+    }
+    private int getTotalPreferenceFields(PartnerPreference pref) {
+
+        int total = 0;
+
+        if (pref.getMinAge() != null && pref.getMaxAge() != null) total++;
+
+        if (pref.getMinHeight() != null && pref.getMaxHeight() != null) total++;
+
+        if (pref.getMinWeight() != null && pref.getMaxWeight() != null) total++;
+
+        if (pref.getReligion() != null) total++;
+
+        if (pref.getCaste() != null) total++;
+
+        if (pref.getCity() != null) total++;
+
+        if (pref.getEducationLevel() != null) total++;
+
+        if (pref.getOccupation() != null) total++;
+
+        if (pref.getMaritalStatus() != null) total++;
+
+        if (pref.getSmoking() != null) total++;
+
+        if (pref.getDrinking() != null) total++;
+
+        if (pref.getDiet() != null) total++;
+
+        return total;
+    }
+    private boolean isAgeMatched(PartnerPreference pref, Profile profile) {
+
+        if (pref.getMinAge() == null ||
+                pref.getMaxAge() == null ||
+                profile.getDateOfBirth() == null) {
+            return false;
+        }
+
+        int age = LocalDate.now().getYear() - profile.getDateOfBirth().getYear();
+
+        return age >= pref.getMinAge() &&
+                age <= pref.getMaxAge();
+    }
+    private boolean isReligionMatched(PartnerPreference pref, Profile profile) {
+
+        return pref.getReligion() != null &&
+                profile.getReligion() != null &&
+                pref.getReligion().getName().trim()
+                        .equalsIgnoreCase(
+                                profile.getReligion().getName().trim()
+                        );
+    }
+    private boolean isCasteMatched(PartnerPreference pref, Profile profile) {
+
+        return pref.getCaste() != null &&
+                profile.getCaste() != null &&
+                pref.getCaste().getName().trim()
+                        .equalsIgnoreCase(
+                                profile.getCaste().getName().trim()
+                        );
+    }
+    private boolean isCityMatched(PartnerPreference pref, Profile profile) {
+
+        return pref.getCity() != null &&
+                profile.getCity() != null &&
+                pref.getCity().getName().trim()
+                        .equalsIgnoreCase(
+                                profile.getCity().getName().trim()
+                        );
+    }
+    private boolean isEducationMatched(PartnerPreference pref, Profile profile) {
+
+        return pref.getEducationLevel() != null &&
+                profile.getEducationLevel() != null &&
+                pref.getEducationLevel().getName().trim()
+                        .equalsIgnoreCase(
+                                profile.getEducationLevel().getName().trim()
+                        );
+    }
+    private boolean isOccupationMatched(PartnerPreference pref, Profile profile) {
+
+        return pref.getOccupation() != null &&
+                profile.getOccupation() != null &&
+                pref.getOccupation().getName().trim()
+                        .equalsIgnoreCase(
+                                profile.getOccupation().getName().trim()
+                        );
+    }
+    private boolean isMaritalMatched(PartnerPreference pref, Profile profile) {
+
+        return pref.getMaritalStatus() != null &&
+                profile.getMaritalStatus() != null &&
+                pref.getMaritalStatus().getName().trim()
+                        .equalsIgnoreCase(
+                                profile.getMaritalStatus().getName().trim()
+                        );
+    }
+    private boolean isSmokingMatched(PartnerPreference pref, Profile profile) {
+
+        return pref.getSmoking() != null &&
+                profile.getSmoking() != null &&
+                pref.getSmoking().getValue().trim()
+                        .equalsIgnoreCase(
+                                profile.getSmoking().getValue().trim()
+                        );
+    }
+    private boolean isDrinkingMatched(PartnerPreference pref, Profile profile) {
+
+        return pref.getDrinking() != null
+                && profile.getDrinking() != null
+                && Objects.equals(
+                pref.getDrinking().getId(),
+                profile.getDrinking().getId()
+        );
+    }
+    private boolean isDietMatched(PartnerPreference pref, Profile profile) {
+
+        return pref.getDiet() != null &&
+                profile.getDiet() != null &&
+                pref.getDiet().getName().trim()
+                        .equalsIgnoreCase(
+                                profile.getDiet().getName().trim()
+                        );
+    }
+//    private Integer extractHeight(String height) {
+//
+//        if (height == null || height.isBlank()) {
+//            return null;
+//        }
+//
+//        try {
+//            return Integer.parseInt(height.replaceAll("[^0-9]", ""));
+//        } catch (Exception e) {
+//            return null;
+//        }
+//    }
+//    private Integer extractWeight(String weight) {
+//
+//        if (weight == null || weight.isBlank()) {
+//            return null;
+//        }
+//
+//        try {
+//            return Integer.parseInt(weight.replaceAll("[^0-9]", ""));
+//        } catch (Exception e) {
+//            return null;
+//        }
+//    }
+    private boolean isHeightMatched(PartnerPreference pref, Profile profile) {
+
+        if (pref.getMinHeight() == null ||
+                pref.getMaxHeight() == null ||
+                profile.getHeight() == null) {
+
+            return false;
+        }
+
+        Long candidateHeightId = profile.getHeight().getId();
+
+        return candidateHeightId >= pref.getMinHeight()
+                && candidateHeightId <= pref.getMaxHeight();
+    }
+    private boolean isWeightMatched(PartnerPreference pref, Profile profile) {
+
+        if (pref.getMinWeight() == null ||
+                pref.getMaxWeight() == null ||
+                profile.getWeight() == null) {
+
+            return false;
+        }
+
+        Long candidateWeightId = profile.getWeight().getId();
+
+        return candidateWeightId >= pref.getMinWeight()
+                && candidateWeightId <= pref.getMaxWeight();
     }
 
     // ================= MAPPER =================
@@ -319,6 +803,88 @@ public class MatchServiceImpl implements MatchService {
 
         return mapUserToDTO(fullUser, currentUser);
     }
+    private void addField(List<FieldMatchDTO> fields,
+                          String fieldName,
+                          String myValue,
+                          String partnerValue,
+                          boolean matched) {
+
+        fields.add(
+                FieldMatchDTO.builder()
+                        .fieldName(fieldName)
+                        .myValue(myValue)
+                        .partnerValue(partnerValue)
+                        .matched(matched)
+                        .build()
+        );
+    }
+    private String getAgeRange(PartnerPreference preference) {
+
+        if (preference.getMinAge() == null ||
+                preference.getMaxAge() == null) {
+
+            return "-";
+        }
+
+        return preference.getMinAge() + " - " + preference.getMaxAge();
+    }
+    private String getHeightRange(PartnerPreference preference) {
+
+        if (preference.getMinHeight() == null ||
+                preference.getMaxHeight() == null) {
+
+            return "-";
+        }
+
+        String minHeight = heightRepository
+                .findById(preference.getMinHeight())
+                .map(Height::getHeight)
+                .orElse("-");
+
+        String maxHeight = heightRepository
+                .findById(preference.getMaxHeight())
+                .map(Height::getHeight)
+                .orElse("-");
+
+        return minHeight + " - " + maxHeight;
+    }
+    private String getWeightRange(PartnerPreference preference) {
+
+        if (preference.getMinWeight() == null ||
+                preference.getMaxWeight() == null) {
+
+            return "-";
+        }
+
+        String minWeight = weightRepository
+                .findById(preference.getMinWeight())
+                .map(Weight::getValue)
+                .orElse("-");
+
+        String maxWeight = weightRepository
+                .findById(preference.getMaxWeight())
+                .map(Weight::getValue)
+                .orElse("-");
+
+        return minWeight + " - " + maxWeight;
+    }
+    private void validatePremium(Long userId) {
+
+        boolean premium = userSubscriptionRepository
+                .findFirstByUser_IdAndIsActiveTrueAndStatusAndEndDateAfter(
+                        userId,
+                        "ACTIVE",
+                        LocalDateTime.now()
+                )
+                .isPresent();
+
+        if (!premium) {
+            throw new PremiumRequiredException(
+                    "Premium membership required to access matches."
+            );
+        }
+    }
+
 
     private MatchResponseDTO mapUserToDTO(User user, User currentUser) {
 
@@ -327,21 +893,55 @@ public class MatchServiceImpl implements MatchService {
         String city = null;
         String religion = null;
         String caste = null;
+        String occupation = null;
+        String imageUrl = null;
+
+        Integer age = null;
+
+        Long profileId = null;
+
+        Boolean isPremium = false;
 
         if (profile != null) {
-            if (profile.getCity() != null) city = profile.getCity().getName();
-            if (profile.getReligion() != null) religion = profile.getReligion().getName();
-            if (profile.getCaste() != null) caste = profile.getCaste().getName();
+
+            profileId = profile.getId();
+
+            imageUrl = profile.getImageUrl();
+
+            isPremium = profile.getIsPremium();
+
+            if (profile.getCity() != null)
+                city = profile.getCity().getName();
+
+            if (profile.getReligion() != null)
+                religion = profile.getReligion().getName();
+
+            if (profile.getCaste() != null)
+                caste = profile.getCaste().getName();
+
+            if (profile.getOccupation() != null)
+                occupation = profile.getOccupation().getName();
+
+            if (profile.getDateOfBirth() != null) {
+
+                age = LocalDate.now().getYear()
+                        - profile.getDateOfBirth().getYear();
+            }
         }
 
         int score = calculateMatchScore(currentUser, user);
 
         return MatchResponseDTO.builder()
                 .userId(user.getId())
+                .profileId(profileId)
                 .name(user.getFullName())
+                .imageUrl(imageUrl)
+                .age(age)
                 .city(city)
                 .religion(religion)
                 .caste(caste)
+                .occupation(occupation)
+                .isPremium(isPremium)
                 .matchScore(score)
                 .matchPercentage(score + "%")
                 .build();

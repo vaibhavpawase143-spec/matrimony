@@ -18,6 +18,9 @@ public class Notification {
 
     private Long senderId;
     private Long receiverId;
+    private Long matchedUserId;
+
+    private Integer matchPercentage;
 
     private String message;
 

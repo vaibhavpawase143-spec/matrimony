@@ -7,6 +7,7 @@ import { useLanguage } from "@/context/LanguageContext.jsx";
 import logo from "@/assets/logo.png";
 import { Bell } from "lucide-react";
 import { useRef } from "react";
+import PremiumUpgradeModal from "@/components/PremiumUpgradeModal";
 
 import toast from "react-hot-toast";
 import {
@@ -44,6 +45,8 @@ const Navbar = () => {
       return "Just now";
     };
 const notificationRef = useRef(null);
+const [showUpgradePopup, setShowUpgradePopup] = useState(false);
+const [premiumFeature, setPremiumFeature] = useState("Compatible Match");
 const notificationAudio = useRef(
   new Audio("/microsammy-ak-47-firing-8760.mp3")
 );
@@ -78,11 +81,11 @@ const currentUserId =
         iconBg: "bg-red-100 dark:bg-red-500/15"
       },
       MATCH: {
-        icon: "🎉",
-        label: "New match",
-        route: "/matches",
-        accent: "border-violet-500",
-        iconBg: "bg-violet-100 dark:bg-violet-500/15"
+          icon: "🎯",
+          label: "Compatible Match",
+          route: "/matches",   // ata temporary theva
+          accent: "border-violet-500",
+          iconBg: "bg-violet-100 dark:bg-violet-500/15"
       },
       VIEW: {
         icon: "👀",
@@ -791,6 +794,24 @@ const meta = getNotificationMeta(item.type);
 
 setShowNotifications(false);
 
+// 🎯 MATCH notification
+if (item.type === "MATCH") {
+
+    if (user?.isPremium) {
+
+        navigate(`/profile/${item.matchedUserId}`);
+
+    } else {
+
+        setPremiumFeature("Compatible Match");
+        setShowUpgradePopup(true);
+
+    }
+
+    return;
+}
+
+// Remaining notifications
 navigate(meta.route);
 } catch(err) {
 
@@ -1037,6 +1058,11 @@ hover:bg-slate-700
         </motion.div>
       )}
     </motion.nav>
+    <PremiumUpgradeModal
+            open={showUpgradePopup}
+            onClose={() => setShowUpgradePopup(false)}
+            feature={premiumFeature}
+        />
     </>
   );
 };

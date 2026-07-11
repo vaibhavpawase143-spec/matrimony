@@ -22,6 +22,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.example.service.MatchNotificationService;
 
 import java.util.List;
 import java.util.Optional;
@@ -94,6 +95,7 @@ public class ProfileServiceImpl implements ProfileService {
 
     private final DrinkingRepository drinkingRepository;
     private final CacheService cacheService;
+    private final MatchNotificationService matchNotificationService;
 
     // =====================================================
     // CURRENT USER
@@ -142,10 +144,13 @@ public class ProfileServiceImpl implements ProfileService {
 
         userRepository.save(user);
 
-        Profile saved =
-                repository.save(profile);
+        Profile saved = repository.save(profile);
 
         safeRedis(user.getId());
+
+        if (saved.getProfileCompleted()) {
+            matchNotificationService.generateForProfileUpdate(user.getId());
+        }
 
         return mapToDTO(saved);
     }
@@ -175,10 +180,13 @@ public class ProfileServiceImpl implements ProfileService {
 
         userRepository.save(user);
 
-        Profile saved =
-                repository.save(profile);
+        Profile saved = repository.save(profile);
 
         safeRedis(user.getId());
+
+        if (saved.getProfileCompleted()) {
+            matchNotificationService.generateForProfileUpdate(user.getId());
+        }
 
         return mapToDTO(saved);
     }
@@ -368,7 +376,11 @@ public class ProfileServiceImpl implements ProfileService {
     @Transactional(readOnly = true)
     public List<Profile> getAll() {
 
-        return repository.findAllWithUser();
+        User currentUser = getCurrentUser();
+
+        return repository.findDiscoverProfiles(
+                currentUser.getId()
+        );
 
     }
     public ProfileResponseDTO

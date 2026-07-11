@@ -155,4 +155,67 @@ public class NotificationServiceImpl implements NotificationService {
         n.setDeleted(true);
         repo.save(n);
     }
+    @Override
+    public void createMatchRecommendation(
+            Long receiverId,
+            Long matchedUserId,
+            Integer matchPercentage
+    ) {
+
+        if (repo.existsByReceiverIdAndMatchedUserIdAndTypeAndDeletedFalse(
+                receiverId,
+                matchedUserId,
+                NotificationType.MATCH
+        )) {
+            return;
+        }
+
+        User matchedUser = userRepository.findById(matchedUserId)
+                .orElseThrow(() -> new RuntimeException("Matched user not found"));
+
+        Notification notification = new Notification();
+
+        notification.setSenderId(matchedUserId);
+
+        notification.setReceiverId(receiverId);
+
+        notification.setMatchedUserId(matchedUserId);
+
+        notification.setMatchPercentage(matchPercentage);
+
+        notification.setType(NotificationType.MATCH);
+
+        notification.setMessage(
+                "🎯 " + matchedUser.getFullName()
+                        + " matches "
+                        + matchPercentage
+                        + "% with your partner preferences."
+        );
+
+        notification.setRead(false);
+
+        notification.setDeleted(false);
+
+        notification.setCreatedAt(LocalDateTime.now());
+
+        Notification saved = repo.save(notification);
+
+        NotificationResponse response = new NotificationResponse();
+
+        response.setId(saved.getId());
+        response.setSenderId(matchedUserId);
+        response.setReceiverId(receiverId);
+        response.setSenderName(matchedUser.getFullName());
+        response.setMessage(saved.getMessage());
+        response.setType(saved.getType().name());
+        response.setRead(false);
+        response.setCreatedAt(saved.getCreatedAt());
+        response.setMatchedUserId(saved.getMatchedUserId());
+        response.setMatchPercentage(saved.getMatchPercentage());
+
+        messagingTemplate.convertAndSend(
+                "/topic/notifications/" + receiverId,
+                response
+        );
+    }
 }

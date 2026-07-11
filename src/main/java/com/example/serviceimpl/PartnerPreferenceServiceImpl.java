@@ -3,6 +3,7 @@ package com.example.serviceimpl;
 import com.example.model.*;
 import com.example.repository.*;
 import com.example.service.CacheService;
+import com.example.service.MatchNotificationService;
 import com.example.service.PartnerPreferenceService;
 import com.example.service.MatchAsyncService;
 
@@ -22,6 +23,7 @@ public class PartnerPreferenceServiceImpl implements PartnerPreferenceService {
 
     private final MatchAsyncService asyncService;
     private final CacheService cacheService;
+    private final MatchNotificationService matchNotificationService;
 
     public PartnerPreferenceServiceImpl(
             PartnerPreferenceRepository repository,
@@ -30,7 +32,8 @@ public class PartnerPreferenceServiceImpl implements PartnerPreferenceService {
             CasteRepository casteRepository,
             CityRepository cityRepository,
             MatchAsyncService asyncService,
-            CacheService cacheService
+            CacheService cacheService,
+            MatchNotificationService matchNotificationService
     ) {
         this.repository = repository;
         this.userRepository = userRepository;
@@ -39,6 +42,7 @@ public class PartnerPreferenceServiceImpl implements PartnerPreferenceService {
         this.cityRepository = cityRepository;
         this.asyncService = asyncService;
         this.cacheService = cacheService;
+        this.matchNotificationService = matchNotificationService;
     }
 
     // ✅ CREATE + UPDATE (FINAL FIX)
@@ -98,8 +102,11 @@ public class PartnerPreferenceServiceImpl implements PartnerPreferenceService {
 
         PartnerPreference saved = repository.save(preference);
 
-        // 🔥 ASYNC MATCH PRELOAD
+// Refresh matches
         asyncService.preloadMatches(userId);
+
+// Generate notifications
+        matchNotificationService.generateForPreferenceUpdate(userId);
 
         return saved;
     }

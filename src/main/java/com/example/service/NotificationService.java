@@ -9,6 +9,12 @@ public interface NotificationService {
 
     void create(Long senderId, Long receiverId, NotificationType type);
 
+    void createMatchRecommendation(
+            Long receiverId,
+            Long matchedUserId,
+            Integer matchPercentage
+    );
+
     List<Notification> getAll(Long userId);   // ✅ FIXED
 
     long unreadCount(Long userId);

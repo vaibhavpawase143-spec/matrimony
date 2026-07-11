@@ -31,10 +31,8 @@ public class Profile {
     // USER
     // =====================================================
 
-    @ManyToOne(fetch = FetchType.EAGER)
-
-    @JoinColumn(name="user_id")
-
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
     private User user;
 
     // =====================================================
