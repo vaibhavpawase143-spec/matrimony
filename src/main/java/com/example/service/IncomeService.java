@@ -7,25 +7,39 @@ import java.util.Optional;
 
 public interface IncomeService {
 
-    Income save(Income income);
+    // 🔍 Basic CRUD
+    Income create(Income income);
+
+    Income update(Long id, Income income);
+
+    void delete(Long id);
 
     Optional<Income> getById(Long id);
 
-    Optional<Income> getByRange(String range);
-
     List<Income> getAll();
 
-    List<Income> getAllActive();
+    // 🔍 Find by range
+    Optional<Income> getByRange(String range);
 
-    List<Income> getAllInactive();
+    Optional<Income> getByRangeIgnoreCase(String range);
 
+    // ✅ Duplicate check
+    boolean existsByRange(String range);
+
+    boolean existsByRangeIgnoreCase(String range);
+
+    // 🔍 Active / Inactive
+    List<Income> getActive();
+
+    List<Income> getInactive();
+
+    // 🔍 Admin-based
     List<Income> getByAdmin(Long adminId);
 
     List<Income> getActiveByAdmin(Long adminId);
 
-    List<Income> searchByRange(String keyword);
+    // 🔍 Search
+    List<Income> search(String keyword);
 
-    Income update(Long id, Income updated);
-
-    void delete(Long id); // soft delete
+    List<Income> searchByAdmin(Long adminId, String keyword);
 }

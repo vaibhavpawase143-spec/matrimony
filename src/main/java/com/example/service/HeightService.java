@@ -7,25 +7,39 @@ import java.util.Optional;
 
 public interface HeightService {
 
-    Height save(Height height);
+    // 🔍 Basic CRUD
+    Height create(Height height);
+
+    Height update(Long id, Height height);
+
+    void delete(Long id);
 
     Optional<Height> getById(Long id);
 
-    Optional<Height> getByHeight(String height);
-
     List<Height> getAll();
 
-    List<Height> getAllActive();
+    // 🔍 Find by height
+    Optional<Height> getByHeight(String height);
 
-    List<Height> getAllInactive();
+    Optional<Height> getByHeightIgnoreCase(String height);
 
+    // ✅ Duplicate check
+    boolean existsByHeight(String height);
+
+    boolean existsByHeightIgnoreCase(String height);
+
+    // 🔍 Active / Inactive
+    List<Height> getActive();
+
+    List<Height> getInactive();
+
+    // 🔍 Admin-based
     List<Height> getByAdmin(Long adminId);
 
     List<Height> getActiveByAdmin(Long adminId);
 
-    List<Height> searchByHeight(String keyword);
+    // 🔍 Search
+    List<Height> search(String keyword);
 
-    Height update(Long id, Height updated);
-
-    void delete(Long id); // soft delete
+    List<Height> searchByAdmin(Long adminId, String keyword);
 }

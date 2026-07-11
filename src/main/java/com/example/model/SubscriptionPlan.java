@@ -1,11 +1,16 @@
 package com.example.model;
 
 import jakarta.persistence.*;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(
         name = "subscription_plans",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"admin_id", "name"})
+        uniqueConstraints = @UniqueConstraint(columnNames = {"admin_id", "name"}),
+        indexes = {
+                @Index(name = "idx_plan_name", columnList = "name")
+        }
 )
 public class SubscriptionPlan {
 
@@ -13,72 +18,114 @@ public class SubscriptionPlan {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String name;            // Example: Gold Plan
-    private Double price;           // Plan price
-    private Integer durationDays;   // Plan duration
+    // Example: Gold Plan
+    @Column(nullable = false, length = 100)
+    private String name;
 
+    // 🔥 Use BigDecimal for money
+    @Column(nullable = false, precision = 10, scale = 2)
+    private BigDecimal price;
+
+    // Duration in days
+    @Column(nullable = false)
+    private Integer duration;
+
+    @Column(length = 500)
     private String description;
 
-    private Boolean active = true;
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive = true;
 
-    @ManyToOne
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "admin_id")
     private Admin admin;
 
     public SubscriptionPlan() {}
 
-    // Getters and Setters
+    // 🔥 Lifecycle hooks (fixed)
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+
+        if (this.isActive == null) {
+            this.isActive = true;
+        }
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    // ===== Getters =====
 
     public Long getId() {
         return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
     }
 
     public String getName() {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public Double getPrice() {
+    public BigDecimal getPrice() {
         return price;
     }
 
-    public void setPrice(Double price) {
-        this.price = price;
+    public Integer getDuration() {
+        return duration;
     }
 
-    public Integer getDurationDays() {
-        return durationDays;
-    }
-
-    public void setDurationDays(Integer durationDays) {
-        this.durationDays = durationDays;
+    public Integer getDurationInDays() {
+        return duration;
     }
 
     public String getDescription() {
         return description;
     }
 
-    public void setDescription(String description) {
-        this.description = description;
+    public Boolean getIsActive() {
+        return isActive;
     }
 
-    public Boolean getActive() {
-        return active;
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
     }
 
-    public void setActive(Boolean active) {
-        this.active = active;
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
     }
 
     public Admin getAdmin() {
         return admin;
+    }
+
+    // ===== Setters =====
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setPrice(BigDecimal price) {
+        this.price = price;
+    }
+
+    public void setDuration(Integer duration) {
+        this.duration = duration;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public void setIsActive(Boolean isActive) {
+        this.isActive = isActive;
     }
 
     public void setAdmin(Admin admin) {

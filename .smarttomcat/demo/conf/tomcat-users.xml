@@ -25,10 +25,10 @@
   you must define such a user - the username and password are arbitrary.
 
   Built-in Tomcat manager roles:
-    - manager-gui    - allows access to the HTML GUI and the status pages
-    - manager-script - allows access to the HTTP API and the status pages
-    - manager-jmx    - allows access to the JMX proxy and the status pages
-    - manager-status - allows access to the status pages only
+    - manager-gui    - allows access to the HTML GUI and the isActive pages
+    - manager-script - allows access to the HTTP API and the isActive pages
+    - manager-jmx    - allows access to the JMX proxy and the isActive pages
+    - manager-isActive - allows access to the isActive pages only
 
   The users below are wrapped in a comment and are therefore ignored. If you
   wish to configure one or more of these users for use with the manager web

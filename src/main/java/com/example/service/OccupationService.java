@@ -9,21 +9,23 @@ public interface OccupationService {
 
     Occupation create(Occupation occupation);
 
-    List<Occupation> getAll();
-
-    List<Occupation> getAllActive();
-
-    List<Occupation> getAllInactive();
-
-    Optional<Occupation> getById(Long id);
-
     Occupation update(Long id, Occupation occupation);
 
     void delete(Long id);
 
-    List<Occupation> search(String keyword);
+    Optional<Occupation> getById(Long id);
+
+    List<Occupation> getAll();   // ✅ important
 
     List<Occupation> getByAdmin(Long adminId);
 
     List<Occupation> getActiveByAdmin(Long adminId);
+
+    List<Occupation> getInactiveByAdmin(Long adminId);
+
+    Optional<Occupation> getByNameAndAdmin(String name, Long adminId);
+
+    boolean existsByNameAndAdmin(String name, Long adminId);
+
+    List<Occupation> searchByAdmin(Long adminId, String keyword);
 }

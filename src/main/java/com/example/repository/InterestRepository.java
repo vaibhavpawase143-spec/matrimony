@@ -4,26 +4,29 @@ import com.example.model.Interest;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface InterestRepository extends JpaRepository<Interest, Long> {
 
-    // 🔍 Interests sent by user
-    List<Interest> findBySenderId(Long senderId);
+    List<Interest> findBySender_Id(Long senderId);
 
-    // 🔍 Interests received by user
-    List<Interest> findByReceiverId(Long receiverId);
+    List<Interest> findByReceiver_Id(Long receiverId);
 
-    // 🔍 Check if already sent (VERY IMPORTANT)
-    boolean existsBySenderIdAndReceiverId(Long senderId, Long receiverId);
+    Optional<Interest> findBySender_IdAndReceiver_Id(Long senderId, Long receiverId);
 
-    // 🔍 Get by sender + status
-    List<Interest> findBySenderIdAndStatus(Long senderId, String status);
+    List<Interest> findByReceiver_IdAndStatusIgnoreCase(Long receiverId, String status);
 
-    // 🔍 Get by receiver + status
-    List<Interest> findByReceiverIdAndStatus(Long receiverId, String status);
+    List<Interest> findBySender_IdAndStatusIgnoreCase(Long senderId, String status);
 
-    // 🔍 Get specific interest
-    Interest findBySenderIdAndReceiverId(Long senderId, Long receiverId);
+    List<Interest> findByStatusIgnoreCase(String status);
+    long countBySender_IdAndCreatedAtBetween(
+            Long senderId,
+            LocalDateTime start,
+            LocalDateTime end
+    );
+
+    long countBySender_IdAndIsActiveTrue(Long senderId);
 }

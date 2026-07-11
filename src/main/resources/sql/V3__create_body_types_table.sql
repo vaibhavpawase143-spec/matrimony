@@ -6,7 +6,7 @@ CREATE TABLE body_types (
 
     value VARCHAR(100),
 
-    status BOOLEAN DEFAULT TRUE,
+    isActive BOOLEAN DEFAULT TRUE,
 
     CONSTRAINT fk_bodytype_admin
         FOREIGN KEY (admin_id)

@@ -10,21 +10,27 @@ import java.util.Optional;
 @Repository
 public interface BloodGroupRepository extends JpaRepository<BloodGroup, Long> {
 
-    // 🔍 Find by type (since it's UNIQUE)
+    // 🔍 Find by type (case-sensitive by default)
     Optional<BloodGroup> findByType(String type);
 
-    // 🔍 Check if type already exists (useful before insert)
+    // 🔍 Case-insensitive (better for real-world usage)
+    Optional<BloodGroup> findByTypeIgnoreCase(String type);
+
+    // ✅ Duplicate check
     boolean existsByType(String type);
 
-    // 🔍 Get all active blood groups
-    List<BloodGroup> findByStatusTrue();
+    boolean existsByTypeIgnoreCase(String type);
 
-    // 🔍 Get all inactive blood groups
-    List<BloodGroup> findByStatusFalse();
+    // 🔍 Active / Inactive
+    List<BloodGroup> findByIsActiveTrue();
+    List<BloodGroup> findByIsActiveFalse();
 
-    // 🔍 Get by admin id (relation use)
+    // 🔍 Admin-based filtering
     List<BloodGroup> findByAdminId(Long adminId);
 
-    // 🔍 Get active blood groups by admin
-    List<BloodGroup> findByAdminIdAndStatusTrue(Long adminId);
+    // ✅ Active by admin
+    List<BloodGroup> findByAdminIdAndIsActiveTrue(Long adminId);
+
+    // 🔥 Optional (best practice combo filter)
+    List<BloodGroup> findByAdminIdAndTypeIgnoreCase(Long adminId, String type);
 }

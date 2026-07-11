@@ -10,24 +10,24 @@ import java.util.Optional;
 @Repository
 public interface StateRepository extends JpaRepository<State, Long> {
 
-    // 🔍 Find by name
-    Optional<State> findByName(String name);
+    // 🔍 Find by name (admin-specific, case-insensitive)
+    Optional<State> findByNameIgnoreCaseAndAdminId(String name, Long adminId);
 
-    // 🔍 Check duplicate
-    boolean existsByName(String name);
+    // 🔍 Check duplicate (admin-specific)
+    boolean existsByNameIgnoreCaseAndAdminId(String name, Long adminId);
 
-    // 🔍 Get all active states
-    List<State> findByStatusTrue();
-
-    // 🔍 Get states by country (VERY IMPORTANT)
-    List<State> findByCountryId(Long countryId);
-
-    // 🔍 Active states by country (dropdown use)
-    List<State> findByCountryIdAndStatusTrue(Long countryId);
-
-    // 🔍 Filter by admin
+    // 🔍 Get all states by admin
     List<State> findByAdminId(Long adminId);
 
-    // 🔍 Search
-    List<State> findByNameContainingIgnoreCase(String keyword);
+    // 🔍 Active states by admin
+    List<State> findByAdminIdAndIsActiveTrue(Long adminId);
+
+    // 🔍 States by country + admin
+    List<State> findByCountry_IdAndAdminId(Long countryId, Long adminId);
+
+    // 🔍 Active states by country + admin
+    List<State> findByCountry_IdAndAdminIdAndIsActiveTrue(Long countryId, Long adminId);
+
+    // 🔍 Search (admin + keyword)
+    List<State> findByAdminIdAndNameContainingIgnoreCase(Long adminId, String keyword);
 }

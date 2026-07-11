@@ -8,7 +8,7 @@ CREATE TABLE cities (
 
                         state_id BIGINT NOT NULL,
 
-                        status BOOLEAN NOT NULL DEFAULT TRUE,
+                        isActive BOOLEAN NOT NULL DEFAULT TRUE,
 
                         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 

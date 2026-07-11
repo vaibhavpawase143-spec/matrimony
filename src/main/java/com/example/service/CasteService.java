@@ -5,33 +5,23 @@ import java.util.List;
 
 public interface CasteService {
 
-    // ✅ Get all castes
-    List<Caste> getAll();
+    Caste create(Caste caste, Long adminId);
 
-    // ✅ Get active castes
-    List<Caste> getActive();
+    Caste getById(Long id, Long adminId);
 
-    // ✅ Get by ID
-    Caste getById(Long id);
+    List<Caste> getAll(Long adminId);
 
-    // ✅ Create caste
-    Caste create(Caste caste);
+    List<Caste> getActive(Long adminId);
 
-    // ✅ Update caste
-    Caste update(Long id, Caste caste);
+    Caste update(Long id, Caste caste, Long adminId);
 
-    // ✅ Delete caste
-    void delete(Long id);
+    void delete(Long id, Long adminId);
 
-    // ✅ Get by religion
-    List<Caste> getByReligion(Long religionId);
+    // 🔗 Religion-based (with admin safety)
+    List<Caste> getByReligion(Long religionId, Long adminId);
 
-    // ✅ Get active by religion
-    List<Caste> getActiveByReligion(Long religionId);
+    List<Caste> getActiveByReligion(Long religionId, Long adminId);
 
-    // ✅ Get by admin
-    List<Caste> getByAdmin(Long adminId);
-
-    // ✅ Search caste
-    List<Caste> search(String keyword);
+    // 🔍 Search (admin scoped)
+    List<Caste> search(String keyword, Long adminId);
 }

@@ -10,24 +10,30 @@ import java.util.Optional;
 @Repository
 public interface MaritalStatusRepository extends JpaRepository<MaritalStatus, Long> {
 
-    // 🔍 Find by name (Single, Married, Divorced)
+    // 🔍 Find by name
     Optional<MaritalStatus> findByName(String name);
 
-    // 🔍 Check duplicate
+    // 🔥 Case-insensitive
+    Optional<MaritalStatus> findByNameIgnoreCase(String name);
+
+    // ✅ Duplicate check
     boolean existsByName(String name);
 
-    // 🔍 Get all active records
-    List<MaritalStatus> findByStatusTrue();
+    boolean existsByNameIgnoreCase(String name);
 
-    // 🔍 Get all inactive records
-    List<MaritalStatus> findByStatusFalse();
+    // 🔍 Active / Inactive
+    List<MaritalStatus> findByIsActiveTrue();
+    List<MaritalStatus> findByIsActiveFalse();
 
-    // 🔍 Filter by admin
+    // 🔍 Admin-based filtering
     List<MaritalStatus> findByAdminId(Long adminId);
 
-    // 🔍 Active records by admin
-    List<MaritalStatus> findByAdminIdAndStatusTrue(Long adminId);
+    // ✅ Active by admin
+    List<MaritalStatus> findByAdminIdAndIsActiveTrue(Long adminId);
 
-    // 🔍 Search (dropdown/filter)
+    // 🔍 Search (global)
     List<MaritalStatus> findByNameContainingIgnoreCase(String keyword);
+
+    // 🔥 Search within admin
+    List<MaritalStatus> findByAdminIdAndNameContainingIgnoreCase(Long adminId, String keyword);
 }

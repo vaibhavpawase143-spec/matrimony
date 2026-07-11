@@ -6,7 +6,7 @@ CREATE TABLE family_details (
 
                                 family_type_id BIGINT,
 
-                                family_status_id BIGINT,
+                                family_isActive_id BIGINT,
 
                                 brother_type_id BIGINT,
 
@@ -24,9 +24,9 @@ CREATE TABLE family_details (
                                     FOREIGN KEY (family_type_id)
                                         REFERENCES family_types(id),
 
-                                CONSTRAINT fk_family_status
-                                    FOREIGN KEY (family_status_id)
-                                        REFERENCES family_status(id),
+                                CONSTRAINT fk_family_isActive
+                                    FOREIGN KEY (family_isActive_id)
+                                        REFERENCES family_isActive(id),
 
                                 CONSTRAINT fk_family_brother
                                     FOREIGN KEY (brother_type_id)

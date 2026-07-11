@@ -4,21 +4,27 @@ import com.example.model.Role;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.Optional;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface RoleRepository extends JpaRepository<Role, Long> {
 
-    // 🔍 Find by name (USER, ADMIN)
-    Optional<Role> findByName(String name);
+    // ✅ GLOBAL ROLE (IMPORTANT)
+    Optional<Role> findByNameIgnoreCase(String name);
 
-    // 🔍 Check duplicate
-    boolean existsByName(String name);
+    // 🔽 Keep if you need admin-specific roles later
+    Optional<Role> findByNameIgnoreCaseAndAdminId(String name, Long adminId);
 
-    // 🔍 Filter by admin
+    boolean existsByNameIgnoreCaseAndAdminId(String name, Long adminId);
+
     List<Role> findByAdminId(Long adminId);
 
-    // 🔍 Search
-    List<Role> findByNameContainingIgnoreCase(String keyword);
+    List<Role> findByAdminIdAndIsActiveTrue(Long adminId);
+
+    List<Role> findByAdminIdAndIsActiveFalse(Long adminId);
+
+    List<Role> findByAdminIdAndNameContainingIgnoreCase(Long adminId, String keyword);
+
+    Optional<Role> findByName(String name);
 }

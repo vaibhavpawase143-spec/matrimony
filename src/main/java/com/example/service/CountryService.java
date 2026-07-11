@@ -1,34 +1,45 @@
 package com.example.service;
 
 import com.example.model.Country;
+
 import java.util.List;
+import java.util.Optional;
 
 public interface CountryService {
 
-    // ✅ Get all countries
-    List<Country> getAll();
-
-    // ✅ Get active countries
-    List<Country> getActive();
-
-    // ✅ Get by ID
-    Country getById(Long id);
-
-    // ✅ Create country
+    // 🔍 Basic CRUD
     Country create(Country country);
 
-    // ✅ Update country
     Country update(Long id, Country country);
 
-    // ✅ Delete country
     void delete(Long id);
 
-    // ✅ Get by admin
+    Optional<Country> getById(Long id);
+
+    List<Country> getAll();
+
+    // 🔍 Find by name
+    Optional<Country> getByName(String name);
+
+    Optional<Country> getByNameIgnoreCase(String name);
+
+    // ✅ Duplicate check
+    boolean existsByName(String name);
+
+    boolean existsByNameIgnoreCase(String name);
+
+    // 🔍 Active / Inactive
+    List<Country> getActive();
+
+    List<Country> getInactive();
+
+    // 🔍 Admin-based
     List<Country> getByAdmin(Long adminId);
 
-    // ✅ Get active by admin
     List<Country> getActiveByAdmin(Long adminId);
 
-    // ✅ Search country
+    // 🔍 Search
     List<Country> search(String keyword);
+
+    List<Country> searchByAdmin(Long adminId, String keyword);
 }

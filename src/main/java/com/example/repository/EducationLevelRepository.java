@@ -13,21 +13,27 @@ public interface EducationLevelRepository extends JpaRepository<EducationLevel, 
     // 🔍 Find by name
     Optional<EducationLevel> findByName(String name);
 
-    // 🔍 Check duplicate
+    // 🔥 Case-insensitive
+    Optional<EducationLevel> findByNameIgnoreCase(String name);
+
+    // ✅ Duplicate check
     boolean existsByName(String name);
 
-    // 🔍 Get all active records
-    List<EducationLevel> findByStatusTrue();
+    boolean existsByNameIgnoreCase(String name);
 
-    // 🔍 Get all inactive records
-    List<EducationLevel> findByStatusFalse();
+    // 🔍 Active / Inactive
+    List<EducationLevel> findByIsActiveTrue();
+    List<EducationLevel> findByIsActiveFalse();
 
-    // 🔍 Filter by admin
+    // 🔍 Admin-based filtering
     List<EducationLevel> findByAdminId(Long adminId);
 
-    // 🔍 Active records by admin
-    List<EducationLevel> findByAdminIdAndStatusTrue(Long adminId);
+    // ✅ Active by admin
+    List<EducationLevel> findByAdminIdAndIsActiveTrue(Long adminId);
 
-    // 🔍 Search
+    // 🔍 Search (global)
     List<EducationLevel> findByNameContainingIgnoreCase(String keyword);
+
+    // 🔥 Search within admin (multi-tenant support)
+    List<EducationLevel> findByAdminIdAndNameContainingIgnoreCase(Long adminId, String keyword);
 }

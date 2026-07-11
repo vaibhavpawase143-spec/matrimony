@@ -5,27 +5,15 @@ import java.util.List;
 
 public interface BloodGroupService {
 
-    // ✅ Get all blood groups
-    List<BloodGroup> getAll();
+    BloodGroup create(BloodGroup bloodGroup, Long adminId);
 
-    // ✅ Get only active blood groups
-    List<BloodGroup> getActive();
+    BloodGroup getById(Long id, Long adminId);
 
-    // ✅ Get by ID
-    BloodGroup getById(Long id);
+    List<BloodGroup> getAll(Long adminId);
 
-    // ✅ Create blood group
-    BloodGroup create(BloodGroup bg);
+    List<BloodGroup> getActive(Long adminId);
 
-    // ✅ Update blood group
-    BloodGroup update(Long id, BloodGroup bg);
+    BloodGroup update(Long id, BloodGroup bloodGroup, Long adminId);
 
-    // ✅ Delete blood group
-    void delete(Long id);
-
-    // ✅ Get by admin
-    List<BloodGroup> getByAdmin(Long adminId);
-
-    // ✅ Get active blood groups by admin
-    List<BloodGroup> getActiveByAdmin(Long adminId);
+    void delete(Long id, Long adminId);
 }

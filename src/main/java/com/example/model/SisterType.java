@@ -1,15 +1,19 @@
 package com.example.model;
 
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
+import lombok.Getter;
+import lombok.Setter;
 
+import java.time.LocalDateTime;
+@Getter
+@Setter
 @Entity
 @Table(
         name = "sister_types",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"admin_id", "value"}),
         indexes = {
                 @Index(name = "idx_sister_type_value", columnList = "value")
-        },
-        uniqueConstraints = @UniqueConstraint(columnNames = {"admin_id", "value"})
+        }
 )
 public class SisterType {
 
@@ -22,11 +26,11 @@ public class SisterType {
     private Admin admin;
 
     // Example: No Sister, 1 Sister, 2 Sisters
-    @Column(nullable = false)
+    @Column(nullable = false, length = 50)
     private String value;
 
-    @Column(nullable = false)
-    private Boolean status = true;
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive = true;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -36,63 +40,61 @@ public class SisterType {
 
     public SisterType() {}
 
+    // 🔥 Lifecycle hooks (fixed)
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+
+        if (this.isActive == null) {
+            this.isActive = true;
+        }
     }
 
     @PreUpdate
     protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
     }
 
-    // Getters and Setters
+    // ===== Getters =====
 
     public Long getId() {
         return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
     }
 
     public Admin getAdmin() {
         return admin;
     }
 
-    public void setAdmin(Admin admin) {
-        this.admin = admin;
-    }
-
     public String getValue() {
         return value;
     }
 
-    public void setValue(String value) {
-        this.value = value;
-    }
-
-    public Boolean getStatus() {
-        return status;
-    }
-
-    public void setStatus(Boolean status) {
-        this.status = status;
+    public Boolean getIsActive() {
+        return isActive;
     }
 
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
     }
 
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
+    // ===== Setters =====
+
+    public void setAdmin(Admin admin) {
+        this.admin = admin;
     }
+
+    public void setValue(String value) {
+        this.value = value;
+    }
+
+    public void setIsActive(Boolean isActive) {
+        this.isActive = isActive;
+    }
+
+
 }

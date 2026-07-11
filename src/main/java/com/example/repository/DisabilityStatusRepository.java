@@ -10,24 +10,30 @@ import java.util.Optional;
 @Repository
 public interface DisabilityStatusRepository extends JpaRepository<DisabilityStatus, Long> {
 
-    // 🔍 Find by value (Yes, No, Physically Challenged, etc.)
+    // 🔍 Find by value
     Optional<DisabilityStatus> findByValue(String value);
 
-    // 🔍 Check duplicate
+    // 🔥 Case-insensitive (important)
+    Optional<DisabilityStatus> findByValueIgnoreCase(String value);
+
+    // ✅ Duplicate check
     boolean existsByValue(String value);
 
-    // 🔍 Get all active records
-    List<DisabilityStatus> findByStatusTrue();
+    boolean existsByValueIgnoreCase(String value);
 
-    // 🔍 Get all inactive records
-    List<DisabilityStatus> findByStatusFalse();
+    // 🔍 Active / Inactive
+    List<DisabilityStatus> findByIsActiveTrue();
+    List<DisabilityStatus> findByIsActiveFalse();
 
-    // 🔍 Filter by admin
+    // 🔍 Admin-based filtering
     List<DisabilityStatus> findByAdminId(Long adminId);
 
-    // 🔍 Active records by admin
-    List<DisabilityStatus> findByAdminIdAndStatusTrue(Long adminId);
+    // ✅ Active by admin
+    List<DisabilityStatus> findByAdminIdAndIsActiveTrue(Long adminId);
 
-    // 🔍 Search (useful for dropdown/search)
+    // 🔍 Search (global)
     List<DisabilityStatus> findByValueContainingIgnoreCase(String keyword);
+
+    // 🔥 Search within admin (multi-tenant support)
+    List<DisabilityStatus> findByAdminIdAndValueContainingIgnoreCase(Long adminId, String keyword);
 }

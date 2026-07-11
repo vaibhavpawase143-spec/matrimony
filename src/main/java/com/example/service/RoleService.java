@@ -7,17 +7,41 @@ import java.util.Optional;
 
 public interface RoleService {
 
-    Role create(Role role);
+    // =========================
+    // ✅ CREATE / SAVE
+    // =========================
+    Role save(Role role);
 
-    List<Role> getAll();
-
+    // =========================
+    // 🔍 GET BY ID
+    // =========================
     Optional<Role> getById(Long id);
 
-    Role update(Long id, Role role);
+    // =========================
+    // 🔍 GET ALL (GLOBAL)
+    // =========================
+    List<Role> getAll();
 
-    void delete(Long id);
+    // =========================
+    // 🔍 GLOBAL ROLE (IMPORTANT FOR JWT)
+    // =========================
+    Optional<Role> getByName(String name);
 
-    List<Role> search(String keyword);
-
+    // =========================
+    // 🔍 ADMIN BASED (OPTIONAL)
+    // =========================
     List<Role> getByAdmin(Long adminId);
+
+    List<Role> getActiveByAdmin(Long adminId);
+
+    List<Role> getInactiveByAdmin(Long adminId);
+
+    List<Role> searchByAdmin(Long adminId, String keyword);
+
+    Optional<Role> getByNameAndAdmin(String name, Long adminId);
+
+    // =========================
+    // ❌ DELETE
+    // =========================
+    void delete(Long id);
 }

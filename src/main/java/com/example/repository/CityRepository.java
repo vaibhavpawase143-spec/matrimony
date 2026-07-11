@@ -13,24 +13,38 @@ public interface CityRepository extends JpaRepository<City, Long> {
     // 🔍 Find by name
     Optional<City> findByName(String name);
 
-    // 🔍 Check duplicate
+    // 🔥 Case-insensitive (important)
+    Optional<City> findByNameIgnoreCase(String name);
+
+    // ✅ Duplicate check
     boolean existsByName(String name);
 
-    // 🔍 Get all active cities
-    List<City> findByStatusTrue();
+    boolean existsByNameIgnoreCase(String name);
 
-    // 🔍 Get cities by state (IMPORTANT)
-    List<City> findByStateId(Long stateId);
+    // 🔍 Active / Inactive
+    List<City> findByIsActiveTrue();
+    List<City> findByIsActiveFalse();
 
-    // 🔍 Active cities by state (used in dropdown)
-    List<City> findByStateIdAndStatusTrue(Long stateId);
+    // 🔍 State-based filtering (RELATION SAFE)
+    List<City> findByState_Id(Long stateId);
 
-    // 🔍 Filter by admin
+    List<City> findByState_IdAndIsActiveTrue(Long stateId);
+
+    // 🔥 State + Name (important for validation)
+    Optional<City> findByState_IdAndNameIgnoreCase(Long stateId, String name);
+
+    // 🔍 Admin-based filtering
     List<City> findByAdminId(Long adminId);
 
-    // 🔍 Search city (for autocomplete)
+    // 🔥 Admin + Active
+    List<City> findByAdminIdAndIsActiveTrue(Long adminId);
+
+    // 🔍 Search (global)
     List<City> findByNameContainingIgnoreCase(String keyword);
 
     // 🔍 Search within state
-    List<City> findByStateIdAndNameContainingIgnoreCase(Long stateId, String keyword);
+    List<City> findByState_IdAndNameContainingIgnoreCase(Long stateId, String keyword);
+
+    // 🔥 Search within admin (multi-tenant support)
+    List<City> findByAdminIdAndNameContainingIgnoreCase(Long adminId, String keyword);
 }

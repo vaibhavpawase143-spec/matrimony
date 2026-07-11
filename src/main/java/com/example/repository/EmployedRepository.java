@@ -13,21 +13,27 @@ public interface EmployedRepository extends JpaRepository<Employed, Long> {
     // 🔍 Find by name
     Optional<Employed> findByName(String name);
 
-    // 🔍 Check duplicate
+    // 🔥 Case-insensitive
+    Optional<Employed> findByNameIgnoreCase(String name);
+
+    // ✅ Duplicate check
     boolean existsByName(String name);
 
-    // 🔍 Get all active records
-    List<Employed> findByStatusTrue();
+    boolean existsByNameIgnoreCase(String name);
 
-    // 🔍 Get all inactive records
-    List<Employed> findByStatusFalse();
+    // 🔍 Active / Inactive
+    List<Employed> findByIsActiveTrue();
+    List<Employed> findByIsActiveFalse();
 
-    // 🔍 Filter by admin
+    // 🔍 Admin-based filtering
     List<Employed> findByAdminId(Long adminId);
 
-    // 🔍 Active records by admin
-    List<Employed> findByAdminIdAndStatusTrue(Long adminId);
+    // ✅ Active by admin
+    List<Employed> findByAdminIdAndIsActiveTrue(Long adminId);
 
-    // 🔍 Search (for dropdown/search)
+    // 🔍 Search (global)
     List<Employed> findByNameContainingIgnoreCase(String keyword);
+
+    // 🔥 Search within admin
+    List<Employed> findByAdminIdAndNameContainingIgnoreCase(Long adminId, String keyword);
 }

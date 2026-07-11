@@ -6,7 +6,7 @@ CREATE TABLE complexions (
 
                              value VARCHAR(100),
 
-                             status BOOLEAN DEFAULT TRUE,
+                             isActive BOOLEAN DEFAULT TRUE,
 
                              CONSTRAINT fk_complexion_admin
                                  FOREIGN KEY (admin_id)

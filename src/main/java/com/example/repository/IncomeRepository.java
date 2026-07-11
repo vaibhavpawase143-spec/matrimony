@@ -10,15 +10,30 @@ import java.util.Optional;
 @Repository
 public interface IncomeRepository extends JpaRepository<Income, Long> {
 
-    // 🔍 Find by range (e.g., 0-5 LPA, 5-10 LPA)
+    // 🔍 Find by range
     Optional<Income> findByRange(String range);
 
-    // 🔍 Check duplicate
+    // 🔥 Case-insensitive
+    Optional<Income> findByRangeIgnoreCase(String range);
+
+    // ✅ Duplicate check
     boolean existsByRange(String range);
 
-    // 🔍 Filter by admin
+    boolean existsByRangeIgnoreCase(String range);
+
+    // 🔍 Active / Inactive
+    List<Income> findByIsActiveTrue();
+    List<Income> findByIsActiveFalse();
+
+    // 🔍 Admin-based filtering
     List<Income> findByAdminId(Long adminId);
 
-    // 🔍 Search (for dropdown/filter)
+    // ✅ Active by admin
+    List<Income> findByAdminIdAndIsActiveTrue(Long adminId);
+
+    // 🔍 Search (global)
     List<Income> findByRangeContainingIgnoreCase(String keyword);
+
+    // 🔥 Search within admin
+    List<Income> findByAdminIdAndRangeContainingIgnoreCase(Long adminId, String keyword);
 }

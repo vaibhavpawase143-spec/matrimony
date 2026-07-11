@@ -1,8 +1,16 @@
 package com.example.model;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
+import lombok.Getter;
+import lombok.Setter;
 
+import java.time.LocalDateTime;
+@Getter
+@Setter
 @Entity
 @Table(
         name = "admins",
@@ -11,51 +19,67 @@ import java.time.LocalDateTime;
                 @Index(name = "idx_admin_username", columnList = "username")
         }
 )
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Admin {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Full name of admin
     @Column(nullable = false)
     private String name;
 
-    // Username for login
     @Column(nullable = false, unique = true)
     private String username;
 
-    // Email for login and communication
     @Column(nullable = false, unique = true)
     private String email;
 
-    // Encrypted password
+    @JsonIgnore
     @Column(nullable = false)
     private String password;
-
-    // Role (Super Admin, Moderator, etc.)
-    @ManyToOne
+    @Column(name = "profile_photo")
+    private String profilePhoto;
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "role_id")
     private Role role;
 
-    // Contact number
     private String phone;
 
-    // Active / Inactive
-    private Boolean status = true;
+    @Column(nullable = false)
+    private Boolean isActive = true;
 
-    // Last login tracking
     private LocalDateTime lastLogin;
 
-    // Audit fields
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+// ================= AUDIT =================
+
+    @Column(name = "deleted_by")
+    private Long deletedBy;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+    // ✅ Default constructor
+    public Admin() {}
+
+    // ✅ For JSON (only id)
+    @JsonCreator
+    public Admin(@JsonProperty("id") Long id) {
+        this.id = id;
+    }
+
+    // ================= LIFECYCLE =================
 
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now();
+        createdAt = now;
+        updatedAt = now;
     }
-
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
@@ -67,12 +91,12 @@ public class Admin {
         return id;
     }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
-
     public String getName() {
         return name;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public void setName(String name) {
@@ -119,12 +143,12 @@ public class Admin {
         this.phone = phone;
     }
 
-    public Boolean getStatus() {
-        return status;
+    public Boolean getIsActive() {
+        return isActive;
     }
 
-    public void setStatus(Boolean status) {
-        this.status = status;
+    public void setIsActive(Boolean isActive) {
+        this.isActive = isActive;
     }
 
     public LocalDateTime getLastLogin() {
@@ -139,17 +163,17 @@ public class Admin {
         return createdAt;
     }
 
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
 
+    public Long getDeletedBy() { return deletedBy; }
+    public void setDeletedBy(Long deletedBy) { this.deletedBy = deletedBy; }
 
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-    
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
+    public LocalDateTime getDeletedAt() { return deletedAt; }
+    public void setDeletedAt(LocalDateTime deletedAt) { this.deletedAt = deletedAt; }
 }

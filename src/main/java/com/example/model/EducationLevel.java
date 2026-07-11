@@ -1,6 +1,9 @@
 package com.example.model;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -10,9 +13,12 @@ import java.time.LocalDateTime;
                 @UniqueConstraint(columnNames = {"name", "admin_id"})
         },
         indexes = {
-                @Index(name = "idx_education_level_name", columnList = "name")
+                @Index(name = "idx_education_level_name", columnList = "name"),
+                @Index(name = "idx_education_level_active", columnList = "is_active")
         }
 )
+@Getter
+@Setter
 public class EducationLevel {
 
     @Id
@@ -22,63 +28,45 @@ public class EducationLevel {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "admin_id")
     private Admin admin;
-
-    @Column(nullable = false)
+    @Column(name = "admin_id", insertable = false, updatable = false)
+    private Long adminId;
+    @Column(nullable = false, length = 100)
     private String name;
 
-    @Column(nullable = false)
-    private Boolean status = true;
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive = true;
 
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    // Getters and Setters
-
-    public Long getId() {
-        return id;
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
     }
 
-    public Admin getAdmin() {
-        return admin;
-    }
+    // Getters & Setters
 
-    public void setAdmin(Admin admin) {
-        this.admin = admin;
-    }
+    public Long getId() { return id; }
 
-    public String getName() {
-        return name;
-    }
+    public Admin getAdmin() { return admin; }
+    public void setAdmin(Admin admin) { this.admin = admin; }
 
-    public void setName(String name) {
-        this.name = name;
-    }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
 
-    public Boolean getStatus() {
-        return status;
-    }
+    public Boolean getIsActive() { return isActive; }
+    public void setIsActive(Boolean isActive) { this.isActive = isActive; }
 
-    public void setStatus(Boolean status) {
-        this.status = status;
-    }
+    public LocalDateTime getCreatedAt() { return createdAt; }
 
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
 }

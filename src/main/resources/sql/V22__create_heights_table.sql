@@ -6,7 +6,7 @@ CREATE TABLE heights (
 
                          height VARCHAR(20),
 
-                         status BOOLEAN DEFAULT TRUE,
+                         isActive BOOLEAN DEFAULT TRUE,
 
                          CONSTRAINT fk_height_admin
                              FOREIGN KEY (admin_id)

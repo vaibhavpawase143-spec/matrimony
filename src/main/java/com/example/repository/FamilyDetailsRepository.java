@@ -1,30 +1,38 @@
 package com.example.repository;
 
 import com.example.model.FamilyDetails;
+import com.example.model.Profile;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.Optional;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface FamilyDetailsRepository extends JpaRepository<FamilyDetails, Long> {
+    FamilyDetails findByProfile(Profile profile);
 
-    // 🔍 Find by profile (VERY IMPORTANT - OneToOne)
-    Optional<FamilyDetails> findByProfileId(Long profileId);
 
-    // 🔍 Check if profile already has family details
-    boolean existsByProfileId(Long profileId);
+    // 🔍 One-to-One mapping (Profile ↔ FamilyDetails)
+    Optional<FamilyDetails> findByProfile_Id(Long profileId);
 
-    // 🔍 Filter by family type
-    List<FamilyDetails> findByFamilyTypeId(Long familyTypeId);
+    boolean existsByProfile_Id(Long profileId);
 
-    // 🔍 Filter by family status
-    List<FamilyDetails> findByFamilyStatusId(Long familyStatusId);
+    // 🔍 FamilyType filtering
+    List<FamilyDetails> findByFamilyType_Id(Long familyTypeId);
 
-    // 🔍 Filter by brother type
-    List<FamilyDetails> findByBrotherTypeId(Long brotherTypeId);
+    // 🔍 Family filtering
+    List<FamilyDetails> findByFamily_Id(Long familyId);
 
-    // 🔍 Filter by sister type
-    List<FamilyDetails> findBySisterTypeId(Long sisterTypeId);
+    // 🔥 Family + Active (ONLY if Family has isActive field)
+    List<FamilyDetails> findByFamily_IdAndFamily_IsActiveTrue(Long familyId);
+
+    // 🔍 BrotherType filtering
+    List<FamilyDetails> findByBrotherType_Id(Long brotherTypeId);
+
+    // 🔍 SisterType filtering
+    List<FamilyDetails> findBySisterType_Id(Long sisterTypeId);
+
+    // 🔥 Optional: Profile + Active (if FamilyDetails has isActive)
+    List<FamilyDetails> findByProfile_IdAndIsActiveTrue(Long profileId);
 }

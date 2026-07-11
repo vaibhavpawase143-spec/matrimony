@@ -13,21 +13,27 @@ public interface FamilyStatusRepository extends JpaRepository<FamilyStatus, Long
     // 🔍 Find by name
     Optional<FamilyStatus> findByName(String name);
 
-    // 🔍 Check duplicate
+    // 🔥 Case-insensitive
+    Optional<FamilyStatus> findByNameIgnoreCase(String name);
+
+    // ✅ Duplicate check
     boolean existsByName(String name);
 
-    // 🔍 Get all active records
-    List<FamilyStatus> findByStatusTrue();
+    boolean existsByNameIgnoreCase(String name);
 
-    // 🔍 Get all inactive records
-    List<FamilyStatus> findByStatusFalse();
+    // 🔍 Active / Inactive (FIXED)
+    List<FamilyStatus> findByIsActiveTrue();
+    List<FamilyStatus> findByIsActiveFalse();
 
-    // 🔍 Filter by admin
+    // 🔍 Admin-based filtering
     List<FamilyStatus> findByAdminId(Long adminId);
 
-    // 🔍 Active records by admin
-    List<FamilyStatus> findByAdminIdAndStatusTrue(Long adminId);
+    // ✅ Active by admin
+    List<FamilyStatus> findByAdminIdAndIsActiveTrue(Long adminId);
 
-    // 🔍 Search (dropdown/filter)
+    // 🔍 Search (global)
     List<FamilyStatus> findByNameContainingIgnoreCase(String keyword);
+
+    // 🔥 Search within admin
+    List<FamilyStatus> findByAdminIdAndNameContainingIgnoreCase(Long adminId, String keyword);
 }

@@ -7,25 +7,39 @@ import java.util.Optional;
 
 public interface FamilyValueService {
 
-    FamilyValue save(FamilyValue familyValue);
+    // 🔍 Basic CRUD
+    FamilyValue create(FamilyValue familyValue);
+
+    FamilyValue update(Long id, FamilyValue familyValue);
+
+    void delete(Long id);
 
     Optional<FamilyValue> getById(Long id);
 
-    Optional<FamilyValue> getByName(String name);
-
     List<FamilyValue> getAll();
 
-    List<FamilyValue> getAllActive();
+    // 🔍 Find by name
+    Optional<FamilyValue> getByName(String name);
 
-    List<FamilyValue> getAllInactive();
+    Optional<FamilyValue> getByNameIgnoreCase(String name);
 
+    // ✅ Duplicate check
+    boolean existsByName(String name);
+
+    boolean existsByNameIgnoreCase(String name);
+
+    // 🔍 Active / Inactive
+    List<FamilyValue> getActive();
+
+    List<FamilyValue> getInactive();
+
+    // 🔍 Admin-based
     List<FamilyValue> getByAdmin(Long adminId);
 
     List<FamilyValue> getActiveByAdmin(Long adminId);
 
-    List<FamilyValue> searchByName(String keyword);
+    // 🔍 Search
+    List<FamilyValue> search(String keyword);
 
-    FamilyValue update(Long id, FamilyValue updated);
-
-    void delete(Long id); // soft delete
+    List<FamilyValue> searchByAdmin(Long adminId, String keyword);
 }

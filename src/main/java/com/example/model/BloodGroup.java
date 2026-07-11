@@ -1,14 +1,15 @@
 package com.example.model;
 
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
+import lombok.Getter;
+import lombok.Setter;
 
+import java.time.LocalDateTime;
+@Getter
+@Setter
 @Entity
 @Table(
-        name = "blood_groups",
-        indexes = {
-                @Index(name = "idx_blood_group", columnList = "type")
-        }
+        name = "blood_groups"
 )
 public class BloodGroup {
 
@@ -17,15 +18,14 @@ public class BloodGroup {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "admin_id")
+    @JoinColumn(name = "admin_id") // add nullable=false if required
     private Admin admin;
 
-    // Example: A+, B+, O-, etc.
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false, unique = true, length = 5)
     private String type;
 
-    @Column(nullable = false)
-    private Boolean status = true;
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive = true;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -67,12 +67,12 @@ public class BloodGroup {
         this.type = type;
     }
 
-    public Boolean getStatus() {
-        return status;
+    public Boolean getIsActive() {   // ✅ FIXED
+        return isActive;
     }
 
-    public void setStatus(Boolean status) {
-        this.status = status;
+    public void setIsActive(Boolean isActive) {
+        this.isActive = isActive;
     }
 
     public LocalDateTime getCreatedAt() {

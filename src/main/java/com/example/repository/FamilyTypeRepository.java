@@ -13,21 +13,27 @@ public interface FamilyTypeRepository extends JpaRepository<FamilyType, Long> {
     // 🔍 Find by name
     Optional<FamilyType> findByName(String name);
 
-    // 🔍 Check duplicate
+    // 🔥 Case-insensitive
+    Optional<FamilyType> findByNameIgnoreCase(String name);
+
+    // ✅ Duplicate check
     boolean existsByName(String name);
 
-    // 🔍 Get all active records
-    List<FamilyType> findByStatusTrue();
+    boolean existsByNameIgnoreCase(String name);
 
-    // 🔍 Get all inactive records
-    List<FamilyType> findByStatusFalse();
+    // 🔍 Active / Inactive
+    List<FamilyType> findByIsActiveTrue();
+    List<FamilyType> findByIsActiveFalse();
 
-    // 🔍 Filter by admin
+    // 🔍 Admin-based filtering
     List<FamilyType> findByAdminId(Long adminId);
 
-    // 🔍 Active records by admin
-    List<FamilyType> findByAdminIdAndStatusTrue(Long adminId);
+    // ✅ Active by admin
+    List<FamilyType> findByAdminIdAndIsActiveTrue(Long adminId);
 
-    // 🔍 Search (for dropdown/search)
+    // 🔍 Search (global)
     List<FamilyType> findByNameContainingIgnoreCase(String keyword);
+
+    // 🔥 Search within admin
+    List<FamilyType> findByAdminIdAndNameContainingIgnoreCase(Long adminId, String keyword);
 }

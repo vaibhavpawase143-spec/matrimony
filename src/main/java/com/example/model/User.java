@@ -1,99 +1,145 @@
 package com.example.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
+import jakarta.validation.constraints.NotNull;
+import lombok.Getter;
+import lombok.Setter;
 
+import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
+
+@Getter
+@Setter
 @Entity
-@Table(name = "users",
+@Table(
+        name = "users",
         uniqueConstraints = {
                 @UniqueConstraint(columnNames = "email"),
                 @UniqueConstraint(columnNames = "phone")
-        })
+        }
+)
 public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // ================= BASIC =================
     private String firstName;
+    private String middleName;
     private String lastName;
 
-    @Column(unique = true)
+    @Column(nullable = false)
     private String email;
 
-    @Column(unique = true)
     private String phone;
 
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    @Column(nullable = false)
     private String password;
 
-    private Boolean active = true;
+    // ================= STATUS =================
+    private Boolean isActive = true;
 
+    private Boolean emailVerified = false;
+
+    // IMPORTANT FIX
+    private Boolean phoneVerified = false;
+
+    private LocalDateTime emailVerifiedAt;
+    private LocalDateTime phoneVerifiedAt;
+
+    // ================= OTP =================
+    private String otp;
+
+    private LocalDateTime otpExpiry;
+
+    // ================= AUDIT =================
+    private Boolean isDeleted = false;
+
+    private Long deletedBy;
+
+    private LocalDateTime deletedAt;
+
+    private Long updatedBy;
+
+    // ================= USER ACTIVITY =================
+    private Boolean isOnline = false;
+
+    private LocalDateTime lastSeen;
+
+    private LocalDateTime lastLogin;
+
+    private LocalDateTime lastHeartbeat;
+
+    // ================= SECURITY =================
+    private Boolean isBlocked = false;
+
+    private Integer reportCount = 0;
+
+    // ================= ROLE =================
+    @JsonIgnore
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "users_roles",
+            joinColumns = @JoinColumn(name = "users_id"),
+            inverseJoinColumns = @JoinColumn(name = "roles_id")
+    )
+    private Set<Role> roles = new HashSet<>();
+
+    // ================= RELATIONS =================
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore
+    private Profile profile;
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore
+    private PartnerPreference partnerPreference;
+
+    // ================= TIMESTAMP =================
     private LocalDateTime createdAt;
+
+    private LocalDateTime updatedAt;
 
     public User() {}
 
-    // Getters and Setters
-    public Long getId() {
-        return id;
+    // ================= LIFECYCLE =================
+    @PrePersist
+    protected void onCreate() {
+
+        createdAt = LocalDateTime.now();
+
+        updatedAt = LocalDateTime.now();
+
     }
 
-    public void setId(Long id) {          // Added setter for id
-        this.id = id;
+    @PreUpdate
+    protected void onUpdate() {
+
+        updatedAt = LocalDateTime.now();
+
     }
 
-    public String getFirstName() {
-        return firstName;
+    // ================= CUSTOM METHODS =================
+    public String getFullName() {
+
+        return
+                (firstName != null ? firstName : "")
+                        + " "
+                        + (middleName != null ? middleName + " " : "")
+                        + (lastName != null ? lastName : "");
+
     }
 
-    public void setFirstName(String firstName) {
-        this.firstName = firstName;
-    }
+    public void setId(
+            @NotNull(message = "User ID is required")
+            Long userId
+    ) {
 
-    public String getLastName() {
-        return lastName;
-    }
+        this.id = userId;
 
-    public void setLastName(String lastName) {
-        this.lastName = lastName;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public String getPhone() {
-        return phone;
-    }
-
-    public void setPhone(String phone) {
-        this.phone = phone;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public Boolean getActive() {
-        return active;
-    }
-
-    public void setActive(Boolean active) {
-        this.active = active;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
     }
 }

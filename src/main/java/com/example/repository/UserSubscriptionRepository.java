@@ -1,27 +1,114 @@
 package com.example.repository;
 
+import com.example.model.User;
 import com.example.model.UserSubscription;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface UserSubscriptionRepository extends JpaRepository<UserSubscription, Long> {
+public interface UserSubscriptionRepository extends
+        JpaRepository<UserSubscription, Long>,
+        JpaSpecificationExecutor<UserSubscription> {
 
-    // 🔍 Get all subscriptions of user
-    List<UserSubscription> findByUserId(Long userId);
+    UserSubscription findByUser(User user);
 
-    // 🔍 Get active subscription of user (VERY IMPORTANT)
-    Optional<UserSubscription> findByUserIdAndActiveTrue(Long userId);
+    // ==========================================
+    // USER HISTORY
+    // ==========================================
 
-    // 🔍 Check if user has active subscription
-    boolean existsByUserIdAndActiveTrue(Long userId);
+    @Query("""
+    SELECT us
+    FROM UserSubscription us
+    JOIN FETCH us.user
+    JOIN FETCH us.subscriptionPlan
+    WHERE us.user.id = :userId
+    ORDER BY us.createdAt DESC
+""")
+    List<UserSubscription> findByUserId(
+            @Param("userId") Long userId
+    );
+    // ==========================================
+    // ACTIVE SUBSCRIPTION (FETCH USER + PLAN)
+    // ==========================================
 
-    // 🔍 Get subscriptions by plan
-    List<UserSubscription> findByPlanId(Long planId);
+    @Query("""
+        SELECT us
+        FROM UserSubscription us
+        JOIN FETCH us.user
+        JOIN FETCH us.subscriptionPlan
+        WHERE us.user.id = :userId
+        AND us.isActive = true
+    """)
+    Optional<UserSubscription> findByUserIdAndIsActiveTrue(
+            @Param("userId") Long userId
+    );
 
-    // 🔍 Get expired subscriptions (optional logic)
-    List<UserSubscription> findByActiveFalse();
+    // ==========================================
+    // CHECK ACTIVE
+    // ==========================================
+
+    boolean existsByUserIdAndIsActiveTrue(Long userId);
+
+    // ==========================================
+    // PLAN
+    // ==========================================
+
+    List<UserSubscription> findBySubscriptionPlanId(Long planId);
+
+    List<UserSubscription> findBySubscriptionPlanIdAndIsActiveTrue(Long planId);
+
+    // ==========================================
+    // INACTIVE
+    // ==========================================
+
+    List<UserSubscription> findByIsActiveFalse();
+
+    List<UserSubscription> findByUserIdAndIsActiveFalse(Long userId);
+    Optional<UserSubscription> findFirstByUser_IdAndIsActiveTrueAndStatusAndEndDateAfter(
+            Long userId,
+            String status,
+            java.time.LocalDateTime now
+    );
+    @EntityGraph(attributePaths = {
+            "user",
+            "subscriptionPlan"
+    })
+    Page<UserSubscription> findAll(
+            Specification<UserSubscription> specification,
+            Pageable pageable
+    );
+    @EntityGraph(attributePaths = {
+            "user",
+            "subscriptionPlan"
+    })
+    Optional<UserSubscription> findWithDetailsById(Long id);
+    long countByIsActiveTrue();
+
+    long countByIsActiveFalse();
+
+    long countByStatus(String status);
+    @Query(value = """
+SELECT COUNT(*)
+FROM user_subscriptions
+WHERE created_at >= DATE_TRUNC('month', CURRENT_DATE)
+""", nativeQuery = true)
+    Long countCurrentMonthSubscriptions();
+
+    @Query(value = """
+SELECT COUNT(*)
+FROM user_subscriptions
+WHERE created_at >= DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')
+AND created_at < DATE_TRUNC('month', CURRENT_DATE)
+""", nativeQuery = true)
+    Long countPreviousMonthSubscriptions();
 }

@@ -1,11 +1,18 @@
 package com.example.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(
         name = "roles",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"admin_id", "name"})
+        uniqueConstraints = @UniqueConstraint(columnNames = {"admin_id", "name"}),
+        indexes = {
+                @Index(name = "idx_role_name", columnList = "name")
+        }
 )
 public class Role {
 
@@ -13,35 +20,68 @@ public class Role {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    // 🔥 FIX: prevent circular lazy loading
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "admin_id")
     private Admin admin;
 
+    @Column(nullable = false, length = 50)
     private String name;
 
-    // Getters and Setters
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive = true;
 
-    public Long getId() {
-        return id;
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    // Optional (for user mapping)
+    @ManyToMany(mappedBy = "roles")
+    private Set<User> users = new HashSet<>();
+
+    public Role() {}
+
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+
+        if (this.isActive == null) {
+            this.isActive = true;
+        }
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
     }
 
-    public Admin getAdmin() {
-        return admin;
-    }
+    // ===== Getters =====
 
-    public void setAdmin(Admin admin) {
-        this.admin = admin;
-    }
+    public Long getId() { return id; }
 
-    public String getName() {
-        return name;
-    }
+    public Admin getAdmin() { return admin; }
 
-    public void setName(String name) {
-        this.name = name;
-    }
+    public String getName() { return name; }
+
+    public Boolean getIsActive() { return isActive; }
+
+    public LocalDateTime getCreatedAt() { return createdAt; }
+
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+
+    public Set<User> getUsers() { return users; }
+
+    // ===== Setters =====
+
+    public void setAdmin(Admin admin) { this.admin = admin; }
+
+    public void setName(String name) { this.name = name; }
+
+    public void setIsActive(Boolean isActive) { this.isActive = isActive; }
+
+    public void setUsers(Set<User> users) { this.users = users; }
 }

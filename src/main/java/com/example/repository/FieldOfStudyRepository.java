@@ -13,21 +13,27 @@ public interface FieldOfStudyRepository extends JpaRepository<FieldOfStudy, Long
     // 🔍 Find by name
     Optional<FieldOfStudy> findByName(String name);
 
-    // 🔍 Check duplicate
+    // 🔥 Case-insensitive
+    Optional<FieldOfStudy> findByNameIgnoreCase(String name);
+
+    // ✅ Duplicate check
     boolean existsByName(String name);
 
-    // 🔍 Get all active records
-    List<FieldOfStudy> findByStatusTrue();
+    boolean existsByNameIgnoreCase(String name);
 
-    // 🔍 Get all inactive records
-    List<FieldOfStudy> findByStatusFalse();
+    // 🔍 Active / Inactive
+    List<FieldOfStudy> findByIsActiveTrue();
+    List<FieldOfStudy> findByIsActiveFalse();
 
-    // 🔍 Filter by admin
+    // 🔍 Admin-based filtering
     List<FieldOfStudy> findByAdminId(Long adminId);
 
-    // 🔍 Active records by admin
-    List<FieldOfStudy> findByAdminIdAndStatusTrue(Long adminId);
+    // ✅ Active by admin
+    List<FieldOfStudy> findByAdminIdAndIsActiveTrue(Long adminId);
 
-    // 🔍 Search (for dropdown/autocomplete)
+    // 🔍 Search (global)
     List<FieldOfStudy> findByNameContainingIgnoreCase(String keyword);
+
+    // 🔥 Search within admin
+    List<FieldOfStudy> findByAdminIdAndNameContainingIgnoreCase(Long adminId, String keyword);
 }

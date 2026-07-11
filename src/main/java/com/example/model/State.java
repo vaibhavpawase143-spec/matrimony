@@ -1,17 +1,23 @@
 package com.example.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+
 import java.time.LocalDateTime;
 import java.util.List;
-
+@Getter
+@Setter
 @Entity
 @Table(
         name = "states",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"country_id", "name"}),
         indexes = {
                 @Index(name = "idx_state_name", columnList = "name"),
                 @Index(name = "idx_state_country", columnList = "country_id")
-        },
-        uniqueConstraints = @UniqueConstraint(columnNames = {"country_id", "name"})
+        }
 )
 public class State {
 
@@ -19,110 +25,68 @@ public class State {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // ✅ SAFE LAZY
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "admin_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Admin admin;
 
-    // State name
     @Column(nullable = false, length = 120)
     private String name;
 
-    // Active / Inactive
-    @Column(nullable = false)
-    private Boolean status = true;
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive = true;
 
-    // Many states belong to one country
+    // ✅ SAFE LAZY
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "country_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Country country;
 
-    // One state has many cities
-    @OneToMany(mappedBy = "state", cascade = CascadeType.ALL)
+    // ✅ PREVENT LOOP + LAZY ERROR
+    @JsonIgnore
+    @OneToMany(mappedBy = "state", fetch = FetchType.LAZY)
     private List<City> cities;
 
-    // Audit fields
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    public State() {
-    }
-
-    public State(String name, Boolean status, Country country) {
-        this.name = name;
-        this.status = status;
-        this.country = country;
-    }
+    public State() {}
 
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+
+        if (this.isActive == null) {
+            this.isActive = true;
+        }
     }
 
     @PreUpdate
     protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
     }
 
-    // Getters
+    // ===== Getters =====
 
-    public Long getId() {
-        return id;
-    }
+    public Long getId() { return id; }
+    public Admin getAdmin() { return admin; }
+    public String getName() { return name; }
+    public Boolean getIsActive() { return isActive; }
+    public Country getCountry() { return country; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
 
-    public String getName() {
-        return name;
-    }
+    // ===== Setters =====
 
-    public Boolean getStatus() {
-        return status;
-    }
+    public void setAdmin(Admin admin) { this.admin = admin; }
+    public void setName(String name) { this.name = name; }
+    public void setIsActive(Boolean isActive) { this.isActive = isActive; }
+    public void setCountry(Country country) { this.country = country; }
 
-    public Country getCountry() {
-        return country;
-    }
 
-    public List<City> getCities() {
-        return cities;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    // Setters
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public void setStatus(Boolean status) {
-        this.status = status;
-    }
-
-    public void setCountry(Country country) {
-        this.country = country;
-    }
-
-    public void setCities(List<City> cities) {
-        this.cities = cities;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
 }

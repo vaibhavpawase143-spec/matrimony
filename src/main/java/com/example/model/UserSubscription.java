@@ -2,80 +2,198 @@ package com.example.model;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.math.BigDecimal;
 
 @Entity
-@Table(name = "user_subscriptions",
-        uniqueConstraints = {
-                @UniqueConstraint(columnNames = {"user_id", "plan_id"})
-        })
+@Table(
+        name = "user_subscriptions",
+        indexes = {
+                @Index(name = "idx_user_subscription_user", columnList = "user_id")
+        }
+)
 public class UserSubscription {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id")
+    // ✅ User relation
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @ManyToOne
-    @JoinColumn(name = "plan_id")
-    private SubscriptionPlan plan;
+    // ✅ FIXED: renamed from "plan" → "subscriptionPlan"
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "plan_id", nullable = false)
+    private SubscriptionPlan subscriptionPlan;
 
+    @Column(name = "start_date", nullable = false)
     private LocalDateTime startDate;
 
+    @Column(name = "end_date", nullable = false)
     private LocalDateTime endDate;
 
-    private Boolean active;
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive = true;
+
+    // ✅ Status field
+    @Column(nullable = false, length = 20)
+    private String status; // ACTIVE, EXPIRED, CANCELLED, REFUNDED
+
+    // ✅ Refund fields
+    @Column(name = "refund_amount", precision = 10, scale = 2)
+    private BigDecimal refundAmount;
+
+    @Column(name = "refund_date")
+    private LocalDateTime refundDate;
+
+    @Column(name = "refund_reason", columnDefinition = "TEXT")
+    private String refundReason;
+
+    // ✅ Cancellation fields
+    @Column(name = "cancellation_reason", columnDefinition = "TEXT")
+    private String cancellationReason;
+
+    @Column(name = "cancelled_at")
+    private LocalDateTime cancelledAt;
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 
     public UserSubscription() {}
 
-    // Getters and Setters
-    public Long getId() {
-        return id;
+    // 🔥 Lifecycle hooks
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+
+        if (this.isActive == null) {
+            this.isActive = true;
+        }
+
+        if (this.status == null) {
+            this.status = "ACTIVE";
+        }
     }
 
-    public void setId(Long id) {   // Added setter for id
-        this.id = id;
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    // ===== Getters =====
+
+    public Long getId() {
+        return id;
     }
 
     public User getUser() {
         return user;
     }
 
-    public void setUser(User user) {
-        this.user = user;
-    }
-
-    public SubscriptionPlan getPlan() {
-        return plan;
-    }
-
-    public void setPlan(SubscriptionPlan plan) {
-        this.plan = plan;
+    public SubscriptionPlan getSubscriptionPlan() {
+        return subscriptionPlan;
     }
 
     public LocalDateTime getStartDate() {
         return startDate;
     }
 
-    public void setStartDate(LocalDateTime startDate) {
-        this.startDate = startDate;
-    }
-
     public LocalDateTime getEndDate() {
         return endDate;
+    }
+
+    public Boolean getIsActive() {
+        return isActive;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
+    // ===== Setters =====
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    public void setSubscriptionPlan(SubscriptionPlan subscriptionPlan) {
+        this.subscriptionPlan = subscriptionPlan;
+    }
+
+    public void setStartDate(LocalDateTime startDate) {
+        this.startDate = startDate;
     }
 
     public void setEndDate(LocalDateTime endDate) {
         this.endDate = endDate;
     }
 
-    public Boolean getActive() {
-        return active;
+    public void setIsActive(Boolean isActive) {
+        this.isActive = isActive;
     }
 
-    public void setActive(Boolean active) {
-        this.active = active;
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public BigDecimal getRefundAmount() {
+        return refundAmount;
+    }
+
+    public void setRefundAmount(BigDecimal refundAmount) {
+        this.refundAmount = refundAmount;
+    }
+
+    public LocalDateTime getRefundDate() {
+        return refundDate;
+    }
+
+    public void setRefundDate(LocalDateTime refundDate) {
+        this.refundDate = refundDate;
+    }
+
+    public String getRefundReason() {
+        return refundReason;
+    }
+
+    public void setRefundReason(String refundReason) {
+        this.refundReason = refundReason;
+    }
+
+    public String getCancellationReason() {
+        return cancellationReason;
+    }
+
+    public void setCancellationReason(String cancellationReason) {
+        this.cancellationReason = cancellationReason;
+    }
+
+    public LocalDateTime getCancelledAt() {
+        return cancelledAt;
+    }
+
+    public void setCancelledAt(LocalDateTime cancelledAt) {
+        this.cancelledAt = cancelledAt;
+    }
+
+    public SubscriptionPlan getPlan() {
+        return subscriptionPlan;
     }
 }

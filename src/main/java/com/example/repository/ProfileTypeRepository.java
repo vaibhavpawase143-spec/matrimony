@@ -10,15 +10,21 @@ import java.util.Optional;
 @Repository
 public interface ProfileTypeRepository extends JpaRepository<ProfileType, Long> {
 
-    // 🔍 Find by name (Public, Private, Premium)
-    Optional<ProfileType> findByName(String name);
+    // 🔍 Find by name (admin-specific)
+    Optional<ProfileType> findByNameIgnoreCaseAndAdminId(String name, Long adminId);
 
-    // 🔍 Check duplicate
-    boolean existsByName(String name);
+    // 🔍 Check duplicate (admin-specific)
+    boolean existsByNameIgnoreCaseAndAdminId(String name, Long adminId);
 
-    // 🔍 Filter by admin
+    // 🔍 Get all records by admin
     List<ProfileType> findByAdminId(Long adminId);
 
-    // 🔍 Search
-    List<ProfileType> findByNameContainingIgnoreCase(String keyword);
+    // 🔍 Active records by admin
+    List<ProfileType> findByAdminIdAndIsActiveTrue(Long adminId);
+
+    // 🔍 Inactive records by admin
+    List<ProfileType> findByAdminIdAndIsActiveFalse(Long adminId);
+
+    // 🔍 Search (admin + keyword)
+    List<ProfileType> findByAdminIdAndNameContainingIgnoreCase(Long adminId, String keyword);
 }

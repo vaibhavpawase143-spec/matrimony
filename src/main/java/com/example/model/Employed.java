@@ -7,10 +7,11 @@ import java.time.LocalDateTime;
 @Table(
         name = "employed",
         uniqueConstraints = {
-                @UniqueConstraint(columnNames = {"name", "admin_id"})
+                @UniqueConstraint(name = "uk_employed_name_admin", columnNames = {"name", "admin_id"})
         },
         indexes = {
-                @Index(name = "idx_employed_name", columnList = "name")
+                @Index(name = "idx_employed_name", columnList = "name"),
+                @Index(name = "idx_employed_active", columnList = "is_active")
         }
 )
 public class Employed {
@@ -23,11 +24,15 @@ public class Employed {
     @JoinColumn(name = "admin_id")
     private Admin admin;
 
+    // For repository queries
+    @Column(name = "admin_id", insertable = false, updatable = false)
+    private Long adminId;
+
     @Column(nullable = false, length = 100)
     private String name;
 
-    @Column(nullable = false)
-    private Boolean status = true;
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive = true;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -39,22 +44,19 @@ public class Employed {
 
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
     }
 
     @PreUpdate
     protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
     }
 
-    // Getters and Setters
+    // ===== Getters & Setters =====
 
     public Long getId() {
         return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
     }
 
     public Admin getAdmin() {
@@ -65,6 +67,10 @@ public class Employed {
         this.admin = admin;
     }
 
+    public Long getAdminId() {
+        return adminId;
+    }
+
     public String getName() {
         return name;
     }
@@ -73,27 +79,19 @@ public class Employed {
         this.name = name;
     }
 
-    public Boolean getStatus() {
-        return status;
+    public Boolean getIsActive() {   // ✅ FIXED
+        return isActive;
     }
 
-    public void setStatus(Boolean status) {
-        this.status = status;
+    public void setIsActive(Boolean isActive) {
+        this.isActive = isActive;
     }
 
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
     }
 }

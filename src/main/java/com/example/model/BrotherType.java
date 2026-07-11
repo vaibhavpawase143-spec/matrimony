@@ -1,16 +1,24 @@
 package com.example.model;
 
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
+import lombok.Getter;
+import lombok.Setter;
 
+import java.time.LocalDateTime;
+@Getter
+@Setter
 @Entity
 @Table(
         name = "brother_types",
         indexes = {
-                @Index(name = "idx_brother_type_value", columnList = "value")
+                @Index(name = "idx_brother_type_value", columnList = "value"),
+                @Index(name = "idx_brother_type_active", columnList = "is_active")
         },
         uniqueConstraints = {
-                @UniqueConstraint(name = "uk_brother_type_admin_value", columnNames = {"admin_id", "value"})
+                @UniqueConstraint(
+                        name = "uk_brother_type_admin_value",
+                        columnNames = {"admin_id", "value"}
+                )
         }
 )
 public class BrotherType {
@@ -23,11 +31,11 @@ public class BrotherType {
     @JoinColumn(name = "admin_id")
     private Admin admin;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 50)
     private String value;
 
-    @Column(nullable = false)
-    private Boolean status = true;
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive = true;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -40,6 +48,7 @@ public class BrotherType {
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
     }
 
     @PreUpdate
@@ -47,14 +56,8 @@ public class BrotherType {
         updatedAt = LocalDateTime.now();
     }
 
-    // Getters and Setters
-
     public Long getId() {
         return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
     }
 
     public Admin getAdmin() {
@@ -73,27 +76,19 @@ public class BrotherType {
         this.value = value;
     }
 
-    public Boolean getStatus() {
-        return status;
+    public Boolean getIsActive() {
+        return isActive;
     }
 
-    public void setStatus(Boolean status) {
-        this.status = status;
+    public void setIsActive(Boolean isActive) {
+        this.isActive = isActive;
     }
 
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
     }
 }

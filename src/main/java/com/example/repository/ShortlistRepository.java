@@ -1,23 +1,200 @@
 package com.example.repository;
 
 import com.example.model.Shortlist;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
-public interface ShortlistRepository extends JpaRepository<Shortlist, Long> {
+public interface ShortlistRepository
+        extends JpaRepository<Shortlist, Long> {
 
-    // 🔍 Get all shortlisted profiles by user
-    List<Shortlist> findByUserId(Long userId);
+    // Prevent duplicate shortlist
+    boolean existsByUser_IdAndProfile_Id(
+            Long userId,
+            Long profileId
+    );
 
-    // 🔍 Check if already shortlisted (VERY IMPORTANT)
-    boolean existsByUserIdAndProfileId(Long userId, Long profileId);
+    // FIXED (added fetch join)
+    @Query("""
 
-    // 🔍 Remove shortlist (used in un-shortlist)
-    void deleteByUserIdAndProfileId(Long userId, Long profileId);
+        SELECT s
 
-    // 🔍 Get specific shortlist
-    Shortlist findByUserIdAndProfileId(Long userId, Long profileId);
+        FROM Shortlist s
+
+        JOIN FETCH s.user
+
+        JOIN FETCH s.profile
+
+        WHERE
+
+        s.user.id = :userId
+
+        AND
+
+        s.profile.id = :profileId
+
+    """)
+    Optional<Shortlist>
+    findByUser_IdAndProfile_Id(
+
+            @Param("userId")
+            Long userId,
+
+            @Param("profileId")
+            Long profileId
+
+    );
+
+    // Active shortlist by user
+    @Query("""
+
+        SELECT s
+
+        FROM Shortlist s
+
+        JOIN FETCH s.user
+
+        JOIN FETCH s.profile
+
+        WHERE
+
+        s.user.id = :userId
+
+        AND
+
+        s.isActive = true
+
+    """)
+    List<Shortlist>
+    findByUser_IdAndIsActiveTrue(
+
+            @Param("userId")
+            Long userId
+
+    );
+
+    @Query(
+
+            value = """
+
+            SELECT s
+
+            FROM Shortlist s
+
+            JOIN FETCH s.user
+
+            JOIN FETCH s.profile
+
+            WHERE
+
+            s.user.id=:userId
+
+            AND
+
+            s.isActive=true
+
+            """,
+
+            countQuery = """
+
+            SELECT count(s)
+
+            FROM Shortlist s
+
+            WHERE
+
+            s.user.id=:userId
+
+            AND
+
+            s.isActive=true
+
+            """
+
+    )
+    Page<Shortlist>
+    findByUser_IdAndIsActiveTrue(
+
+            @Param("userId")
+            Long userId,
+
+            Pageable pageable
+
+    );
+
+    // Who shortlisted profile
+    @Query("""
+
+        SELECT s
+
+        FROM Shortlist s
+
+        JOIN FETCH s.user
+
+        JOIN FETCH s.profile
+
+        WHERE
+
+        s.profile.id=:profileId
+
+        AND
+
+        s.isActive=true
+
+    """)
+    List<Shortlist>
+    findByProfile_IdAndIsActiveTrue(
+
+            @Param("profileId")
+            Long profileId
+
+    );
+
+    // All active
+    @Query("""
+
+        SELECT s
+
+        FROM Shortlist s
+
+        JOIN FETCH s.user
+
+        JOIN FETCH s.profile
+
+        WHERE
+
+        s.isActive=true
+
+    """)
+    List<Shortlist>
+    findByIsActiveTrue();
+
+    @Query("""
+
+SELECT COUNT(s)
+
+FROM Shortlist s
+
+WHERE
+
+s.user.id = :userId
+
+AND
+
+s.isActive = true
+
+""")
+    long countActiveShortlistsByUser(
+
+            @Param("userId")
+            Long userId
+
+    );
 }

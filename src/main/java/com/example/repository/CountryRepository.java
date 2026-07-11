@@ -10,24 +10,30 @@ import java.util.Optional;
 @Repository
 public interface CountryRepository extends JpaRepository<Country, Long> {
 
-    // 🔍 Find by name (unique)
+    // 🔍 Find by name
     Optional<Country> findByName(String name);
 
-    // 🔍 Check duplicate before insert
+    // 🔥 Case-insensitive (important)
+    Optional<Country> findByNameIgnoreCase(String name);
+
+    // ✅ Duplicate check
     boolean existsByName(String name);
 
-    // 🔍 Get all active countries
-    List<Country> findByStatusTrue();
+    boolean existsByNameIgnoreCase(String name);
 
-    // 🔍 Get all inactive countries
-    List<Country> findByStatusFalse();
+    // 🔍 Active / Inactive
+    List<Country> findByIsActiveTrue();
+    List<Country> findByIsActiveFalse();
 
-    // 🔍 Filter by admin
+    // 🔍 Admin-based filtering
     List<Country> findByAdminId(Long adminId);
 
-    // 🔍 Active countries by admin
-    List<Country> findByAdminIdAndStatusTrue(Long adminId);
+    // ✅ Active by admin
+    List<Country> findByAdminIdAndIsActiveTrue(Long adminId);
 
-    // 🔍 Search country (for dropdown/search)
+    // 🔍 Search (global)
     List<Country> findByNameContainingIgnoreCase(String keyword);
+
+    // 🔥 Search within admin (multi-tenant support)
+    List<Country> findByAdminIdAndNameContainingIgnoreCase(Long adminId, String keyword);
 }

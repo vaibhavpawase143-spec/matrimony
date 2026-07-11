@@ -3,7 +3,7 @@ CREATE TABLE sub_castes (
                             admin_id BIGINT,
                             name VARCHAR(120),
                             caste_id BIGINT,
-                            status BOOLEAN DEFAULT TRUE,
+                            isActive BOOLEAN DEFAULT TRUE,
                             created_at TIMESTAMP NULL,
                             updated_at TIMESTAMP NULL,
                             CONSTRAINT fk_subcaste_admin

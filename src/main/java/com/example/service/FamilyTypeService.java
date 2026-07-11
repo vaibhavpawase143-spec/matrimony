@@ -7,25 +7,39 @@ import java.util.Optional;
 
 public interface FamilyTypeService {
 
-    FamilyType save(FamilyType familyType);
+    // 🔍 Basic CRUD
+    FamilyType create(FamilyType familyType);
+
+    FamilyType update(Long id, FamilyType familyType);
+
+    void delete(Long id);
 
     Optional<FamilyType> getById(Long id);
 
-    Optional<FamilyType> getByName(String name);
-
     List<FamilyType> getAll();
 
-    List<FamilyType> getAllActive();
+    // 🔍 Find by name
+    Optional<FamilyType> getByName(String name);
 
-    List<FamilyType> getAllInactive();
+    Optional<FamilyType> getByNameIgnoreCase(String name);
 
+    // ✅ Duplicate check
+    boolean existsByName(String name);
+
+    boolean existsByNameIgnoreCase(String name);
+
+    // 🔍 Active / Inactive
+    List<FamilyType> getActive();
+
+    List<FamilyType> getInactive();
+
+    // 🔍 Admin-based
     List<FamilyType> getByAdmin(Long adminId);
 
     List<FamilyType> getActiveByAdmin(Long adminId);
 
-    List<FamilyType> searchByName(String keyword);
+    // 🔍 Search
+    List<FamilyType> search(String keyword);
 
-    FamilyType update(Long id, FamilyType updated);
-
-    void delete(Long id); // soft delete
+    List<FamilyType> searchByAdmin(Long adminId, String keyword);
 }
