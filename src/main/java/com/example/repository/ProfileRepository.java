@@ -192,6 +192,10 @@ LEFT JOIN FETCH p.employed
 LEFT JOIN FETCH p.disabilityStatus
 LEFT JOIN FETCH p.bloodGroup
 WHERE p.isActive = true
+AND p.profileCompleted = true
+AND p.user.isActive = true
+AND p.user.isBlocked = false
+AND p.user.isDeleted = false
 
 ORDER BY p.isPremium DESC,
          p.createdAt DESC
