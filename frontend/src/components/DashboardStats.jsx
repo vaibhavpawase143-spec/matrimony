@@ -9,10 +9,12 @@ Users
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { subscriptionAPI } from "@/services/api";
+import PremiumUpgradeModal from "@/components/PremiumUpgradeModal";
 const DashboardStats = ({ stats = {} }) => {
 
 const navigate = useNavigate();
 const [showUpgradePopup, setShowUpgradePopup] = useState(false);
+const [premiumFeature, setPremiumFeature] = useState("Messages");
 const defaultStats = {
 
 totalMatches:
@@ -39,20 +41,17 @@ stats.messages || 0,
 const statItems = [
 
 {
+  label: 'Total Matches',
 
-label:'Total Matches',
+  value: defaultStats.totalMatches,
 
-value:
-defaultStats.totalMatches,
+  icon: Users,
 
-icon:Users,
+  color: 'bg-blue-100 dark:bg-blue-900/30',
 
-color:
-'bg-blue-100 dark:bg-blue-900/30',
+  textColor: 'text-blue-600 dark:text-blue-400',
 
-textColor:
-'text-blue-600 dark:text-blue-400'
-
+  route: '/matches'
 },
 
 {
@@ -180,7 +179,10 @@ onClick={async () => {
 
     if (!stat.route) return;
 
-    if (stat.route === "/messages") {
+    if (
+        stat.route === "/messages" ||
+        stat.route === "/matches"
+    ) {
 
         try {
 
@@ -189,19 +191,21 @@ onClick={async () => {
 
             if (subscription?.isActive) {
 
-                navigate("/messages");
+                navigate(stat.route);
 
-           } else {
+            } else {
 
-               setShowUpgradePopup(true);
+                setPremiumFeature(stat.label);
+                setShowUpgradePopup(true);
 
-           }
+            }
 
-           } catch {
+           }catch {
 
-               setShowUpgradePopup(true);
+                setPremiumFeature(stat.label);
+                setShowUpgradePopup(true);
 
-           }
+            }
         return;
 
     }
@@ -273,55 +277,11 @@ stat.route
 
 </div>
 
-{
-showUpgradePopup && (
-
-<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[999999]">
-
-    <div className="bg-white rounded-3xl p-8 w-[420px] text-center">
-
-        <div className="text-6xl mb-4">
-            👑
-        </div>
-
-        <h2 className="text-2xl font-bold mb-3">
-            Premium Required
-        </h2>
-
-        <p className="text-gray-600 mb-6">
-            Chat is available only for Premium members.
-        </p>
-
-        <div className="flex justify-center gap-3">
-
-            <button
-                onClick={() => {
-                    setShowUpgradePopup(false);
-                    navigate("/home");
-                }}
-                className="px-5 py-2 rounded-xl bg-gray-200"
-            >
-                Home
-            </button>
-
-            <button
-                onClick={() => {
-                    setShowUpgradePopup(false);
-                    navigate("/upgrade");
-                }}
-                className="px-5 py-2 rounded-xl bg-pink-600 text-white"
-            >
-                Upgrade Premium
-            </button>
-
-        </div>
-
-    </div>
-
-</div>
-
-)
-}
+<PremiumUpgradeModal
+    open={showUpgradePopup}
+    onClose={() => setShowUpgradePopup(false)}
+    feature={premiumFeature}
+/>
 </>
 );
 

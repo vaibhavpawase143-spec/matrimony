@@ -1,10 +1,10 @@
 package com.example.service;
 
 import com.example.model.*;
+
 import com.example.repository.UserBlockRepository;
 import com.example.repository.UserReportRepository;
 import com.example.repository.UserRepository;
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +19,7 @@ public class UserReportService {
     private final UserReportRepository userReportRepository;
     private final UserRepository userRepository;
     private final UserBlockRepository userBlockRepository;
+
 
     private static final int BLOCK_THRESHOLD = 5;
 

@@ -37,14 +37,13 @@ import { useLanguage } from "@/context/LanguageContext.jsx";
 import { useProfileData } from "@/hooks/useProfileData";
 
 import {
-
-profileAPI,
-
-interestAPI,
-profileVisitorAPI,
-blockAPI,
-reportAPI,
-subscriptionAPI
+  profileAPI,
+  interestAPI,
+  profileVisitorAPI,
+  blockAPI,
+  reportAPI,
+  subscriptionAPI,
+  matchAPI
 } from "@/services/api";
 
 import {
@@ -75,6 +74,7 @@ const [selectedReason, setSelectedReason] = useState("");
 const [customReason, setCustomReason] = useState("");
 const [blockedUsers, setBlockedUsers] = useState([]);
 const [showUpgradePopup, setShowUpgradePopup] = useState(false);
+const [premiumFeature, setPremiumFeature] = useState("Chat");
 const { userName, logout } = useAuth();
 
 const { startLoading, stopLoading } =
@@ -186,6 +186,15 @@ const likesData = safeArray(likesResponse);
       0
     );
 
+    const matches =
+    await matchAPI.getTopMatches(
+    userId,
+    50
+    );
+    const filteredMatches = matches.filter(
+        match => match.matchScore >= 75
+    );
+
     const acceptedMatches = receivedData.filter((interest) =>
       String(
         interest.status ||
@@ -195,7 +204,7 @@ const likesData = safeArray(likesResponse);
     ).length;
 
     setDashboardStats({
-      totalMatches: acceptedMatches,
+      totalMatches: filteredMatches.length,
       interestsSent: sentData.length,
       interestsReceived: receivedData.length,
       shortlists: shortlistsData.length,
@@ -315,8 +324,19 @@ const calculateAge = (dob) => {
        JSON.parse(
        localStorage.getItem("user")
        );
-  const data =
-  await profileAPI.getProfiles();
+
+
+ const userId =
+ Number(
+ currentUser.profile.userId
+ );
+
+ const data =
+ await matchAPI.getTopMatches(
+ userId,
+ 50
+ );
+
   console.log(
     "PROFILES API:",
     data
@@ -325,6 +345,7 @@ const calculateAge = (dob) => {
     await blockAPI.getMyBlockedUsers(
       currentUser.profile.userId
     );
+
 
   console.log(
     "BLOCKED USERS:",
@@ -339,6 +360,7 @@ const blockedIds =
   blockedUsers.map(
     user => user.blockedId
   );
+    setBlockedUsers(blockedIds);
 
 console.log(
   "BLOCKED IDS:",
@@ -421,7 +443,7 @@ for (const profile of filteredProfiles) {
 setReportedUsers(reportStatus);
 
 
-setProfiles(filteredProfiles);
+setProfiles(data);
 
     } catch (error) {
       console.warn('Failed to load profiles:', error.message);
@@ -627,7 +649,7 @@ return (
         </h2>
 
         <p className="text-gray-600 mb-6">
-            Chat is available only for Premium members.
+            {premiumFeature} is available only for Premium members.
             Upgrade your plan to continue.
         </p>
 
@@ -702,8 +724,11 @@ return (
 
                  }
 
-                 // Premium check only for Messages
-                 if (item.label === "Messages") {
+                 // Premium check for Messages & Matches
+                 if (
+                     item.label === "Messages" ||
+                     item.label === "Matches"
+                 ) {
 
                      e.preventDefault();
 
@@ -714,20 +739,21 @@ return (
 
                          if (subscription?.isActive) {
 
-                             navigate("/messages");
+                             navigate(item.to);
 
                          } else {
 
+                             setPremiumFeature(item.label);
                              setShowUpgradePopup(true);
 
                          }
 
-                     } catch (error) {
+                     }catch (error) {
 
-                         setShowUpgradePopup(true);
+                          setPremiumFeature(item.label);
+                          setShowUpgradePopup(true);
 
-                     }
-
+                      }
                      return;
 
                  }
@@ -944,7 +970,7 @@ p-8
                   {profiles.map((profile, i) => (
 
                     <motion.div
-                      key={profile.id || i}
+                      key={profile.profileId || i}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: i * 0.1 }}
@@ -954,12 +980,9 @@ p-8
                      rounded-2xl
                      shadow-lg
                      overflow-hidden
-                     cursor-pointer
-                     transition-all
-                     duration-300
-                     hover:shadow-xl
-                   hover:scale-[1.03]
-                   hover:-translate-y-1
+                     flex
+                     flex-col
+                     h-full
                      "
 onClick={(e)=>{
 
@@ -985,11 +1008,7 @@ e.detail===1
 
 ){
 
-navigate(
-
-`/profile/${profile.id}`
-
-);
+navigate(`/profile/${profile.profileId}`);
 
 }
 
@@ -1005,7 +1024,7 @@ className="
 
 relative
 
-h-[320px]
+h-[180px]
 
 
 "
@@ -1106,7 +1125,7 @@ shadow
 
 >
 
-❤️ {profile.matchPercentage || 0}% Match
+❤️ {profile.matchPercentage || 0} Match
 
 </div>
 
@@ -1140,31 +1159,24 @@ No Image
 
 }
                     </div>
-                  <div className="p-5 pb-6">
-                  <h3 className="text-xl font-bold">
-
-                    {profile.firstName}
-                    {" "}
-                    {profile.lastName}
+                  <div className="p-4 flex flex-col flex-1">
+                  <h3 className="text-lg font-semibold leading-tight">
+                    {profile.name || "Unknown User"}
+                    <span className="text-pink-600">
+                      {profile.age ? ` ${profile.age}yrs` : ""}
+                    </span>
 
                     {profile.isPremium && (
-                      <span className="ml-2 text-yellow-500">
-                        👑
-                      </span>
+                      <span className="ml-2 text-yellow-500">👑</span>
                     )}
-
                   </h3>
 
-                   <p className="text-gray-600 mt-1">
-
-                   {calculateAge(profile.dateOfBirth)}
-                   yrs • {profile.cityName || "City"}
-
+                   <p className="text-gray-600 mt-0.5">
+                     {profile.occupation || "Profession not specified"} • {profile.city || "Location not specified"}
                    </p>
+                   <div className="flex-1"></div>
 
-
-
-                  <div className="mt-4 flex flex-col gap-3">
+                  <div className="mt-3 flex flex-col gap-2">
 
                   <button
 
@@ -1179,7 +1191,7 @@ No Image
                   bg-[#E94057]
                   disabled:opacity-70
                   text-white
-                  py-3
+                  py-2
                   rounded-xl
                   font-semibold
                   shadow-md
@@ -1238,7 +1250,7 @@ No Image
                  border
                  border-[#E9ECEF]
                  text-[#343A40]
-                 py-3
+                 py-2
                  rounded-xl
                  font-semibold
                  shadow-sm
@@ -1260,7 +1272,7 @@ No Image
                    }
 
                    navigate(
-                     `/profile/${profile.id}`
+                     `/profile/${profile.profileId}`
                    );
 
                  }}
@@ -1271,7 +1283,7 @@ No Image
 
                  </button>
                    </div>
-<div className="mt-5 flex justify-center gap-3">
+<div className="mt-3 flex justify-center gap-3">
 
 <button
   title="Like"
@@ -1355,24 +1367,20 @@ justify-center
 >
 
 <ShortlistButton
-profileId={profile.id || i}
+profileId={profile.profileId || i}
 size="sm"
 showLabel={false}
 />
 
 </div>
 <button
-  title="Block User"
+  title={
+    blockedUsers.includes(profile.userId)
+      ? "Unblock User"
+      : "Block User"
+  }
   onClick={async (e) => {
     e.stopPropagation();
-
-    const confirmBlock = window.confirm(
-      "Are you sure you want to block this user?"
-    );
-
-    if (!confirmBlock) {
-      return;
-    }
 
     try {
       const currentUser = JSON.parse(
@@ -1387,25 +1395,54 @@ showLabel={false}
 
       const blockedId = Number(profile.userId);
 
-      if (!blockerId || !blockedId) {
-        toast.error("User information not found");
-        return;
+      if (blockedUsers.includes(blockedId)) {
+
+        await blockAPI.unblockUser(
+          blockerId,
+          blockedId
+        );
+
+        toast.success("User unblocked");
+
+        setBlockedUsers(prev =>
+          prev.filter(id => id !== blockedId)
+        );
+
+      } else {
+
+        const confirmBlock = window.confirm(
+          "Are you sure you want to block this user?"
+        );
+
+        if (!confirmBlock) return;
+
+        await blockAPI.blockUser(
+          blockerId,
+          blockedId
+        );
+
+        toast.success("User blocked");
+
+        setBlockedUsers(prev => [
+          ...prev,
+          blockedId
+        ]);
+
+        setProfiles(prev =>
+          prev.filter(
+            p => p.userId !== blockedId
+          )
+        );
       }
 
-      await blockAPI.blockUser(blockerId, blockedId);
+    } catch (err) {
 
-      toast.success("User blocked successfully");
+      console.error(err);
 
-      setProfiles((previousProfiles) =>
-        previousProfiles.filter(
-          (item) => Number(item.userId) !== blockedId
-        )
-      );
-    } catch (error) {
-      console.error("Block failed:", error);
       toast.error(
-        error?.message || "Failed to block user"
+        err.message || "Operation failed"
       );
+
     }
   }}
   className="
@@ -1418,7 +1455,6 @@ showLabel={false}
     border-red-200
     shadow-lg
     hover:scale-125
-    active:scale-95
     transition-all
     duration-300
     flex
@@ -1426,7 +1462,9 @@ showLabel={false}
     justify-center
   "
 >
-  🚫
+  {blockedUsers.includes(profile.userId)
+    ? "🔓"
+    : "🚫"}
 </button>
 
 <button

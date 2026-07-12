@@ -9,6 +9,7 @@ import com.example.service.MatchService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.example.dto.response.MatchDetailsResponseDTO;
 
 import java.util.List;
 
@@ -45,6 +46,7 @@ public class MatchController {
     ) {
         return matchService.getMatchExplanation(userId, profileId);
     }
+
     @PostMapping("/swipe")
     public ResponseEntity<String> swipe(
             @RequestParam Long fromUserId,
@@ -53,5 +55,16 @@ public class MatchController {
     ) {
         matchService.swipe(fromUserId, toUserId, type);
         return ResponseEntity.ok("Swiped successfully");
+    }
+
+    @GetMapping("/{userId}/details/{partnerId}")
+    public ResponseEntity<MatchDetailsResponseDTO> getMatchDetails(
+            @PathVariable Long userId,
+            @PathVariable Long partnerId
+    ) {
+
+        return ResponseEntity.ok(
+                matchService.getMatchDetails(userId, partnerId)
+        );
     }
 }

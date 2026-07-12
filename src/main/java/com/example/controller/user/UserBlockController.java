@@ -4,6 +4,7 @@ import com.example.model.UserBlock;
 import com.example.service.UserBlockService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+import com.example.dto.response.BlockedUserResponseDTO;
 
 import java.util.List;
 
@@ -24,14 +25,11 @@ public class UserBlockController {
         return "User blocked successfully";
     }
     @GetMapping("/my-blocked-users")
-    public List<UserBlock> getMyBlockedUsers(
+    public List<BlockedUserResponseDTO> getMyBlockedUsers(
             @RequestParam Long blockerId
     ) {
 
-        return userBlockService
-                .getBlockedUsers(
-                        blockerId
-                );
+        return userBlockService.getBlockedUsers(blockerId);
 
     }
     // ✅ UNBLOCK USER

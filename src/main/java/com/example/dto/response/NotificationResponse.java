@@ -19,6 +19,10 @@ public class NotificationResponse {
 
     private String message;
 
+    private Long matchedUserId;
+
+    private Integer matchPercentage;
+
     private String preview;
 
     private boolean isRead;

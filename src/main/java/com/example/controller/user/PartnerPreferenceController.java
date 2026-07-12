@@ -170,168 +170,115 @@ public class PartnerPreferenceController {
     }
 
     private void applyFields(
-
             PartnerPreference preference,
-
             PartnerPreferenceRequestDTO dto
+    ) {
+        preference.setMinAge(dto.getMinAge());
+        preference.setMaxAge(dto.getMaxAge());
+        preference.setMinHeight(dto.getMinHeight());
+        preference.setMaxHeight(dto.getMaxHeight());
+        preference.setMinWeight(dto.getMinWeight());
+        preference.setMaxWeight(dto.getMaxWeight());
+        preference.setIsActive(dto.getIsActive());
 
-    ){
-
-        preference.setMinAge(
-                dto.getMinAge()
-        );
-
-        preference.setMaxAge(
-                dto.getMaxAge()
-        );
-        preference.setMaxHeight(
-                dto.getMaxHeight()
-        );
-        preference.setMinWeight(
-                dto.getMinWeight()
-        );
-
-        preference.setMaxWeight(
-                dto.getMaxWeight()
-        );
-        preference.setMinHeight(
-                dto.getMinHeight()
-        );
-
-        preference.setMaxHeight(
-                dto.getMaxHeight()
-        );
-
-        preference.setIsActive(
-                dto.getIsActive()
-        );
-
-        if(dto.getReligionId()!=null){
-
+        if (dto.getReligionId() != null) {
             preference.setReligion(
-
-                    religionRepository
-                            .findById(
-                                    dto.getReligionId()
-                            )
-                            .orElseThrow()
-
+                    religionRepository.findById(dto.getReligionId())
+                            .orElseThrow(() -> new RuntimeException(
+                                    "Religion not found for ID: " + dto.getReligionId()
+                            ))
             );
-
+        } else {
+            preference.setReligion(null);
         }
 
-        if(dto.getCasteId()!=null){
-
+        if (dto.getCasteId() != null) {
             preference.setCaste(
-
-                    casteRepository
-                            .findById(
-                                    dto.getCasteId()
-                            )
-                            .orElseThrow()
-
+                    casteRepository.findById(dto.getCasteId())
+                            .orElseThrow(() -> new RuntimeException(
+                                    "Caste not found for ID: " + dto.getCasteId()
+                            ))
             );
-
+        } else {
+            preference.setCaste(null);
         }
 
-        if(dto.getCityId()!=null){
-
+        if (dto.getCityId() != null) {
             preference.setCity(
-
-                    cityRepository
-                            .findById(
-                                    dto.getCityId()
-                            )
-                            .orElseThrow()
-
+                    cityRepository.findById(dto.getCityId())
+                            .orElseThrow(() -> new RuntimeException(
+                                    "City not found for ID: " + dto.getCityId()
+                            ))
             );
-
+        } else {
+            preference.setCity(null);
         }
 
-        if(dto.getEducationLevelId()!=null){
-
+        if (dto.getEducationLevelId() != null) {
             preference.setEducationLevel(
-
-                    educationLevelRepository
-                            .findById(
-                                    dto.getEducationLevelId()
-                            )
-                            .orElseThrow()
-
+                    educationLevelRepository.findById(dto.getEducationLevelId())
+                            .orElseThrow(() -> new RuntimeException(
+                                    "Education level not found for ID: " + dto.getEducationLevelId()
+                            ))
             );
-
+        } else {
+            preference.setEducationLevel(null);
         }
 
-        if(dto.getOccupationId()!=null){
-
+        if (dto.getOccupationId() != null) {
             preference.setOccupation(
-
-                    occupationRepository
-                            .findById(
-                                    dto.getOccupationId()
-                            )
-                            .orElseThrow()
-
+                    occupationRepository.findById(dto.getOccupationId())
+                            .orElseThrow(() -> new RuntimeException(
+                                    "Occupation not found for ID: " + dto.getOccupationId()
+                            ))
             );
-
+        } else {
+            preference.setOccupation(null);
         }
 
-        if(dto.getMaritalStatusId()!=null){
-
+        if (dto.getMaritalStatusId() != null) {
             preference.setMaritalStatus(
-
-                    maritalStatusRepository
-                            .findById(
-                                    dto.getMaritalStatusId()
-                            )
-                            .orElseThrow()
-
+                    maritalStatusRepository.findById(dto.getMaritalStatusId())
+                            .orElseThrow(() -> new RuntimeException(
+                                    "Marital status not found for ID: " + dto.getMaritalStatusId()
+                            ))
             );
-
+        } else {
+            preference.setMaritalStatus(null);
         }
 
-        if(dto.getSmokingId()!=null){
-
+        if (dto.getSmokingId() != null) {
             preference.setSmoking(
-
-                    smokingRepository
-                            .findById(
-                                    dto.getSmokingId()
-                            )
-                            .orElseThrow()
-
+                    smokingRepository.findById(dto.getSmokingId())
+                            .orElseThrow(() -> new RuntimeException(
+                                    "Smoking status not found for ID: " + dto.getSmokingId()
+                            ))
             );
-
+        } else {
+            preference.setSmoking(null);
         }
 
-        if(dto.getDrinkingId()!=null){
-
+        if (dto.getDrinkingId() != null) {
             preference.setDrinking(
-
-                    drinkingRepository
-                            .findById(
-                                    dto.getDrinkingId()
-                            )
-                            .orElseThrow()
-
+                    drinkingRepository.findById(dto.getDrinkingId())
+                            .orElseThrow(() -> new RuntimeException(
+                                    "Drinking status not found for ID: " + dto.getDrinkingId()
+                            ))
             );
-
+        } else {
+            preference.setDrinking(null);
         }
 
-        if(dto.getDietId()!=null){
-
+        if (dto.getDietId() != null) {
             preference.setDiet(
-
-                    dietRepository
-                            .findById(
-                                    dto.getDietId()
-                            )
-                            .orElseThrow()
-
+                    dietRepository.findById(dto.getDietId())
+                            .orElseThrow(() -> new RuntimeException(
+                                    "Diet not found for ID: " + dto.getDietId()
+                            ))
             );
-
+        } else {
+            preference.setDiet(null);
         }
-
     }
 
 

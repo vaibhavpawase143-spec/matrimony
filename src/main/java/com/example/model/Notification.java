@@ -21,6 +21,9 @@ public class Notification {
 
     // Receiver (User)
     private Long receiverId;
+    private Long matchedUserId;
+
+    private Integer matchPercentage;
 
     // NEW FIELD
     @Column(length = 255)

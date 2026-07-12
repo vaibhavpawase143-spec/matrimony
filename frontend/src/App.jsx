@@ -49,6 +49,7 @@ import FAQ from "./pages/FAQ";
 import HelpSupport from "./pages/HelpSupport";
 import RefundPolicy from "./pages/RefundPolicy";
 import ChatPage from "./pages/ChatPage";
+import MatchDetails from "./pages/MatchDetails";
 
 // ADMIN PAGES
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -258,6 +259,15 @@ element={<ResetPassword />}
                       element={
                         <AuthenticatedLayout>
                           <Matches />
+                        </AuthenticatedLayout>
+                      }
+                    />
+
+                    <Route
+                      path="/match-details/:partnerId"
+                      element={
+                        <AuthenticatedLayout>
+                          <MatchDetails />
                         </AuthenticatedLayout>
                       }
                     />

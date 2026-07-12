@@ -5,6 +5,7 @@ import com.example.dto.response.MatchResponseDTO;
 import com.example.dto.response.PageResponse;
 import com.example.model.SwipeType;
 import com.example.model.User;
+import com.example.dto.response.MatchDetailsResponseDTO;
 
 import java.util.List;
 
@@ -16,7 +17,11 @@ public interface MatchService {
 
     MatchExplanationResponseDTO getMatchExplanation(Long userId, Long profileId);
 
+    int calculateMatchScore(Long currentUserId, Long candidateUserId);
+
     // 🔥 NEW
     void swipe(Long fromUserId, Long toUserId, SwipeType type);
     List<User> getMyMatches(Long userId);
+
+    MatchDetailsResponseDTO getMatchDetails(Long userId, Long partnerId);
 }

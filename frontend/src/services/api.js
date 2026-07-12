@@ -439,15 +439,21 @@ export const blockAPI = {
 
   },
 
-getMyBlockedUsers: async (
-  blockerId
-) => {
 
-  return await apiClient(
-    `/block/my-blocked-users?blockerId=${blockerId}`
-  );
+  getMyBlockedUsers: async (blockerId) => {
 
-},
+    return await apiClient(
+
+      `/block/my-blocked-users?blockerId=${blockerId}`,
+
+      {
+        method: "GET"
+      }
+
+    );
+
+  },
+
   unblockUser: async (
     blockerId,
     blockedId
@@ -1851,6 +1857,25 @@ return await apiClient(
 
  }
 
+ };
+ export const matchAPI = {
+
+   getTopMatches: async (userId, limit = 20) => {
+
+     return await apiClient(
+
+       `/match/recommend/${userId}?limit=${limit}`
+
+     );
+
+   },
+   getMatchDetails: async (userId, partnerId) => {
+
+       return await apiClient(
+           `/match/${userId}/details/${partnerId}`
+       );
+
+   },
  };
  export const subscriptionAPI = {
 

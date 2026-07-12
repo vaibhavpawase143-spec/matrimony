@@ -1,17 +1,18 @@
 import { useState, useEffect } from "react";
-import { User, Lock, Bell, Save, Upload, X } from "lucide-react";
+import { User, Lock, Bell, Save, Upload, X ,Ban, } from "lucide-react";
 import { motion } from "framer-motion";
 
 import { useToast } from "@/components/Toast";
 import { useProfileData } from "@/hooks/useProfileData";
 import { partnerPreferenceAPI } from "@/services/api";
 import { masterDataAPI } from "@/services/api";
-import { photoAPI } from "@/services/api";
+import { photoAPI, blockAPI } from "@/services/api";
 
 const tabs = [
   { id: "profile", label: "Profile", icon: <User className="h-4 w-4" /> },
   { id: "password", label: "Password", icon: <Lock className="h-4 w-4" /> },
   { id: "notifications", label: "Notifications", icon: <Bell className="h-4 w-4" /> },
+  { id: "blocked", label: "Blocked Users", icon: <Ban className="h-4 w-4" /> },
 ];
 
 const SettingsPage = () => {
@@ -144,6 +145,7 @@ bloodGroupId:null,
     newPassword: "",
     confirmPassword: ""
   });
+const [blockedUsers, setBlockedUsers] = useState([]);
 const [partnerPreferenceId, setPartnerPreferenceId] = useState(null);
 const [partnerPreference,setPartnerPreference]=
 useState({
@@ -312,7 +314,7 @@ savedProfileData,
     const loadMasterData = async () => {
       try {
         console.log('🔍 Loading master data from APIs...');
-        
+
    const [
      incomes,
      diets,
@@ -390,7 +392,7 @@ masterDataAPI.getBloodGroups(),
      masterDataAPI.getStates()
 
    ]);
-        
+
         console.log('📊 Master data loaded:', {
           religions: religions?.length || 0,
           genders: genders?.length || 0,
@@ -404,7 +406,7 @@ masterDataAPI.getBloodGroups(),
           bodyTypes: bodyTypes?.length || 0,
           motherTongues: motherTongues?.length || 0
         });
-        
+
         // Ensure all data are arra
         const safeData = {
 
@@ -613,7 +615,7 @@ safeData.disabilityStatuses
                                    console.log("Blood Groups:", safeData.bloodGroups);
                                    console.log("Family Types:", safeData.familyTypes);
                                    console.log("Employment:", safeData.employmentStatuses);
-        
+
       } catch (error) {
         console.error('❌ Failed to load master data:', error);
         // Set empty arrays on error to prevent UI crashes
@@ -642,7 +644,7 @@ safeData.disabilityStatuses
 
   });    }
     };
-    
+
     loadMasterData();
   }, []);
 
@@ -1142,7 +1144,7 @@ savedProfileData.cityId
 
 
  };
-      
+
     console.log(
     "Mapped Data:",
     mappedData
@@ -1213,10 +1215,10 @@ savedProfileData
       'bloodGroupId',
       'drinkingId'
     ];
-      const finalValue = idFields.includes(field) && value !== '' 
+      const finalValue = idFields.includes(field) && value !== ''
         ? (typeof value === 'string' ? parseInt(value, 10) : value)
         : value;
-      
+
       setFormData(prev => ({ ...prev, [field]: finalValue }));
     }
   };
@@ -1363,17 +1365,17 @@ const validateProfileForm = () => {
       error("First name is required");
       return false;
     }
-    
+
     if (!formData.lastName || formData.lastName.trim() === "") {
       error("Last name is required");
       return false;
     }
-    
+
    if (!formData.genderId) {
       error("Gender is required");
       return false;
     }
-    
+
     if (!formData.dateOfBirth) {
       error("Date of birth is required");
       return false;
@@ -1475,13 +1477,13 @@ useEffect(() => {
 
     try {
       console.log('💾 Saving profile data:', formData);
-      
+
       // Prepare data for backend API with correct field mapping
       // Parse fullName into firstName and lastName for backend
       const nameParts = (formData.fullName || '').trim().split(' ');
       const firstNameFromFull = nameParts[0] || formData.firstName;
       const lastNameFromFull = nameParts.slice(1).join(' ') || formData.lastName;
-      
+
      const dataToSave = {
 
        // BASIC
@@ -1706,7 +1708,7 @@ console.log(
       } else {
         error("Failed to update profile. Please try again.");
       }
-      
+
       // Scroll to top
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err) {
@@ -1735,7 +1737,89 @@ console.log(
   const handleNotificationToggle = (label, isChecked) => {
     info(`${label} ${isChecked ? 'enabled' : 'disabled'}`);
   };
+const loadBlockedUsers = async () => {
 
+  try {
+
+    const blockerId =
+      savedProfileData?.userId ||
+      savedProfileData?.id;
+
+    if (!blockerId) return;
+
+    const response =
+      await blockAPI.getMyBlockedUsers(
+        blockerId
+      );
+
+    console.log(
+      "Blocked Users:",
+      response
+    );
+
+    setBlockedUsers(response);
+
+  } catch (err) {
+
+    console.error(
+      "Failed to load blocked users",
+      err
+    );
+
+    setBlockedUsers([]);
+
+  }
+
+};
+useEffect(() => {
+
+  if (
+    savedProfileData?.userId ||
+    savedProfileData?.id
+  ) {
+
+    loadBlockedUsers();
+
+  }
+
+}, [savedProfileData]);
+const handleUnblock = async (blockedUserId) => {
+
+  const confirmed = window.confirm(
+    "Are you sure you want to unblock this user?"
+  );
+
+  if (!confirmed) return;
+
+  try {
+
+    const blockerId =
+      savedProfileData?.userId ||
+      savedProfileData?.id;
+
+    await blockAPI.unblockUser(
+      blockerId,
+      blockedUserId
+    );
+
+    setBlockedUsers((prev) =>
+      prev.filter(
+        (user) =>
+          user.blockedUserId !== blockedUserId
+      )
+    );
+
+    success("User unblocked successfully");
+
+  } catch (err) {
+
+    console.error(err);
+
+    error("Failed to unblock user");
+
+  }
+
+};
   // Helper function to render form fields
 const renderField = (field) => {
 
@@ -2221,15 +2305,15 @@ fieldOptions = masterOptions.bloodGroups || [];
                   })}
                   {renderField({ label: "Date of Birth", type: "date", key: "dateOfBirth" })}
                   {renderField({ label: "Age", type: "number", key: "age", placeholder: "Auto-calculated", readOnly: true })}
-                  {renderField({ 
-                    label: "Marital Status", 
-                    key: "maritalStatusId", 
-                    type: "select" 
+                  {renderField({
+                    label: "Marital Status",
+                    key: "maritalStatusId",
+                    type: "select"
                   })}
-                  {renderField({ 
-                    label: "Religion", 
-                    key: "religionId", 
-                    type: "select" 
+                  {renderField({
+                    label: "Religion",
+                    key: "religionId",
+                    type: "select"
                   })}
                   {renderField({ label: "Caste", key: "casteId", type: "select" })}
                   {renderField({ label: "Sub-caste", key: "subCasteId", type: "select" })}
@@ -2261,13 +2345,13 @@ fieldOptions = masterOptions.bloodGroups || [];
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {renderField({ label: "Height", key: "heightId", type: "select" })}
                   {renderField({ label: "Weight", key: "weightId", type: "select" })}
-                  {renderField({ 
-                    label: "Complexion", 
+                  {renderField({
+                    label: "Complexion",
                    key: "complexionId",
                     type: "select",
                   })}
-                  {renderField({ 
-                    label: "Body Type", 
+                  {renderField({
+                    label: "Body Type",
                   key: "bodyTypeId",
                     type: "select",
                   })}
@@ -2281,10 +2365,10 @@ fieldOptions = masterOptions.bloodGroups || [];
 
                 <h3 className="text-sm font-semibold text-foreground mb-3 pb-2 border-b border-border">Education & Career</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {renderField({ 
-                    label: "Highest Education", 
-                    key: "educationLevelId", 
-                    type: "select" 
+                  {renderField({
+                    label: "Highest Education",
+                    key: "educationLevelId",
+                    type: "select"
                   })}
                   {renderField({ label: "Profession/Occupation", key: "occupationId", type: "select" })}
                   {renderField({ label: "Annual Income", key: "incomeId", type: "select" })}
@@ -3280,12 +3364,12 @@ text-foreground
                 <h3 className="text-sm font-semibold text-foreground mb-3 pb-2 border-b border-border">About Me</h3>
                 <div>
                   <label className="text-xs font-medium text-foreground mb-1 block">About Me</label>
-                  <textarea 
-                    rows={4} 
+                  <textarea
+                    rows={4}
                     value={formData.aboutMe}
                     onChange={(e) => handleInputChange("aboutMe", e.target.value)}
-                    placeholder="Tell us about yourself, your interests, personality and what you are looking for..." 
-                    className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none" 
+                    placeholder="Tell us about yourself, your interests, personality and what you are looking for..."
+                    className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none"
                   />
                 </div>
               </div>
@@ -3400,12 +3484,12 @@ text-foreground
               ].map((field) => (
                 <div key={field.key}>
                   <label className="text-xs font-medium text-foreground mb-1 block">{field.label}</label>
-                  <input 
-                    type="password" 
+                  <input
+                    type="password"
                     value={passwordData[field.key]}
                     onChange={(e) => setPasswordData({...passwordData, [field.key]: e.target.value})}
-                    placeholder="••••••••" 
-                    className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" 
+                    placeholder="••••••••"
+                    className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                   />
                 </div>
               ))}
@@ -3431,11 +3515,11 @@ text-foreground
                     <p className="text-xs text-muted-foreground">{n.desc}</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
-                    <input 
-                      type="checkbox" 
-                      defaultChecked={i < 3} 
+                    <input
+                      type="checkbox"
+                      defaultChecked={i < 3}
                       onChange={(e) => handleNotificationToggle(n.label, e.target.checked)}
-                      className="sr-only peer" 
+                      className="sr-only peer"
                     />
                     <div className="w-9 h-5 bg-muted rounded-full peer peer-checked:bg-primary transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-background after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4" />
                   </label>
@@ -3443,6 +3527,79 @@ text-foreground
               ))}
             </div>
           )}
+      {activeTab === "blocked" && (
+        <div className="space-y-5">
+
+          <h2 className="text-lg font-display font-bold text-foreground">
+            Blocked Users
+          </h2>
+
+          <p className="text-sm text-muted-foreground">
+            Users you have blocked cannot message or view your profile.
+          </p>
+
+          {blockedUsers.length === 0 ? (
+
+            <div className="text-center py-10">
+
+              <Ban className="mx-auto h-12 w-12 text-muted-foreground" />
+
+              <p className="mt-4 text-muted-foreground">
+                You haven't blocked anyone yet.
+              </p>
+
+            </div>
+
+          ) : (
+
+            <div className="space-y-4">
+
+              {blockedUsers.map((user) => (
+
+                <div
+                 key={user.blockedUserId}
+                  className="flex items-center justify-between border border-border rounded-xl p-4"
+                >
+
+                  <div className="flex items-center gap-4">
+
+                    <img
+                      src={user.photoUrl}
+                      alt={user.fullName}
+                      className="w-14 h-14 rounded-full object-cover"
+                    />
+
+                    <div>
+
+                      <h3 className="font-semibold">
+                        {user.fullName}
+                      </h3>
+
+                      <p className="text-xs text-muted-foreground">
+                        Blocked on {user.blockedDate}
+                      </p>
+
+                    </div>
+
+                  </div>
+
+                  <button
+                    onClick={() => handleUnblock(user.blockedUserId)}
+                    className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm"
+                  >
+                    Unblock
+                  </button>
+
+                </div>
+
+              ))}
+
+            </div>
+
+          )}
+
+        </div>
+      )}
           </motion.div>
       </div>
     </div>

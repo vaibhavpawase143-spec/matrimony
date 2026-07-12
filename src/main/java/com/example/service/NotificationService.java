@@ -28,6 +28,16 @@ public interface NotificationService {
     void delete(Long id);
 
     // ==========================
+// MATCH NOTIFICATIONS
+// ==========================
+
+    void createMatchRecommendation(
+            Long receiverId,
+            Long matchedUserId,
+            Integer matchPercentage
+    );
+
+    // ==========================
     // ADMIN NOTIFICATIONS
     // ==========================
 

@@ -9,6 +9,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
+import com.example.exception.PremiumRequiredException;
 
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.SignatureException;
@@ -136,6 +137,25 @@ public class GlobalExceptionHandler {
                         .error("FORBIDDEN")
                         .errorCode("ERR_403")
                         .message("You are not authorized")
+                        .build()
+        );
+    }
+    // =========================
+// 🔴 PREMIUM REQUIRED (403)
+// =========================
+    @ExceptionHandler(PremiumRequiredException.class)
+    public ResponseEntity<ErrorResponse> handlePremiumRequired(
+            PremiumRequiredException ex) {
+
+        log.warn("Premium required: {}", ex.getMessage());
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
+                ErrorResponse.builder()
+                        .timestamp(LocalDateTime.now())
+                        .status(403)
+                        .error("PREMIUM_REQUIRED")
+                        .errorCode("ERR_PREMIUM_REQUIRED")
+                        .message(ex.getMessage())
                         .build()
         );
     }
