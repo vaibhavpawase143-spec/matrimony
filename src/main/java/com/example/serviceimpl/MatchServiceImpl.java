@@ -1,28 +1,26 @@
 package com.example.serviceimpl;
 
-import com.example.dto.response.MatchExplanationResponseDTO;
-import com.example.dto.response.MatchResponseDTO;
-import com.example.dto.response.PageResponse;
+import com.example.dto.response.*;
+import com.example.exception.PremiumRequiredException;
 import com.example.model.*;
 import com.example.repository.*;
 import com.example.service.MatchService;
 import com.example.service.NotificationService;
-
 import lombok.RequiredArgsConstructor;
-
-import org.springframework.data.domain.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
-import com.example.dto.response.MatchDetailsResponseDTO;
-import com.example.dto.response.FieldMatchDTO;
-import com.example.exception.PremiumRequiredException;
-import com.example.repository.UserSubscriptionRepository;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -352,10 +350,8 @@ public class MatchServiceImpl implements MatchService {
         );
     }
     // ================= TOP MATCHES =================
-
     @Override
     public List<MatchResponseDTO> getTopMatches(Long userId, int limit) {
-
 
         User currentUser = userRepository.findByIdWithProfileAndPreference(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -371,21 +367,52 @@ public class MatchServiceImpl implements MatchService {
 
         return users.stream()
 
+                // Don't show blocked users
                 .filter(user -> !blockedIds.contains(user.getId()))
 
+                // Don't show yourself
                 .filter(user -> !user.getId().equals(userId))
 
+                // Load complete profile
                 .map(u ->
                         userRepository
                                 .findByIdWithProfileAndPreference(u.getId())
                                 .orElse(u)
                 )
 
+                // Only active users
+                .filter(user ->
+                        user.getIsActive() != null &&
+                                user.getIsActive()
+                )
+
+                // Skip blocked users
+                .filter(user ->
+                        user.getIsBlocked() == null ||
+                                !user.getIsBlocked()
+                )
+
+                // Skip deleted users
+                .filter(user ->
+                        user.getIsDeleted() == null ||
+                                !user.getIsDeleted()
+                )
+
+                // Only completed profiles
+                .filter(user ->
+                        user.getProfile() != null &&
+                                Boolean.TRUE.equals(
+                                        user.getProfile().getProfileCompleted()
+                                )
+                )
+
+                // Sort by match percentage
                 .sorted((u1, u2) ->
                         calculateMatchScore(currentUser, u2)
                                 - calculateMatchScore(currentUser, u1)
                 )
 
+                // Convert to DTO
                 .map(user -> mapUserToDTO(user, currentUser))
 
                 .limit(limit)
