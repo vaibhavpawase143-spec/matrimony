@@ -2,120 +2,68 @@ package com.example.repository;
 
 import com.example.model.Religion;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Repository for Religion entity.
- * Includes both soft-deleted and non-deleted record queries.
- */
 @Repository
 public interface ReligionRepository extends JpaRepository<Religion, Long> {
 
-    // ================= NON-DELETED QUERIES =================
+    // =====================================================
+    // BASIC
+    // =====================================================
 
-    /**
-     * Find active religions (non-deleted and isActive=true)
-     */
-    @Query("SELECT r FROM Religion r WHERE r.deletedAt IS NULL AND r.isActive = true ORDER BY r.name ASC")
-    List<Religion> findAllActive();
+    Optional<Religion> findByIdAndDeletedAtIsNull(Long id);
 
-    /**
-     * Find active religions by admin
-     */
-    @Query("SELECT r FROM Religion r WHERE r.admin.id = :adminId AND r.deletedAt IS NULL AND r.isActive = true ORDER BY r.name ASC")
-    List<Religion> findActiveByAdmin(@Param("adminId") Long adminId);
+    Optional<Religion> findByIdAndDeletedAtIsNotNull(Long id);
 
-    /**
-     * Find religion by name (case-insensitive, non-deleted)
-     */
-    @Query("SELECT r FROM Religion r WHERE LOWER(r.name) = LOWER(:name) AND r.deletedAt IS NULL")
-    Optional<Religion> findByNameIgnoreCase(@Param("name") String name);
+    List<Religion> findAllByDeletedAtIsNull();
 
-    /**
-     * Find by name and admin (case-insensitive, non-deleted)
-     */
-    @Query("SELECT r FROM Religion r WHERE LOWER(r.name) = LOWER(:name) AND r.admin.id = :adminId AND r.deletedAt IS NULL")
-    Optional<Religion> findByNameIgnoreCaseAndAdmin(@Param("name") String name, @Param("adminId") Long adminId);
+    List<Religion> findByDeletedAtIsNotNull();
 
-    /**
-     * Check if religion exists for admin (non-deleted)
-     */
-    @Query("SELECT CASE WHEN COUNT(r) > 0 THEN true ELSE false END FROM Religion r WHERE LOWER(r.name) = LOWER(:name) AND r.admin.id = :adminId AND r.deletedAt IS NULL")
-    boolean existsByNameIgnoreCaseAndAdmin(@Param("name") String name, @Param("adminId") Long adminId);
+    // =====================================================
+    // DUPLICATE CHECK
+    // =====================================================
 
-    /**
-     * Get all non-deleted records by admin
-     */
-    List<Religion> findByAdminIdAndDeletedAtIsNull(Long adminId);
+    boolean existsByNameIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+            String name,
+            Long adminId
+    );
 
-    /**
-     * Get active non-deleted records by admin
-     */
-    List<Religion> findByAdminIdAndIsActiveTrueAndDeletedAtIsNull(Long adminId);
+    Optional<Religion> findByNameIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+            String name,
+            Long adminId
+    );
 
-    /**
-     * Get inactive non-deleted records by admin
-     */
-    List<Religion> findByAdminIdAndIsActiveFalseAndDeletedAtIsNull(Long adminId);
+    // =====================================================
+    // ACTIVE / INACTIVE
+    // =====================================================
 
-    /**
-     * Search non-deleted records by admin and keyword
-     */
-    @Query("SELECT r FROM Religion r WHERE r.admin.id = :adminId AND r.deletedAt IS NULL AND LOWER(r.name) LIKE LOWER(CONCAT('%', :keyword, '%')) ORDER BY r.name ASC")
-    List<Religion> searchByAdminAndKeyword(@Param("adminId") Long adminId, @Param("keyword") String keyword);
+    List<Religion> findByIsActiveTrueAndDeletedAtIsNull();
 
-    // ================= SOFT DELETE QUERIES =================
+    List<Religion> findByIsActiveFalseAndDeletedAtIsNull();
 
-    /**
-     * Find deleted records by admin
-     */
-    List<Religion> findByAdminIdAndDeletedAtIsNotNull(Long adminId);
+    // =====================================================
+    // ADMIN
+    // =====================================================
 
-    /**
-     * Check if record is deleted
-     */
-    @Query("SELECT CASE WHEN r.deletedAt IS NOT NULL THEN true ELSE false END FROM Religion r WHERE r.id = :id")
-    boolean isDeleted(@Param("id") Long id);
+    List<Religion> findByAdmin_IdAndDeletedAtIsNull(Long adminId);
 
-    // ================= BACKWARD COMPATIBILITY (DEPRECATED) =================
-    /**
-     * @deprecated Use findByNameIgnoreCaseAndAdmin instead
-     */
-    @Deprecated
-    Optional<Religion> findByNameIgnoreCaseAndAdminId(String name, Long adminId);
+    List<Religion> findByAdmin_IdAndIsActiveTrueAndDeletedAtIsNull(Long adminId);
 
-    /**
-     * @deprecated Use existsByNameIgnoreCaseAndAdmin instead
-     */
-    @Deprecated
-    boolean existsByNameIgnoreCaseAndAdminId(String name, Long adminId);
+    List<Religion> findByAdmin_IdAndIsActiveFalseAndDeletedAtIsNull(Long adminId);
 
-    /**
-     * @deprecated Use findByAdminIdAndDeletedAtIsNull instead
-     */
-    @Deprecated
-    List<Religion> findByAdminId(Long adminId);
+    // =====================================================
+    // SEARCH
+    // =====================================================
 
-    /**
-     * @deprecated Use findByAdminIdAndIsActiveTrueAndDeletedAtIsNull instead
-     */
-    @Deprecated
-    List<Religion> findByAdminIdAndIsActiveTrue(Long adminId);
+    List<Religion> findByNameContainingIgnoreCaseAndDeletedAtIsNull(
+            String keyword
+    );
 
-    /**
-     * @deprecated Use findByAdminIdAndIsActiveFalseAndDeletedAtIsNull instead
-     */
-    @Deprecated
-    List<Religion> findByAdminIdAndIsActiveFalse(Long adminId);
-
-    /**
-     * @deprecated Use searchByAdminAndKeyword instead
-     */
-    @Deprecated
-    List<Religion> findByAdminIdAndNameContainingIgnoreCase(Long adminId, String keyword);
+    List<Religion> findByAdmin_IdAndNameContainingIgnoreCaseAndDeletedAtIsNull(
+            Long adminId,
+            String keyword
+    );
 }

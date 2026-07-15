@@ -1,6 +1,7 @@
 package com.example.controller.master;
 
 import com.example.dto.request.ComplexionRequestDTO;
+import com.example.dto.response.ApiResponse;
 import com.example.dto.response.ComplexionResponseDTO;
 import com.example.model.Admin;
 import com.example.model.Complexion;
@@ -10,7 +11,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/complexions")
@@ -21,76 +21,166 @@ public class ComplexionController {
 
     // ================= CREATE =================
     @PostMapping
-    public ComplexionResponseDTO create(@Valid @RequestBody ComplexionRequestDTO dto) {
+    public ApiResponse<ComplexionResponseDTO> create(
+            @Valid @RequestBody ComplexionRequestDTO dto) {
 
         Complexion saved = complexionService.create(mapToEntity(dto));
-        return mapToResponse(saved);
+
+        return ApiResponse.<ComplexionResponseDTO>builder()
+                .success(true)
+                .message("Complexion created successfully.")
+                .data(mapToResponse(saved))
+                .build();
     }
 
     // ================= GET BY ID =================
     @GetMapping("/{id}")
-    public ComplexionResponseDTO getById(@PathVariable Long id) {
+    public ApiResponse<ComplexionResponseDTO> getById(
+            @PathVariable Long id) {
 
-        return mapToResponse(complexionService.getById(id));
+        Complexion complexion = complexionService.getById(id);
+
+        return ApiResponse.<ComplexionResponseDTO>builder()
+                .success(true)
+                .message("Complexion retrieved successfully.")
+                .data(mapToResponse(complexion))
+                .build();
     }
-
     // ================= GET ALL =================
     @GetMapping
-    public List<ComplexionResponseDTO> getAll() {
+    public ApiResponse<List<ComplexionResponseDTO>> getAll() {
 
-        return complexionService.getAll()
+        List<ComplexionResponseDTO> complexions = complexionService.getAll()
                 .stream()
                 .map(this::mapToResponse)
-                .collect(Collectors.toList());
-    }
+                .toList();
 
+        return ApiResponse.<List<ComplexionResponseDTO>>builder()
+                .success(true)
+                .message("Complexions retrieved successfully.")
+                .data(complexions)
+                .build();
+    }
     // ================= GET ACTIVE =================
     @GetMapping("/active")
-    public List<ComplexionResponseDTO> getActive() {
+    public ApiResponse<List<ComplexionResponseDTO>> getActive() {
 
-        return complexionService.getActive()
+        List<ComplexionResponseDTO> active = complexionService.getActive()
                 .stream()
                 .map(this::mapToResponse)
-                .collect(Collectors.toList());
+                .toList();
+
+        return ApiResponse.<List<ComplexionResponseDTO>>builder()
+                .success(true)
+                .message("Active complexions retrieved successfully.")
+                .data(active)
+                .build();
     }
 
     // ================= GET BY ADMIN =================
     @GetMapping("/admin/{adminId}")
-    public List<ComplexionResponseDTO> getByAdmin(@PathVariable Long adminId) {
+    public ApiResponse<List<ComplexionResponseDTO>> getByAdmin(
+            @PathVariable Long adminId) {
 
-        return complexionService.getByAdmin(adminId)
+        List<ComplexionResponseDTO> complexions = complexionService
+                .getByAdmin(adminId)
                 .stream()
                 .map(this::mapToResponse)
-                .collect(Collectors.toList());
+                .toList();
+
+        return ApiResponse.<List<ComplexionResponseDTO>>builder()
+                .success(true)
+                .message("Complexions retrieved successfully by admin.")
+                .data(complexions)
+                .build();
     }
 
     // ================= SEARCH =================
     @GetMapping("/search")
-    public List<ComplexionResponseDTO> search(@RequestParam String keyword) {
+    public ApiResponse<List<ComplexionResponseDTO>> search(
+            @RequestParam String keyword) {
 
-        return complexionService.search(keyword)
+        List<ComplexionResponseDTO> complexions = complexionService
+                .search(keyword)
                 .stream()
                 .map(this::mapToResponse)
-                .collect(Collectors.toList());
+                .toList();
+
+        return ApiResponse.<List<ComplexionResponseDTO>>builder()
+                .success(true)
+                .message("Complexions searched successfully.")
+                .data(complexions)
+                .build();
     }
 
     // ================= UPDATE =================
     @PutMapping("/{id}")
-    public ComplexionResponseDTO update(@PathVariable Long id,
-                                        @Valid @RequestBody ComplexionRequestDTO dto) {
+    public ApiResponse<ComplexionResponseDTO> update(
+            @PathVariable Long id,
+            @Valid @RequestBody ComplexionRequestDTO dto) {
 
-        Complexion updated = complexionService.update(id, mapToEntity(dto));
-        return mapToResponse(updated);
+        Complexion updated = complexionService.update(
+                id,
+                mapToEntity(dto)
+        );
+
+        return ApiResponse.<ComplexionResponseDTO>builder()
+                .success(true)
+                .message("Complexion updated successfully.")
+                .data(mapToResponse(updated))
+                .build();
     }
 
     // ================= DELETE =================
     @DeleteMapping("/{id}")
-    public String delete(@PathVariable Long id) {
+    public ApiResponse<String> delete(
+            @PathVariable Long id,
+            @RequestParam Long deletedBy) {
 
-        complexionService.delete(id);
-        return "Complexion deleted successfully";
+        complexionService.delete(id, deletedBy);
+
+        return ApiResponse.<String>builder()
+                .success(true)
+                .message("Complexion deleted successfully.")
+                .build();
     }
+    @GetMapping("/deleted")
+    public ApiResponse<List<ComplexionResponseDTO>> getDeleted() {
 
+        List<ComplexionResponseDTO> deleted = complexionService.getDeleted()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+
+        return ApiResponse.<List<ComplexionResponseDTO>>builder()
+                .success(true)
+                .message("Deleted complexions retrieved successfully.")
+                .data(deleted)
+                .build();
+    }
+    @PutMapping("/restore/{id}")
+    public ApiResponse<ComplexionResponseDTO> restore(
+            @PathVariable Long id) {
+
+        Complexion restored = complexionService.restore(id);
+
+        return ApiResponse.<ComplexionResponseDTO>builder()
+                .success(true)
+                .message("Complexion restored successfully.")
+                .data(mapToResponse(restored))
+                .build();
+    }
+    @DeleteMapping("/hard-delete/{id}")
+    public ApiResponse<String> hardDelete(
+            @PathVariable Long id) {
+
+        complexionService.hardDelete(id);
+
+        return ApiResponse.<String>builder()
+                .success(true)
+                .message("Complexion permanently deleted successfully.")
+                .build();
+    }
     // ================= MAPPERS =================
 
     private Complexion mapToEntity(ComplexionRequestDTO dto) {

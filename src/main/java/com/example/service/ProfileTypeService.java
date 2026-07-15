@@ -1,35 +1,59 @@
 package com.example.service;
 
-import com.example.model.ProfileType;
+import com.example.dto.request.ProfileTypeRequestDTO;
+import com.example.dto.response.ProfileTypeResponseDTO;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface ProfileTypeService {
 
-    // ✅ Create / Save
-    ProfileType save(ProfileType profileType);
+    // =========================
+    // CRUD
+    // =========================
 
-    // ✅ Get by ID
-    Optional<ProfileType> getById(Long id);
+    ProfileTypeResponseDTO create(ProfileTypeRequestDTO requestDto);
 
-    // 🔍 Get all
-    List<ProfileType> getAll();
+    ProfileTypeResponseDTO update(Long id, ProfileTypeRequestDTO requestDto);
 
-    // 🔍 Get by admin
-    List<ProfileType> getByAdmin(Long adminId);
+    void softDelete(Long id);
 
-    // 🔍 Active / Inactive
-    List<ProfileType> getActiveByAdmin(Long adminId);
+    void restore(Long id);
 
-    List<ProfileType> getInactiveByAdmin(Long adminId);
+    void hardDelete(Long id);
 
-    // 🔍 Search
-    List<ProfileType> searchByAdmin(Long adminId, String keyword);
+    // =========================
+    // GET
+    // =========================
 
-    // 🔍 Find by name (admin-specific)
-    Optional<ProfileType> getByNameAndAdmin(String name, Long adminId);
+    ProfileTypeResponseDTO getById(Long id);
 
-    // ✅ Delete
-    void delete(Long id);
+    List<ProfileTypeResponseDTO> getAll();
+
+    List<ProfileTypeResponseDTO> getDeleted();
+
+    // =========================
+    // ACTIVE / INACTIVE
+    // =========================
+
+    List<ProfileTypeResponseDTO> getActive();
+
+    List<ProfileTypeResponseDTO> getInactive();
+
+    // =========================
+    // ADMIN
+    // =========================
+
+    List<ProfileTypeResponseDTO> getByAdmin(Long adminId);
+
+    List<ProfileTypeResponseDTO> getActiveByAdmin(Long adminId);
+
+    List<ProfileTypeResponseDTO> getInactiveByAdmin(Long adminId);
+
+    // =========================
+    // SEARCH
+    // =========================
+
+    List<ProfileTypeResponseDTO> search(String keyword);
+
+    List<ProfileTypeResponseDTO> searchByAdmin(Long adminId, String keyword);
 }

@@ -10,24 +10,79 @@ import java.util.Optional;
 @Repository
 public interface StateRepository extends JpaRepository<State, Long> {
 
-    // 🔍 Find by name (admin-specific, case-insensitive)
-    Optional<State> findByNameIgnoreCaseAndAdminId(String name, Long adminId);
+    // =====================================================
+    // BASIC
+    // =====================================================
 
-    // 🔍 Check duplicate (admin-specific)
-    boolean existsByNameIgnoreCaseAndAdminId(String name, Long adminId);
+    Optional<State> findByIdAndDeletedAtIsNull(Long id);
 
-    // 🔍 Get all states by admin
-    List<State> findByAdminId(Long adminId);
+    Optional<State> findByIdAndDeletedAtIsNotNull(Long id);
 
-    // 🔍 Active states by admin
-    List<State> findByAdminIdAndIsActiveTrue(Long adminId);
+    List<State> findAllByDeletedAtIsNull();
 
-    // 🔍 States by country + admin
-    List<State> findByCountry_IdAndAdminId(Long countryId, Long adminId);
+    List<State> findByDeletedAtIsNotNull();
 
-    // 🔍 Active states by country + admin
-    List<State> findByCountry_IdAndAdminIdAndIsActiveTrue(Long countryId, Long adminId);
+    // =====================================================
+    // DUPLICATE CHECK
+    // =====================================================
 
-    // 🔍 Search (admin + keyword)
-    List<State> findByAdminIdAndNameContainingIgnoreCase(Long adminId, String keyword);
+    boolean existsByNameIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+            String name,
+            Long adminId
+    );
+
+    Optional<State> findByNameIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+            String name,
+            Long adminId
+    );
+
+    // =====================================================
+    // ACTIVE / INACTIVE
+    // =====================================================
+
+    List<State> findByIsActiveTrueAndDeletedAtIsNull();
+
+    List<State> findByIsActiveFalseAndDeletedAtIsNull();
+
+    // =====================================================
+    // ADMIN
+    // =====================================================
+
+    List<State> findByAdmin_IdAndDeletedAtIsNull(Long adminId);
+
+    List<State> findByAdmin_IdAndIsActiveTrueAndDeletedAtIsNull(Long adminId);
+
+    List<State> findByAdmin_IdAndIsActiveFalseAndDeletedAtIsNull(Long adminId);
+
+    // =====================================================
+    // COUNTRY
+    // =====================================================
+
+    List<State> findByCountry_IdAndAdmin_IdAndDeletedAtIsNull(
+            Long countryId,
+            Long adminId
+    );
+
+    List<State> findByCountry_IdAndAdmin_IdAndIsActiveTrueAndDeletedAtIsNull(
+            Long countryId,
+            Long adminId
+    );
+
+    List<State> findByCountry_IdAndAdmin_IdAndIsActiveFalseAndDeletedAtIsNull(
+            Long countryId,
+            Long adminId
+    );
+
+    // =====================================================
+    // SEARCH
+    // =====================================================
+
+    List<State> findByNameContainingIgnoreCaseAndDeletedAtIsNull(
+            String keyword
+    );
+
+    List<State> findByAdmin_IdAndNameContainingIgnoreCaseAndDeletedAtIsNull(
+            Long adminId,
+            String keyword
+    );
 }

@@ -10,30 +10,74 @@ import java.util.Optional;
 @Repository
 public interface FamilyStatusRepository extends JpaRepository<FamilyStatus, Long> {
 
-    // 🔍 Find by name
-    Optional<FamilyStatus> findByName(String name);
+    // =========================
+    // GET BY ID
+    // =========================
 
-    // 🔥 Case-insensitive
-    Optional<FamilyStatus> findByNameIgnoreCase(String name);
+    Optional<FamilyStatus> findByIdAndDeletedAtIsNull(Long id);
 
-    // ✅ Duplicate check
-    boolean existsByName(String name);
+    // =========================
+    // GET ALL
+    // =========================
 
-    boolean existsByNameIgnoreCase(String name);
+    List<FamilyStatus> findAllByDeletedAtIsNull();
 
-    // 🔍 Active / Inactive (FIXED)
-    List<FamilyStatus> findByIsActiveTrue();
-    List<FamilyStatus> findByIsActiveFalse();
+    // =========================
+    // FIND BY NAME
+    // =========================
 
-    // 🔍 Admin-based filtering
-    List<FamilyStatus> findByAdminId(Long adminId);
+    Optional<FamilyStatus> findByNameIgnoreCaseAndDeletedAtIsNull(String name);
 
-    // ✅ Active by admin
-    List<FamilyStatus> findByAdminIdAndIsActiveTrue(Long adminId);
+    Optional<FamilyStatus> findByNameIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+            String name,
+            Long adminId
+    );
 
-    // 🔍 Search (global)
-    List<FamilyStatus> findByNameContainingIgnoreCase(String keyword);
+    // =========================
+    // DUPLICATE CHECK
+    // =========================
 
-    // 🔥 Search within admin
-    List<FamilyStatus> findByAdminIdAndNameContainingIgnoreCase(Long adminId, String keyword);
+    boolean existsByNameIgnoreCaseAndDeletedAtIsNull(String name);
+
+    boolean existsByNameIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+            String name,
+            Long adminId
+    );
+
+    // =========================
+    // ACTIVE / INACTIVE
+    // =========================
+
+    List<FamilyStatus> findByIsActiveTrueAndDeletedAtIsNull();
+
+    List<FamilyStatus> findByIsActiveFalseAndDeletedAtIsNull();
+
+    // =========================
+    // ADMIN WISE
+    // =========================
+
+    List<FamilyStatus> findByAdmin_IdAndDeletedAtIsNull(Long adminId);
+
+    List<FamilyStatus> findByAdmin_IdAndIsActiveTrueAndDeletedAtIsNull(Long adminId);
+
+    List<FamilyStatus> findByAdmin_IdAndIsActiveFalseAndDeletedAtIsNull(Long adminId);
+
+    // =========================
+    // SEARCH
+    // =========================
+
+    List<FamilyStatus> findByNameContainingIgnoreCaseAndDeletedAtIsNull(String keyword);
+
+    List<FamilyStatus> findByAdmin_IdAndNameContainingIgnoreCaseAndDeletedAtIsNull(
+            Long adminId,
+            String keyword
+    );
+
+    // =========================
+    // SOFT DELETED
+    // =========================
+
+    List<FamilyStatus> findByDeletedAtIsNotNull();
+
+    Optional<FamilyStatus> findByIdAndDeletedAtIsNotNull(Long id);
 }

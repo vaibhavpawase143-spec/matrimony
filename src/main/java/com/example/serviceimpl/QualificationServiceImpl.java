@@ -1,84 +1,323 @@
 package com.example.serviceimpl;
 
+import com.example.dto.request.QualificationRequestDTO;
+import com.example.dto.response.QualificationResponseDTO;
+import com.example.exception.BadRequestException;
+import com.example.exception.ResourceNotFoundException;
+import com.example.model.Admin;
 import com.example.model.Qualification;
+import com.example.repository.AdminRepository;
 import com.example.repository.QualificationRepository;
+import com.example.service.CurrentAdminService;
 import com.example.service.QualificationService;
+import com.example.util.AuditHelper;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
 public class QualificationServiceImpl implements QualificationService {
 
-    private final QualificationRepository repository;
+    private final QualificationRepository qualificationRepository;
+    private final AdminRepository adminRepository;
+    private final CurrentAdminService currentAdminService;
+    private final AuditHelper auditHelper;
 
-    public QualificationServiceImpl(QualificationRepository repository) {
-        this.repository = repository;
-    }
+    private static final String MODULE = "Master";
+    private static final String ENTITY = "Qualification";
 
-    // ✅ Save (admin-wise duplicate check)
+    // =====================================================
+    // CREATE
+    // =====================================================
+
     @Override
-    public Qualification save(Qualification qualification) {
+    public QualificationResponseDTO create(QualificationRequestDTO requestDto) {
 
-        String name = qualification.getName();
-        Long adminId = qualification.getAdmin().getId();
+        Admin admin = adminRepository.findById(requestDto.getAdminId())
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Admin not found."));
 
-        Optional<Qualification> existing =
-                repository.findByNameIgnoreCaseAndAdminId(name, adminId);
+        if (qualificationRepository.existsByNameIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+                requestDto.getName(),
+                admin.getId())) {
 
-        if (existing.isPresent() &&
-                !existing.get().getId().equals(qualification.getId())) {
-            throw new RuntimeException("Qualification already exists for this admin!");
+            throw new BadRequestException("Qualification already exists.");
         }
 
-        return repository.save(qualification);
+        Qualification entity = Qualification.builder()
+                .admin(admin)
+                .name(requestDto.getName())
+                .isActive(requestDto.getIsActive())
+                .build();
+
+        entity = qualificationRepository.save(entity);
+
+        auditHelper.logCreate(
+                MODULE,
+                ENTITY,
+                entity.getId(),
+                entity.getName(),
+                entity.getName()
+        );
+
+        return mapToResponse(entity);
     }
 
-    // ✅ Get by ID
-    @Override
-    public Optional<Qualification> getById(Long id) {
-        return repository.findById(id);
-    }
-
-    // 🔍 Get all
-    @Override
-    public List<Qualification> getAll() {
-        return repository.findAll();
-    }
-
-    // 🔍 Get by admin
-    @Override
-    public List<Qualification> getByAdmin(Long adminId) {
-        return repository.findByAdminId(adminId);
-    }
-
-    // 🔍 Active / Inactive
-    @Override
-    public List<Qualification> getActiveByAdmin(Long adminId) {
-        return repository.findByAdminIdAndIsActiveTrue(adminId);
-    }
+    // =====================================================
+    // UPDATE
+    // =====================================================
 
     @Override
-    public List<Qualification> getInactiveByAdmin(Long adminId) {
-        return repository.findByAdminIdAndIsActiveFalse(adminId);
+    public QualificationResponseDTO update(Long id,
+                                           QualificationRequestDTO requestDto) {
+
+        Qualification entity = qualificationRepository
+                .findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Qualification not found."));
+
+        if (!entity.getName().equalsIgnoreCase(requestDto.getName())
+                && qualificationRepository.existsByNameIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+                requestDto.getName(),
+                entity.getAdmin().getId())) {
+
+            throw new BadRequestException("Qualification already exists.");
+        }
+
+        String oldValue = entity.getName();
+        Boolean oldActive = entity.getIsActive();
+
+        entity.setName(requestDto.getName());
+        entity.setIsActive(requestDto.getIsActive());
+
+        entity = qualificationRepository.save(entity);
+
+        auditHelper.logUpdate(
+                MODULE,
+                ENTITY,
+                entity.getId(),
+                entity.getName(),
+                oldValue,
+                entity.getName(),
+                oldActive,
+                entity.getIsActive()
+        );
+
+        return mapToResponse(entity);
     }
 
-    // 🔍 Search
+    // =====================================================
+    // SOFT DELETE
+    // =====================================================
+
     @Override
-    public List<Qualification> searchByAdmin(Long adminId, String keyword) {
-        return repository.findByAdminIdAndNameContainingIgnoreCase(adminId, keyword);
+    public void softDelete(Long id) {
+
+        Qualification entity = qualificationRepository
+                .findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Qualification not found."));
+
+        entity.setDeletedAt(LocalDateTime.now());
+        entity.setDeletedBy(currentAdminService.getCurrentAdmin().getId());
+
+        qualificationRepository.save(entity);
+
+        auditHelper.logDelete(
+                MODULE,
+                ENTITY,
+                entity.getId(),
+                entity.getName(),
+                entity.getName()
+        );
+    }
+    // =====================================================
+    // RESTORE
+    // =====================================================
+
+    @Override
+    public void restore(Long id) {
+
+        Qualification entity = qualificationRepository
+                .findByIdAndDeletedAtIsNotNull(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Deleted Qualification not found."));
+
+        entity.setDeletedAt(null);
+        entity.setDeletedBy(null);
+
+        qualificationRepository.save(entity);
+
+        auditHelper.logRestore(
+                MODULE,
+                ENTITY,
+                entity.getId(),
+                entity.getName(),
+                entity.getName()
+        );
     }
 
-    // 🔍 Find by name
+    // =====================================================
+    // HARD DELETE
+    // =====================================================
+
     @Override
-    public Optional<Qualification> getByNameAndAdmin(String name, Long adminId) {
-        return repository.findByNameIgnoreCaseAndAdminId(name, adminId);
+    public void hardDelete(Long id) {
+
+        Qualification entity = qualificationRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Qualification not found."));
+
+        auditHelper.logHardDelete(
+                MODULE,
+                ENTITY,
+                entity.getId(),
+                entity.getName(),
+                entity.getName()
+        );
+
+        qualificationRepository.delete(entity);
     }
 
-    // ✅ Delete
+    // =====================================================
+    // GET BY ID
+    // =====================================================
+
     @Override
-    public void delete(Long id) {
-        repository.deleteById(id);
+    public QualificationResponseDTO getById(Long id) {
+
+        Qualification entity = qualificationRepository
+                .findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Qualification not found."));
+
+        return mapToResponse(entity);
+    }
+
+    // =====================================================
+    // GET ALL
+    // =====================================================
+
+    @Override
+    public List<QualificationResponseDTO> getAll() {
+
+        return qualificationRepository.findAllByDeletedAtIsNull()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Override
+    public List<QualificationResponseDTO> getDeleted() {
+
+        return qualificationRepository.findByDeletedAtIsNotNull()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    // =====================================================
+    // ACTIVE / INACTIVE
+    // =====================================================
+
+    @Override
+    public List<QualificationResponseDTO> getActive() {
+
+        return qualificationRepository.findByIsActiveTrueAndDeletedAtIsNull()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Override
+    public List<QualificationResponseDTO> getInactive() {
+
+        return qualificationRepository.findByIsActiveFalseAndDeletedAtIsNull()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    // =====================================================
+    // ADMIN
+    // =====================================================
+
+    @Override
+    public List<QualificationResponseDTO> getByAdmin(Long adminId) {
+
+        return qualificationRepository.findByAdmin_IdAndDeletedAtIsNull(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Override
+    public List<QualificationResponseDTO> getActiveByAdmin(Long adminId) {
+
+        return qualificationRepository
+                .findByAdmin_IdAndIsActiveTrueAndDeletedAtIsNull(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Override
+    public List<QualificationResponseDTO> getInactiveByAdmin(Long adminId) {
+
+        return qualificationRepository
+                .findByAdmin_IdAndIsActiveFalseAndDeletedAtIsNull(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    // =====================================================
+    // SEARCH
+    // =====================================================
+
+    @Override
+    public List<QualificationResponseDTO> search(String keyword) {
+
+        return qualificationRepository
+                .findByNameContainingIgnoreCaseAndDeletedAtIsNull(keyword)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Override
+    public List<QualificationResponseDTO> searchByAdmin(Long adminId,
+                                                        String keyword) {
+
+        return qualificationRepository
+                .findByAdmin_IdAndNameContainingIgnoreCaseAndDeletedAtIsNull(
+                        adminId,
+                        keyword
+                )
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    // =====================================================
+    // DTO MAPPING
+    // =====================================================
+
+    private QualificationResponseDTO mapToResponse(Qualification entity) {
+
+        return QualificationResponseDTO.builder()
+                .id(entity.getId())
+                .adminId(entity.getAdmin() != null ? entity.getAdmin().getId() : null)
+                .adminName(null) // Avoid LazyInitializationException
+                .name(entity.getName())
+                .isActive(entity.getIsActive())
+                .createdAt(entity.getCreatedAt())
+                .updatedAt(entity.getUpdatedAt())
+                .deletedAt(entity.getDeletedAt())
+                .deletedBy(entity.getDeletedBy())
+                .build();
     }
 }

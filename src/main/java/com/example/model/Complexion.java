@@ -1,17 +1,28 @@
 package com.example.model;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 import java.time.LocalDateTime;
 
+@Getter
+@Setter
+@NoArgsConstructor
 @Entity
 @Table(
         name = "complexions",
         uniqueConstraints = {
-                @UniqueConstraint(columnNames = {"admin_id", "value"})
+                @UniqueConstraint(
+                        name = "uk_complexion_admin_value",
+                        columnNames = {"admin_id", "value"}
+                )
         },
         indexes = {
                 @Index(name = "idx_complexion_admin", columnList = "admin_id"),
-                @Index(name = "idx_complexion_active", columnList = "is_active")
+                @Index(name = "idx_complexion_active", columnList = "is_active"),
+                @Index(name = "idx_complexion_deleted", columnList = "deleted_at")
         }
 )
 public class Complexion {
@@ -21,7 +32,7 @@ public class Complexion {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "admin_id") // add nullable=false if needed
+    @JoinColumn(name = "admin_id")
     private Admin admin;
 
     @Column(nullable = false, length = 120)
@@ -36,7 +47,19 @@ public class Complexion {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    public Complexion() {}
+    // ==========================
+    // SOFT DELETE
+    // ==========================
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
+    @Column(name = "deleted_by")
+    private Long deletedBy;
+
+    // ==========================
+    // AUDIT
+    // ==========================
 
     @PrePersist
     protected void onCreate() {
@@ -47,43 +70,5 @@ public class Complexion {
     @PreUpdate
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
-    }
-
-    // --- Getters and Setters ---
-
-    public Long getId() {
-        return id;
-    }
-
-    public Admin getAdmin() {
-        return admin;
-    }
-
-    public void setAdmin(Admin admin) {
-        this.admin = admin;
-    }
-
-    public String getValue() {
-        return value;
-    }
-
-    public void setValue(String value) {
-        this.value = value;
-    }
-
-    public Boolean getIsActive() {
-        return isActive;
-    }
-
-    public void setIsActive(Boolean isActive) {
-        this.isActive = isActive;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
     }
 }

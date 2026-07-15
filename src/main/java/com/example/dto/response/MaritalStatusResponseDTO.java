@@ -1,16 +1,23 @@
 package com.example.dto.response;
 
-import lombok.Data;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
-@Data
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class MaritalStatusResponseDTO {
 
     private Long id;
+    private Long adminId;
     private String name;
     private Boolean isActive;
-    private Long adminId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    private LocalDateTime deletedAt;
+    private Long deletedBy;
 }

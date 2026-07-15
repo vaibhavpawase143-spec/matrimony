@@ -1,45 +1,59 @@
 package com.example.service;
 
-import com.example.model.Height;
+import com.example.dto.request.HeightRequestDTO;
+import com.example.dto.response.HeightResponseDTO;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface HeightService {
 
-    // 🔍 Basic CRUD
-    Height create(Height height);
+    // =========================
+    // CRUD
+    // =========================
 
-    Height update(Long id, Height height);
+    HeightResponseDTO create(HeightRequestDTO requestDto);
 
-    void delete(Long id);
+    HeightResponseDTO update(Long id, HeightRequestDTO requestDto);
 
-    Optional<Height> getById(Long id);
+    void softDelete(Long id);
 
-    List<Height> getAll();
+    void restore(Long id);
 
-    // 🔍 Find by height
-    Optional<Height> getByHeight(String height);
+    void hardDelete(Long id);
 
-    Optional<Height> getByHeightIgnoreCase(String height);
+    // =========================
+    // GET
+    // =========================
 
-    // ✅ Duplicate check
-    boolean existsByHeight(String height);
+    HeightResponseDTO getById(Long id);
 
-    boolean existsByHeightIgnoreCase(String height);
+    List<HeightResponseDTO> getAll();
 
-    // 🔍 Active / Inactive
-    List<Height> getActive();
+    List<HeightResponseDTO> getDeleted();
 
-    List<Height> getInactive();
+    // =========================
+    // ACTIVE / INACTIVE
+    // =========================
 
-    // 🔍 Admin-based
-    List<Height> getByAdmin(Long adminId);
+    List<HeightResponseDTO> getActive();
 
-    List<Height> getActiveByAdmin(Long adminId);
+    List<HeightResponseDTO> getInactive();
 
-    // 🔍 Search
-    List<Height> search(String keyword);
+    // =========================
+    // ADMIN WISE
+    // =========================
 
-    List<Height> searchByAdmin(Long adminId, String keyword);
+    List<HeightResponseDTO> getByAdmin(Long adminId);
+
+    List<HeightResponseDTO> getActiveByAdmin(Long adminId);
+
+    List<HeightResponseDTO> getInactiveByAdmin(Long adminId);
+
+    // =========================
+    // SEARCH
+    // =========================
+
+    List<HeightResponseDTO> search(String keyword);
+
+    List<HeightResponseDTO> searchByAdmin(Long adminId, String keyword);
 }

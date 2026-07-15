@@ -1,32 +1,69 @@
 package com.example.service;
 
 import com.example.dto.request.FamilyDetailsRequestDto;
-import com.example.model.FamilyDetails;
+import com.example.dto.response.FamilyDetailsResponseDto;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface FamilyDetailsService {
 
-    FamilyDetails create(FamilyDetailsRequestDto dto);
+    // =========================
+    // CRUD
+    // =========================
 
-    FamilyDetails update(Long id, FamilyDetails familyDetails);
-    FamilyDetails update(Long id, FamilyDetailsRequestDto dto);
+    FamilyDetailsResponseDto create(FamilyDetailsRequestDto requestDto);
 
-    void delete(Long id);
+    FamilyDetailsResponseDto update(Long id, FamilyDetailsRequestDto requestDto);
 
-    Optional<FamilyDetails> getById(Long id);
-    List<FamilyDetails> getAll();
+    void softDelete(Long id);
 
-    Optional<FamilyDetails> getByProfile(Long profileId);
+    void restore(Long id);
+
+    void hardDelete(Long id);
+
+    // =========================
+    // GET
+    // =========================
+
+    FamilyDetailsResponseDto getById(Long id);
+
+    List<FamilyDetailsResponseDto> getAll();
+
+    List<FamilyDetailsResponseDto> getDeleted();
+
+    // =========================
+    // PROFILE
+    // =========================
+
+    FamilyDetailsResponseDto getByProfile(Long profileId);
+
     boolean existsByProfile(Long profileId);
 
-    List<FamilyDetails> getByFamilyType(Long familyTypeId);
-    List<FamilyDetails> getByFamily(Long familyId);
-    List<FamilyDetails> getActiveByFamily(Long familyId);
+    List<FamilyDetailsResponseDto> getActiveByProfile(Long profileId);
 
-    List<FamilyDetails> getByBrotherType(Long brotherTypeId);
-    List<FamilyDetails> getBySisterType(Long sisterTypeId);
+    // =========================
+    // FAMILY TYPE
+    // =========================
 
-    List<FamilyDetails> getActiveByProfile(Long profileId);
+    List<FamilyDetailsResponseDto> getByFamilyType(Long familyTypeId);
+
+    // =========================
+    // FAMILY
+    // =========================
+
+    List<FamilyDetailsResponseDto> getByFamily(Long familyId);
+
+    List<FamilyDetailsResponseDto> getActiveByFamily(Long familyId);
+
+    // =========================
+    // BROTHER TYPE
+    // =========================
+
+    List<FamilyDetailsResponseDto> getByBrotherType(Long brotherTypeId);
+
+    // =========================
+    // SISTER TYPE
+    // =========================
+
+    List<FamilyDetailsResponseDto> getBySisterType(Long sisterTypeId);
 }

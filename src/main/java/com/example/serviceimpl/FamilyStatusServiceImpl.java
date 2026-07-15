@@ -1,127 +1,334 @@
 package com.example.serviceimpl;
 
+import com.example.dto.request.FamilyStatusRequestDto;
+import com.example.dto.response.FamilyStatusResponseDto;
+import com.example.exception.BadRequestException;
+import com.example.exception.ResourceNotFoundException;
+import com.example.model.Admin;
 import com.example.model.FamilyStatus;
+import com.example.repository.AdminRepository;
 import com.example.repository.FamilyStatusRepository;
 import com.example.service.FamilyStatusService;
+import com.example.util.AuditHelper;
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
+@Transactional
 public class FamilyStatusServiceImpl implements FamilyStatusService {
 
+    private static final String MODULE = "MASTER";
+    private static final String ENTITY = "FAMILY_STATUS";
+
     private final FamilyStatusRepository familyStatusRepository;
+    private final AdminRepository adminRepository;
+    private final AuditHelper auditHelper;
 
-    public FamilyStatusServiceImpl(FamilyStatusRepository familyStatusRepository) {
-        this.familyStatusRepository = familyStatusRepository;
-    }
+    // =========================
+    // CREATE
+    // =========================
 
-    // ✅ Create
     @Override
-    public FamilyStatus create(FamilyStatus familyStatus) {
+    public FamilyStatusResponseDto create(FamilyStatusRequestDto requestDto) {
 
-        if (familyStatusRepository.existsByNameIgnoreCase(familyStatus.getName())) {
-            throw new RuntimeException("FamilyStatus already exists: " + familyStatus.getName());
+        Admin admin = adminRepository.findById(requestDto.getAdminId())
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Admin not found."));
+
+        if (familyStatusRepository.existsByNameIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+                requestDto.getName(),
+                requestDto.getAdminId())) {
+
+            throw new BadRequestException("Family Status already exists.");
         }
 
-        return familyStatusRepository.save(familyStatus);
+        FamilyStatus familyStatus = FamilyStatus.builder()
+                .admin(admin)
+                .name(requestDto.getName().trim())
+                .isActive(requestDto.getIsActive())
+                .build();
+
+        FamilyStatus saved = familyStatusRepository.save(familyStatus);
+
+        auditHelper.logCreate(
+                MODULE,
+                ENTITY,
+                saved.getId(),
+                saved.getName(),
+                saved.getName()
+        );
+
+        return mapToResponse(saved);
     }
 
-    // 🔄 Update
+    // =========================
+    // UPDATE
+    // =========================
+
     @Override
-    public FamilyStatus update(Long id, FamilyStatus familyStatus) {
+    public FamilyStatusResponseDto update(Long id,
+                                          FamilyStatusRequestDto requestDto) {
 
-        FamilyStatus existing = familyStatusRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("FamilyStatus not found with id: " + id));
+        FamilyStatus familyStatus = familyStatusRepository
+                .findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Family Status not found."));
 
-        familyStatusRepository.findByNameIgnoreCase(familyStatus.getName())
-                .ifPresent(f -> {
-                    if (!f.getId().equals(id)) {
-                        throw new RuntimeException("FamilyStatus already exists: " + familyStatus.getName());
-                    }
-                });
+        boolean oldStatus = familyStatus.getIsActive();
 
-        // ✏️ Update fields
-        existing.setName(familyStatus.getName());
-        existing.setIsActive(familyStatus.getIsActive());
+        if (familyStatusRepository
+                .findByNameIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+                        requestDto.getName(),
+                        requestDto.getAdminId())
+                .filter(f -> !f.getId().equals(id))
+                .isPresent()) {
 
-        return familyStatusRepository.save(existing);
+            throw new BadRequestException("Family Status already exists.");
+        }
+
+        Admin admin = adminRepository.findById(requestDto.getAdminId())
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Admin not found."));
+
+        String oldValue = familyStatus.getName();
+
+        familyStatus.setAdmin(admin);
+        familyStatus.setName(requestDto.getName().trim());
+        familyStatus.setIsActive(requestDto.getIsActive());
+
+        FamilyStatus updated = familyStatusRepository.save(familyStatus);
+
+        auditHelper.logUpdate(
+                MODULE,
+                ENTITY,
+                updated.getId(),
+                updated.getName(),
+                oldValue,
+                updated.getName(),
+                oldStatus,
+                updated.getIsActive()
+        );
+
+        return mapToResponse(updated);
     }
 
-    // ❌ Delete
-    @Override
-    public void delete(Long id) {
-        FamilyStatus existing = familyStatusRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("FamilyStatus not found with id: " + id));
+    // =========================
+    // SOFT DELETE
+    // =========================
 
-        familyStatusRepository.delete(existing);
+    @Override
+    public void softDelete(Long id) {
+
+        FamilyStatus familyStatus = familyStatusRepository
+                .findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Family Status not found."));
+
+        familyStatus.setDeletedAt(LocalDateTime.now());
+
+        familyStatusRepository.save(familyStatus);
+
+        auditHelper.logDelete(
+                MODULE,
+                ENTITY,
+                familyStatus.getId(),
+                familyStatus.getName(),
+                familyStatus.getName()
+        );
+    }
+    // =========================
+    // RESTORE
+    // =========================
+
+    @Override
+    public void restore(Long id) {
+
+        FamilyStatus familyStatus = familyStatusRepository
+                .findByIdAndDeletedAtIsNotNull(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Deleted Family Status not found."));
+
+        if (familyStatusRepository.existsByNameIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+                familyStatus.getName(),
+                familyStatus.getAdmin().getId())) {
+
+            throw new BadRequestException("Family Status already exists.");
+        }
+
+        familyStatus.setDeletedAt(null);
+        familyStatus.setDeletedBy(null);
+
+        familyStatusRepository.save(familyStatus);
+
+        auditHelper.logRestore(
+                MODULE,
+                ENTITY,
+                familyStatus.getId(),
+                familyStatus.getName(),
+                familyStatus.getName()
+        );
     }
 
-    // 🔍 Get by ID
-    @Override
-    public Optional<FamilyStatus> getById(Long id) {
-        return familyStatusRepository.findById(id);
-    }
-
-    // 🔍 Get all
-    @Override
-    public List<FamilyStatus> getAll() {
-        return familyStatusRepository.findAll();
-    }
-
-    // 🔍 Find by name
-    @Override
-    public Optional<FamilyStatus> getByName(String name) {
-        return familyStatusRepository.findByName(name);
-    }
+    // =========================
+    // HARD DELETE
+    // =========================
 
     @Override
-    public Optional<FamilyStatus> getByNameIgnoreCase(String name) {
-        return familyStatusRepository.findByNameIgnoreCase(name);
+    public void hardDelete(Long id) {
+
+        FamilyStatus familyStatus = familyStatusRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Family Status not found."));
+
+        auditHelper.logHardDelete(
+                MODULE,
+                ENTITY,
+                familyStatus.getId(),
+                familyStatus.getName(),
+                familyStatus.getName()
+        );
+
+        familyStatusRepository.delete(familyStatus);
     }
 
-    // ✅ Duplicate check
-    @Override
-    public boolean existsByName(String name) {
-        return familyStatusRepository.existsByName(name);
-    }
+    // =========================
+    // GET BY ID
+    // =========================
 
     @Override
-    public boolean existsByNameIgnoreCase(String name) {
-        return familyStatusRepository.existsByNameIgnoreCase(name);
+    public FamilyStatusResponseDto getById(Long id) {
+
+        return mapToResponse(
+                familyStatusRepository.findByIdAndDeletedAtIsNull(id)
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException("Family Status not found."))
+        );
     }
 
-    // 🔍 Active / Inactive
-    @Override
-    public List<FamilyStatus> getActive() {
-        return familyStatusRepository.findByIsActiveTrue();
-    }
+    // =========================
+    // GET ALL
+    // =========================
 
     @Override
-    public List<FamilyStatus> getInactive() {
-        return familyStatusRepository.findByIsActiveFalse();
-    }
+    public List<FamilyStatusResponseDto> getAll() {
 
-    // 🔍 Admin-based
-    @Override
-    public List<FamilyStatus> getByAdmin(Long adminId) {
-        return familyStatusRepository.findByAdminId(adminId);
-    }
-
-    @Override
-    public List<FamilyStatus> getActiveByAdmin(Long adminId) {
-        return familyStatusRepository.findByAdminIdAndIsActiveTrue(adminId);
-    }
-
-    // 🔍 Search
-    @Override
-    public List<FamilyStatus> search(String keyword) {
-        return familyStatusRepository.findByNameContainingIgnoreCase(keyword);
+        return familyStatusRepository.findAllByDeletedAtIsNull()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
     }
 
     @Override
-    public List<FamilyStatus> searchByAdmin(Long adminId, String keyword) {
-        return familyStatusRepository.findByAdminIdAndNameContainingIgnoreCase(adminId, keyword);
+    public List<FamilyStatusResponseDto> getDeleted() {
+
+        return familyStatusRepository.findByDeletedAtIsNotNull()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    // =========================
+    // ACTIVE / INACTIVE
+    // =========================
+
+    @Override
+    public List<FamilyStatusResponseDto> getActive() {
+
+        return familyStatusRepository.findByIsActiveTrueAndDeletedAtIsNull()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Override
+    public List<FamilyStatusResponseDto> getInactive() {
+
+        return familyStatusRepository.findByIsActiveFalseAndDeletedAtIsNull()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    // =========================
+    // ADMIN WISE
+    // =========================
+
+    @Override
+    public List<FamilyStatusResponseDto> getByAdmin(Long adminId) {
+
+        return familyStatusRepository.findByAdmin_IdAndDeletedAtIsNull(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Override
+    public List<FamilyStatusResponseDto> getActiveByAdmin(Long adminId) {
+
+        return familyStatusRepository
+                .findByAdmin_IdAndIsActiveTrueAndDeletedAtIsNull(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Override
+    public List<FamilyStatusResponseDto> getInactiveByAdmin(Long adminId) {
+
+        return familyStatusRepository
+                .findByAdmin_IdAndIsActiveFalseAndDeletedAtIsNull(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    // =========================
+    // SEARCH
+    // =========================
+
+    @Override
+    public List<FamilyStatusResponseDto> search(String keyword) {
+
+        return familyStatusRepository
+                .findByNameContainingIgnoreCaseAndDeletedAtIsNull(keyword)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Override
+    public List<FamilyStatusResponseDto> searchByAdmin(Long adminId,
+                                                       String keyword) {
+
+        return familyStatusRepository
+                .findByAdmin_IdAndNameContainingIgnoreCaseAndDeletedAtIsNull(
+                        adminId,
+                        keyword)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    // =========================
+    // DTO MAPPING
+    // =========================
+
+    private FamilyStatusResponseDto mapToResponse(FamilyStatus entity) {
+
+        return FamilyStatusResponseDto.builder()
+                .id(entity.getId())
+                .adminId(entity.getAdmin().getId())
+                .name(entity.getName())
+                .isActive(entity.getIsActive())
+                .createdAt(entity.getCreatedAt())
+                .updatedAt(entity.getUpdatedAt())
+                .deletedAt(entity.getDeletedAt())
+                .deletedBy(entity.getDeletedBy())
+                .build();
     }
 }

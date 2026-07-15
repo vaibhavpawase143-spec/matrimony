@@ -1,117 +1,215 @@
 package com.example.controller.master;
 
 import com.example.dto.request.FamilyTypeRequestDto;
+import com.example.dto.response.ApiResponse;
 import com.example.dto.response.FamilyTypeResponseDto;
-import com.example.model.Admin;
-import com.example.model.FamilyType;
 import com.example.service.FamilyTypeService;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/master/family-types")
+@RequiredArgsConstructor
 public class FamilyTypeController {
 
-    private final FamilyTypeService service;
+    private final FamilyTypeService familyTypeService;
 
-    public FamilyTypeController(FamilyTypeService service) {
-        this.service = service;
-    }
+    // =========================
+    // CREATE
+    // =========================
 
-    // ✅ Create
     @PostMapping
-    public FamilyTypeResponseDto create(@Valid @RequestBody FamilyTypeRequestDto dto) {
-        return mapToResponse(service.create(mapToEntity(dto)));
+    @ResponseStatus(HttpStatus.CREATED)
+    public ApiResponse<FamilyTypeResponseDto> create(
+            @Valid @RequestBody FamilyTypeRequestDto requestDto) {
+
+        return ApiResponse.success(
+                "Family Type created successfully.",
+                familyTypeService.create(requestDto)
+        );
     }
 
-    // 🔄 Update
+    // =========================
+    // UPDATE
+    // =========================
+
     @PutMapping("/{id}")
-    public FamilyTypeResponseDto update(@PathVariable Long id,
-                                        @Valid @RequestBody FamilyTypeRequestDto dto) {
-        return mapToResponse(service.update(id, mapToEntity(dto)));
+    public ApiResponse<FamilyTypeResponseDto> update(
+            @PathVariable Long id,
+            @Valid @RequestBody FamilyTypeRequestDto requestDto) {
+
+        return ApiResponse.success(
+                "Family Type updated successfully.",
+                familyTypeService.update(id, requestDto)
+        );
     }
 
-    // ❌ Delete
+    // =========================
+    // SOFT DELETE
+    // =========================
+
     @DeleteMapping("/{id}")
-    public String delete(@PathVariable Long id) {
-        service.delete(id);
-        return "FamilyType deleted successfully";
+    public ApiResponse<Void> softDelete(@PathVariable Long id) {
+
+        familyTypeService.softDelete(id);
+
+        return ApiResponse.success(
+                "Family Type deleted successfully.",
+                null
+        );
     }
 
-    // 🔍 Get by ID
+    // =========================
+    // RESTORE
+    // =========================
+
+    @PatchMapping("/{id}/restore")
+    public ApiResponse<Void> restore(@PathVariable Long id) {
+
+        familyTypeService.restore(id);
+
+        return ApiResponse.success(
+                "Family Type restored successfully.",
+                null
+        );
+    }
+
+    // =========================
+    // HARD DELETE
+    // =========================
+
+    @DeleteMapping("/{id}/hard")
+    public ApiResponse<Void> hardDelete(@PathVariable Long id) {
+
+        familyTypeService.hardDelete(id);
+
+        return ApiResponse.success(
+                "Family Type permanently deleted.",
+                null
+        );
+    }
+
+    // =========================
+    // GET BY ID
+    // =========================
+
     @GetMapping("/{id}")
-    public FamilyTypeResponseDto getById(@PathVariable Long id) {
-        return service.getById(id)
-                .map(this::mapToResponse)
-                .orElseThrow(() -> new RuntimeException("FamilyType not found"));
+    public ApiResponse<FamilyTypeResponseDto> getById(@PathVariable Long id) {
+
+        return ApiResponse.success(
+                "Family Type fetched successfully.",
+                familyTypeService.getById(id)
+        );
     }
 
-    // 🔍 Get all
+    // =========================
+    // GET ALL
+    // =========================
+
     @GetMapping
-    public List<FamilyTypeResponseDto> getAll() {
-        return service.getAll()
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+    public ApiResponse<List<FamilyTypeResponseDto>> getAll() {
+
+        return ApiResponse.success(
+                "Family Types fetched successfully.",
+                familyTypeService.getAll()
+        );
     }
 
-    // 🔍 Active
+    // =========================
+    // GET DELETED
+    // =========================
+
+    @GetMapping("/deleted")
+    public ApiResponse<List<FamilyTypeResponseDto>> getDeleted() {
+
+        return ApiResponse.success(
+                "Deleted Family Types fetched successfully.",
+                familyTypeService.getDeleted()
+        );
+    }
+
+    // =========================
+    // ACTIVE / INACTIVE
+    // =========================
+
     @GetMapping("/active")
-    public List<FamilyTypeResponseDto> getActive() {
-        return service.getActive()
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+    public ApiResponse<List<FamilyTypeResponseDto>> getActive() {
+
+        return ApiResponse.success(
+                "Active Family Types fetched successfully.",
+                familyTypeService.getActive()
+        );
     }
 
-    // 🔍 By Admin
+    @GetMapping("/inactive")
+    public ApiResponse<List<FamilyTypeResponseDto>> getInactive() {
+
+        return ApiResponse.success(
+                "Inactive Family Types fetched successfully.",
+                familyTypeService.getInactive()
+        );
+    }
+
+    // =========================
+    // ADMIN WISE
+    // =========================
+
     @GetMapping("/admin/{adminId}")
-    public List<FamilyTypeResponseDto> getByAdmin(@PathVariable Long adminId) {
-        return service.getByAdmin(adminId)
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+    public ApiResponse<List<FamilyTypeResponseDto>> getByAdmin(
+            @PathVariable Long adminId) {
+
+        return ApiResponse.success(
+                "Family Types fetched successfully.",
+                familyTypeService.getByAdmin(adminId)
+        );
     }
 
-    // 🔍 Search
+    @GetMapping("/admin/{adminId}/active")
+    public ApiResponse<List<FamilyTypeResponseDto>> getActiveByAdmin(
+            @PathVariable Long adminId) {
+
+        return ApiResponse.success(
+                "Active Family Types fetched successfully.",
+                familyTypeService.getActiveByAdmin(adminId)
+        );
+    }
+
+    @GetMapping("/admin/{adminId}/inactive")
+    public ApiResponse<List<FamilyTypeResponseDto>> getInactiveByAdmin(
+            @PathVariable Long adminId) {
+
+        return ApiResponse.success(
+                "Inactive Family Types fetched successfully.",
+                familyTypeService.getInactiveByAdmin(adminId)
+        );
+    }
+
+    // =========================
+    // SEARCH
+    // =========================
+
     @GetMapping("/search")
-    public List<FamilyTypeResponseDto> search(@RequestParam String keyword) {
-        return service.search(keyword)
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+    public ApiResponse<List<FamilyTypeResponseDto>> search(
+            @RequestParam String keyword) {
+
+        return ApiResponse.success(
+                "Search completed successfully.",
+                familyTypeService.search(keyword)
+        );
     }
 
-    // =========================
-    // 🔁 MAPPING (SAFE)
-    // =========================
+    @GetMapping("/admin/{adminId}/search")
+    public ApiResponse<List<FamilyTypeResponseDto>> searchByAdmin(
+            @PathVariable Long adminId,
+            @RequestParam String keyword) {
 
-    private FamilyType mapToEntity(FamilyTypeRequestDto dto) {
-
-        FamilyType entity = new FamilyType();
-
-        Admin admin = new Admin();
-        admin.setId(dto.getAdminId());
-
-        entity.setAdmin(admin);
-        entity.setName(dto.getName());
-        entity.setIsActive(dto.getIsActive());
-
-        return entity;
-    }
-
-    private FamilyTypeResponseDto mapToResponse(FamilyType entity) {
-
-        return FamilyTypeResponseDto.builder()
-                .id(entity.getId())
-                .name(entity.getName())
-                .isActive(entity.getIsActive())
-                .createdAt(entity.getCreatedAt())
-                .updatedAt(entity.getUpdatedAt())
-                .adminId(entity.getAdmin() != null ? entity.getAdmin().getId() : null)
-                .build();
+        return ApiResponse.success(
+                "Search completed successfully.",
+                familyTypeService.searchByAdmin(adminId, keyword)
+        );
     }
 }

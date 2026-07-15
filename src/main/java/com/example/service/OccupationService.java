@@ -1,31 +1,59 @@
 package com.example.service;
 
-import com.example.model.Occupation;
+import com.example.dto.request.OccupationRequestDTO;
+import com.example.dto.response.OccupationResponseDTO;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface OccupationService {
 
-    Occupation create(Occupation occupation);
+    // =========================
+    // CRUD
+    // =========================
 
-    Occupation update(Long id, Occupation occupation);
+    OccupationResponseDTO create(OccupationRequestDTO requestDto);
 
-    void delete(Long id);
+    OccupationResponseDTO update(Long id, OccupationRequestDTO requestDto);
 
-    Optional<Occupation> getById(Long id);
+    void softDelete(Long id);
 
-    List<Occupation> getAll();   // ✅ important
+    void restore(Long id);
 
-    List<Occupation> getByAdmin(Long adminId);
+    void hardDelete(Long id);
 
-    List<Occupation> getActiveByAdmin(Long adminId);
+    // =========================
+    // GET
+    // =========================
 
-    List<Occupation> getInactiveByAdmin(Long adminId);
+    OccupationResponseDTO getById(Long id);
 
-    Optional<Occupation> getByNameAndAdmin(String name, Long adminId);
+    List<OccupationResponseDTO> getAll();
 
-    boolean existsByNameAndAdmin(String name, Long adminId);
+    List<OccupationResponseDTO> getDeleted();
 
-    List<Occupation> searchByAdmin(Long adminId, String keyword);
+    // =========================
+    // ACTIVE / INACTIVE
+    // =========================
+
+    List<OccupationResponseDTO> getActive();
+
+    List<OccupationResponseDTO> getInactive();
+
+    // =========================
+    // ADMIN
+    // =========================
+
+    List<OccupationResponseDTO> getByAdmin(Long adminId);
+
+    List<OccupationResponseDTO> getActiveByAdmin(Long adminId);
+
+    List<OccupationResponseDTO> getInactiveByAdmin(Long adminId);
+
+    // =========================
+    // SEARCH
+    // =========================
+
+    List<OccupationResponseDTO> search(String keyword);
+
+    List<OccupationResponseDTO> searchByAdmin(Long adminId, String keyword);
 }

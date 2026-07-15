@@ -1,47 +1,66 @@
 package com.example.service;
 
+import com.example.dto.request.RoleRequestDTO;
+import com.example.dto.response.RoleResponseDTO;
 import com.example.model.Role;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface RoleService {
 
-    // =========================
-    // ✅ CREATE / SAVE
-    // =========================
-    Role save(Role role);
+    // =====================================================
+    // CRUD
+    // =====================================================
 
-    // =========================
-    // 🔍 GET BY ID
-    // =========================
-    Optional<Role> getById(Long id);
+    RoleResponseDTO create(RoleRequestDTO requestDto);
 
-    // =========================
-    // 🔍 GET ALL (GLOBAL)
-    // =========================
-    List<Role> getAll();
+    RoleResponseDTO update(Long id, RoleRequestDTO requestDto);
 
-    // =========================
-    // 🔍 GLOBAL ROLE (IMPORTANT FOR JWT)
-    // =========================
-    Optional<Role> getByName(String name);
+    void softDelete(Long id);
 
-    // =========================
-    // 🔍 ADMIN BASED (OPTIONAL)
-    // =========================
-    List<Role> getByAdmin(Long adminId);
+    void restore(Long id);
 
-    List<Role> getActiveByAdmin(Long adminId);
+    void hardDelete(Long id);
 
-    List<Role> getInactiveByAdmin(Long adminId);
+    // =====================================================
+    // GET
+    // =====================================================
 
-    List<Role> searchByAdmin(Long adminId, String keyword);
+    RoleResponseDTO getById(Long id);
 
-    Optional<Role> getByNameAndAdmin(String name, Long adminId);
+    List<RoleResponseDTO> getAll();
 
-    // =========================
-    // ❌ DELETE
-    // =========================
-    void delete(Long id);
+    List<RoleResponseDTO> getDeleted();
+
+    // =====================================================
+    // ACTIVE / INACTIVE
+    // =====================================================
+
+    List<RoleResponseDTO> getActive();
+
+    List<RoleResponseDTO> getInactive();
+
+    // =====================================================
+    // ADMIN
+    // =====================================================
+
+    List<RoleResponseDTO> getByAdmin(Long adminId);
+
+    List<RoleResponseDTO> getActiveByAdmin(Long adminId);
+
+    List<RoleResponseDTO> getInactiveByAdmin(Long adminId);
+
+    // =====================================================
+    // SEARCH
+    // =====================================================
+
+    List<RoleResponseDTO> search(String keyword);
+
+    List<RoleResponseDTO> searchByAdmin(Long adminId, String keyword);
+
+    // =====================================================
+    // JWT / SPRING SECURITY
+    // =====================================================
+
+    Role getRoleEntityByName(String name);
 }

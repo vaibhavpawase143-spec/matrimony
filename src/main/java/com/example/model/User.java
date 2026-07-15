@@ -1,5 +1,6 @@
 package com.example.model;
 
+import com.example.model.base.Auditable;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
@@ -21,7 +22,7 @@ import java.util.Set;
                 @UniqueConstraint(columnNames = "phone")
         }
 )
-public class User {
+public class User extends Auditable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -99,29 +100,9 @@ public class User {
     @JsonIgnore
     private PartnerPreference partnerPreference;
 
-    // ================= TIMESTAMP =================
-    private LocalDateTime createdAt;
-
-    private LocalDateTime updatedAt;
 
     public User() {}
 
-    // ================= LIFECYCLE =================
-    @PrePersist
-    protected void onCreate() {
-
-        createdAt = LocalDateTime.now();
-
-        updatedAt = LocalDateTime.now();
-
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-
-        updatedAt = LocalDateTime.now();
-
-    }
 
     // ================= CUSTOM METHODS =================
     public String getFullName() {

@@ -1,9 +1,11 @@
 package com.example.dto.response;
 
 import lombok.*;
+
 import java.time.LocalDateTime;
 
-@Data
+@Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -20,4 +22,7 @@ public class ProfileTypeResponseDTO {
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    private LocalDateTime deletedAt;
+    private Long deletedBy;
 }

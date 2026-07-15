@@ -3,47 +3,48 @@ package com.example.service;
 import com.example.model.City;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface CityService {
 
-    // 🔍 Basic CRUD
-    City saveCity(City city);
+    // ==========================
+    // CRUD
+    // ==========================
 
-    Optional<City> getCityById(Long id);
+    City create(City city);
 
-    List<City> getAllCities();
+    City getById(Long id);
 
-    void deleteCity(Long id);
+    List<City> getAll();
 
-    // 🔍 Find by name
-    Optional<City> getByName(String name);
+    List<City> getActive();
 
-    Optional<City> getByNameIgnoreCase(String name);
+    City update(Long id, City city);
 
-    // ✅ Duplicate check
-    boolean existsByName(String name);
+    void delete(Long id, Long deletedBy);
 
-    boolean existsByNameIgnoreCase(String name);
+    void hardDelete(Long id);
 
-    // 🔍 Active / Inactive
-    List<City> getActiveCities();
+    City restore(Long id);
 
-    List<City> getInactiveCities();
+    List<City> getDeleted();
 
-    // 🔍 State-based
-    List<City> getCitiesByState(Long stateId);
+    // ==========================
+    // FIND
+    // ==========================
 
-    List<City> getActiveCitiesByState(Long stateId);
+    List<City> getByState(Long stateId);
 
-    Optional<City> getByStateAndName(Long stateId, String name);
+    List<City> getActiveByState(Long stateId);
 
-    // 🔍 Admin-based
-    List<City> getCitiesByAdmin(Long adminId);
+    List<City> getByAdmin(Long adminId);
 
-    List<City> getActiveCitiesByAdmin(Long adminId);
+    List<City> getActiveByAdmin(Long adminId);
 
-    // 🔍 Search
+    // ==========================
+    // SEARCH
+    // (Keep because frontend uses it)
+    // ==========================
+
     List<City> searchByName(String keyword);
 
     List<City> searchByState(Long stateId, String keyword);

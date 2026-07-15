@@ -1,12 +1,12 @@
 package com.example.controller.master;
 
 import com.example.dto.request.BloodGroupRequestDTO;
+import com.example.dto.response.ApiResponse;
 import com.example.dto.response.BloodGroupResponseDTO;
 import com.example.model.Admin;
 import com.example.model.BloodGroup;
 import com.example.repository.AdminRepository;
 import com.example.service.BloodGroupService;
-
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -32,65 +32,98 @@ public class BloodGroupController {
 
     // ================= CREATE =================
     @PostMapping
-    public BloodGroupResponseDTO create(@Valid @RequestBody BloodGroupRequestDTO dto) {
+    public ApiResponse<BloodGroupResponseDTO> create(@Valid @RequestBody BloodGroupRequestDTO dto) {
 
         Admin admin = getCurrentAdmin();
 
         BloodGroup bloodGroup = mapToEntity(dto);
         BloodGroup saved = bloodGroupService.create(bloodGroup, admin.getId());
 
-        return mapToResponse(saved);
+        return ApiResponse.<BloodGroupResponseDTO>builder()
+                .success(true)
+                .message("Blood group created successfully.")
+                .data(mapToResponse(saved))
+                .build();
     }
 
     // ================= GET BY ID =================
     @GetMapping("/{id}")
-    public BloodGroupResponseDTO getById(@PathVariable Long id) {
+    public ApiResponse<BloodGroupResponseDTO> getById(@PathVariable Long id) {
 
         Admin admin = getCurrentAdmin();
 
         BloodGroup bg = bloodGroupService.getById(id, admin.getId());
-        return mapToResponse(bg);
+        return ApiResponse.<BloodGroupResponseDTO>builder()
+                .success(true)
+                .message("Blood group retrieved successfully.")
+                .data(mapToResponse(bg))
+                .build();
     }
 
     // ================= GET ALL =================
     @GetMapping
-    public List<BloodGroupResponseDTO> getAll() {
+    public ApiResponse<List<BloodGroupResponseDTO>> getAll() {
 
-        return bloodGroupService.getAll(null)
+        List<BloodGroupResponseDTO> bloodGroups = bloodGroupService.getAll(null)
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
+
+        return ApiResponse.<List<BloodGroupResponseDTO>>builder()
+                .success(true)
+                .message("Blood groups retrieved successfully.")
+                .data(bloodGroups)
+                .build();
     }
 
     // ================= GET ACTIVE =================
     @GetMapping("/active")
-    public List<BloodGroupResponseDTO> getActive() {
+    public ApiResponse<List<BloodGroupResponseDTO>> getActive() {
 
-        return bloodGroupService.getActive(null)
+        List<BloodGroupResponseDTO> activeBloodGroups = bloodGroupService.getActive(null)
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
+
+        return ApiResponse.<List<BloodGroupResponseDTO>>builder()
+                .success(true)
+                .message("Active blood groups retrieved successfully.")
+                .data(activeBloodGroups)
+                .build();
     }
 
     // ================= UPDATE =================
     @PutMapping("/{id}")
-    public BloodGroupResponseDTO update(@PathVariable Long id,
-                                        @Valid @RequestBody BloodGroupRequestDTO dto) {
+    public ApiResponse<BloodGroupResponseDTO> update(
+            @PathVariable Long id,
+            @Valid @RequestBody BloodGroupRequestDTO dto) {
 
         Admin admin = getCurrentAdmin();
 
-        BloodGroup updated = bloodGroupService.update(id, mapToEntity(dto), admin.getId());
-        return mapToResponse(updated);
-    }
+        BloodGroup updated = bloodGroupService.update(
+                id,
+                mapToEntity(dto),
+                admin.getId()
+        );
 
+        return ApiResponse.<BloodGroupResponseDTO>builder()
+                .success(true)
+                .message("Blood group updated successfully.")
+                .data(mapToResponse(updated))
+                .build();
+    }
     // ================= DELETE =================
     @DeleteMapping("/{id}")
-    public String delete(@PathVariable Long id) {
+    public ApiResponse<String> delete(@PathVariable Long id) {
 
         Admin admin = getCurrentAdmin();
 
         bloodGroupService.delete(id, admin.getId());
-        return "Blood group deleted successfully";
+
+        return ApiResponse.<String>builder()
+                .success(true)
+                .message("Blood group deleted successfully.")
+                .build();
     }
 
     // ================= MAPPERS =================
@@ -118,5 +151,43 @@ public class BloodGroupController {
         }
 
         return dto;
+    }
+    @GetMapping("/deleted")
+    public ApiResponse<List<BloodGroupResponseDTO>> getDeleted() {
+
+        Admin admin = getCurrentAdmin();
+
+        List<BloodGroupResponseDTO> deleted = bloodGroupService
+                .getDeleted(admin.getId())
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+
+        return ApiResponse.<List<BloodGroupResponseDTO>>builder()
+                .success(true)
+                .message("Deleted blood groups retrieved successfully.")
+                .data(deleted)
+                .build();
+    }
+    @PutMapping("/restore/{id}")
+    public ApiResponse<BloodGroupResponseDTO> restore(@PathVariable Long id) {
+
+        BloodGroup restored = bloodGroupService.restore(id);
+
+        return ApiResponse.<BloodGroupResponseDTO>builder()
+                .success(true)
+                .message("Blood group restored successfully.")
+                .data(mapToResponse(restored))
+                .build();
+    }
+    @DeleteMapping("/hard-delete/{id}")
+    public ApiResponse<String> hardDelete(@PathVariable Long id) {
+
+        bloodGroupService.hardDelete(id);
+
+        return ApiResponse.<String>builder()
+                .success(true)
+                .message("Blood group permanently deleted successfully.")
+                .build();
     }
 }

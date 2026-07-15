@@ -1,17 +1,28 @@
 package com.example.model;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 import java.time.LocalDateTime;
 
+@Getter
+@Setter
+@NoArgsConstructor
 @Entity
 @Table(
         name = "cities",
-        uniqueConstraints = {
-                @UniqueConstraint(columnNames = {"name", "state_id"})
-        },
         indexes = {
+                @Index(name = "idx_city_name", columnList = "name"),
                 @Index(name = "idx_city_state", columnList = "state_id"),
                 @Index(name = "idx_city_active", columnList = "is_active")
+        },
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_city_state_name",
+                        columnNames = {"state_id", "name"}
+                )
         }
 )
 public class City {
@@ -20,24 +31,16 @@ public class City {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 100)
-    private String name;
-
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "state_id", nullable = false)
-    private State state;
-
-    // For query optimization
-    @Column(name = "state_id", insertable = false, updatable = false)
-    private Long stateId;
-
-    // ✅ FIXED: consistent with other entities
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "admin_id")
     private Admin admin;
 
-    @Column(name = "admin_id", insertable = false, updatable = false)
-    private Long adminId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "state_id", nullable = false)
+    private State state;
+
+    @Column(nullable = false, length = 100)
+    private String name;
 
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
@@ -48,70 +51,25 @@ public class City {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    public City() {}
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
+    @Column(name = "deleted_by")
+    private Long deletedBy;
 
     @PrePersist
     protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
+
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+
+        if (isActive == null) {
+            isActive = true;
+        }
     }
 
     @PreUpdate
     protected void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
-    }
-
-    // ===== Getters & Setters =====
-
-    public Long getId() {
-        return id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public State getState() {
-        return state;
-    }
-
-    public void setState(State state) {
-        this.state = state;
-    }
-
-    public Long getStateId() {
-        return stateId;
-    }
-
-    public Admin getAdmin() {
-        return admin;
-    }
-
-    public void setAdmin(Admin admin) {
-        this.admin = admin;
-    }
-
-    public Long getAdminId() {
-        return adminId;
-    }
-
-    public Boolean getIsActive() {
-        return isActive;
-    }
-
-    public void setIsActive(Boolean active) {
-        isActive = active;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
+        updatedAt = LocalDateTime.now();
     }
 }

@@ -1,97 +1,219 @@
 package com.example.controller.master;
 
 import com.example.dto.request.SisterTypeRequestDTO;
+import com.example.dto.response.ApiResponse;
 import com.example.dto.response.SisterTypeResponseDTO;
-import com.example.model.Admin;
-import com.example.model.SisterType;
 import com.example.service.SisterTypeService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/master/sister-types")
 @RequiredArgsConstructor
 public class SisterTypeController {
 
-    private final SisterTypeService service;
+    private final SisterTypeService sisterTypeService;
+
+    // =====================================================
+    // CREATE
+    // =====================================================
 
     @PostMapping
-    public SisterTypeResponseDTO create(@Valid @RequestBody SisterTypeRequestDTO dto) {
-        SisterType entity = mapToEntity(dto);
-        SisterType saved = service.save(entity);
-        return mapToResponse(saved);
+    @ResponseStatus(HttpStatus.CREATED)
+    public ApiResponse<SisterTypeResponseDTO> create(
+            @Valid @RequestBody SisterTypeRequestDTO requestDto) {
+
+        return ApiResponse.success(
+                "Sister Type created successfully.",
+                sisterTypeService.create(requestDto)
+        );
     }
+
+    // =====================================================
+    // UPDATE
+    // =====================================================
 
     @PutMapping("/{id}")
-    public SisterTypeResponseDTO update(@PathVariable Long id,
-                                        @Valid @RequestBody SisterTypeRequestDTO dto) {
+    public ApiResponse<SisterTypeResponseDTO> update(
+            @PathVariable Long id,
+            @Valid @RequestBody SisterTypeRequestDTO requestDto) {
 
-        SisterType existing = service.getById(id)
-                .orElseThrow(() -> new RuntimeException("SisterType not found"));
-
-        updateEntity(existing, dto);
-        SisterType updated = service.save(existing);
-
-        return mapToResponse(updated);
+        return ApiResponse.success(
+                "Sister Type updated successfully.",
+                sisterTypeService.update(id, requestDto)
+        );
     }
 
-    @GetMapping("/{id}")
-    public SisterTypeResponseDTO getById(@PathVariable Long id) {
-        SisterType s = service.getById(id)
-                .orElseThrow(() -> new RuntimeException("SisterType not found"));
-        return mapToResponse(s);
-    }
-
-    @GetMapping
-    public List<SisterTypeResponseDTO> getAll() {
-        return service.getAll()
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
-    }
+    // =====================================================
+    // SOFT DELETE
+    // =====================================================
 
     @DeleteMapping("/{id}")
-    public String delete(@PathVariable Long id) {
-        service.delete(id);
-        return "SisterType deleted successfully";
+    public ApiResponse<Void> softDelete(@PathVariable Long id) {
+
+        sisterTypeService.softDelete(id);
+
+        return ApiResponse.success(
+                "Sister Type deleted successfully.",
+                null
+        );
     }
 
-    // ================= MAPPING =================
+    // =====================================================
+    // RESTORE
+    // =====================================================
 
-    private SisterType mapToEntity(SisterTypeRequestDTO dto) {
-        SisterType s = new SisterType();
+    @PatchMapping("/{id}/restore")
+    public ApiResponse<Void> restore(@PathVariable Long id) {
 
-        Admin admin = new Admin();
-        admin.setId(dto.getAdminId());
-        s.setAdmin(admin);
+        sisterTypeService.restore(id);
 
-        s.setValue(dto.getValue());
-        if (dto.getIsActive() != null) s.setIsActive(dto.getIsActive());
-
-        return s;
+        return ApiResponse.success(
+                "Sister Type restored successfully.",
+                null
+        );
     }
 
-    private void updateEntity(SisterType s, SisterTypeRequestDTO dto) {
-        if (dto.getValue() != null) s.setValue(dto.getValue());
-        if (dto.getIsActive() != null) s.setIsActive(dto.getIsActive());
+    // =====================================================
+    // HARD DELETE
+    // =====================================================
+
+    @DeleteMapping("/{id}/hard")
+    public ApiResponse<Void> hardDelete(@PathVariable Long id) {
+
+        sisterTypeService.hardDelete(id);
+
+        return ApiResponse.success(
+                "Sister Type permanently deleted successfully.",
+                null
+        );
     }
 
-    private SisterTypeResponseDTO mapToResponse(SisterType s) {
-        return SisterTypeResponseDTO.builder()
-                .id(s.getId())
-                .adminId(s.getAdmin() != null ? s.getAdmin().getId() : null)
+    // =====================================================
+    // GET BY ID
+    // =====================================================
 
-                // ✅ FIX (remove lazy access)
-                .adminName(null)
+    @GetMapping("/{id}")
+    public ApiResponse<SisterTypeResponseDTO> getById(@PathVariable Long id) {
 
-                .value(s.getValue())
-                .isActive(s.getIsActive())
-                .createdAt(s.getCreatedAt())
-                .updatedAt(s.getUpdatedAt())
-                .build();
+        return ApiResponse.success(
+                "Sister Type fetched successfully.",
+                sisterTypeService.getById(id)
+        );
+    }
+
+    // =====================================================
+    // GET ALL
+    // =====================================================
+
+    @GetMapping
+    public ApiResponse<List<SisterTypeResponseDTO>> getAll() {
+
+        return ApiResponse.success(
+                "Sister Type list fetched successfully.",
+                sisterTypeService.getAll()
+        );
+    }
+
+    // =====================================================
+    // GET DELETED
+    // =====================================================
+
+    @GetMapping("/deleted")
+    public ApiResponse<List<SisterTypeResponseDTO>> getDeleted() {
+
+        return ApiResponse.success(
+                "Deleted Sister Type list fetched successfully.",
+                sisterTypeService.getDeleted()
+        );
+    }
+
+    // =====================================================
+    // ACTIVE
+    // =====================================================
+
+    @GetMapping("/active")
+    public ApiResponse<List<SisterTypeResponseDTO>> getActive() {
+
+        return ApiResponse.success(
+                "Active Sister Type list fetched successfully.",
+                sisterTypeService.getActive()
+        );
+    }
+
+    // =====================================================
+    // INACTIVE
+    // =====================================================
+
+    @GetMapping("/inactive")
+    public ApiResponse<List<SisterTypeResponseDTO>> getInactive() {
+
+        return ApiResponse.success(
+                "Inactive Sister Type list fetched successfully.",
+                sisterTypeService.getInactive()
+        );
+    }
+
+    // =====================================================
+    // ADMIN
+    // =====================================================
+
+    @GetMapping("/admin/{adminId}")
+    public ApiResponse<List<SisterTypeResponseDTO>> getByAdmin(
+            @PathVariable Long adminId) {
+
+        return ApiResponse.success(
+                "Sister Type list fetched successfully.",
+                sisterTypeService.getByAdmin(adminId)
+        );
+    }
+
+    @GetMapping("/admin/{adminId}/active")
+    public ApiResponse<List<SisterTypeResponseDTO>> getActiveByAdmin(
+            @PathVariable Long adminId) {
+
+        return ApiResponse.success(
+                "Active Sister Type list fetched successfully.",
+                sisterTypeService.getActiveByAdmin(adminId)
+        );
+    }
+
+    @GetMapping("/admin/{adminId}/inactive")
+    public ApiResponse<List<SisterTypeResponseDTO>> getInactiveByAdmin(
+            @PathVariable Long adminId) {
+
+        return ApiResponse.success(
+                "Inactive Sister Type list fetched successfully.",
+                sisterTypeService.getInactiveByAdmin(adminId)
+        );
+    }
+
+    // =====================================================
+    // SEARCH
+    // =====================================================
+
+    @GetMapping("/search")
+    public ApiResponse<List<SisterTypeResponseDTO>> search(
+            @RequestParam String keyword) {
+
+        return ApiResponse.success(
+                "Search completed successfully.",
+                sisterTypeService.search(keyword)
+        );
+    }
+
+    @GetMapping("/admin/{adminId}/search")
+    public ApiResponse<List<SisterTypeResponseDTO>> searchByAdmin(
+            @PathVariable Long adminId,
+            @RequestParam String keyword) {
+
+        return ApiResponse.success(
+                "Search completed successfully.",
+                sisterTypeService.searchByAdmin(adminId, keyword)
+        );
     }
 }

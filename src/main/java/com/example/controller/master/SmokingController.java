@@ -1,182 +1,210 @@
 package com.example.controller.master;
 
 import com.example.dto.request.SmokingRequestDTO;
+import com.example.dto.response.ApiResponse;
 import com.example.dto.response.SmokingResponseDTO;
-import com.example.model.Admin;
-import com.example.model.Smoking;
 import com.example.service.SmokingService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/master/smoking")
 @RequiredArgsConstructor
 public class SmokingController {
 
-    private final SmokingService service;
+    private final SmokingService smokingService;
 
-    // =========================
+    // =====================================================
     // CREATE
-    // =========================
+    // =====================================================
+
     @PostMapping
-    public SmokingResponseDTO create(@Valid @RequestBody SmokingRequestDTO dto) {
+    public ApiResponse<SmokingResponseDTO> create(
+            @Valid @RequestBody SmokingRequestDTO requestDto) {
 
-        Smoking entity = mapToEntity(dto);
-        Smoking saved = service.save(entity);
-
-        return mapToResponse(saved);
+        return ApiResponse.success(
+                "Smoking created successfully.",
+                smokingService.create(requestDto)
+        );
     }
 
-    // =========================
+    // =====================================================
     // UPDATE
-    // =========================
+    // =====================================================
+
     @PutMapping("/{id}")
-    public SmokingResponseDTO update(
+    public ApiResponse<SmokingResponseDTO> update(
             @PathVariable Long id,
-            @Valid @RequestBody SmokingRequestDTO dto) {
+            @Valid @RequestBody SmokingRequestDTO requestDto) {
 
-        Smoking existing = service.getById(id)
-                .orElseThrow(() -> new RuntimeException("Smoking not found"));
-
-        updateEntity(existing, dto);
-
-        Smoking updated = service.save(existing);
-
-        return mapToResponse(updated);
+        return ApiResponse.success(
+                "Smoking updated successfully.",
+                smokingService.update(id, requestDto)
+        );
     }
 
-    // =========================
+    // =====================================================
+    // SOFT DELETE
+    // =====================================================
+
+    @DeleteMapping("/{id}")
+    public ApiResponse<Void> softDelete(@PathVariable Long id) {
+
+        smokingService.softDelete(id);
+
+        return ApiResponse.success(
+                "Smoking deleted successfully.",
+                null
+        );
+    }
+
+    // =====================================================
+    // RESTORE
+    // =====================================================
+
+    @PatchMapping("/{id}/restore")
+    public ApiResponse<Void> restore(@PathVariable Long id) {
+
+        smokingService.restore(id);
+
+        return ApiResponse.success(
+                "Smoking restored successfully.",
+                null
+        );
+    }
+
+    // =====================================================
+    // HARD DELETE
+    // =====================================================
+
+    @DeleteMapping("/{id}/hard")
+    public ApiResponse<Void> hardDelete(@PathVariable Long id) {
+
+        smokingService.hardDelete(id);
+
+        return ApiResponse.success(
+                "Smoking permanently deleted.",
+                null
+        );
+    }
+
+    // =====================================================
     // GET BY ID
-    // =========================
+    // =====================================================
+
     @GetMapping("/{id}")
-    public SmokingResponseDTO getById(@PathVariable Long id) {
+    public ApiResponse<SmokingResponseDTO> getById(
+            @PathVariable Long id) {
 
-        Smoking s = service.getById(id)
-                .orElseThrow(() -> new RuntimeException("Smoking not found"));
-
-        return mapToResponse(s);
+        return ApiResponse.success(
+                "Smoking fetched successfully.",
+                smokingService.getById(id)
+        );
     }
 
-    // =========================
+    // =====================================================
     // GET ALL
-    // =========================
-    @GetMapping
-    public List<SmokingResponseDTO> getAll() {
+    // =====================================================
 
-        return service.getAll()
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+    @GetMapping
+    public ApiResponse<List<SmokingResponseDTO>> getAll() {
+
+        return ApiResponse.success(
+                "Smoking list fetched successfully.",
+                smokingService.getAll()
+        );
     }
 
-    // =========================
-    // ADMIN APIs
-    // =========================
+    @GetMapping("/deleted")
+    public ApiResponse<List<SmokingResponseDTO>> getDeleted() {
+
+        return ApiResponse.success(
+                "Deleted smoking list fetched successfully.",
+                smokingService.getDeleted()
+        );
+    }
+
+    // =====================================================
+    // ACTIVE / INACTIVE
+    // =====================================================
+
+    @GetMapping("/active")
+    public ApiResponse<List<SmokingResponseDTO>> getActive() {
+
+        return ApiResponse.success(
+                "Active smoking list fetched successfully.",
+                smokingService.getActive()
+        );
+    }
+
+    @GetMapping("/inactive")
+    public ApiResponse<List<SmokingResponseDTO>> getInactive() {
+
+        return ApiResponse.success(
+                "Inactive smoking list fetched successfully.",
+                smokingService.getInactive()
+        );
+    }
+
+    // =====================================================
+    // ADMIN
+    // =====================================================
 
     @GetMapping("/admin/{adminId}")
-    public List<SmokingResponseDTO> getByAdmin(@PathVariable Long adminId) {
+    public ApiResponse<List<SmokingResponseDTO>> getByAdmin(
+            @PathVariable Long adminId) {
 
-        return service.getByAdmin(adminId)
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+        return ApiResponse.success(
+                "Smoking list fetched successfully.",
+                smokingService.getByAdmin(adminId)
+        );
     }
 
     @GetMapping("/admin/{adminId}/active")
-    public List<SmokingResponseDTO> getActive(@PathVariable Long adminId) {
+    public ApiResponse<List<SmokingResponseDTO>> getActiveByAdmin(
+            @PathVariable Long adminId) {
 
-        return service.getActiveByAdmin(adminId)
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+        return ApiResponse.success(
+                "Active smoking list fetched successfully.",
+                smokingService.getActiveByAdmin(adminId)
+        );
     }
 
     @GetMapping("/admin/{adminId}/inactive")
-    public List<SmokingResponseDTO> getInactive(@PathVariable Long adminId) {
+    public ApiResponse<List<SmokingResponseDTO>> getInactiveByAdmin(
+            @PathVariable Long adminId) {
 
-        return service.getInactiveByAdmin(adminId)
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+        return ApiResponse.success(
+                "Inactive smoking list fetched successfully.",
+                smokingService.getInactiveByAdmin(adminId)
+        );
     }
 
-    // =========================
+    // =====================================================
     // SEARCH
-    // =========================
+    // =====================================================
+
+    @GetMapping("/search")
+    public ApiResponse<List<SmokingResponseDTO>> search(
+            @RequestParam String keyword) {
+
+        return ApiResponse.success(
+                "Search completed successfully.",
+                smokingService.search(keyword)
+        );
+    }
+
     @GetMapping("/admin/{adminId}/search")
-    public List<SmokingResponseDTO> search(
+    public ApiResponse<List<SmokingResponseDTO>> searchByAdmin(
             @PathVariable Long adminId,
             @RequestParam String keyword) {
 
-        return service.searchByAdmin(adminId, keyword)
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
-    }
-
-    // =========================
-    // DELETE
-    // =========================
-    @DeleteMapping("/{id}")
-    public String delete(@PathVariable Long id) {
-        service.delete(id);
-        return "Smoking deleted successfully";
-    }
-
-    // =========================
-    // 🔥 MAPPING
-    // =========================
-
-    private Smoking mapToEntity(SmokingRequestDTO dto) {
-
-        Smoking s = new Smoking();
-
-        Admin admin = new Admin();
-        admin.setId(dto.getAdminId());
-        s.setAdmin(admin);
-
-        s.setValue(dto.getValue());
-
-        if (dto.getIsActive() != null) {
-            s.setIsActive(dto.getIsActive());
-        }
-
-        return s;
-    }
-
-    private void updateEntity(Smoking s, SmokingRequestDTO dto) {
-
-        // 🚫 DO NOT update admin
-
-        if (dto.getValue() != null) {
-            s.setValue(dto.getValue());
-        }
-
-        if (dto.getIsActive() != null) {
-            s.setIsActive(dto.getIsActive());
-        }
-    }
-
-    private SmokingResponseDTO mapToResponse(Smoking s) {
-
-        return SmokingResponseDTO.builder()
-                .id(s.getId())
-                .adminId(s.getAdmin() != null ? s.getAdmin().getId() : null)
-
-                // ❌ REMOVE THIS (VERY IMPORTANT)
-                // .adminName(s.getAdmin().getName())
-
-                // ✅ SAFE
-                .adminName(null)
-
-                .value(s.getValue())
-                .isActive(s.getIsActive())
-                .createdAt(s.getCreatedAt())
-                .updatedAt(s.getUpdatedAt())
-                .build();
+        return ApiResponse.success(
+                "Search completed successfully.",
+                smokingService.searchByAdmin(adminId, keyword)
+        );
     }
 }

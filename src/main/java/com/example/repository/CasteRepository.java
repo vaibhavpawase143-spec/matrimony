@@ -18,16 +18,19 @@ public interface CasteRepository extends JpaRepository<Caste, Long> {
     Optional<Caste> findByNameIgnoreCase(String name);
 
     // =========================================
-    // SECURE FETCH
+    // GET BY ID
     // =========================================
 
     @Query("""
-        SELECT c FROM Caste c
+        SELECT c
+        FROM Caste c
+        LEFT JOIN FETCH c.religion
         WHERE c.id = :id
-        AND (
-            c.admin.id = :adminId
-            OR c.admin IS NULL
-        )
+          AND c.deletedAt IS NULL
+          AND (
+                c.admin.id = :adminId
+                OR c.admin IS NULL
+          )
     """)
     Optional<Caste> findAccessibleById(
             Long id,
@@ -42,16 +45,12 @@ public interface CasteRepository extends JpaRepository<Caste, Long> {
         SELECT COUNT(c) > 0
         FROM Caste c
         WHERE LOWER(c.name) = LOWER(:name)
-        AND c.religion.id = :religionId
-        AND (
-            c.admin.id = :adminId
-            OR c.admin IS NULL
-        )
+          AND c.religion.id = :religionId
+          AND c.deletedAt IS NULL
     """)
-    boolean existsAvailableCaste(
+    boolean existsByNameIgnoreCaseAndReligionIdAndDeletedAtIsNull(
             String name,
-            Long religionId,
-            Long adminId
+            Long religionId
     );
 
     // =========================================
@@ -59,11 +58,14 @@ public interface CasteRepository extends JpaRepository<Caste, Long> {
     // =========================================
 
     @Query("""
-        SELECT c FROM Caste c
-        WHERE (
-            c.admin.id = :adminId
-            OR c.admin IS NULL
-        )
+        SELECT c
+        FROM Caste c
+        LEFT JOIN FETCH c.religion
+        WHERE c.deletedAt IS NULL
+          AND (
+                c.admin.id = :adminId
+                OR c.admin IS NULL
+          )
         ORDER BY c.name ASC
     """)
     List<Caste> findAllAvailable(Long adminId);
@@ -73,27 +75,33 @@ public interface CasteRepository extends JpaRepository<Caste, Long> {
     // =========================================
 
     @Query("""
-        SELECT c FROM Caste c
-        WHERE c.isActive = true
-        AND (
-            c.admin.id = :adminId
-            OR c.admin IS NULL
-        )
+        SELECT c
+        FROM Caste c
+        LEFT JOIN FETCH c.religion
+        WHERE c.deletedAt IS NULL
+          AND c.isActive = true
+          AND (
+                c.admin.id = :adminId
+                OR c.admin IS NULL
+          )
         ORDER BY c.name ASC
     """)
     List<Caste> findAllActiveAvailable(Long adminId);
 
     // =========================================
-    // RELIGION FILTER
+    // GET BY RELIGION
     // =========================================
 
     @Query("""
-        SELECT c FROM Caste c
+        SELECT c
+        FROM Caste c
+        LEFT JOIN FETCH c.religion
         WHERE c.religion.id = :religionId
-        AND (
-            c.admin.id = :adminId
-            OR c.admin IS NULL
-        )
+          AND c.deletedAt IS NULL
+          AND (
+                c.admin.id = :adminId
+                OR c.admin IS NULL
+          )
         ORDER BY c.name ASC
     """)
     List<Caste> findAvailableByReligion(
@@ -102,17 +110,20 @@ public interface CasteRepository extends JpaRepository<Caste, Long> {
     );
 
     // =========================================
-    // ACTIVE + RELIGION
+    // GET ACTIVE BY RELIGION
     // =========================================
 
     @Query("""
-        SELECT c FROM Caste c
+        SELECT c
+        FROM Caste c
+        LEFT JOIN FETCH c.religion
         WHERE c.religion.id = :religionId
-        AND c.isActive = true
-        AND (
-            c.admin.id = :adminId
-            OR c.admin IS NULL
-        )
+          AND c.deletedAt IS NULL
+          AND c.isActive = true
+          AND (
+                c.admin.id = :adminId
+                OR c.admin IS NULL
+          )
         ORDER BY c.name ASC
     """)
     List<Caste> findActiveAvailableByReligion(
@@ -125,17 +136,30 @@ public interface CasteRepository extends JpaRepository<Caste, Long> {
     // =========================================
 
     @Query("""
-        SELECT c FROM Caste c
+        SELECT c
+        FROM Caste c
+        LEFT JOIN FETCH c.religion
         WHERE LOWER(c.name)
-        LIKE LOWER(CONCAT('%', :keyword, '%'))
-        AND (
-            c.admin.id = :adminId
-            OR c.admin IS NULL
-        )
+              LIKE LOWER(CONCAT('%', :keyword, '%'))
+          AND c.deletedAt IS NULL
+          AND (
+                c.admin.id = :adminId
+                OR c.admin IS NULL
+          )
         ORDER BY c.name ASC
     """)
     List<Caste> searchAvailable(
             String keyword,
             Long adminId
     );
+
+    // =========================================
+    // ADMIN METHODS
+    // =========================================
+
+    List<Caste> findByAdminIdAndDeletedAtIsNull(Long adminId);
+
+    List<Caste> findByAdminIdAndDeletedAtIsNotNull(Long adminId);
+
+    List<Caste> findByAdminIdAndIsActiveTrueAndDeletedAtIsNull(Long adminId);
 }

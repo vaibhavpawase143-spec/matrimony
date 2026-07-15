@@ -1,127 +1,264 @@
 package com.example.serviceimpl;
 
+import com.example.exception.BadRequestException;
+import com.example.exception.ResourceNotFoundException;
+import com.example.model.Admin;
 import com.example.model.Drinking;
+import com.example.repository.AdminRepository;
 import com.example.repository.DrinkingRepository;
 import com.example.service.DrinkingService;
+import com.example.util.AuditHelper;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
+@Transactional
 public class DrinkingServiceImpl implements DrinkingService {
 
     private final DrinkingRepository drinkingRepository;
+    private final AdminRepository adminRepository;
+    private final AuditHelper auditHelper;
 
-    public DrinkingServiceImpl(DrinkingRepository drinkingRepository) {
-        this.drinkingRepository = drinkingRepository;
-    }
+    // ================= CREATE =================
 
-    // ✅ Create
     @Override
+    @Transactional
     public Drinking create(Drinking drinking) {
 
-        if (drinkingRepository.existsByValueIgnoreCase(drinking.getValue())) {
-            throw new RuntimeException("Drinking already exists: " + drinking.getValue());
+        Admin admin = adminRepository.findById(
+                drinking.getAdmin().getId()
+        ).orElseThrow(() ->
+                new ResourceNotFoundException("Admin not found"));
+
+        drinking.setValue(drinking.getValue().trim());
+
+        if (drinkingRepository.existsByValueIgnoreCaseAndDeletedAtIsNull(
+                drinking.getValue())) {
+
+            throw new BadRequestException("Drinking already exists");
         }
 
-        return drinkingRepository.save(drinking);
+        drinking.setAdmin(admin);
+
+        Drinking saved = drinkingRepository.save(drinking);
+
+        auditHelper.logCreate(
+                "MASTER_DATA",
+                "DRINKING",
+                saved.getId(),
+                saved.getValue(),
+                "Value=" + saved.getValue()
+                        + ", Active=" + saved.getIsActive()
+        );
+
+        return saved;
     }
 
-    // 🔄 Update
+    // ================= UPDATE =================
+
     @Override
-    public Drinking update(Long id, Drinking drinking) {
+    @Transactional
+    public Drinking update(Long id, Drinking updated) {
 
-        Drinking existing = drinkingRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Drinking not found with id: " + id));
+        Drinking existing = getById(id);
 
-        drinkingRepository.findByValueIgnoreCase(drinking.getValue())
-                .ifPresent(d -> {
-                    if (!d.getId().equals(id)) {
-                        throw new RuntimeException("Drinking already exists: " + drinking.getValue());
-                    }
-                });
+        String oldValue = "Value=" + existing.getValue()
+                + ", Active=" + existing.getIsActive();
 
-        // ✏️ Update fields
-        existing.setValue(drinking.getValue());
-        existing.setIsActive(drinking.getIsActive());
+        boolean wasActive = Boolean.TRUE.equals(existing.getIsActive());
 
-        return drinkingRepository.save(existing);
+        updated.setValue(updated.getValue().trim());
+
+        if (!existing.getValue().equalsIgnoreCase(updated.getValue())
+                && drinkingRepository.existsByValueIgnoreCaseAndDeletedAtIsNull(
+                updated.getValue())) {
+
+            throw new BadRequestException("Drinking already exists");
+        }
+
+        existing.setName(updated.getName());
+        existing.setValue(updated.getValue());
+
+        existing.setIsActive(
+                updated.getIsActive() != null
+                        ? updated.getIsActive()
+                        : existing.getIsActive()
+        );
+
+        Drinking saved = drinkingRepository.save(existing);
+
+        String newValue = "Value=" + saved.getValue()
+                + ", Active=" + saved.getIsActive();
+
+        auditHelper.logUpdate(
+                "MASTER_DATA",
+                "DRINKING",
+                saved.getId(),
+                saved.getValue(),
+                oldValue,
+                newValue,
+                wasActive,
+                Boolean.TRUE.equals(saved.getIsActive())
+        );
+
+        return saved;
+    }
+    // ================= DELETE =================
+
+    @Override
+    @Transactional
+    public void delete(Long id, Long deletedBy) {
+
+        Drinking drinking = getById(id);
+
+        String oldValue = "Value=" + drinking.getValue()
+                + ", Active=" + drinking.getIsActive();
+
+        drinking.setDeletedAt(LocalDateTime.now());
+        drinking.setDeletedBy(deletedBy);
+
+        drinkingRepository.save(drinking);
+
+        auditHelper.logDelete(
+                "MASTER_DATA",
+                "DRINKING",
+                drinking.getId(),
+                drinking.getValue(),
+                oldValue
+        );
     }
 
-    // ❌ Delete
     @Override
-    public void delete(Long id) {
-        Drinking existing = drinkingRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Drinking not found with id: " + id));
+    @Transactional
+    public void hardDelete(Long id) {
 
-        drinkingRepository.delete(existing);
+        Drinking drinking = drinkingRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Drinking not found"));
+
+        String oldValue = "Value=" + drinking.getValue()
+                + ", Active=" + drinking.getIsActive();
+
+        drinkingRepository.delete(drinking);
+
+        auditHelper.logHardDelete(
+                "MASTER_DATA",
+                "DRINKING",
+                drinking.getId(),
+                drinking.getValue(),
+                oldValue
+        );
     }
 
-    // 🔍 Get by ID
     @Override
-    public Optional<Drinking> getById(Long id) {
-        return drinkingRepository.findById(id);
+    @Transactional
+    public Drinking restore(Long id) {
+
+        Drinking drinking = drinkingRepository.findById(id)
+                .filter(d -> d.getDeletedAt() != null)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Deleted drinking not found"));
+
+        drinking.setDeletedAt(null);
+        drinking.setDeletedBy(null);
+        drinking.setUpdatedAt(LocalDateTime.now());
+
+        Drinking restored = drinkingRepository.save(drinking);
+
+        auditHelper.logRestore(
+                "MASTER_DATA",
+                "DRINKING",
+                restored.getId(),
+                restored.getValue(),
+                "Value=" + restored.getValue()
+                        + ", Active=" + restored.getIsActive()
+        );
+
+        return restored;
     }
 
-    // 🔍 Get all
+    // ================= GET =================
+
     @Override
+    @Transactional(readOnly = true)
+    public Drinking getById(Long id) {
+
+        return drinkingRepository.findById(id)
+                .filter(d -> d.getDeletedAt() == null)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Drinking not found"));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<Drinking> getAll() {
-        return drinkingRepository.findAll();
-    }
 
-    // 🔍 Find by value
-    @Override
-    public Optional<Drinking> getByValue(String value) {
-        return drinkingRepository.findByValue(value);
+        return drinkingRepository.findByDeletedAtIsNull();
     }
 
     @Override
-    public Optional<Drinking> getByValueIgnoreCase(String value) {
-        return drinkingRepository.findByValueIgnoreCase(value);
-    }
+    @Transactional(readOnly = true)
+    public List<Drinking> getDeleted() {
 
-    // ✅ Duplicate check
-    @Override
-    public boolean existsByValue(String value) {
-        return drinkingRepository.existsByValue(value);
+        return drinkingRepository.findByDeletedAtIsNotNull();
     }
 
     @Override
-    public boolean existsByValueIgnoreCase(String value) {
-        return drinkingRepository.existsByValueIgnoreCase(value);
-    }
-
-    // 🔍 Active / Inactive
-    @Override
+    @Transactional(readOnly = true)
     public List<Drinking> getActive() {
-        return drinkingRepository.findByIsActiveTrue();
+
+        return drinkingRepository.findByIsActiveTrueAndDeletedAtIsNull();
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Drinking> getInactive() {
-        return drinkingRepository.findByIsActiveFalse();
+
+        return drinkingRepository.findByIsActiveFalseAndDeletedAtIsNull();
     }
 
-    // 🔍 Admin-based
+    // ================= ADMIN =================
+
     @Override
+    @Transactional(readOnly = true)
     public List<Drinking> getByAdmin(Long adminId) {
-        return drinkingRepository.findByAdminId(adminId);
+
+        return drinkingRepository.findByAdmin_IdAndDeletedAtIsNull(adminId);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Drinking> getActiveByAdmin(Long adminId) {
-        return drinkingRepository.findByAdminIdAndIsActiveTrue(adminId);
+
+        return drinkingRepository
+                .findByAdmin_IdAndIsActiveTrueAndDeletedAtIsNull(adminId);
     }
 
-    // 🔍 Search
+    // ================= SEARCH =================
+
     @Override
+    @Transactional(readOnly = true)
     public List<Drinking> search(String keyword) {
-        return drinkingRepository.findByValueContainingIgnoreCase(keyword);
+
+        return drinkingRepository
+                .findByValueContainingIgnoreCaseAndDeletedAtIsNull(
+                        keyword.trim()
+                );
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Drinking> searchByAdmin(Long adminId, String keyword) {
-        return drinkingRepository.findByAdminIdAndValueContainingIgnoreCase(adminId, keyword);
+
+        return drinkingRepository
+                .findByAdmin_IdAndValueContainingIgnoreCaseAndDeletedAtIsNull(
+                        adminId,
+                        keyword.trim()
+                );
     }
 }

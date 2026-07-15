@@ -1,6 +1,7 @@
 package com.example.controller.master;
 
 import com.example.dto.request.CountryRequestDTO;
+import com.example.dto.response.ApiResponse;
 import com.example.dto.response.CountryResponseDTO;
 import com.example.model.Admin;
 import com.example.model.Country;
@@ -10,7 +11,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/countries")
@@ -21,78 +21,173 @@ public class CountryController {
 
     // ================= CREATE =================
     @PostMapping
-    public CountryResponseDTO create(@Valid @RequestBody CountryRequestDTO dto) {
+    public ApiResponse<CountryResponseDTO> create(
+            @Valid @RequestBody CountryRequestDTO dto) {
 
         Country saved = countryService.create(mapToEntity(dto));
-        return mapToResponse(saved);
+
+        return ApiResponse.<CountryResponseDTO>builder()
+                .success(true)
+                .message("Country created successfully.")
+                .data(mapToResponse(saved))
+                .build();
     }
 
     // ================= GET BY ID =================
     @GetMapping("/{id}")
-    public CountryResponseDTO getById(@PathVariable Long id) {
+    public ApiResponse<CountryResponseDTO> getById(
+            @PathVariable Long id) {
 
-        return countryService.getById(id)
-                .map(this::mapToResponse)
-                .orElseThrow(() -> new RuntimeException("Country not found"));
+        Country country = countryService.getById(id);
+
+        return ApiResponse.<CountryResponseDTO>builder()
+                .success(true)
+                .message("Country retrieved successfully.")
+                .data(mapToResponse(country))
+                .build();
     }
 
     // ================= GET ALL =================
     @GetMapping
-    public List<CountryResponseDTO> getAll() {
+    public ApiResponse<List<CountryResponseDTO>> getAll() {
 
-        return countryService.getAll()
+        List<CountryResponseDTO> countries = countryService.getAll()
                 .stream()
                 .map(this::mapToResponse)
-                .collect(Collectors.toList());
+                .toList();
+
+        return ApiResponse.<List<CountryResponseDTO>>builder()
+                .success(true)
+                .message("Countries retrieved successfully.")
+                .data(countries)
+                .build();
     }
 
     // ================= GET ACTIVE =================
     @GetMapping("/active")
-    public List<CountryResponseDTO> getActive() {
+    public ApiResponse<List<CountryResponseDTO>> getActive() {
 
-        return countryService.getActive()
+        List<CountryResponseDTO> countries = countryService.getActive()
                 .stream()
                 .map(this::mapToResponse)
-                .collect(Collectors.toList());
-    }
+                .toList();
 
+        return ApiResponse.<List<CountryResponseDTO>>builder()
+                .success(true)
+                .message("Active countries retrieved successfully.")
+                .data(countries)
+                .build();
+    }
     // ================= GET BY ADMIN =================
     @GetMapping("/admin/{adminId}")
-    public List<CountryResponseDTO> getByAdmin(@PathVariable Long adminId) {
+    public ApiResponse<List<CountryResponseDTO>> getByAdmin(
+            @PathVariable Long adminId) {
 
-        return countryService.getByAdmin(adminId)
+        List<CountryResponseDTO> countries = countryService
+                .getByAdmin(adminId)
                 .stream()
                 .map(this::mapToResponse)
-                .collect(Collectors.toList());
+                .toList();
+
+        return ApiResponse.<List<CountryResponseDTO>>builder()
+                .success(true)
+                .message("Countries retrieved successfully by admin.")
+                .data(countries)
+                .build();
     }
 
     // ================= SEARCH =================
     @GetMapping("/search")
-    public List<CountryResponseDTO> search(@RequestParam String keyword) {
+    public ApiResponse<List<CountryResponseDTO>> search(
+            @RequestParam String keyword) {
 
-        return countryService.search(keyword)
+        List<CountryResponseDTO> countries = countryService
+                .search(keyword)
                 .stream()
                 .map(this::mapToResponse)
-                .collect(Collectors.toList());
+                .toList();
+
+        return ApiResponse.<List<CountryResponseDTO>>builder()
+                .success(true)
+                .message("Countries searched successfully.")
+                .data(countries)
+                .build();
     }
 
     // ================= UPDATE =================
     @PutMapping("/{id}")
-    public CountryResponseDTO update(@PathVariable Long id,
-                                     @Valid @RequestBody CountryRequestDTO dto) {
+    public ApiResponse<CountryResponseDTO> update(
+            @PathVariable Long id,
+            @Valid @RequestBody CountryRequestDTO dto) {
 
-        Country updated = countryService.update(id, mapToEntity(dto));
-        return mapToResponse(updated);
+        Country updated = countryService.update(
+                id,
+                mapToEntity(dto)
+        );
+
+        return ApiResponse.<CountryResponseDTO>builder()
+                .success(true)
+                .message("Country updated successfully.")
+                .data(mapToResponse(updated))
+                .build();
     }
 
     // ================= DELETE =================
     @DeleteMapping("/{id}")
-    public String delete(@PathVariable Long id) {
+    public ApiResponse<String> delete(
+            @PathVariable Long id,
+            @RequestParam Long deletedBy) {
 
-        countryService.delete(id);
-        return "Country deleted successfully";
+        countryService.delete(id, deletedBy);
+
+        return ApiResponse.<String>builder()
+                .success(true)
+                .message("Country deleted successfully.")
+                .build();
     }
 
+    // ================= GET DELETED =================
+    @GetMapping("/deleted")
+    public ApiResponse<List<CountryResponseDTO>> getDeleted() {
+
+        List<CountryResponseDTO> deleted = countryService.getDeleted()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+
+        return ApiResponse.<List<CountryResponseDTO>>builder()
+                .success(true)
+                .message("Deleted countries retrieved successfully.")
+                .data(deleted)
+                .build();
+    }
+
+    // ================= RESTORE =================
+    @PutMapping("/restore/{id}")
+    public ApiResponse<CountryResponseDTO> restore(
+            @PathVariable Long id) {
+
+        Country restored = countryService.restore(id);
+
+        return ApiResponse.<CountryResponseDTO>builder()
+                .success(true)
+                .message("Country restored successfully.")
+                .data(mapToResponse(restored))
+                .build();
+    }
+
+    // ================= HARD DELETE =================
+    @DeleteMapping("/hard-delete/{id}")
+    public ApiResponse<String> hardDelete(
+            @PathVariable Long id) {
+
+        countryService.hardDelete(id);
+
+        return ApiResponse.<String>builder()
+                .success(true)
+                .message("Country permanently deleted successfully.")
+                .build();
+    }
     // ================= MAPPERS =================
 
     private Country mapToEntity(CountryRequestDTO dto) {
@@ -106,7 +201,11 @@ public class CountryController {
         admin.setId(dto.getAdminId());
         country.setAdmin(admin);
 
-        country.setIsActive(dto.getIsActive() != null ? dto.getIsActive() : true);
+        country.setIsActive(
+                dto.getIsActive() != null
+                        ? dto.getIsActive()
+                        : true
+        );
 
         return country;
     }
@@ -120,7 +219,9 @@ public class CountryController {
         dto.setIsActive(country.getIsActive());
         dto.setCreatedAt(country.getCreatedAt());
 
-        dto.setAdminId(country.getAdminId());
+        if (country.getAdmin() != null) {
+            dto.setAdminId(country.getAdmin().getId());
+        }
 
         return dto;
     }

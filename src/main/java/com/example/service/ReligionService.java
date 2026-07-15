@@ -5,78 +5,55 @@ import com.example.dto.response.ReligionResponseDTO;
 
 import java.util.List;
 
-/**
- * Service interface for Religion master data.
- * Handles CRUD operations, soft delete, and search functionality.
- */
 public interface ReligionService {
 
-    // ================= CRUD OPERATIONS =================
+    // =====================================================
+    // CRUD
+    // =====================================================
 
-    /**
-     * Create or save a religion
-     */
-    ReligionResponseDTO create(ReligionRequestDTO dto, Long adminId);
+    ReligionResponseDTO create(ReligionRequestDTO requestDto);
 
-    /**
-     * Fetch religion by ID (non-deleted only)
-     */
-    ReligionResponseDTO getById(Long id);
+    ReligionResponseDTO update(Long id, ReligionRequestDTO requestDto);
 
-    /**
-     * Fetch all active religions
-     */
-    List<ReligionResponseDTO> getAll();
+    void softDelete(Long id);
 
-    /**
-     * Update an existing religion
-     */
-    ReligionResponseDTO update(Long id, ReligionRequestDTO dto);
+    void restore(Long id);
 
-    /**
-     * Soft delete a religion
-     */
-    void delete(Long id, Long deletedBy);
-
-    /**
-     * Permanently delete a religion (hard delete)
-     */
     void hardDelete(Long id);
 
-    // ================= ADMIN-SPECIFIC QUERIES =================
+    // =====================================================
+    // GET
+    // =====================================================
 
-    /**
-     * Get all religions by admin (non-deleted)
-     */
+    ReligionResponseDTO getById(Long id);
+
+    List<ReligionResponseDTO> getAll();
+
+    List<ReligionResponseDTO> getDeleted();
+
+    // =====================================================
+    // ACTIVE / INACTIVE
+    // =====================================================
+
+    List<ReligionResponseDTO> getActive();
+
+    List<ReligionResponseDTO> getInactive();
+
+    // =====================================================
+    // ADMIN
+    // =====================================================
+
     List<ReligionResponseDTO> getByAdmin(Long adminId);
 
-    /**
-     * Get active religions by admin
-     */
     List<ReligionResponseDTO> getActiveByAdmin(Long adminId);
 
-    /**
-     * Get inactive religions by admin (non-deleted)
-     */
     List<ReligionResponseDTO> getInactiveByAdmin(Long adminId);
 
-    /**
-     * Search religions by admin
-     */
+    // =====================================================
+    // SEARCH
+    // =====================================================
+
+    List<ReligionResponseDTO> search(String keyword);
+
     List<ReligionResponseDTO> searchByAdmin(Long adminId, String keyword);
-
-    /**
-     * Get deleted religions by admin
-     */
-    List<ReligionResponseDTO> getDeletedByAdmin(Long adminId);
-
-    /**
-     * Check if religion exists for admin
-     */
-    boolean existsForAdmin(String name, Long adminId);
-
-    /**
-     * Restore soft-deleted religion
-     */
-    ReligionResponseDTO restore(Long id);
 }

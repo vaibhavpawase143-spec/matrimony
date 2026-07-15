@@ -2,12 +2,11 @@ package com.example.serviceimpl;
 
 import com.example.dto.request.SupportRequestDTO;
 import com.example.dto.response.SupportResponseDTO;
-import com.example.model.SupportPriority;
-import com.example.model.SupportStatus;
-import com.example.model.SupportTicket;
-import com.example.model.User;
+import com.example.model.*;
 import com.example.repository.SupportTicketRepository;
 import com.example.repository.UserRepository;
+import com.example.service.AdminAuditLogService;
+import com.example.service.CurrentAdminService;
 import com.example.service.SupportService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -25,7 +24,8 @@ public class SupportServiceImpl implements SupportService {
 
     private final SupportTicketRepository repository;
     private final UserRepository userRepository;
-
+    private final CurrentAdminService currentAdminService;
+    private final AdminAuditLogService adminAuditLogService;
     // ================= USER: CREATE TICKET =================
 
     @Override
@@ -156,7 +156,7 @@ public class SupportServiceImpl implements SupportService {
     ) {
 
         SupportTicket ticket = findTicketByNumber(ticketNumber);
-
+        SupportStatus oldStatus = ticket.getStatus();
         try {
             ticket.setStatus(
                     SupportStatus.valueOf(
@@ -176,9 +176,24 @@ public class SupportServiceImpl implements SupportService {
             ticket.setResolvedAt(null);
         }
 
-        repository.save(ticket);
+        SupportTicket updatedTicket = repository.save(ticket);
 
-        return mapToDTO(ticket);
+        Admin currentAdmin = currentAdminService.getCurrentAdmin();
+
+        adminAuditLogService.log(
+                currentAdmin.getId(),
+                "SUPPORT_MANAGEMENT",
+                "SUPPORT_STATUS_UPDATED",
+                "SUPPORT_TICKET",
+                updatedTicket.getId(),
+                "Updated support ticket status: " + updatedTicket.getTicketNumber(),
+                "Status=" + oldStatus,
+                "Status=" + updatedTicket.getStatus(),
+                "SYSTEM",
+                "SYSTEM"
+        );
+
+        return mapToDTO(updatedTicket);
     }
 
     // ================= ADMIN: REPLY =================
@@ -191,17 +206,33 @@ public class SupportServiceImpl implements SupportService {
     ) {
 
         SupportTicket ticket = findTicketByNumber(ticketNumber);
-
+        String oldReply = ticket.getAdminReply();
+        SupportStatus oldStatus = ticket.getStatus();
         ticket.setAdminReply(reply.trim());
 
         // First reply automatically moves OPEN ticket to IN_PROGRESS
         if (ticket.getStatus() == SupportStatus.OPEN) {
             ticket.setStatus(SupportStatus.IN_PROGRESS);
         }
+        SupportTicket updatedTicket = repository.save(ticket);
 
-        repository.save(ticket);
+        Admin currentAdmin = currentAdminService.getCurrentAdmin();
 
-        return mapToDTO(ticket);
+        adminAuditLogService.log(
+                currentAdmin.getId(),
+                "SUPPORT_MANAGEMENT",
+                "SUPPORT_REPLY_ADDED",
+                "SUPPORT_TICKET",
+                updatedTicket.getId(),
+                "Admin replied to support ticket: " + updatedTicket.getTicketNumber(),
+                "Reply=" + (oldReply == null ? "No Reply" : oldReply)
+                        + ", Status=" + oldStatus,
+                "Reply=" + updatedTicket.getAdminReply()
+                        + ", Status=" + updatedTicket.getStatus(),
+                "SYSTEM",
+                "SYSTEM"
+        );
+        return mapToDTO(updatedTicket);
     }
 
     // ================= HELPERS =================

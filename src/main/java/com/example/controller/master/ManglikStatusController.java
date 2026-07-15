@@ -1,133 +1,219 @@
 package com.example.controller.master;
 
 import com.example.dto.request.ManglikStatusRequestDTO;
+import com.example.dto.response.ApiResponse;
 import com.example.dto.response.ManglikStatusResponseDTO;
-import com.example.model.Admin;
-import com.example.model.ManglikStatus;
 import com.example.service.ManglikStatusService;
-
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/manglik-statuses")
+@RequestMapping("/api/master/manglik-status")
 @RequiredArgsConstructor
 public class ManglikStatusController {
 
     private final ManglikStatusService manglikStatusService;
 
-    // ✅ Create
+    // =========================
+    // CREATE
+    // =========================
+
     @PostMapping
-    public ManglikStatusResponseDTO create(@Valid @RequestBody ManglikStatusRequestDTO dto) {
+    @ResponseStatus(HttpStatus.CREATED)
+    public ApiResponse<ManglikStatusResponseDTO> create(
+            @Valid @RequestBody ManglikStatusRequestDTO requestDto) {
 
-        ManglikStatus entity = mapToEntity(dto);
-        ManglikStatus saved = manglikStatusService.create(entity);
-
-        return mapToResponse(saved);
+        return ApiResponse.success(
+                "Manglik Status created successfully.",
+                manglikStatusService.create(requestDto)
+        );
     }
 
-    // 🔄 Update
+    // =========================
+    // UPDATE
+    // =========================
+
     @PutMapping("/{id}")
-    public ManglikStatusResponseDTO update(
+    public ApiResponse<ManglikStatusResponseDTO> update(
             @PathVariable Long id,
-            @Valid @RequestBody ManglikStatusRequestDTO dto
-    ) {
-        ManglikStatus entity = mapToEntity(dto);
-        ManglikStatus updated = manglikStatusService.update(id, entity);
+            @Valid @RequestBody ManglikStatusRequestDTO requestDto) {
 
-        return mapToResponse(updated);
+        return ApiResponse.success(
+                "Manglik Status updated successfully.",
+                manglikStatusService.update(id, requestDto)
+        );
     }
 
-    // ❌ Delete
+    // =========================
+    // SOFT DELETE
+    // =========================
+
     @DeleteMapping("/{id}")
-    public String delete(@PathVariable Long id) {
-        manglikStatusService.delete(id);
-        return "ManglikStatus deleted successfully";
+    public ApiResponse<Void> softDelete(@PathVariable Long id) {
+
+        manglikStatusService.softDelete(id);
+
+        return ApiResponse.success(
+                "Manglik Status deleted successfully.",
+                null
+        );
     }
 
-    // 🔍 Get by ID
+    // =========================
+    // RESTORE
+    // =========================
+
+    @PatchMapping("/{id}/restore")
+    public ApiResponse<Void> restore(@PathVariable Long id) {
+
+        manglikStatusService.restore(id);
+
+        return ApiResponse.success(
+                "Manglik Status restored successfully.",
+                null
+        );
+    }
+
+    // =========================
+    // HARD DELETE
+    // =========================
+
+    @DeleteMapping("/{id}/hard")
+    public ApiResponse<Void> hardDelete(@PathVariable Long id) {
+
+        manglikStatusService.hardDelete(id);
+
+        return ApiResponse.success(
+                "Manglik Status permanently deleted.",
+                null
+        );
+    }
+
+    // =========================
+    // GET BY ID
+    // =========================
+
     @GetMapping("/{id}")
-    public ManglikStatusResponseDTO getById(@PathVariable Long id) {
-        ManglikStatus data = manglikStatusService.getById(id)
-                .orElseThrow(() -> new RuntimeException("ManglikStatus not found"));
+    public ApiResponse<ManglikStatusResponseDTO> getById(@PathVariable Long id) {
 
-        return mapToResponse(data);
+        return ApiResponse.success(
+                "Manglik Status fetched successfully.",
+                manglikStatusService.getById(id)
+        );
     }
 
-    // 🔍 Get all
+    // =========================
+    // GET ALL
+    // =========================
+
     @GetMapping
-    public List<ManglikStatusResponseDTO> getAll() {
-        return manglikStatusService.getAll()
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+    public ApiResponse<List<ManglikStatusResponseDTO>> getAll() {
+
+        return ApiResponse.success(
+                "Manglik Status list fetched successfully.",
+                manglikStatusService.getAll()
+        );
     }
 
-    // 🔍 Active
+    // =========================
+    // GET DELETED
+    // =========================
+
+    @GetMapping("/deleted")
+    public ApiResponse<List<ManglikStatusResponseDTO>> getDeleted() {
+
+        return ApiResponse.success(
+                "Deleted Manglik Status fetched successfully.",
+                manglikStatusService.getDeleted()
+        );
+    }
+
+    // =========================
+    // ACTIVE
+    // =========================
+
     @GetMapping("/active")
-    public List<ManglikStatusResponseDTO> getActive() {
-        return manglikStatusService.getActive()
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+    public ApiResponse<List<ManglikStatusResponseDTO>> getActive() {
+
+        return ApiResponse.success(
+                "Active Manglik Status fetched successfully.",
+                manglikStatusService.getActive()
+        );
     }
 
-    // 🔍 By admin
+    // =========================
+    // INACTIVE
+    // =========================
+
+    @GetMapping("/inactive")
+    public ApiResponse<List<ManglikStatusResponseDTO>> getInactive() {
+
+        return ApiResponse.success(
+                "Inactive Manglik Status fetched successfully.",
+                manglikStatusService.getInactive()
+        );
+    }
+
+    // =========================
+    // ADMIN
+    // =========================
+
     @GetMapping("/admin/{adminId}")
-    public List<ManglikStatusResponseDTO> getByAdmin(@PathVariable Long adminId) {
-        return manglikStatusService.getByAdmin(adminId)
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+    public ApiResponse<List<ManglikStatusResponseDTO>> getByAdmin(
+            @PathVariable Long adminId) {
+
+        return ApiResponse.success(
+                "Manglik Status fetched successfully.",
+                manglikStatusService.getByAdmin(adminId)
+        );
     }
 
-    // 🔍 Search
+    @GetMapping("/admin/{adminId}/active")
+    public ApiResponse<List<ManglikStatusResponseDTO>> getActiveByAdmin(
+            @PathVariable Long adminId) {
+
+        return ApiResponse.success(
+                "Active Manglik Status fetched successfully.",
+                manglikStatusService.getActiveByAdmin(adminId)
+        );
+    }
+
+    @GetMapping("/admin/{adminId}/inactive")
+    public ApiResponse<List<ManglikStatusResponseDTO>> getInactiveByAdmin(
+            @PathVariable Long adminId) {
+
+        return ApiResponse.success(
+                "Inactive Manglik Status fetched successfully.",
+                manglikStatusService.getInactiveByAdmin(adminId)
+        );
+    }
+
+    // =========================
+    // SEARCH
+    // =========================
+
     @GetMapping("/search")
-    public List<ManglikStatusResponseDTO> search(@RequestParam String keyword) {
-        return manglikStatusService.search(keyword)
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+    public ApiResponse<List<ManglikStatusResponseDTO>> search(
+            @RequestParam String keyword) {
+
+        return ApiResponse.success(
+                "Search completed successfully.",
+                manglikStatusService.search(keyword)
+        );
     }
 
-    // ===============================
-    // 🔁 Mapping Methods
-    // ===============================
+    @GetMapping("/admin/{adminId}/search")
+    public ApiResponse<List<ManglikStatusResponseDTO>> searchByAdmin(
+            @PathVariable Long adminId,
+            @RequestParam String keyword) {
 
-    private ManglikStatus mapToEntity(ManglikStatusRequestDTO dto) {
-
-        ManglikStatus entity = new ManglikStatus();
-
-        entity.setName(dto.getName());
-        entity.setIsActive(dto.getIsActive());
-
-        if (dto.getAdminId() != null) {
-            Admin admin = new Admin();
-            admin.setId(dto.getAdminId());
-            entity.setAdmin(admin);
-        }
-
-        return entity;
-    }
-
-    private ManglikStatusResponseDTO mapToResponse(ManglikStatus entity) {
-
-        ManglikStatusResponseDTO dto = new ManglikStatusResponseDTO();
-
-        dto.setId(entity.getId());
-        dto.setName(entity.getName());
-        dto.setIsActive(entity.getIsActive());
-        dto.setCreatedAt(entity.getCreatedAt());
-        dto.setUpdatedAt(entity.getUpdatedAt());
-
-        if (entity.getAdmin() != null) {
-            dto.setAdminId(entity.getAdmin().getId());
-        }
-
-        return dto;
+        return ApiResponse.success(
+                "Search completed successfully.",
+                manglikStatusService.searchByAdmin(adminId, keyword)
+        );
     }
 }

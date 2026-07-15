@@ -2,20 +2,18 @@ package com.example.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
-/**
- * Religion Request DTO
- * Used for creating and updating religion master data.
- * Admin ID is obtained from authenticated context, not from request.
- */
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class ReligionRequestDTO {
 
-
     @NotBlank(message = "Religion name is required")
-    @Size(max = 120, message = "Name must be less than 120 characters")
+    @Size(max = 120, message = "Religion name must not exceed 120 characters")
     private String name;
 
-    private Boolean isActive;
+    private Boolean isActive = true;
 }

@@ -10,30 +10,74 @@ import java.util.Optional;
 @Repository
 public interface ManglikStatusRepository extends JpaRepository<ManglikStatus, Long> {
 
-    // 🔍 Find by name
-    Optional<ManglikStatus> findByName(String name);
+    // =========================
+    // GET BY ID
+    // =========================
 
-    // 🔥 Case-insensitive
-    Optional<ManglikStatus> findByNameIgnoreCase(String name);
+    Optional<ManglikStatus> findByIdAndDeletedAtIsNull(Long id);
 
-    // ✅ Duplicate check
-    boolean existsByName(String name);
+    // =========================
+    // GET ALL
+    // =========================
 
-    boolean existsByNameIgnoreCase(String name);
+    List<ManglikStatus> findAllByDeletedAtIsNull();
 
-    // 🔍 Active / Inactive
-    List<ManglikStatus> findByIsActiveTrue();
-    List<ManglikStatus> findByIsActiveFalse();
+    // =========================
+    // FIND BY NAME
+    // =========================
 
-    // 🔍 Admin-based filtering
-    List<ManglikStatus> findByAdminId(Long adminId);
+    Optional<ManglikStatus> findByNameIgnoreCaseAndDeletedAtIsNull(String name);
 
-    // ✅ Active by admin
-    List<ManglikStatus> findByAdminIdAndIsActiveTrue(Long adminId);
+    Optional<ManglikStatus> findByNameIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+            String name,
+            Long adminId
+    );
 
-    // 🔍 Search (global)
-    List<ManglikStatus> findByNameContainingIgnoreCase(String keyword);
+    // =========================
+    // DUPLICATE CHECK
+    // =========================
 
-    // 🔥 Search within admin
-    List<ManglikStatus> findByAdminIdAndNameContainingIgnoreCase(Long adminId, String keyword);
+    boolean existsByNameIgnoreCaseAndDeletedAtIsNull(String name);
+
+    boolean existsByNameIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+            String name,
+            Long adminId
+    );
+
+    // =========================
+    // ACTIVE / INACTIVE
+    // =========================
+
+    List<ManglikStatus> findByIsActiveTrueAndDeletedAtIsNull();
+
+    List<ManglikStatus> findByIsActiveFalseAndDeletedAtIsNull();
+
+    // =========================
+    // ADMIN WISE
+    // =========================
+
+    List<ManglikStatus> findByAdmin_IdAndDeletedAtIsNull(Long adminId);
+
+    List<ManglikStatus> findByAdmin_IdAndIsActiveTrueAndDeletedAtIsNull(Long adminId);
+
+    List<ManglikStatus> findByAdmin_IdAndIsActiveFalseAndDeletedAtIsNull(Long adminId);
+
+    // =========================
+    // SEARCH
+    // =========================
+
+    List<ManglikStatus> findByNameContainingIgnoreCaseAndDeletedAtIsNull(String keyword);
+
+    List<ManglikStatus> findByAdmin_IdAndNameContainingIgnoreCaseAndDeletedAtIsNull(
+            Long adminId,
+            String keyword
+    );
+
+    // =========================
+    // SOFT DELETED
+    // =========================
+
+    List<ManglikStatus> findByDeletedAtIsNotNull();
+
+    Optional<ManglikStatus> findByIdAndDeletedAtIsNotNull(Long id);
 }

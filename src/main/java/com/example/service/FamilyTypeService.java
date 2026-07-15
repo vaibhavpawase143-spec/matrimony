@@ -1,45 +1,59 @@
 package com.example.service;
 
-import com.example.model.FamilyType;
+import com.example.dto.request.FamilyTypeRequestDto;
+import com.example.dto.response.FamilyTypeResponseDto;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface FamilyTypeService {
 
-    // 🔍 Basic CRUD
-    FamilyType create(FamilyType familyType);
+    // =========================
+    // CRUD
+    // =========================
 
-    FamilyType update(Long id, FamilyType familyType);
+    FamilyTypeResponseDto create(FamilyTypeRequestDto requestDto);
 
-    void delete(Long id);
+    FamilyTypeResponseDto update(Long id, FamilyTypeRequestDto requestDto);
 
-    Optional<FamilyType> getById(Long id);
+    void softDelete(Long id);
 
-    List<FamilyType> getAll();
+    void restore(Long id);
 
-    // 🔍 Find by name
-    Optional<FamilyType> getByName(String name);
+    void hardDelete(Long id);
 
-    Optional<FamilyType> getByNameIgnoreCase(String name);
+    // =========================
+    // GET
+    // =========================
 
-    // ✅ Duplicate check
-    boolean existsByName(String name);
+    FamilyTypeResponseDto getById(Long id);
 
-    boolean existsByNameIgnoreCase(String name);
+    List<FamilyTypeResponseDto> getAll();
 
-    // 🔍 Active / Inactive
-    List<FamilyType> getActive();
+    List<FamilyTypeResponseDto> getDeleted();
 
-    List<FamilyType> getInactive();
+    // =========================
+    // ACTIVE / INACTIVE
+    // =========================
 
-    // 🔍 Admin-based
-    List<FamilyType> getByAdmin(Long adminId);
+    List<FamilyTypeResponseDto> getActive();
 
-    List<FamilyType> getActiveByAdmin(Long adminId);
+    List<FamilyTypeResponseDto> getInactive();
 
-    // 🔍 Search
-    List<FamilyType> search(String keyword);
+    // =========================
+    // ADMIN WISE
+    // =========================
 
-    List<FamilyType> searchByAdmin(Long adminId, String keyword);
+    List<FamilyTypeResponseDto> getByAdmin(Long adminId);
+
+    List<FamilyTypeResponseDto> getActiveByAdmin(Long adminId);
+
+    List<FamilyTypeResponseDto> getInactiveByAdmin(Long adminId);
+
+    // =========================
+    // SEARCH
+    // =========================
+
+    List<FamilyTypeResponseDto> search(String keyword);
+
+    List<FamilyTypeResponseDto> searchByAdmin(Long adminId, String keyword);
 }

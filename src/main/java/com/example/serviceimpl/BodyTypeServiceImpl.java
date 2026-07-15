@@ -1,13 +1,18 @@
 package com.example.serviceimpl;
 
+import com.example.exception.BadRequestException;
+import com.example.exception.ResourceNotFoundException;
 import com.example.model.Admin;
 import com.example.model.BodyType;
 import com.example.repository.AdminRepository;
 import com.example.repository.BodyTypeRepository;
 import com.example.service.BodyTypeService;
+import com.example.util.AuditHelper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -16,129 +21,213 @@ public class BodyTypeServiceImpl implements BodyTypeService {
 
     private final BodyTypeRepository bodyTypeRepository;
     private final AdminRepository adminRepository;
-
+    private final AuditHelper auditHelper;
     // ✅ Create
     @Override
+    @Transactional
     public BodyType create(BodyType bodyType, Long adminId) {
 
         Admin admin = adminRepository.findById(adminId)
-                .orElseThrow(() -> new RuntimeException("Admin not found"));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Admin not found"));
 
-        // 🔍 Duplicate check
-        boolean exists = bodyTypeRepository.findAll().stream()
-                .anyMatch(bt ->
+        if (bodyTypeRepository.existsByValueIgnoreCaseAndDeletedAtIsNull(
+                bodyType.getValue().trim())) {
 
-                        bt.getValue().equalsIgnoreCase(bodyType.getValue())
-
-                                &&
-
-                                (
-                                        bt.getAdmin() == null
-                                                ||
-                                                bt.getAdmin().getId().equals(adminId)
-                                )
-
-                );
-
-        if (exists) {
-            throw new RuntimeException("Body type already exists");
+            throw new BadRequestException("Body type already exists");
         }
 
+        bodyType.setValue(bodyType.getValue().trim());
         bodyType.setAdmin(admin);
 
-        return bodyTypeRepository.save(bodyType);
-    }
+        BodyType saved = bodyTypeRepository.save(bodyType);
 
+        auditHelper.logCreate(
+                "MASTER_DATA",
+                "BODY_TYPE",
+                saved.getId(),
+                saved.getValue(),
+                "Value=" + saved.getValue()
+                        + ", Active=" + saved.getIsActive()
+        );
+
+        return saved;
+    }
     // ✅ Get by ID
     @Override
     public BodyType getById(Long id, Long adminId) {
 
-        BodyType bt = bodyTypeRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Body type not found"));
+        BodyType bodyType = bodyTypeRepository.findById(id)
+                .filter(bt -> bt.getDeletedAt() == null)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Body type not found"));
 
-        if (
+        if (adminId != null
+                && bodyType.getAdmin() != null
+                && !bodyType.getAdmin().getId().equals(adminId)) {
 
-                bt.getAdmin() != null
-                        &&
-
-                        !bt.getAdmin().getId().equals(adminId)
-
-        ) {
-            throw new RuntimeException("Unauthorized access");
+            throw new BadRequestException("Unauthorized access");
         }
 
-        return bt;
+        return bodyType;
     }
-
     // ✅ Get all
     @Override
     public List<BodyType> getAll(Long adminId) {
 
-        return bodyTypeRepository.findAll();
+        if (adminId == null) {
 
+            return bodyTypeRepository.findAll()
+                    .stream()
+                    .filter(bt -> bt.getDeletedAt() == null)
+                    .toList();
+        }
+
+        return bodyTypeRepository.findByAdminIdAndDeletedAtIsNull(adminId);
     }
-
     // ✅ Get active
     @Override
     public List<BodyType> getActive(Long adminId) {
 
-        return bodyTypeRepository.findAll()
-                .stream()
-                .filter(bt -> Boolean.TRUE.equals(bt.getIsActive()))
-                .toList();
-    }
+        if (adminId == null) {
 
+            return bodyTypeRepository.findAll()
+                    .stream()
+                    .filter(bt ->
+                            bt.getDeletedAt() == null
+                                    && Boolean.TRUE.equals(bt.getIsActive()))
+                    .toList();
+        }
+
+        return bodyTypeRepository.findByAdminIdAndIsActiveTrueAndDeletedAtIsNull(adminId);
+    }
     // ✅ Get inactive
-    @Override
-    public List<BodyType> getInactive(Long adminId) {
 
-        return bodyTypeRepository.findAll()
-                .stream()
-                .filter(bt -> Boolean.FALSE.equals(bt.getIsActive()))
-                .toList();
-    }
 
     // ✅ Update
     @Override
+    @Transactional
     public BodyType update(Long id, BodyType updated, Long adminId) {
 
         BodyType existing = getById(id, adminId);
 
-        // 🔍 Duplicate check
-        boolean exists = bodyTypeRepository.findAll().stream()
-                .anyMatch(bt ->
+        String oldValue = "Value=" + existing.getValue()
+                + ", Active=" + existing.getIsActive();
 
-                        bt.getValue().equalsIgnoreCase(updated.getValue())
+        boolean wasActive = Boolean.TRUE.equals(existing.getIsActive());
 
-                                &&
+        if (bodyTypeRepository.existsByValueIgnoreCaseAndDeletedAtIsNull(
+                updated.getValue().trim())
+                && !existing.getValue().equalsIgnoreCase(updated.getValue().trim())) {
 
-                                (
-                                        bt.getAdmin() == null
-                                                ||
-                                                bt.getAdmin().getId().equals(adminId)
-                                )
-
-                                &&
-
-                                !bt.getId().equals(id)
-
-                );
-
-        if (exists) {
-            throw new RuntimeException("Body type already exists");
+            throw new BadRequestException("Body type already exists");
         }
 
-        existing.setValue(updated.getValue());
-        existing.setIsActive(updated.getIsActive());
+        existing.setValue(updated.getValue().trim());
+        existing.setIsActive(
+                updated.getIsActive() != null
+                        ? updated.getIsActive()
+                        : existing.getIsActive()
+        );
+        BodyType saved = bodyTypeRepository.save(existing);
 
-        return bodyTypeRepository.save(existing);
+        String newValue = "Value=" + saved.getValue()
+                + ", Active=" + saved.getIsActive();
+
+        boolean isActive = Boolean.TRUE.equals(saved.getIsActive());
+
+        auditHelper.logUpdate(
+                "MASTER_DATA",
+                "BODY_TYPE",
+                saved.getId(),
+                saved.getValue(),
+                oldValue,
+                newValue,
+                wasActive,
+                isActive
+        );
+
+        return saved;
     }
-
     // ✅ Delete
     @Override
-    public void delete(Long id, Long adminId) {
+    @Transactional
+    public void delete(Long id, Long deletedBy) {
 
-        BodyType bt = getById(id, adminId);
-        bodyTypeRepository.delete(bt);
+        BodyType bodyType = bodyTypeRepository.findById(id)
+                .filter(bt -> bt.getDeletedAt() == null)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Body type not found"));
+
+        String oldValue = "Value=" + bodyType.getValue()
+                + ", Active=" + bodyType.getIsActive();
+
+        bodyType.setDeletedAt(LocalDateTime.now());
+        bodyType.setDeletedBy(deletedBy);
+
+        bodyTypeRepository.save(bodyType);
+
+        auditHelper.logDelete(
+                "MASTER_DATA",
+                "BODY_TYPE",
+                bodyType.getId(),
+                bodyType.getValue(),
+                oldValue
+        );
+    }
+    @Override
+    @Transactional
+    public void hardDelete(Long id) {
+
+        BodyType bodyType = bodyTypeRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Body type not found"));
+
+        String oldValue = "Value=" + bodyType.getValue()
+                + ", Active=" + bodyType.getIsActive();
+
+        bodyTypeRepository.delete(bodyType);
+
+        auditHelper.logHardDelete(
+                "MASTER_DATA",
+                "BODY_TYPE",
+                bodyType.getId(),
+                bodyType.getValue(),
+                oldValue
+        );
+    }
+    @Override
+    @Transactional
+    public BodyType restore(Long id) {
+
+        BodyType bodyType = bodyTypeRepository.findById(id)
+                .filter(bt -> bt.getDeletedAt() != null)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Deleted body type not found"));
+
+        bodyType.setDeletedAt(null);
+        bodyType.setDeletedBy(null);
+        bodyType.setUpdatedAt(LocalDateTime.now());
+        BodyType restored = bodyTypeRepository.save(bodyType);
+
+        auditHelper.logRestore(
+                "MASTER_DATA",
+                "BODY_TYPE",
+                restored.getId(),
+                restored.getValue(),
+                "Value=" + restored.getValue()
+                        + ", Active=" + restored.getIsActive()
+        );
+
+        return restored;
+    }
+    @Override
+    @Transactional
+    public List<BodyType> getDeleted(Long adminId) {
+
+        return bodyTypeRepository.findAll()
+                .stream()
+                .filter(bt -> bt.getDeletedAt() != null)
+                .toList();
     }
 }

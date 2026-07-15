@@ -1,133 +1,219 @@
 package com.example.controller.master;
 
 import com.example.dto.request.MaritalStatusRequestDTO;
+import com.example.dto.response.ApiResponse;
 import com.example.dto.response.MaritalStatusResponseDTO;
-import com.example.model.Admin;
-import com.example.model.MaritalStatus;
 import com.example.service.MaritalStatusService;
-
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/marital-status")
+@RequestMapping("/api/master/marital-status")
 @RequiredArgsConstructor
 public class MaritalStatusController {
 
     private final MaritalStatusService maritalStatusService;
 
-    // ✅ Create
+    // =========================
+    // CREATE
+    // =========================
+
     @PostMapping
-    public MaritalStatusResponseDTO create(@Valid @RequestBody MaritalStatusRequestDTO dto) {
+    @ResponseStatus(HttpStatus.CREATED)
+    public ApiResponse<MaritalStatusResponseDTO> create(
+            @Valid @RequestBody MaritalStatusRequestDTO requestDto) {
 
-        MaritalStatus entity = mapToEntity(dto);
-        MaritalStatus saved = maritalStatusService.create(entity);
-
-        return mapToResponse(saved);
+        return ApiResponse.success(
+                "Marital Status created successfully.",
+                maritalStatusService.create(requestDto)
+        );
     }
 
-    // 🔄 Update
+    // =========================
+    // UPDATE
+    // =========================
+
     @PutMapping("/{id}")
-    public MaritalStatusResponseDTO update(
+    public ApiResponse<MaritalStatusResponseDTO> update(
             @PathVariable Long id,
-            @Valid @RequestBody MaritalStatusRequestDTO dto
-    ) {
-        MaritalStatus entity = mapToEntity(dto);
-        MaritalStatus updated = maritalStatusService.update(id, entity);
+            @Valid @RequestBody MaritalStatusRequestDTO requestDto) {
 
-        return mapToResponse(updated);
+        return ApiResponse.success(
+                "Marital Status updated successfully.",
+                maritalStatusService.update(id, requestDto)
+        );
     }
 
-    // ❌ Delete
+    // =========================
+    // SOFT DELETE
+    // =========================
+
     @DeleteMapping("/{id}")
-    public String delete(@PathVariable Long id) {
-        maritalStatusService.delete(id);
-        return "MaritalStatus deleted successfully";
+    public ApiResponse<Void> softDelete(@PathVariable Long id) {
+
+        maritalStatusService.softDelete(id);
+
+        return ApiResponse.success(
+                "Marital Status deleted successfully.",
+                null
+        );
     }
 
-    // 🔍 Get by ID
+    // =========================
+    // RESTORE
+    // =========================
+
+    @PatchMapping("/{id}/restore")
+    public ApiResponse<Void> restore(@PathVariable Long id) {
+
+        maritalStatusService.restore(id);
+
+        return ApiResponse.success(
+                "Marital Status restored successfully.",
+                null
+        );
+    }
+
+    // =========================
+    // HARD DELETE
+    // =========================
+
+    @DeleteMapping("/{id}/hard")
+    public ApiResponse<Void> hardDelete(@PathVariable Long id) {
+
+        maritalStatusService.hardDelete(id);
+
+        return ApiResponse.success(
+                "Marital Status permanently deleted.",
+                null
+        );
+    }
+
+    // =========================
+    // GET BY ID
+    // =========================
+
     @GetMapping("/{id}")
-    public MaritalStatusResponseDTO getById(@PathVariable Long id) {
-        MaritalStatus data = maritalStatusService.getById(id)
-                .orElseThrow(() -> new RuntimeException("MaritalStatus not found"));
+    public ApiResponse<MaritalStatusResponseDTO> getById(@PathVariable Long id) {
 
-        return mapToResponse(data);
+        return ApiResponse.success(
+                "Marital Status fetched successfully.",
+                maritalStatusService.getById(id)
+        );
     }
 
-    // 🔍 Get all
+    // =========================
+    // GET ALL
+    // =========================
+
     @GetMapping
-    public List<MaritalStatusResponseDTO> getAll() {
-        return maritalStatusService.getAll()
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+    public ApiResponse<List<MaritalStatusResponseDTO>> getAll() {
+
+        return ApiResponse.success(
+                "Marital Status list fetched successfully.",
+                maritalStatusService.getAll()
+        );
     }
 
-    // 🔍 Active
+    // =========================
+    // GET DELETED
+    // =========================
+
+    @GetMapping("/deleted")
+    public ApiResponse<List<MaritalStatusResponseDTO>> getDeleted() {
+
+        return ApiResponse.success(
+                "Deleted Marital Status fetched successfully.",
+                maritalStatusService.getDeleted()
+        );
+    }
+
+    // =========================
+    // ACTIVE
+    // =========================
+
     @GetMapping("/active")
-    public List<MaritalStatusResponseDTO> getActive() {
-        return maritalStatusService.getActive()
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+    public ApiResponse<List<MaritalStatusResponseDTO>> getActive() {
+
+        return ApiResponse.success(
+                "Active Marital Status fetched successfully.",
+                maritalStatusService.getActive()
+        );
     }
 
-    // 🔍 By admin
+    // =========================
+    // INACTIVE
+    // =========================
+
+    @GetMapping("/inactive")
+    public ApiResponse<List<MaritalStatusResponseDTO>> getInactive() {
+
+        return ApiResponse.success(
+                "Inactive Marital Status fetched successfully.",
+                maritalStatusService.getInactive()
+        );
+    }
+
+    // =========================
+    // ADMIN
+    // =========================
+
     @GetMapping("/admin/{adminId}")
-    public List<MaritalStatusResponseDTO> getByAdmin(@PathVariable Long adminId) {
-        return maritalStatusService.getByAdmin(adminId)
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+    public ApiResponse<List<MaritalStatusResponseDTO>> getByAdmin(
+            @PathVariable Long adminId) {
+
+        return ApiResponse.success(
+                "Marital Status fetched successfully.",
+                maritalStatusService.getByAdmin(adminId)
+        );
     }
 
-    // 🔍 Search
+    @GetMapping("/admin/{adminId}/active")
+    public ApiResponse<List<MaritalStatusResponseDTO>> getActiveByAdmin(
+            @PathVariable Long adminId) {
+
+        return ApiResponse.success(
+                "Active Marital Status fetched successfully.",
+                maritalStatusService.getActiveByAdmin(adminId)
+        );
+    }
+
+    @GetMapping("/admin/{adminId}/inactive")
+    public ApiResponse<List<MaritalStatusResponseDTO>> getInactiveByAdmin(
+            @PathVariable Long adminId) {
+
+        return ApiResponse.success(
+                "Inactive Marital Status fetched successfully.",
+                maritalStatusService.getInactiveByAdmin(adminId)
+        );
+    }
+
+    // =========================
+    // SEARCH
+    // =========================
+
     @GetMapping("/search")
-    public List<MaritalStatusResponseDTO> search(@RequestParam String keyword) {
-        return maritalStatusService.search(keyword)
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+    public ApiResponse<List<MaritalStatusResponseDTO>> search(
+            @RequestParam String keyword) {
+
+        return ApiResponse.success(
+                "Search completed successfully.",
+                maritalStatusService.search(keyword)
+        );
     }
 
-    // ===============================
-    // 🔁 Mapping Methods
-    // ===============================
+    @GetMapping("/admin/{adminId}/search")
+    public ApiResponse<List<MaritalStatusResponseDTO>> searchByAdmin(
+            @PathVariable Long adminId,
+            @RequestParam String keyword) {
 
-    private MaritalStatus mapToEntity(MaritalStatusRequestDTO dto) {
-
-        MaritalStatus entity = new MaritalStatus();
-
-        entity.setName(dto.getName());
-        entity.setIsActive(dto.getIsActive());
-
-        if (dto.getAdminId() != null) {
-            Admin admin = new Admin();
-            admin.setId(dto.getAdminId());
-            entity.setAdmin(admin);
-        }
-
-        return entity;
-    }
-
-    private MaritalStatusResponseDTO mapToResponse(MaritalStatus entity) {
-
-        MaritalStatusResponseDTO dto = new MaritalStatusResponseDTO();
-
-        dto.setId(entity.getId());
-        dto.setName(entity.getName());
-        dto.setIsActive(entity.getIsActive());
-        dto.setCreatedAt(entity.getCreatedAt());
-        dto.setUpdatedAt(entity.getUpdatedAt());
-
-        if (entity.getAdmin() != null) {
-            dto.setAdminId(entity.getAdmin().getId());
-        }
-
-        return dto;
+        return ApiResponse.success(
+                "Search completed successfully.",
+                maritalStatusService.searchByAdmin(adminId, keyword)
+        );
     }
 }

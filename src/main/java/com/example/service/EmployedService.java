@@ -1,45 +1,59 @@
 package com.example.service;
 
-import com.example.model.Employed;
+import com.example.dto.request.EmployedRequestDto;
+import com.example.dto.response.EmployedResponseDto;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface EmployedService {
 
-    // 🔍 Basic CRUD
-    Employed create(Employed employed);
+    // =========================
+    // CRUD
+    // =========================
 
-    Employed update(Long id, Employed employed);
+    EmployedResponseDto create(EmployedRequestDto requestDto);
 
-    void delete(Long id);
+    EmployedResponseDto update(Long id, EmployedRequestDto requestDto);
 
-    Optional<Employed> getById(Long id);
+    void softDelete(Long id);
 
-    List<Employed> getAll();
+    void restore(Long id);
 
-    // 🔍 Find by name
-    Optional<Employed> getByName(String name);
+    void hardDelete(Long id);
 
-    Optional<Employed> getByNameIgnoreCase(String name);
+    // =========================
+    // Get
+    // =========================
 
-    // ✅ Duplicate check
-    boolean existsByName(String name);
+    EmployedResponseDto getById(Long id);
 
-    boolean existsByNameIgnoreCase(String name);
+    List<EmployedResponseDto> getAll();
 
-    // 🔍 Active / Inactive
-    List<Employed> getActive();
+    List<EmployedResponseDto> getDeleted();
 
-    List<Employed> getInactive();
+    // =========================
+    // Active / Inactive
+    // =========================
 
-    // 🔍 Admin-based
-    List<Employed> getByAdmin(Long adminId);
+    List<EmployedResponseDto> getActive();
 
-    List<Employed> getActiveByAdmin(Long adminId);
+    List<EmployedResponseDto> getInactive();
 
-    // 🔍 Search
-    List<Employed> search(String keyword);
+    // =========================
+    // Admin Wise
+    // =========================
 
-    List<Employed> searchByAdmin(Long adminId, String keyword);
+    List<EmployedResponseDto> getByAdmin(Long adminId);
+
+    List<EmployedResponseDto> getActiveByAdmin(Long adminId);
+
+    List<EmployedResponseDto> getInactiveByAdmin(Long adminId);
+
+    // =========================
+    // Search
+    // =========================
+
+    List<EmployedResponseDto> search(String keyword);
+
+    List<EmployedResponseDto> searchByAdmin(Long adminId, String keyword);
 }

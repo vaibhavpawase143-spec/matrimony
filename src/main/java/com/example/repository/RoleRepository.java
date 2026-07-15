@@ -10,21 +10,68 @@ import java.util.Optional;
 @Repository
 public interface RoleRepository extends JpaRepository<Role, Long> {
 
-    // ✅ GLOBAL ROLE (IMPORTANT)
-    Optional<Role> findByNameIgnoreCase(String name);
-
-    // 🔽 Keep if you need admin-specific roles later
-    Optional<Role> findByNameIgnoreCaseAndAdminId(String name, Long adminId);
-
-    boolean existsByNameIgnoreCaseAndAdminId(String name, Long adminId);
-
-    List<Role> findByAdminId(Long adminId);
-
-    List<Role> findByAdminIdAndIsActiveTrue(Long adminId);
-
-    List<Role> findByAdminIdAndIsActiveFalse(Long adminId);
-
-    List<Role> findByAdminIdAndNameContainingIgnoreCase(Long adminId, String keyword);
+    // =====================================================
+    // JWT / SPRING SECURITY
+    // =====================================================
 
     Optional<Role> findByName(String name);
+
+    Optional<Role> findByNameIgnoreCase(String name);
+
+    // =====================================================
+    // BASIC
+    // =====================================================
+
+    Optional<Role> findByIdAndDeletedAtIsNull(Long id);
+
+    Optional<Role> findByIdAndDeletedAtIsNotNull(Long id);
+
+    List<Role> findAllByDeletedAtIsNull();
+
+    List<Role> findByDeletedAtIsNotNull();
+
+    // =====================================================
+    // DUPLICATE CHECK
+    // =====================================================
+
+    boolean existsByNameIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+            String name,
+            Long adminId
+    );
+
+    Optional<Role> findByNameIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+            String name,
+            Long adminId
+    );
+
+    // =====================================================
+    // ACTIVE / INACTIVE
+    // =====================================================
+
+    List<Role> findByIsActiveTrueAndDeletedAtIsNull();
+
+    List<Role> findByIsActiveFalseAndDeletedAtIsNull();
+
+    // =====================================================
+    // ADMIN
+    // =====================================================
+
+    List<Role> findByAdmin_IdAndDeletedAtIsNull(Long adminId);
+
+    List<Role> findByAdmin_IdAndIsActiveTrueAndDeletedAtIsNull(Long adminId);
+
+    List<Role> findByAdmin_IdAndIsActiveFalseAndDeletedAtIsNull(Long adminId);
+
+    // =====================================================
+    // SEARCH
+    // =====================================================
+
+    List<Role> findByNameContainingIgnoreCaseAndDeletedAtIsNull(
+            String keyword
+    );
+
+    List<Role> findByAdmin_IdAndNameContainingIgnoreCaseAndDeletedAtIsNull(
+            Long adminId,
+            String keyword
+    );
 }

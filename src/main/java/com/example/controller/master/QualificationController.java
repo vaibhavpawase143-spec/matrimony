@@ -1,174 +1,219 @@
 package com.example.controller.master;
 
 import com.example.dto.request.QualificationRequestDTO;
+import com.example.dto.response.ApiResponse;
 import com.example.dto.response.QualificationResponseDTO;
-import com.example.model.Admin;
-import com.example.model.Qualification;
 import com.example.service.QualificationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/qualifications")
+@RequestMapping("/api/master/qualifications")
 @RequiredArgsConstructor
 public class QualificationController {
 
-    private final QualificationService service;
+    private final QualificationService qualificationService;
 
-    // =========================
-    // ✅ CREATE
-    // =========================
+    // =====================================================
+    // CREATE
+    // =====================================================
+
     @PostMapping
-    public QualificationResponseDTO create(@Valid @RequestBody QualificationRequestDTO dto) {
+    @ResponseStatus(HttpStatus.CREATED)
+    public ApiResponse<QualificationResponseDTO> create(
+            @Valid @RequestBody QualificationRequestDTO requestDto) {
 
-        Qualification entity = mapToEntity(dto);
-        Qualification saved = service.save(entity);
-
-        return mapToResponse(saved);
+        return ApiResponse.success(
+                "Qualification created successfully.",
+                qualificationService.create(requestDto)
+        );
     }
 
-    // =========================
-    // ✅ UPDATE
-    // =========================
+    // =====================================================
+    // UPDATE
+    // =====================================================
+
     @PutMapping("/{id}")
-    public QualificationResponseDTO update(
+    public ApiResponse<QualificationResponseDTO> update(
             @PathVariable Long id,
-            @Valid @RequestBody QualificationRequestDTO dto) {
+            @Valid @RequestBody QualificationRequestDTO requestDto) {
 
-        Qualification existing = service.getById(id)
-                .orElseThrow(() -> new RuntimeException("Qualification not found"));
-
-        updateEntity(existing, dto);
-
-        Qualification updated = service.save(existing);
-
-        return mapToResponse(updated);
+        return ApiResponse.success(
+                "Qualification updated successfully.",
+                qualificationService.update(id, requestDto)
+        );
     }
 
-    // =========================
-    // ✅ GET BY ID
-    // =========================
+    // =====================================================
+    // SOFT DELETE
+    // =====================================================
+
+    @DeleteMapping("/{id}")
+    public ApiResponse<Void> softDelete(@PathVariable Long id) {
+
+        qualificationService.softDelete(id);
+
+        return ApiResponse.success(
+                "Qualification deleted successfully.",
+                null
+        );
+    }
+
+    // =====================================================
+    // RESTORE
+    // =====================================================
+
+    @PatchMapping("/{id}/restore")
+    public ApiResponse<Void> restore(@PathVariable Long id) {
+
+        qualificationService.restore(id);
+
+        return ApiResponse.success(
+                "Qualification restored successfully.",
+                null
+        );
+    }
+
+    // =====================================================
+    // HARD DELETE
+    // =====================================================
+
+    @DeleteMapping("/{id}/hard")
+    public ApiResponse<Void> hardDelete(@PathVariable Long id) {
+
+        qualificationService.hardDelete(id);
+
+        return ApiResponse.success(
+                "Qualification permanently deleted.",
+                null
+        );
+    }
+
+    // =====================================================
+    // GET BY ID
+    // =====================================================
+
     @GetMapping("/{id}")
-    public QualificationResponseDTO getById(@PathVariable Long id) {
+    public ApiResponse<QualificationResponseDTO> getById(@PathVariable Long id) {
 
-        Qualification q = service.getById(id)
-                .orElseThrow(() -> new RuntimeException("Qualification not found"));
-
-        return mapToResponse(q);
+        return ApiResponse.success(
+                "Qualification fetched successfully.",
+                qualificationService.getById(id)
+        );
     }
 
-    // =========================
-    // ✅ GET ALL
-    // =========================
+    // =====================================================
+    // GET ALL
+    // =====================================================
+
     @GetMapping
-    public List<QualificationResponseDTO> getAll() {
+    public ApiResponse<List<QualificationResponseDTO>> getAll() {
 
-        return service.getAll()
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+        return ApiResponse.success(
+                "Qualification list fetched successfully.",
+                qualificationService.getAll()
+        );
     }
 
-    // =========================
-    // 🔍 ADMIN APIs
-    // =========================
+    // =====================================================
+    // GET DELETED
+    // =====================================================
+
+    @GetMapping("/deleted")
+    public ApiResponse<List<QualificationResponseDTO>> getDeleted() {
+
+        return ApiResponse.success(
+                "Deleted Qualification list fetched successfully.",
+                qualificationService.getDeleted()
+        );
+    }
+
+    // =====================================================
+    // ACTIVE
+    // =====================================================
+
+    @GetMapping("/active")
+    public ApiResponse<List<QualificationResponseDTO>> getActive() {
+
+        return ApiResponse.success(
+                "Active Qualification list fetched successfully.",
+                qualificationService.getActive()
+        );
+    }
+
+    // =====================================================
+    // INACTIVE
+    // =====================================================
+
+    @GetMapping("/inactive")
+    public ApiResponse<List<QualificationResponseDTO>> getInactive() {
+
+        return ApiResponse.success(
+                "Inactive Qualification list fetched successfully.",
+                qualificationService.getInactive()
+        );
+    }
+
+    // =====================================================
+    // ADMIN
+    // =====================================================
 
     @GetMapping("/admin/{adminId}")
-    public List<QualificationResponseDTO> getByAdmin(@PathVariable Long adminId) {
+    public ApiResponse<List<QualificationResponseDTO>> getByAdmin(
+            @PathVariable Long adminId) {
 
-        return service.getByAdmin(adminId)
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+        return ApiResponse.success(
+                "Qualification list fetched successfully.",
+                qualificationService.getByAdmin(adminId)
+        );
     }
 
     @GetMapping("/admin/{adminId}/active")
-    public List<QualificationResponseDTO> getActive(@PathVariable Long adminId) {
+    public ApiResponse<List<QualificationResponseDTO>> getActiveByAdmin(
+            @PathVariable Long adminId) {
 
-        return service.getActiveByAdmin(adminId)
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+        return ApiResponse.success(
+                "Active Qualification list fetched successfully.",
+                qualificationService.getActiveByAdmin(adminId)
+        );
     }
 
     @GetMapping("/admin/{adminId}/inactive")
-    public List<QualificationResponseDTO> getInactive(@PathVariable Long adminId) {
+    public ApiResponse<List<QualificationResponseDTO>> getInactiveByAdmin(
+            @PathVariable Long adminId) {
 
-        return service.getInactiveByAdmin(adminId)
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+        return ApiResponse.success(
+                "Inactive Qualification list fetched successfully.",
+                qualificationService.getInactiveByAdmin(adminId)
+        );
     }
 
-    // =========================
-    // 🔍 SEARCH
-    // =========================
+    // =====================================================
+    // SEARCH
+    // =====================================================
+
+    @GetMapping("/search")
+    public ApiResponse<List<QualificationResponseDTO>> search(
+            @RequestParam String keyword) {
+
+        return ApiResponse.success(
+                "Search completed successfully.",
+                qualificationService.search(keyword)
+        );
+    }
+
     @GetMapping("/admin/{adminId}/search")
-    public List<QualificationResponseDTO> search(
+    public ApiResponse<List<QualificationResponseDTO>> searchByAdmin(
             @PathVariable Long adminId,
             @RequestParam String keyword) {
 
-        return service.searchByAdmin(adminId, keyword)
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
-    }
-
-    // =========================
-    // ❌ DELETE
-    // =========================
-    @DeleteMapping("/{id}")
-    public String delete(@PathVariable Long id) {
-        service.delete(id);
-        return "Qualification deleted successfully";
-    }
-
-    // =========================
-    // 🔥 MAPPING
-    // =========================
-
-    private Qualification mapToEntity(QualificationRequestDTO dto) {
-
-        Qualification q = new Qualification();
-
-        Admin admin = new Admin();
-        admin.setId(dto.getAdminId());
-        q.setAdmin(admin);
-
-        q.setName(dto.getName());
-
-        if (dto.getIsActive() != null) {
-            q.setIsActive(dto.getIsActive());
-        }
-
-        return q;
-    }
-
-    private void updateEntity(Qualification q, QualificationRequestDTO dto) {
-
-        if (dto.getName() != null) {
-            q.setName(dto.getName());
-        }
-
-        if (dto.getIsActive() != null) {
-            q.setIsActive(dto.getIsActive());
-        }
-    }
-
-    private QualificationResponseDTO mapToResponse(Qualification q) {
-
-        return QualificationResponseDTO.builder()
-                .id(q.getId())
-                .adminId(q.getAdmin() != null ? q.getAdmin().getId() : null)
-                .adminName(null) // ✅ FIXED (removed lazy call)
-                .name(q.getName())
-                .isActive(q.getIsActive())
-                .createdAt(q.getCreatedAt())
-                .updatedAt(q.getUpdatedAt())
-                .build();
+        return ApiResponse.success(
+                "Search completed successfully.",
+                qualificationService.searchByAdmin(adminId, keyword)
+        );
     }
 }

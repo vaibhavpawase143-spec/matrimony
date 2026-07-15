@@ -10,30 +10,75 @@ import java.util.Optional;
 @Repository
 public interface CountryRepository extends JpaRepository<Country, Long> {
 
-    // 🔍 Find by name
+    // =========================================
+    // FIND
+    // =========================================
+
     Optional<Country> findByName(String name);
 
-    // 🔥 Case-insensitive (important)
     Optional<Country> findByNameIgnoreCase(String name);
 
-    // ✅ Duplicate check
+    // =========================================
+    // DUPLICATE CHECK
+    // =========================================
+
     boolean existsByName(String name);
 
     boolean existsByNameIgnoreCase(String name);
 
-    // 🔍 Active / Inactive
+    boolean existsByNameIgnoreCaseAndDeletedAtIsNull(String name);
+
+    // =========================================
+    // ACTIVE / INACTIVE
+    // =========================================
+
     List<Country> findByIsActiveTrue();
+
     List<Country> findByIsActiveFalse();
 
-    // 🔍 Admin-based filtering
+    List<Country> findByIsActiveTrueAndDeletedAtIsNull();
+
+    List<Country> findByIsActiveFalseAndDeletedAtIsNull();
+
+    // =========================================
+    // ADMIN
+    // =========================================
+
     List<Country> findByAdminId(Long adminId);
 
-    // ✅ Active by admin
     List<Country> findByAdminIdAndIsActiveTrue(Long adminId);
 
-    // 🔍 Search (global)
+    List<Country> findByAdminIdAndDeletedAtIsNull(Long adminId);
+
+    List<Country> findByAdminIdAndDeletedAtIsNotNull(Long adminId);
+
+    List<Country> findByAdminIdAndIsActiveTrueAndDeletedAtIsNull(Long adminId);
+
+    // =========================================
+    // SEARCH (KEEP - FRONTEND USES THESE)
+    // =========================================
+
     List<Country> findByNameContainingIgnoreCase(String keyword);
 
-    // 🔥 Search within admin (multi-tenant support)
-    List<Country> findByAdminIdAndNameContainingIgnoreCase(Long adminId, String keyword);
+    List<Country> findByNameContainingIgnoreCaseAndDeletedAtIsNull(
+            String keyword
+    );
+
+    List<Country> findByAdminIdAndNameContainingIgnoreCase(
+            Long adminId,
+            String keyword
+    );
+
+    List<Country> findByAdminIdAndNameContainingIgnoreCaseAndDeletedAtIsNull(
+            Long adminId,
+            String keyword
+    );
+
+    // =========================================
+    // SOFT DELETE
+    // =========================================
+
+    List<Country> findByDeletedAtIsNull();
+
+    List<Country> findByDeletedAtIsNotNull();
 }

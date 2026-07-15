@@ -1,20 +1,28 @@
 package com.example.dto.response;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 
 @Getter
 @Setter
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class FamilyTypeResponseDto {
 
     private Long id;
     private Long adminId;
     private String name;
     private Boolean isActive;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    private LocalDateTime deletedAt;
+    private Long deletedBy;
 }

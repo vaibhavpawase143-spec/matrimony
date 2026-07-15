@@ -10,27 +10,41 @@ import java.util.Optional;
 @Repository
 public interface BodyTypeRepository extends JpaRepository<BodyType, Long> {
 
-    // 🔍 Find by value
-    Optional<BodyType> findByValue(String value);
+    // ================= Duplicate Check =================
 
-    // 🔥 Case-insensitive (important for real-world data)
+    boolean existsByValueIgnoreCaseAndDeletedAtIsNull(String value);
+
     Optional<BodyType> findByValueIgnoreCase(String value);
 
-    // ✅ Duplicate check
-    boolean existsByValue(String value);
+    // ================= Basic Queries =================
 
-    boolean existsByValueIgnoreCase(String value);
-
-    // 🔍 Active / Inactive
     List<BodyType> findByIsActiveTrue();
+
     List<BodyType> findByIsActiveFalse();
 
-    // 🔍 Admin-based filtering
+    // ================= Admin Queries =================
+
     List<BodyType> findByAdminId(Long adminId);
 
-    // ✅ Active by admin
     List<BodyType> findByAdminIdAndIsActiveTrue(Long adminId);
 
-    // 🔥 Combined filter (best practice)
-    List<BodyType> findByAdminIdAndValueIgnoreCase(Long adminId, String value);
+    List<BodyType> findByAdminIdAndIsActiveFalse(Long adminId);
+
+    // ================= Soft Delete =================
+
+    List<BodyType> findByDeletedAtIsNull();
+
+    List<BodyType> findByDeletedAtIsNotNull();
+
+    List<BodyType> findByIsActiveTrueAndDeletedAtIsNull();
+
+    List<BodyType> findByIsActiveFalseAndDeletedAtIsNull();
+
+    List<BodyType> findByAdminIdAndDeletedAtIsNull(Long adminId);
+
+    List<BodyType> findByAdminIdAndDeletedAtIsNotNull(Long adminId);
+
+    List<BodyType> findByAdminIdAndIsActiveTrueAndDeletedAtIsNull(Long adminId);
+
+    List<BodyType> findByAdminIdAndIsActiveFalseAndDeletedAtIsNull(Long adminId);
 }

@@ -9,7 +9,15 @@ import java.time.LocalDateTime;
 @Table(
         name = "drinking",
         uniqueConstraints = {
-                @UniqueConstraint(columnNames = {"value", "admin_id"})
+                @UniqueConstraint(
+                        name = "uk_drinking_value_admin",
+                        columnNames = {"value", "admin_id"}
+                )
+        },
+        indexes = {
+                @Index(name = "idx_drinking_admin", columnList = "admin_id"),
+                @Index(name = "idx_drinking_active", columnList = "is_active"),
+                @Index(name = "idx_drinking_deleted", columnList = "deleted_at")
         }
 )
 @Getter
@@ -32,9 +40,9 @@ public class Drinking {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "admin_id")
     private Admin admin;
-    @Column(name = "admin_id", insertable = false, updatable = false)
-    private Long adminId;
+
     @Column(name = "is_active", nullable = false)
+    @Builder.Default
     private Boolean isActive = true;
 
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -43,14 +51,24 @@ public class Drinking {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    // ==========================
+    // SOFT DELETE
+    // ==========================
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
+    @Column(name = "deleted_by")
+    private Long deletedBy;
+
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
     }
 
     @PreUpdate
     protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
     }
 }

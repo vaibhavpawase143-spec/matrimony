@@ -1,45 +1,59 @@
 package com.example.service;
 
-import com.example.model.ManglikStatus;
+import com.example.dto.request.ManglikStatusRequestDTO;
+import com.example.dto.response.ManglikStatusResponseDTO;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface ManglikStatusService {
 
-    // 🔍 Basic CRUD
-    ManglikStatus create(ManglikStatus manglikStatus);
+    // =========================
+    // CRUD
+    // =========================
 
-    ManglikStatus update(Long id, ManglikStatus manglikStatus);
+    ManglikStatusResponseDTO create(ManglikStatusRequestDTO requestDto);
 
-    void delete(Long id);
+    ManglikStatusResponseDTO update(Long id, ManglikStatusRequestDTO requestDto);
 
-    Optional<ManglikStatus> getById(Long id);
+    void softDelete(Long id);
 
-    List<ManglikStatus> getAll();
+    void restore(Long id);
 
-    // 🔍 Find by name
-    Optional<ManglikStatus> getByName(String name);
+    void hardDelete(Long id);
 
-    Optional<ManglikStatus> getByNameIgnoreCase(String name);
+    // =========================
+    // GET
+    // =========================
 
-    // ✅ Duplicate check
-    boolean existsByName(String name);
+    ManglikStatusResponseDTO getById(Long id);
 
-    boolean existsByNameIgnoreCase(String name);
+    List<ManglikStatusResponseDTO> getAll();
 
-    // 🔍 Active / Inactive
-    List<ManglikStatus> getActive();
+    List<ManglikStatusResponseDTO> getDeleted();
 
-    List<ManglikStatus> getInactive();
+    // =========================
+    // ACTIVE / INACTIVE
+    // =========================
 
-    // 🔍 Admin-based
-    List<ManglikStatus> getByAdmin(Long adminId);
+    List<ManglikStatusResponseDTO> getActive();
 
-    List<ManglikStatus> getActiveByAdmin(Long adminId);
+    List<ManglikStatusResponseDTO> getInactive();
 
-    // 🔍 Search
-    List<ManglikStatus> search(String keyword);
+    // =========================
+    // ADMIN WISE
+    // =========================
 
-    List<ManglikStatus> searchByAdmin(Long adminId, String keyword);
+    List<ManglikStatusResponseDTO> getByAdmin(Long adminId);
+
+    List<ManglikStatusResponseDTO> getActiveByAdmin(Long adminId);
+
+    List<ManglikStatusResponseDTO> getInactiveByAdmin(Long adminId);
+
+    // =========================
+    // SEARCH
+    // =========================
+
+    List<ManglikStatusResponseDTO> search(String keyword);
+
+    List<ManglikStatusResponseDTO> searchByAdmin(Long adminId, String keyword);
 }

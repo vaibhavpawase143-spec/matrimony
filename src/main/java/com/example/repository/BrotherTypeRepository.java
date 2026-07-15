@@ -10,24 +10,31 @@ import java.util.Optional;
 @Repository
 public interface BrotherTypeRepository extends JpaRepository<BrotherType, Long> {
 
-    // 🔍 Find by value (optional use)
+    // ================= Duplicate Check =================
+
     Optional<BrotherType> findByValueIgnoreCase(String value);
 
-    // 🔥 Duplicate check (ADMIN SAFE)
-    boolean existsByValueIgnoreCaseAndAdminId(String value, Long adminId);
+    boolean existsByValueIgnoreCaseAndDeletedAtIsNull(String value);
 
-    // 🔍 Active / Inactive
+    // ================= Active / Inactive =================
+
     List<BrotherType> findByIsActiveTrue();
+
     List<BrotherType> findByIsActiveFalse();
 
-    // 🔍 Admin-based filtering
+    // ================= Admin =================
+
     List<BrotherType> findByAdminId(Long adminId);
 
     List<BrotherType> findByAdminIdAndIsActiveTrue(Long adminId);
 
-    // 🔒 Secure fetch
-    Optional<BrotherType> findByIdAndAdminId(Long id, Long adminId);
+    // ================= Soft Delete =================
 
-    // 🔍 Search (admin scoped)
-    List<BrotherType> findByValueContainingIgnoreCaseAndAdminId(String keyword, Long adminId);
+    List<BrotherType> findByAdminIdAndDeletedAtIsNull(Long adminId);
+
+    List<BrotherType> findByAdminIdAndIsActiveTrueAndDeletedAtIsNull(Long adminId);
+
+    List<BrotherType> findByAdminIdAndIsActiveFalseAndDeletedAtIsNull(Long adminId);
+
+    List<BrotherType> findByAdminIdAndDeletedAtIsNotNull(Long adminId);
 }

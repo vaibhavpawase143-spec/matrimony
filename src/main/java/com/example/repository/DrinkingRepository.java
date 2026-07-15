@@ -5,35 +5,48 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
-import java.util.Optional;
 
 @Repository
 public interface DrinkingRepository extends JpaRepository<Drinking, Long> {
 
-    // 🔍 Find by value
-    Optional<Drinking> findByValue(String value);
+    // ==========================
+    // DUPLICATE CHECK
+    // ==========================
 
-    // 🔥 Case-insensitive
-    Optional<Drinking> findByValueIgnoreCase(String value);
+    boolean existsByValueIgnoreCaseAndDeletedAtIsNull(String value);
 
-    // ✅ Duplicate check
-    boolean existsByValue(String value);
+    // ==========================
+    // GET
+    // ==========================
 
-    boolean existsByValueIgnoreCase(String value);
+    List<Drinking> findByDeletedAtIsNull();
 
-    // 🔍 Active / Inactive
-    List<Drinking> findByIsActiveTrue();
-    List<Drinking> findByIsActiveFalse();
+    List<Drinking> findByDeletedAtIsNotNull();
 
-    // 🔍 Admin-based filtering
-    List<Drinking> findByAdminId(Long adminId);
+    List<Drinking> findByIsActiveTrueAndDeletedAtIsNull();
 
-    // ✅ Active by admin
-    List<Drinking> findByAdminIdAndIsActiveTrue(Long adminId);
+    List<Drinking> findByIsActiveFalseAndDeletedAtIsNull();
 
-    // 🔍 Search (global)
-    List<Drinking> findByValueContainingIgnoreCase(String keyword);
+    // ==========================
+    // ADMIN
+    // ==========================
 
-    // 🔥 Search within admin
-    List<Drinking> findByAdminIdAndValueContainingIgnoreCase(Long adminId, String keyword);
+    List<Drinking> findByAdmin_IdAndDeletedAtIsNull(Long adminId);
+
+    List<Drinking> findByAdmin_IdAndDeletedAtIsNotNull(Long adminId);
+
+    List<Drinking> findByAdmin_IdAndIsActiveTrueAndDeletedAtIsNull(Long adminId);
+
+    // ==========================
+    // SEARCH
+    // ==========================
+
+    List<Drinking> findByValueContainingIgnoreCaseAndDeletedAtIsNull(
+            String keyword
+    );
+
+    List<Drinking> findByAdmin_IdAndValueContainingIgnoreCaseAndDeletedAtIsNull(
+            Long adminId,
+            String keyword
+    );
 }

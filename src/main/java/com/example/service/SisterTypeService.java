@@ -1,35 +1,59 @@
 package com.example.service;
 
-import com.example.model.SisterType;
+import com.example.dto.request.SisterTypeRequestDTO;
+import com.example.dto.response.SisterTypeResponseDTO;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface SisterTypeService {
 
-    // ✅ Create / Save
-    SisterType save(SisterType sisterType);
+    // =====================================================
+    // CRUD
+    // =====================================================
 
-    // ✅ Get by ID
-    Optional<SisterType> getById(Long id);
+    SisterTypeResponseDTO create(SisterTypeRequestDTO requestDto);
 
-    // 🔍 Get all
-    List<SisterType> getAll();
+    SisterTypeResponseDTO update(Long id, SisterTypeRequestDTO requestDto);
 
-    // 🔍 Get by admin
-    List<SisterType> getByAdmin(Long adminId);
+    void softDelete(Long id);
 
-    // 🔍 Active / Inactive
-    List<SisterType> getActiveByAdmin(Long adminId);
+    void restore(Long id);
 
-    List<SisterType> getInactiveByAdmin(Long adminId);
+    void hardDelete(Long id);
 
-    // 🔍 Search
-    List<SisterType> searchByAdmin(Long adminId, String keyword);
+    // =====================================================
+    // GET
+    // =====================================================
 
-    // 🔍 Find by value (admin-specific)
-    Optional<SisterType> getByValueAndAdmin(String value, Long adminId);
+    SisterTypeResponseDTO getById(Long id);
 
-    // ✅ Delete
-    void delete(Long id);
+    List<SisterTypeResponseDTO> getAll();
+
+    List<SisterTypeResponseDTO> getDeleted();
+
+    // =====================================================
+    // ACTIVE / INACTIVE
+    // =====================================================
+
+    List<SisterTypeResponseDTO> getActive();
+
+    List<SisterTypeResponseDTO> getInactive();
+
+    // =====================================================
+    // ADMIN
+    // =====================================================
+
+    List<SisterTypeResponseDTO> getByAdmin(Long adminId);
+
+    List<SisterTypeResponseDTO> getActiveByAdmin(Long adminId);
+
+    List<SisterTypeResponseDTO> getInactiveByAdmin(Long adminId);
+
+    // =====================================================
+    // SEARCH
+    // =====================================================
+
+    List<SisterTypeResponseDTO> search(String keyword);
+
+    List<SisterTypeResponseDTO> searchByAdmin(Long adminId, String keyword);
 }

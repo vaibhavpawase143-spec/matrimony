@@ -510,7 +510,7 @@ public class UserServiceImpl implements UserService {
         if (updatedUser.getPhone() != null)
             existingUser.setPhone(updatedUser.getPhone());
 
-        existingUser.setUpdatedAt(LocalDateTime.now());
+
 
         return userRepository.save(existingUser);
     }
@@ -540,7 +540,7 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         user.setIsActive(false);
-        user.setUpdatedAt(LocalDateTime.now());
+
 
         userRepository.save(user);
     }

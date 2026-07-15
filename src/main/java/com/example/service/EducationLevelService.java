@@ -1,45 +1,59 @@
 package com.example.service;
 
-import com.example.model.EducationLevel;
+import com.example.dto.request.EducationLevelRequestDto;
+import com.example.dto.response.EducationLevelResponseDto;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface EducationLevelService {
 
-    // 🔍 Basic CRUD
-    EducationLevel create(EducationLevel educationLevel);
+    // =========================
+    // CRUD
+    // =========================
 
-    EducationLevel update(Long id, EducationLevel educationLevel);
+    EducationLevelResponseDto create(EducationLevelRequestDto requestDto);
 
-    void delete(Long id);
+    EducationLevelResponseDto update(Long id, EducationLevelRequestDto requestDto);
 
-    Optional<EducationLevel> getById(Long id);
+    void softDelete(Long id);
 
-    List<EducationLevel> getAll();
+    void restore(Long id);
 
-    // 🔍 Find by name
-    Optional<EducationLevel> getByName(String name);
+    void hardDelete(Long id);
 
-    Optional<EducationLevel> getByNameIgnoreCase(String name);
+    // =========================
+    // Get
+    // =========================
 
-    // ✅ Duplicate check
-    boolean existsByName(String name);
+    EducationLevelResponseDto getById(Long id);
 
-    boolean existsByNameIgnoreCase(String name);
+    List<EducationLevelResponseDto> getAll();
 
-    // 🔍 Active / Inactive
-    List<EducationLevel> getActive();
+    List<EducationLevelResponseDto> getDeleted();
 
-    List<EducationLevel> getInactive();
+    // =========================
+    // Active / Inactive
+    // =========================
 
-    // 🔍 Admin-based
-    List<EducationLevel> getByAdmin(Long adminId);
+    List<EducationLevelResponseDto> getActive();
 
-    List<EducationLevel> getActiveByAdmin(Long adminId);
+    List<EducationLevelResponseDto> getInactive();
 
-    // 🔍 Search
-    List<EducationLevel> search(String keyword);
+    // =========================
+    // Admin Wise
+    // =========================
 
-    List<EducationLevel> searchByAdmin(Long adminId, String keyword);
+    List<EducationLevelResponseDto> getByAdmin(Long adminId);
+
+    List<EducationLevelResponseDto> getActiveByAdmin(Long adminId);
+
+    List<EducationLevelResponseDto> getInactiveByAdmin(Long adminId);
+
+    // =========================
+    // Search
+    // =========================
+
+    List<EducationLevelResponseDto> search(String keyword);
+
+    List<EducationLevelResponseDto> searchByAdmin(Long adminId, String keyword);
 }

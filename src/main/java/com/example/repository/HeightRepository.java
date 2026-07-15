@@ -10,30 +10,74 @@ import java.util.Optional;
 @Repository
 public interface HeightRepository extends JpaRepository<Height, Long> {
 
-    // 🔍 Find by height
-    Optional<Height> findByHeight(String height);
+    // =========================
+    // GET BY ID
+    // =========================
 
-    // 🔥 Case-insensitive
-    Optional<Height> findByHeightIgnoreCase(String height);
+    Optional<Height> findByIdAndDeletedAtIsNull(Long id);
 
-    // ✅ Duplicate check
-    boolean existsByHeight(String height);
+    // =========================
+    // GET ALL
+    // =========================
 
-    boolean existsByHeightIgnoreCase(String height);
+    List<Height> findAllByDeletedAtIsNull();
 
-    // 🔍 Active / Inactive
-    List<Height> findByIsActiveTrue();
-    List<Height> findByIsActiveFalse();
+    // =========================
+    // FIND BY HEIGHT
+    // =========================
 
-    // 🔍 Admin-based filtering
-    List<Height> findByAdminId(Long adminId);
+    Optional<Height> findByHeightIgnoreCaseAndDeletedAtIsNull(String height);
 
-    // ✅ Active by admin
-    List<Height> findByAdminIdAndIsActiveTrue(Long adminId);
+    Optional<Height> findByHeightIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+            String height,
+            Long adminId
+    );
 
-    // 🔍 Search (global)
-    List<Height> findByHeightContainingIgnoreCase(String keyword);
+    // =========================
+    // DUPLICATE CHECK
+    // =========================
 
-    // 🔥 Search within admin
-    List<Height> findByAdminIdAndHeightContainingIgnoreCase(Long adminId, String keyword);
+    boolean existsByHeightIgnoreCaseAndDeletedAtIsNull(String height);
+
+    boolean existsByHeightIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+            String height,
+            Long adminId
+    );
+
+    // =========================
+    // ACTIVE / INACTIVE
+    // =========================
+
+    List<Height> findByIsActiveTrueAndDeletedAtIsNull();
+
+    List<Height> findByIsActiveFalseAndDeletedAtIsNull();
+
+    // =========================
+    // ADMIN WISE
+    // =========================
+
+    List<Height> findByAdmin_IdAndDeletedAtIsNull(Long adminId);
+
+    List<Height> findByAdmin_IdAndIsActiveTrueAndDeletedAtIsNull(Long adminId);
+
+    List<Height> findByAdmin_IdAndIsActiveFalseAndDeletedAtIsNull(Long adminId);
+
+    // =========================
+    // SEARCH
+    // =========================
+
+    List<Height> findByHeightContainingIgnoreCaseAndDeletedAtIsNull(String keyword);
+
+    List<Height> findByAdmin_IdAndHeightContainingIgnoreCaseAndDeletedAtIsNull(
+            Long adminId,
+            String keyword
+    );
+
+    // =========================
+    // SOFT DELETED
+    // =========================
+
+    List<Height> findByDeletedAtIsNotNull();
+
+    Optional<Height> findByIdAndDeletedAtIsNotNull(Long id);
 }

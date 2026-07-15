@@ -3,43 +3,48 @@ package com.example.service;
 import com.example.model.Country;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface CountryService {
 
-    // 🔍 Basic CRUD
+    // =========================================
+    // CRUD
+    // =========================================
+
     Country create(Country country);
 
-    Country update(Long id, Country country);
-
-    void delete(Long id);
-
-    Optional<Country> getById(Long id);
+    Country getById(Long id);
 
     List<Country> getAll();
 
-    // 🔍 Find by name
-    Optional<Country> getByName(String name);
-
-    Optional<Country> getByNameIgnoreCase(String name);
-
-    // ✅ Duplicate check
-    boolean existsByName(String name);
-
-    boolean existsByNameIgnoreCase(String name);
-
-    // 🔍 Active / Inactive
     List<Country> getActive();
 
-    List<Country> getInactive();
+    Country update(Long id, Country country);
 
-    // 🔍 Admin-based
+    void delete(Long id, Long deletedBy);
+
+    // =========================================
+    // ADMIN
+    // =========================================
+
     List<Country> getByAdmin(Long adminId);
 
     List<Country> getActiveByAdmin(Long adminId);
 
-    // 🔍 Search
+    // =========================================
+    // SEARCH
+    // =========================================
+
     List<Country> search(String keyword);
 
     List<Country> searchByAdmin(Long adminId, String keyword);
+
+    // =========================================
+    // SOFT DELETE
+    // =========================================
+
+    List<Country> getDeleted();
+
+    Country restore(Long id);
+
+    void hardDelete(Long id);
 }

@@ -1,144 +1,219 @@
 package com.example.controller.master;
 
 import com.example.dto.request.OccupationRequestDTO;
+import com.example.dto.response.ApiResponse;
 import com.example.dto.response.OccupationResponseDTO;
-import com.example.model.Admin;
-import com.example.model.Occupation;
 import com.example.service.OccupationService;
-
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/occupations")
+@RequestMapping("/api/master/occupations")
 @RequiredArgsConstructor
 public class OccupationController {
 
     private final OccupationService occupationService;
-    // ADD THIS METHOD ONLY (rest is already correct)
+
+    // =========================
+    // CREATE
+    // =========================
+
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public ApiResponse<OccupationResponseDTO> create(
+            @Valid @RequestBody OccupationRequestDTO requestDto) {
+
+        return ApiResponse.success(
+                "Occupation created successfully.",
+                occupationService.create(requestDto)
+        );
+    }
+
+    // =========================
+    // UPDATE
+    // =========================
+
+    @PutMapping("/{id}")
+    public ApiResponse<OccupationResponseDTO> update(
+            @PathVariable Long id,
+            @Valid @RequestBody OccupationRequestDTO requestDto) {
+
+        return ApiResponse.success(
+                "Occupation updated successfully.",
+                occupationService.update(id, requestDto)
+        );
+    }
+
+    // =========================
+    // SOFT DELETE
+    // =========================
+
+    @DeleteMapping("/{id}")
+    public ApiResponse<Void> softDelete(@PathVariable Long id) {
+
+        occupationService.softDelete(id);
+
+        return ApiResponse.success(
+                "Occupation deleted successfully.",
+                null
+        );
+    }
+
+    // =========================
+    // RESTORE
+    // =========================
+
+    @PatchMapping("/{id}/restore")
+    public ApiResponse<Void> restore(@PathVariable Long id) {
+
+        occupationService.restore(id);
+
+        return ApiResponse.success(
+                "Occupation restored successfully.",
+                null
+        );
+    }
+
+    // =========================
+    // HARD DELETE
+    // =========================
+
+    @DeleteMapping("/{id}/hard")
+    public ApiResponse<Void> hardDelete(@PathVariable Long id) {
+
+        occupationService.hardDelete(id);
+
+        return ApiResponse.success(
+                "Occupation permanently deleted.",
+                null
+        );
+    }
+
+    // =========================
+    // GET BY ID
+    // =========================
+
+    @GetMapping("/{id}")
+    public ApiResponse<OccupationResponseDTO> getById(@PathVariable Long id) {
+
+        return ApiResponse.success(
+                "Occupation fetched successfully.",
+                occupationService.getById(id)
+        );
+    }
+
+    // =========================
+    // GET ALL
+    // =========================
 
     @GetMapping
-    public List<OccupationResponseDTO> getAll() {
-        return occupationService.getAll()
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
-    }
-    // ✅ Create
-    @PostMapping
-    public OccupationResponseDTO create(@Valid @RequestBody OccupationRequestDTO dto) {
+    public ApiResponse<List<OccupationResponseDTO>> getAll() {
 
-        Occupation entity = mapToEntity(dto);
-        Occupation saved = occupationService.create(entity);
-
-        return mapToResponse(saved);
+        return ApiResponse.success(
+                "Occupation list fetched successfully.",
+                occupationService.getAll()
+        );
     }
 
-    // 🔄 Update
-    @PutMapping("/{id}")
-    public OccupationResponseDTO update(
-            @PathVariable Long id,
-            @Valid @RequestBody OccupationRequestDTO dto
-    ) {
-        Occupation entity = mapToEntity(dto);
-        Occupation updated = occupationService.update(id, entity);
+    // =========================
+    // GET DELETED
+    // =========================
 
-        return mapToResponse(updated);
+    @GetMapping("/deleted")
+    public ApiResponse<List<OccupationResponseDTO>> getDeleted() {
+
+        return ApiResponse.success(
+                "Deleted Occupation list fetched successfully.",
+                occupationService.getDeleted()
+        );
     }
 
-    // ❌ Delete
-    @DeleteMapping("/{id}")
-    public String delete(@PathVariable Long id) {
-        occupationService.delete(id);
-        return "Occupation deleted successfully";
+    // =========================
+    // ACTIVE
+    // =========================
+
+    @GetMapping("/active")
+    public ApiResponse<List<OccupationResponseDTO>> getActive() {
+
+        return ApiResponse.success(
+                "Active Occupation list fetched successfully.",
+                occupationService.getActive()
+        );
     }
 
-    // 🔍 Get by ID
-    @GetMapping("/{id}")
-    public OccupationResponseDTO getById(@PathVariable Long id) {
-        Occupation data = occupationService.getById(id)
-                .orElseThrow(() -> new RuntimeException("Occupation not found"));
+    // =========================
+    // INACTIVE
+    // =========================
 
-        return mapToResponse(data);
+    @GetMapping("/inactive")
+    public ApiResponse<List<OccupationResponseDTO>> getInactive() {
+
+        return ApiResponse.success(
+                "Inactive Occupation list fetched successfully.",
+                occupationService.getInactive()
+        );
     }
 
-    // 🔍 Get by Admin
+    // =========================
+    // ADMIN
+    // =========================
+
     @GetMapping("/admin/{adminId}")
-    public List<OccupationResponseDTO> getByAdmin(@PathVariable Long adminId) {
-        return occupationService.getByAdmin(adminId)
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+    public ApiResponse<List<OccupationResponseDTO>> getByAdmin(
+            @PathVariable Long adminId) {
+
+        return ApiResponse.success(
+                "Occupation list fetched successfully.",
+                occupationService.getByAdmin(adminId)
+        );
     }
 
-    // 🔍 Active
     @GetMapping("/admin/{adminId}/active")
-    public List<OccupationResponseDTO> getActive(@PathVariable Long adminId) {
-        return occupationService.getActiveByAdmin(adminId)
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+    public ApiResponse<List<OccupationResponseDTO>> getActiveByAdmin(
+            @PathVariable Long adminId) {
+
+        return ApiResponse.success(
+                "Active Occupation list fetched successfully.",
+                occupationService.getActiveByAdmin(adminId)
+        );
     }
 
-    // 🔍 Inactive
     @GetMapping("/admin/{adminId}/inactive")
-    public List<OccupationResponseDTO> getInactive(@PathVariable Long adminId) {
-        return occupationService.getInactiveByAdmin(adminId)
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+    public ApiResponse<List<OccupationResponseDTO>> getInactiveByAdmin(
+            @PathVariable Long adminId) {
+
+        return ApiResponse.success(
+                "Inactive Occupation list fetched successfully.",
+                occupationService.getInactiveByAdmin(adminId)
+        );
     }
 
-    // 🔍 Search
+    // =========================
+    // SEARCH
+    // =========================
+
+    @GetMapping("/search")
+    public ApiResponse<List<OccupationResponseDTO>> search(
+            @RequestParam String keyword) {
+
+        return ApiResponse.success(
+                "Search completed successfully.",
+                occupationService.search(keyword)
+        );
+    }
+
     @GetMapping("/admin/{adminId}/search")
-    public List<OccupationResponseDTO> search(
+    public ApiResponse<List<OccupationResponseDTO>> searchByAdmin(
             @PathVariable Long adminId,
-            @RequestParam String keyword
-    ) {
-        return occupationService.searchByAdmin(adminId, keyword)
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
-    }
+            @RequestParam String keyword) {
 
-    // ===============================
-    // 🔁 Mapping Methods
-    // ===============================
-
-    private Occupation mapToEntity(OccupationRequestDTO dto) {
-
-        Occupation entity = new Occupation();
-
-        entity.setName(dto.getName());
-        entity.setIsActive(dto.getIsActive());
-
-        if (dto.getAdminId() != null) {
-            Admin admin = new Admin();
-            admin.setId(dto.getAdminId());
-            entity.setAdmin(admin);
-        }
-
-        return entity;
-    }
-
-    private OccupationResponseDTO mapToResponse(Occupation entity) {
-
-        OccupationResponseDTO dto = new OccupationResponseDTO();
-
-        dto.setId(entity.getId());
-        dto.setName(entity.getName());
-        dto.setIsActive(entity.getIsActive());
-        dto.setCreatedAt(entity.getCreatedAt());
-        dto.setUpdatedAt(entity.getUpdatedAt());
-
-        if (entity.getAdmin() != null) {
-            dto.setAdminId(entity.getAdmin().getId());
-        }
-
-        return dto;
+        return ApiResponse.success(
+                "Search completed successfully.",
+                occupationService.searchByAdmin(adminId, keyword)
+        );
     }
 }

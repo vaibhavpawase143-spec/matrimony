@@ -1,35 +1,67 @@
 package com.example.service;
 
-import com.example.model.Smoking;
+import com.example.dto.request.SmokingRequestDTO;
+import com.example.dto.response.SmokingResponseDTO;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface SmokingService {
 
-    // ✅ Create / Save
-    Smoking save(Smoking smoking);
+    // =====================================================
+    // CREATE
+    // =====================================================
 
-    // ✅ Get by ID
-    Optional<Smoking> getById(Long id);
+    SmokingResponseDTO create(SmokingRequestDTO requestDto);
 
-    // 🔍 Get all
-    List<Smoking> getAll();
+    // =====================================================
+    // UPDATE
+    // =====================================================
 
-    // 🔍 Get by admin
-    List<Smoking> getByAdmin(Long adminId);
+    SmokingResponseDTO update(Long id, SmokingRequestDTO requestDto);
 
-    // 🔍 Active / Inactive
-    List<Smoking> getActiveByAdmin(Long adminId);
+    // =====================================================
+    // DELETE
+    // =====================================================
 
-    List<Smoking> getInactiveByAdmin(Long adminId);
+    void softDelete(Long id);
 
-    // 🔍 Search
-    List<Smoking> searchByAdmin(Long adminId, String keyword);
+    void restore(Long id);
 
-    // 🔍 Find by value (admin-specific)
-    Optional<Smoking> getByValueAndAdmin(String value, Long adminId);
+    void hardDelete(Long id);
 
-    // ✅ Delete
-    void delete(Long id);
+    // =====================================================
+    // GET
+    // =====================================================
+
+    SmokingResponseDTO getById(Long id);
+
+    List<SmokingResponseDTO> getAll();
+
+    List<SmokingResponseDTO> getDeleted();
+
+    // =====================================================
+    // ACTIVE / INACTIVE
+    // =====================================================
+
+    List<SmokingResponseDTO> getActive();
+
+    List<SmokingResponseDTO> getInactive();
+
+    // =====================================================
+    // ADMIN
+    // =====================================================
+
+    List<SmokingResponseDTO> getByAdmin(Long adminId);
+
+    List<SmokingResponseDTO> getActiveByAdmin(Long adminId);
+
+    List<SmokingResponseDTO> getInactiveByAdmin(Long adminId);
+
+    // =====================================================
+    // SEARCH
+    // =====================================================
+
+    List<SmokingResponseDTO> search(String keyword);
+
+    List<SmokingResponseDTO> searchByAdmin(Long adminId, String keyword);
 }

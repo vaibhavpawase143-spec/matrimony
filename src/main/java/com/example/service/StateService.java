@@ -1,39 +1,69 @@
 package com.example.service;
 
-import com.example.model.State;
+import com.example.dto.request.StateRequestDTO;
+import com.example.dto.response.StateResponseDTO;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface StateService {
 
-    // ✅ Create / Save
-    State save(State state);
+    // =====================================================
+    // CRUD
+    // =====================================================
 
-    // ✅ Get by ID
-    Optional<State> getById(Long id);
+    StateResponseDTO create(StateRequestDTO requestDto);
 
-    // 🔍 Get all
-    List<State> getAll();
+    StateResponseDTO update(Long id, StateRequestDTO requestDto);
 
-    // 🔍 Get by admin
-    List<State> getByAdmin(Long adminId);
+    void softDelete(Long id);
 
-    // 🔍 Active states by admin
-    List<State> getActiveByAdmin(Long adminId);
+    void restore(Long id);
 
-    // 🔍 Get by country + admin
-    List<State> getByCountryAndAdmin(Long countryId, Long adminId);
+    void hardDelete(Long id);
 
-    // 🔍 Active by country + admin
-    List<State> getActiveByCountryAndAdmin(Long countryId, Long adminId);
+    // =====================================================
+    // GET
+    // =====================================================
 
-    // 🔍 Search
-    List<State> searchByAdmin(Long adminId, String keyword);
+    StateResponseDTO getById(Long id);
 
-    // 🔍 Find by name (admin-specific)
-    Optional<State> getByNameAndAdmin(String name, Long adminId);
+    List<StateResponseDTO> getAll();
 
-    // ✅ Delete
-    void delete(Long id);
+    List<StateResponseDTO> getDeleted();
+
+    // =====================================================
+    // ACTIVE / INACTIVE
+    // =====================================================
+
+    List<StateResponseDTO> getActive();
+
+    List<StateResponseDTO> getInactive();
+
+    // =====================================================
+    // ADMIN
+    // =====================================================
+
+    List<StateResponseDTO> getByAdmin(Long adminId);
+
+    List<StateResponseDTO> getActiveByAdmin(Long adminId);
+
+    List<StateResponseDTO> getInactiveByAdmin(Long adminId);
+
+    // =====================================================
+    // COUNTRY
+    // =====================================================
+
+    List<StateResponseDTO> getByCountryAndAdmin(Long countryId, Long adminId);
+
+    List<StateResponseDTO> getActiveByCountryAndAdmin(Long countryId, Long adminId);
+
+    List<StateResponseDTO> getInactiveByCountryAndAdmin(Long countryId, Long adminId);
+
+    // =====================================================
+    // SEARCH
+    // =====================================================
+
+    List<StateResponseDTO> search(String keyword);
+
+    List<StateResponseDTO> searchByAdmin(Long adminId, String keyword);
 }

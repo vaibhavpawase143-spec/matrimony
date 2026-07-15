@@ -1,16 +1,28 @@
 package com.example.dto.response;
 
-import lombok.Data;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 
-@Data
+@Getter
+@Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class FieldOfStudyResponseDTO {
 
     private Long id;
+    private Long adminId;
     private String name;
     private Boolean isActive;
-    private Long adminId;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    private LocalDateTime deletedAt;
+    private Long deletedBy;
 }
