@@ -1,212 +1,368 @@
 package com.example.serviceimpl;
 
 import com.example.dto.request.SubscriptionPlanFilterDTO;
+import com.example.dto.request.SubscriptionPlanRequestDTO;
 import com.example.dto.response.SubscriptionPlanResponseDTO;
 import com.example.dto.response.SubscriptionPlanStatsDTO;
+import com.example.exception.BadRequestException;
+import com.example.exception.ResourceNotFoundException;
 import com.example.model.Admin;
 import com.example.model.SubscriptionPlan;
+import com.example.repository.AdminRepository;
 import com.example.repository.SubscriptionPlanRepository;
-import com.example.service.AdminAuditLogService;
 import com.example.service.CurrentAdminService;
 import com.example.service.SubscriptionPlanService;
 import com.example.specification.SubscriptionPlanSpecification;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import com.example.util.AuditHelper;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
 public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
 
-    private final SubscriptionPlanRepository repository;
+    private final SubscriptionPlanRepository subscriptionPlanRepository;
+    private final AdminRepository adminRepository;
     private final CurrentAdminService currentAdminService;
-    private final AdminAuditLogService auditLogService;
+    private final AuditHelper auditHelper;
 
-    public SubscriptionPlanServiceImpl(
-            SubscriptionPlanRepository repository,
-            CurrentAdminService currentAdminService,
-            AdminAuditLogService auditLogService) {
-        this.repository = repository;
-        this.currentAdminService = currentAdminService;
-        this.auditLogService = auditLogService;
-    }
+    private static final String MODULE = "Master";
+    private static final String ENTITY = "Subscription Plan";
 
-    // ✅ Create
+    // =====================================================
+    // CREATE
+    // =====================================================
+
     @Override
-    public SubscriptionPlan create(SubscriptionPlan plan) {
+    public SubscriptionPlanResponseDTO create(
+            SubscriptionPlanRequestDTO requestDto) {
 
-        String name = plan.getName();
-        Long adminId = plan.getAdmin().getId();
+        Admin admin = adminRepository.findById(requestDto.getAdminId())
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Admin not found."));
 
-        if (repository.existsByNameIgnoreCaseAndAdminId(name, adminId)) {
-            throw new RuntimeException("Subscription plan already exists!");
+        if (subscriptionPlanRepository
+                .existsByNameIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+                        requestDto.getName(),
+                        admin.getId())) {
+
+            throw new BadRequestException(
+                    "Subscription Plan already exists.");
         }
 
-        plan.setIsActive(true);
-        SubscriptionPlan saved = repository.save(plan);
+        SubscriptionPlan entity = SubscriptionPlan.builder()
+                .admin(admin)
+                .name(requestDto.getName().trim())
+                .price(requestDto.getPrice())
+                .duration(requestDto.getDuration())
+                .description(requestDto.getDescription())
+                .isActive(
+                        requestDto.getIsActive() != null
+                                ? requestDto.getIsActive()
+                                : true
+                )
+                .build();
 
-        Admin currentAdmin = currentAdminService.getCurrentAdmin();
-        auditLogService.log(
-                currentAdmin.getId(),
-                "SUBSCRIPTION_MANAGEMENT",
-                "PLAN_CREATED",
-                "SUBSCRIPTION_PLAN",
-                saved.getId(),
-                "Created subscription plan: " + saved.getName(),
-                null,
-                "Name=" + saved.getName() + ", Price=" + saved.getPrice() + ", Duration=" + saved.getDuration() + " days, Active=" + saved.getIsActive(),
-                "SYSTEM",
-                "SYSTEM"
+        entity = subscriptionPlanRepository.save(entity);
+
+        auditHelper.logCreate(
+                MODULE,
+                ENTITY,
+                entity.getId(),
+                entity.getName(),
+                entity.getName()
         );
 
-        return saved;
+        return mapToResponse(entity);
     }
 
-    // 🔍 Get by ID
+    // =====================================================
+    // UPDATE
+    // =====================================================
+
     @Override
-    public Optional<SubscriptionPlan> getById(Long id) {
-        return repository.findById(id);
-    }
+    public SubscriptionPlanResponseDTO update(
+            Long id,
+            SubscriptionPlanRequestDTO requestDto) {
 
-    // 🔍 Get all
-    @Override
-    public List<SubscriptionPlan> getAll() {
-        return repository.findAll();
-    }
+        SubscriptionPlan entity = subscriptionPlanRepository
+                .findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Subscription Plan not found."));
 
-    // 🔍 Get by admin
-    @Override
-    public List<SubscriptionPlan> getByAdmin(Long adminId) {
-        return repository.findByAdminId(adminId);
-    }
+        Admin admin = adminRepository.findById(requestDto.getAdminId())
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Admin not found."));
 
-    // 🔍 Active by admin
-    @Override
-    public List<SubscriptionPlan> getActiveByAdmin(Long adminId) {
-        return repository.findByAdminIdAndIsActiveTrue(adminId);
-    }
+        if (!entity.getName().equalsIgnoreCase(requestDto.getName())
+                &&
+                subscriptionPlanRepository
+                        .existsByNameIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+                                requestDto.getName(),
+                                admin.getId())) {
 
-    // 🔍 Inactive by admin
-    @Override
-    public List<SubscriptionPlan> getInactiveByAdmin(Long adminId) {
-        return repository.findByAdminIdAndIsActiveFalse(adminId);
-    }
-
-    // 🔍 Search (admin-based)
-    @Override
-    public List<SubscriptionPlan> searchByAdmin(Long adminId, String keyword) {
-        return repository.findByAdminIdAndNameContainingIgnoreCase(adminId, keyword);
-    }
-
-    // ✅ Update
-    @Override
-    public SubscriptionPlan update(Long id, SubscriptionPlan plan) {
-
-        SubscriptionPlan existing = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Plan not found!"));
-
-        String name = plan.getName();
-        Long adminId = plan.getAdmin().getId();
-
-        Optional<SubscriptionPlan> duplicate =
-                repository.findByNameIgnoreCaseAndAdminId(name, adminId);
-
-        if (duplicate.isPresent() &&
-                !duplicate.get().getId().equals(id)) {
-            throw new RuntimeException("Subscription plan already exists!");
+            throw new BadRequestException(
+                    "Subscription Plan already exists.");
         }
 
-        // Capture transitions for active status
-        String action = "PLAN_UPDATED";
-        boolean wasActive = Boolean.TRUE.equals(existing.getIsActive());
-        boolean nowActive = plan.getIsActive() != null ? plan.getIsActive() : true;
+        String oldName = entity.getName();
+        Boolean oldActive = entity.getIsActive();
 
-        if (!wasActive && nowActive) {
-            action = "PLAN_ACTIVATED";
-        } else if (wasActive && !nowActive) {
-            action = "PLAN_DEACTIVATED";
-        }
+        entity.setAdmin(admin);
+        entity.setName(requestDto.getName().trim());
+        entity.setPrice(requestDto.getPrice());
+        entity.setDuration(requestDto.getDuration());
+        entity.setDescription(requestDto.getDescription());
+        entity.setIsActive(requestDto.getIsActive());
 
-        String oldValueDescription = "Name=" + existing.getName() + ", Price=" + existing.getPrice() + ", Duration=" + existing.getDuration() + " days, Active=" + existing.getIsActive();
+        entity = subscriptionPlanRepository.save(entity);
 
-        existing.setName(plan.getName());
-        existing.setPrice(plan.getPrice());
-        existing.setDuration(plan.getDuration());
-        existing.setDescription(plan.getDescription());
-        existing.setIsActive(plan.getIsActive());
-
-        SubscriptionPlan saved = repository.save(existing);
-
-        String newValueDescription = "Name=" + saved.getName() + ", Price=" + saved.getPrice() + ", Duration=" + saved.getDuration() + " days, Active=" + saved.getIsActive();
-
-        Admin currentAdmin = currentAdminService.getCurrentAdmin();
-        auditLogService.log(
-                currentAdmin.getId(),
-                "SUBSCRIPTION_MANAGEMENT",
-                action,
-                "SUBSCRIPTION_PLAN",
-                saved.getId(),
-                "Updated subscription plan: " + saved.getName(),
-                oldValueDescription,
-                newValueDescription,
-                "SYSTEM",
-                "SYSTEM"
+        auditHelper.logUpdate(
+                MODULE,
+                ENTITY,
+                entity.getId(),
+                entity.getName(),
+                oldName,
+                entity.getName(),
+                oldActive,
+                entity.getIsActive()
         );
 
-        return saved;
+        return mapToResponse(entity);
     }
 
-    // ❌ Soft delete
+    // =====================================================
+    // SOFT DELETE
+    // =====================================================
+
     @Override
-    public void delete(Long id) {
+    public void softDelete(Long id) {
 
-        SubscriptionPlan plan = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Plan not found!"));
+        SubscriptionPlan entity = subscriptionPlanRepository
+                .findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Subscription Plan not found."));
 
-        boolean wasActive = Boolean.TRUE.equals(plan.getIsActive());
-        plan.setIsActive(false);
-        SubscriptionPlan saved = repository.save(plan);
+        entity.setDeletedAt(LocalDateTime.now());
+        entity.setDeletedBy(
+                currentAdminService.getCurrentAdmin().getId());
 
-        if (wasActive) {
-            Admin currentAdmin = currentAdminService.getCurrentAdmin();
-            auditLogService.log(
-                    currentAdmin.getId(),
-                    "SUBSCRIPTION_MANAGEMENT",
-                    "PLAN_DEACTIVATED",
-                    "SUBSCRIPTION_PLAN",
-                    saved.getId(),
-                    "Soft deleted (deactivated) subscription plan: " + saved.getName(),
-                    "Active=true",
-                    "Active=false",
-                    "SYSTEM",
-                    "SYSTEM"
-            );
-        }
+        subscriptionPlanRepository.save(entity);
+
+        auditHelper.logDelete(
+                MODULE,
+                ENTITY,
+                entity.getId(),
+                entity.getName(),
+                entity.getName()
+        );
     }
-    // 📊 Statistics
+
+    // =====================================================
+    // RESTORE
+    // =====================================================
+
     @Override
-    @Transactional(readOnly = true)
+    public void restore(Long id) {
+
+        SubscriptionPlan entity = subscriptionPlanRepository
+                .findByIdAndDeletedAtIsNotNull(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Deleted Subscription Plan not found."));
+
+        entity.setDeletedAt(null);
+        entity.setDeletedBy(null);
+
+        subscriptionPlanRepository.save(entity);
+
+        auditHelper.logRestore(
+                MODULE,
+                ENTITY,
+                entity.getId(),
+                entity.getName(),
+                entity.getName()
+        );
+    }
+
+    // =====================================================
+    // HARD DELETE
+    // =====================================================
+
+    @Override
+    public void hardDelete(Long id) {
+
+        SubscriptionPlan entity = subscriptionPlanRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Subscription Plan not found."));
+
+        auditHelper.logHardDelete(
+                MODULE,
+                ENTITY,
+                entity.getId(),
+                entity.getName(),
+                entity.getName()
+        );
+
+        subscriptionPlanRepository.delete(entity);
+    }
+    // =====================================================
+    // GET BY ID
+    // =====================================================
+
+    @Override
+    public SubscriptionPlanResponseDTO getById(Long id) {
+
+        SubscriptionPlan entity = subscriptionPlanRepository
+                .findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Subscription Plan not found."));
+
+        return mapToResponse(entity);
+    }
+
+    // =====================================================
+    // GET ALL
+    // =====================================================
+
+    @Override
+    public List<SubscriptionPlanResponseDTO> getAll() {
+
+        return subscriptionPlanRepository.findAllByDeletedAtIsNull()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Override
+    public List<SubscriptionPlanResponseDTO> getDeleted() {
+
+        return subscriptionPlanRepository.findByDeletedAtIsNotNull()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    // =====================================================
+    // ACTIVE / INACTIVE
+    // =====================================================
+
+    @Override
+    public List<SubscriptionPlanResponseDTO> getActive() {
+
+        return subscriptionPlanRepository
+                .findByIsActiveTrueAndDeletedAtIsNull()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Override
+    public List<SubscriptionPlanResponseDTO> getInactive() {
+
+        return subscriptionPlanRepository
+                .findByIsActiveFalseAndDeletedAtIsNull()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    // =====================================================
+    // ADMIN
+    // =====================================================
+
+    @Override
+    public List<SubscriptionPlanResponseDTO> getByAdmin(Long adminId) {
+
+        return subscriptionPlanRepository
+                .findByAdmin_IdAndDeletedAtIsNull(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Override
+    public List<SubscriptionPlanResponseDTO> getActiveByAdmin(Long adminId) {
+
+        return subscriptionPlanRepository
+                .findByAdmin_IdAndIsActiveTrueAndDeletedAtIsNull(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Override
+    public List<SubscriptionPlanResponseDTO> getInactiveByAdmin(Long adminId) {
+
+        return subscriptionPlanRepository
+                .findByAdmin_IdAndIsActiveFalseAndDeletedAtIsNull(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    // =====================================================
+    // SEARCH
+    // =====================================================
+
+    @Override
+    public List<SubscriptionPlanResponseDTO> search(String keyword) {
+
+        return subscriptionPlanRepository
+                .findByNameContainingIgnoreCaseAndDeletedAtIsNull(keyword)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Override
+    public List<SubscriptionPlanResponseDTO> searchByAdmin(
+            Long adminId,
+            String keyword) {
+
+        return subscriptionPlanRepository
+                .findByAdmin_IdAndNameContainingIgnoreCaseAndDeletedAtIsNull(
+                        adminId,
+                        keyword
+                )
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    // =====================================================
+    // STATISTICS
+    // =====================================================
+
+    @Override
     public SubscriptionPlanStatsDTO getStatistics() {
 
         return SubscriptionPlanStatsDTO.builder()
-                .totalPlans(repository.count())
-                .activePlans(repository.countByIsActiveTrue())
-                .inactivePlans(repository.countByIsActiveFalse())
+                .totalPlans(subscriptionPlanRepository.countByDeletedAtIsNull())
+                .activePlans(subscriptionPlanRepository.countByIsActiveTrueAndDeletedAtIsNull())
+                .inactivePlans(subscriptionPlanRepository.countByIsActiveFalseAndDeletedAtIsNull())
                 .build();
     }
+
+    // =====================================================
+    // PAGINATION
+    // =====================================================
+
     @Override
     public Page<SubscriptionPlanResponseDTO> getAllPlans(
             SubscriptionPlanFilterDTO filter,
             int page,
             int size,
             String sortBy,
-            String direction
-    ) {
+            String direction) {
 
         Sort sort = direction.equalsIgnoreCase("DESC")
                 ? Sort.by(sortBy).descending()
@@ -214,20 +370,35 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
 
         Pageable pageable = PageRequest.of(page, size, sort);
 
-        return repository.findAll(
-                SubscriptionPlanSpecification.getPlans(filter),
-                pageable
-        ).map(plan -> SubscriptionPlanResponseDTO.builder()
-                .id(plan.getId())
-                .adminId(plan.getAdmin() != null ? plan.getAdmin().getId() : null)
-                .adminName(plan.getAdmin() != null ? plan.getAdmin().getName() : null)
-                .name(plan.getName())
-                .price(plan.getPrice())
-                .duration(plan.getDuration())
-                .description(plan.getDescription())
-                .isActive(plan.getIsActive())
-                .createdAt(plan.getCreatedAt())
-                .updatedAt(plan.getUpdatedAt())
-                .build());
+        return subscriptionPlanRepository.findAll(
+                        SubscriptionPlanSpecification.getPlans(filter),
+                        pageable
+                )
+                .map(this::mapToResponse);
+    }
+
+    // =====================================================
+    // DTO MAPPING
+    // =====================================================
+
+    private SubscriptionPlanResponseDTO mapToResponse(
+            SubscriptionPlan entity) {
+
+        return SubscriptionPlanResponseDTO.builder()
+                .id(entity.getId())
+                .adminId(entity.getAdmin() != null
+                        ? entity.getAdmin().getId()
+                        : null)
+                .adminName(entity.getAdmin() != null
+                        ? entity.getAdmin().getName()
+                        : null)
+                .name(entity.getName())
+                .price(entity.getPrice())
+                .duration(entity.getDuration())
+                .description(entity.getDescription())
+                .isActive(entity.getIsActive())
+                .createdAt(entity.getCreatedAt())
+                .updatedAt(entity.getUpdatedAt())
+                .build();
     }
 }

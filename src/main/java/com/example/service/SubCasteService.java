@@ -1,41 +1,69 @@
 package com.example.service;
 
-import com.example.model.SubCaste;
+import com.example.dto.request.SubCasteRequestDTO;
+import com.example.dto.response.SubCasteResponseDTO;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface SubCasteService {
 
-    // ✅ Create / Save
-    SubCaste save(SubCaste subCaste);
+    // =====================================================
+    // CRUD
+    // =====================================================
 
-    // ✅ Get by ID
-    Optional<SubCaste> getById(Long id);
+    SubCasteResponseDTO create(SubCasteRequestDTO requestDto);
 
-    // 🔍 Get all
-    List<SubCaste> getAll();
+    SubCasteResponseDTO update(Long id, SubCasteRequestDTO requestDto);
 
-    // 🔍 Get by admin
-    List<SubCaste> getByAdmin(Long adminId);
+    void softDelete(Long id);
 
-    // 🔍 Active / Inactive
-    List<SubCaste> getActiveByAdmin(Long adminId);
+    void restore(Long id);
 
-    List<SubCaste> getInactiveByAdmin(Long adminId);
+    void hardDelete(Long id);
 
-    // 🔍 Filter by caste + admin
-    List<SubCaste> getByCasteAndAdmin(Long casteId, Long adminId);
+    // =====================================================
+    // GET
+    // =====================================================
 
-    // 🔍 Active by caste + admin
-    List<SubCaste> getActiveByCasteAndAdmin(Long casteId, Long adminId);
+    SubCasteResponseDTO getById(Long id);
 
-    // 🔍 Search
-    List<SubCaste> searchByAdmin(Long adminId, String keyword);
+    List<SubCasteResponseDTO> getAll();
 
-    // 🔍 Find by name
-    Optional<SubCaste> getByNameAndAdmin(String name, Long adminId);
+    List<SubCasteResponseDTO> getDeleted();
 
-    // ✅ Delete
-    void delete(Long id);
+    // =====================================================
+    // ACTIVE / INACTIVE
+    // =====================================================
+
+    List<SubCasteResponseDTO> getActive();
+
+    List<SubCasteResponseDTO> getInactive();
+
+    // =====================================================
+    // ADMIN
+    // =====================================================
+
+    List<SubCasteResponseDTO> getByAdmin(Long adminId);
+
+    List<SubCasteResponseDTO> getActiveByAdmin(Long adminId);
+
+    List<SubCasteResponseDTO> getInactiveByAdmin(Long adminId);
+
+    // =====================================================
+    // CASTE
+    // =====================================================
+
+    List<SubCasteResponseDTO> getByCasteAndAdmin(Long casteId, Long adminId);
+
+    List<SubCasteResponseDTO> getActiveByCasteAndAdmin(Long casteId, Long adminId);
+
+    List<SubCasteResponseDTO> getInactiveByCasteAndAdmin(Long casteId, Long adminId);
+
+    // =====================================================
+    // SEARCH
+    // =====================================================
+
+    List<SubCasteResponseDTO> search(String keyword);
+
+    List<SubCasteResponseDTO> searchByAdmin(Long adminId, String keyword);
 }

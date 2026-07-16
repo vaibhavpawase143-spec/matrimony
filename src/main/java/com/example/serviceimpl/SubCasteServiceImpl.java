@@ -1,173 +1,399 @@
 package com.example.serviceimpl;
 
+import com.example.dto.request.SubCasteRequestDTO;
+import com.example.dto.response.SubCasteResponseDTO;
+import com.example.exception.BadRequestException;
+import com.example.exception.ResourceNotFoundException;
+import com.example.model.Admin;
+import com.example.model.Caste;
 import com.example.model.SubCaste;
+import com.example.repository.AdminRepository;
+import com.example.repository.CasteRepository;
 import com.example.repository.SubCasteRepository;
+import com.example.service.CurrentAdminService;
 import com.example.service.SubCasteService;
+import com.example.util.AuditHelper;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
 public class SubCasteServiceImpl implements SubCasteService {
 
-    private final SubCasteRepository repository;
+    private final SubCasteRepository subCasteRepository;
+    private final AdminRepository adminRepository;
+    private final CasteRepository casteRepository;
+    private final CurrentAdminService currentAdminService;
+    private final AuditHelper auditHelper;
 
-    public SubCasteServiceImpl(SubCasteRepository repository) {
-        this.repository = repository;
-    }
+    private static final String MODULE = "Master";
+    private static final String ENTITY = "Sub Caste";
 
-    // =========================================
-    // SAVE
-    // =========================================
+    // =====================================================
+    // CREATE
+    // =====================================================
 
     @Override
-    public SubCaste save(SubCaste subCaste) {
+    public SubCasteResponseDTO create(SubCasteRequestDTO requestDto) {
 
-        String name = subCaste.getName();
+        Admin admin = adminRepository.findById(requestDto.getAdminId())
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Admin not found."));
 
-        Long adminId = subCaste.getAdmin() != null
-                ? subCaste.getAdmin().getId()
-                : null;
+        Caste caste = casteRepository.findById(requestDto.getCasteId())
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Caste not found."));
 
-        Optional<SubCaste> existing =
-                repository.findAccessibleByName(
-                        name,
-                        adminId
-                );
+        if (subCasteRepository.existsByNameIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+                requestDto.getName(),
+                admin.getId())) {
 
-        if (existing.isPresent()
-                && !existing.get().getId().equals(subCaste.getId())) {
-
-            throw new RuntimeException(
-                    "SubCaste already exists!"
-            );
+            throw new BadRequestException("Sub Caste already exists.");
         }
 
-        return repository.save(subCaste);
+        SubCaste entity = SubCaste.builder()
+                .admin(admin)
+                .caste(caste)
+                .name(requestDto.getName().trim())
+                .isActive(
+                        requestDto.getIsActive() != null
+                                ? requestDto.getIsActive()
+                                : true
+                )
+                .build();
+
+        entity = subCasteRepository.save(entity);
+
+        auditHelper.logCreate(
+                MODULE,
+                ENTITY,
+                entity.getId(),
+                entity.getName(),
+                entity.getName()
+        );
+
+        return mapToResponse(entity);
     }
 
-    // =========================================
+    // =====================================================
+    // UPDATE
+    // =====================================================
+
+    @Override
+    public SubCasteResponseDTO update(Long id,
+                                      SubCasteRequestDTO requestDto) {
+
+        SubCaste entity = subCasteRepository
+                .findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Sub Caste not found."));
+
+        Admin admin = adminRepository.findById(requestDto.getAdminId())
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Admin not found."));
+
+        Caste caste = casteRepository.findById(requestDto.getCasteId())
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Caste not found."));
+
+        if (!entity.getName().equalsIgnoreCase(requestDto.getName())
+                && subCasteRepository.existsByNameIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+                requestDto.getName(),
+                admin.getId())) {
+
+            throw new BadRequestException("Sub Caste already exists.");
+        }
+
+        String oldName = entity.getName();
+        Boolean oldStatus = entity.getIsActive();
+
+        entity.setAdmin(admin);
+        entity.setCaste(caste);
+        entity.setName(requestDto.getName().trim());
+        entity.setIsActive(requestDto.getIsActive());
+
+        entity = subCasteRepository.save(entity);
+
+        auditHelper.logUpdate(
+                MODULE,
+                ENTITY,
+                entity.getId(),
+                entity.getName(),
+                oldName,
+                entity.getName(),
+                oldStatus,
+                entity.getIsActive()
+        );
+
+        return mapToResponse(entity);
+    }
+
+    // =====================================================
+    // SOFT DELETE
+    // =====================================================
+
+    @Override
+    public void softDelete(Long id) {
+
+        SubCaste entity = subCasteRepository
+                .findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Sub Caste not found."));
+
+        entity.setDeletedAt(LocalDateTime.now());
+        entity.setDeletedBy(currentAdminService.getCurrentAdmin().getId());
+
+        subCasteRepository.save(entity);
+
+        auditHelper.logDelete(
+                MODULE,
+                ENTITY,
+                entity.getId(),
+                entity.getName(),
+                entity.getName()
+        );
+    }
+
+    // =====================================================
+    // RESTORE
+    // =====================================================
+
+    @Override
+    public void restore(Long id) {
+
+        SubCaste entity = subCasteRepository
+                .findByIdAndDeletedAtIsNotNull(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Deleted Sub Caste not found."));
+
+        entity.setDeletedAt(null);
+        entity.setDeletedBy(null);
+
+        subCasteRepository.save(entity);
+
+        auditHelper.logRestore(
+                MODULE,
+                ENTITY,
+                entity.getId(),
+                entity.getName(),
+                entity.getName()
+        );
+    }
+
+    // =====================================================
+    // HARD DELETE
+    // =====================================================
+
+    @Override
+    public void hardDelete(Long id) {
+
+        SubCaste entity = subCasteRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Sub Caste not found."));
+
+        auditHelper.logHardDelete(
+                MODULE,
+                ENTITY,
+                entity.getId(),
+                entity.getName(),
+                entity.getName()
+        );
+
+        subCasteRepository.delete(entity);
+    }
+    // =====================================================
     // GET BY ID
-    // =========================================
+    // =====================================================
 
     @Override
-    public Optional<SubCaste> getById(Long id) {
+    public SubCasteResponseDTO getById(Long id) {
 
-        return repository.findById(id);
+        SubCaste entity = subCasteRepository
+                .findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Sub Caste not found."));
+
+        return mapToResponse(entity);
     }
 
-    // =========================================
+    // =====================================================
     // GET ALL
-    // =========================================
+    // =====================================================
 
     @Override
-    public List<SubCaste> getAll() {
+    public List<SubCasteResponseDTO> getAll() {
 
-        return repository.findAll();
+        return subCasteRepository.findAllByDeletedAtIsNull()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
     }
-
-    // =========================================
-    // GET BY ADMIN
-    // =========================================
 
     @Override
-    public List<SubCaste> getByAdmin(Long adminId) {
+    public List<SubCasteResponseDTO> getDeleted() {
 
-        return repository.findAllAvailable(adminId);
+        return subCasteRepository.findByDeletedAtIsNotNull()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
     }
 
-    // =========================================
-    // ACTIVE
-    // =========================================
+    // =====================================================
+    // ACTIVE / INACTIVE
+    // =====================================================
 
     @Override
-    public List<SubCaste> getActiveByAdmin(Long adminId) {
+    public List<SubCasteResponseDTO> getActive() {
 
-        return repository.findAllActiveAvailable(adminId);
+        return subCasteRepository.findByIsActiveTrueAndDeletedAtIsNull()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
     }
-
-    // =========================================
-    // INACTIVE
-    // =========================================
 
     @Override
-    public List<SubCaste> getInactiveByAdmin(Long adminId) {
+    public List<SubCasteResponseDTO> getInactive() {
 
-        return repository.findAllInactiveAvailable(adminId);
+        return subCasteRepository.findByIsActiveFalseAndDeletedAtIsNull()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
     }
 
-    // =========================================
-    // BY CASTE
-    // =========================================
+    // =====================================================
+    // ADMIN
+    // =====================================================
 
     @Override
-    public List<SubCaste> getByCasteAndAdmin(
-            Long casteId,
-            Long adminId
-    ) {
+    public List<SubCasteResponseDTO> getByAdmin(Long adminId) {
 
-        return repository.findAvailableByCaste(
-                casteId,
-                adminId
-        );
+        return subCasteRepository.findByAdmin_IdAndDeletedAtIsNull(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
     }
-
-    // =========================================
-    // ACTIVE BY CASTE
-    // =========================================
 
     @Override
-    public List<SubCaste> getActiveByCasteAndAdmin(
-            Long casteId,
-            Long adminId
-    ) {
+    public List<SubCasteResponseDTO> getActiveByAdmin(Long adminId) {
 
-        return repository.findActiveAvailableByCaste(
-                casteId,
-                adminId
-        );
+        return subCasteRepository
+                .findByAdmin_IdAndIsActiveTrueAndDeletedAtIsNull(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
     }
 
-    // =========================================
+    @Override
+    public List<SubCasteResponseDTO> getInactiveByAdmin(Long adminId) {
+
+        return subCasteRepository
+                .findByAdmin_IdAndIsActiveFalseAndDeletedAtIsNull(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    // =====================================================
+    // CASTE
+    // =====================================================
+
+    @Override
+    public List<SubCasteResponseDTO> getByCasteAndAdmin(Long casteId,
+                                                        Long adminId) {
+
+        return subCasteRepository
+                .findByCaste_IdAndAdmin_IdAndDeletedAtIsNull(
+                        casteId,
+                        adminId
+                )
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Override
+    public List<SubCasteResponseDTO> getActiveByCasteAndAdmin(Long casteId,
+                                                              Long adminId) {
+
+        return subCasteRepository
+                .findByCaste_IdAndAdmin_IdAndIsActiveTrueAndDeletedAtIsNull(
+                        casteId,
+                        adminId
+                )
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Override
+    public List<SubCasteResponseDTO> getInactiveByCasteAndAdmin(Long casteId,
+                                                                Long adminId) {
+
+        return subCasteRepository
+                .findByCaste_IdAndAdmin_IdAndIsActiveFalseAndDeletedAtIsNull(
+                        casteId,
+                        adminId
+                )
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    // =====================================================
     // SEARCH
-    // =========================================
+    // =====================================================
 
     @Override
-    public List<SubCaste> searchByAdmin(
-            Long adminId,
-            String keyword
-    ) {
+    public List<SubCasteResponseDTO> search(String keyword) {
 
-        return repository.searchAvailable(
-                keyword,
-                adminId
-        );
+        return subCasteRepository
+                .findByNameContainingIgnoreCaseAndDeletedAtIsNull(keyword)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
     }
 
-    // =========================================
-    // FIND BY NAME
-    // =========================================
-
     @Override
-    public Optional<SubCaste> getByNameAndAdmin(
-            String name,
-            Long adminId
-    ) {
+    public List<SubCasteResponseDTO> searchByAdmin(Long adminId,
+                                                   String keyword) {
 
-        return repository.findAccessibleByName(
-                name,
-                adminId
-        );
+        return subCasteRepository
+                .findByAdmin_IdAndNameContainingIgnoreCaseAndDeletedAtIsNull(
+                        adminId,
+                        keyword
+                )
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
     }
 
-    // =========================================
-    // DELETE
-    // =========================================
+    // =====================================================
+    // DTO MAPPING
+    // =====================================================
 
-    @Override
-    public void delete(Long id) {
+    private SubCasteResponseDTO mapToResponse(SubCaste entity) {
 
-        repository.deleteById(id);
+        return SubCasteResponseDTO.builder()
+                .id(entity.getId())
+                .adminId(entity.getAdmin() != null
+                        ? entity.getAdmin().getId()
+                        : null)
+                .adminName(entity.getAdmin() != null
+                        ? entity.getAdmin().getName()
+                        : null)
+                .casteId(entity.getCaste() != null
+                        ? entity.getCaste().getId()
+                        : null)
+                .casteName(entity.getCaste() != null
+                        ? entity.getCaste().getName()
+                        : null)
+                .name(entity.getName())
+                .isActive(entity.getIsActive())
+                .createdAt(entity.getCreatedAt())
+                .updatedAt(entity.getUpdatedAt())
+                .build();
     }
 }

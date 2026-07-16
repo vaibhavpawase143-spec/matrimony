@@ -1,6 +1,9 @@
 package com.example.dto.response;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
@@ -13,10 +16,8 @@ public class WeightResponseDTO {
     private Long id;
 
     private Long adminId;
-
     private String adminName;
 
-    // IMPORTANT FOR FRONTEND
     private String name;
 
     private String value;
@@ -24,6 +25,5 @@ public class WeightResponseDTO {
     private Boolean isActive;
 
     private LocalDateTime createdAt;
-
     private LocalDateTime updatedAt;
 }

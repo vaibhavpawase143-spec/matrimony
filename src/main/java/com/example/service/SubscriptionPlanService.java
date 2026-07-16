@@ -1,42 +1,77 @@
 package com.example.service;
 
 import com.example.dto.request.SubscriptionPlanFilterDTO;
+import com.example.dto.request.SubscriptionPlanRequestDTO;
 import com.example.dto.response.SubscriptionPlanResponseDTO;
 import com.example.dto.response.SubscriptionPlanStatsDTO;
-import com.example.model.SubscriptionPlan;
 import org.springframework.data.domain.Page;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface SubscriptionPlanService {
 
-    // ✅ Create
-    SubscriptionPlan create(SubscriptionPlan plan);
+    // =====================================================
+    // CRUD
+    // =====================================================
 
-    // 🔍 Get by ID
-    Optional<SubscriptionPlan> getById(Long id);
+    SubscriptionPlanResponseDTO create(SubscriptionPlanRequestDTO requestDto);
 
-    // 🔍 Get all
-    List<SubscriptionPlan> getAll();
+    SubscriptionPlanResponseDTO update(Long id,
+                                       SubscriptionPlanRequestDTO requestDto);
 
-    // 🔍 By admin
-    List<SubscriptionPlan> getByAdmin(Long adminId);
+    void softDelete(Long id);
 
-    // 🔍 Active / Inactive (admin-based)
-    List<SubscriptionPlan> getActiveByAdmin(Long adminId);
+    void restore(Long id);
 
-    List<SubscriptionPlan> getInactiveByAdmin(Long adminId);
+    void hardDelete(Long id);
 
-    // 🔍 Search (admin-based)
-    List<SubscriptionPlan> searchByAdmin(Long adminId, String keyword);
+    // =====================================================
+    // GET
+    // =====================================================
 
-    // ✅ Update
-    SubscriptionPlan update(Long id, SubscriptionPlan plan);
+    SubscriptionPlanResponseDTO getById(Long id);
 
-    // ❌ Soft delete
-    void delete(Long id);
+    List<SubscriptionPlanResponseDTO> getAll();
+
+    List<SubscriptionPlanResponseDTO> getDeleted();
+
+    // =====================================================
+    // ACTIVE / INACTIVE
+    // =====================================================
+
+    List<SubscriptionPlanResponseDTO> getActive();
+
+    List<SubscriptionPlanResponseDTO> getInactive();
+
+    // =====================================================
+    // ADMIN
+    // =====================================================
+
+    List<SubscriptionPlanResponseDTO> getByAdmin(Long adminId);
+
+    List<SubscriptionPlanResponseDTO> getActiveByAdmin(Long adminId);
+
+    List<SubscriptionPlanResponseDTO> getInactiveByAdmin(Long adminId);
+
+    // =====================================================
+    // SEARCH
+    // =====================================================
+
+    List<SubscriptionPlanResponseDTO> search(String keyword);
+
+    List<SubscriptionPlanResponseDTO> searchByAdmin(Long adminId,
+                                                    String keyword);
+
+    // =====================================================
+    // STATISTICS
+    // =====================================================
+
     SubscriptionPlanStatsDTO getStatistics();
+
+    // =====================================================
+    // PAGINATION
+    // =====================================================
+
     Page<SubscriptionPlanResponseDTO> getAllPlans(
             SubscriptionPlanFilterDTO filter,
             int page,

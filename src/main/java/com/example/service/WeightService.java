@@ -1,35 +1,59 @@
 package com.example.service;
 
-import com.example.model.Weight;
+import com.example.dto.request.WeightRequestDTO;
+import com.example.dto.response.WeightResponseDTO;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface WeightService {
 
-    // ✅ Create / Save
-    Weight save(Weight weight);
+    // =====================================================
+    // CRUD
+    // =====================================================
 
-    // 🔍 Get by ID
-    Optional<Weight> getById(Long id);
+    WeightResponseDTO create(WeightRequestDTO requestDto);
 
-    // 🔍 Get all
-    List<Weight> getAll();
+    WeightResponseDTO update(Long id, WeightRequestDTO requestDto);
 
-    // 🔍 Get by admin
-    List<Weight> getByAdmin(Long adminId);
+    void softDelete(Long id);
 
-    // 🔍 Active / Inactive
-    List<Weight> getActiveByAdmin(Long adminId);
+    void restore(Long id);
 
-    List<Weight> getInactiveByAdmin(Long adminId);
+    void hardDelete(Long id);
 
-    // 🔍 Search
-    List<Weight> searchByAdmin(Long adminId, String keyword);
+    // =====================================================
+    // GET
+    // =====================================================
 
-    // 🔍 Find by value
-    Optional<Weight> getByValueAndAdmin(String value, Long adminId);
+    WeightResponseDTO getById(Long id);
 
-    // ❌ Delete (soft delete recommended)
-    void delete(Long id);
+    List<WeightResponseDTO> getAll();
+
+    List<WeightResponseDTO> getDeleted();
+
+    // =====================================================
+    // ACTIVE / INACTIVE
+    // =====================================================
+
+    List<WeightResponseDTO> getActive();
+
+    List<WeightResponseDTO> getInactive();
+
+    // =====================================================
+    // ADMIN
+    // =====================================================
+
+    List<WeightResponseDTO> getByAdmin(Long adminId);
+
+    List<WeightResponseDTO> getActiveByAdmin(Long adminId);
+
+    List<WeightResponseDTO> getInactiveByAdmin(Long adminId);
+
+    // =====================================================
+    // SEARCH
+    // =====================================================
+
+    List<WeightResponseDTO> search(String keyword);
+
+    List<WeightResponseDTO> searchByAdmin(Long adminId, String keyword);
 }

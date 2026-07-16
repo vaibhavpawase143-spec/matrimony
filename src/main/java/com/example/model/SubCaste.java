@@ -1,36 +1,66 @@
 package com.example.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+import lombok.*;
+
 import java.time.LocalDateTime;
 
 @Entity
 @Table(
         name = "sub_castes",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"caste_id", "name"}),
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_sub_caste_caste_name",
+                        columnNames = {"caste_id", "name"}
+                )
+        },
         indexes = {
-                @Index(name = "idx_subcaste_name", columnList = "name"),
-                @Index(name = "idx_subcaste_caste", columnList = "caste_id")
+                @Index(name = "idx_sub_caste_name", columnList = "name"),
+                @Index(name = "idx_sub_caste_caste", columnList = "caste_id"),
+                @Index(name = "idx_sub_caste_admin", columnList = "admin_id"),
+                @Index(name = "idx_sub_caste_active", columnList = "is_active"),
+                @Index(name = "idx_sub_caste_deleted", columnList = "deleted_at")
         }
 )
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class SubCaste {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "admin_id")
-    private Admin admin;
+    // =====================================================
+    // RELATIONSHIPS
+    // =====================================================
 
-    @Column(nullable = false, length = 120)
-    private String name;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "admin_id", nullable = false)
+    @JsonIgnore
+    private Admin admin;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "caste_id", nullable = false)
     private Caste caste;
 
+    // =====================================================
+    // BASIC DETAILS
+    // =====================================================
+
+    @Column(nullable = false, length = 120)
+    private String name;
+
+    @Builder.Default
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
+
+    // =====================================================
+    // AUDIT FIELDS
+    // =====================================================
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -38,69 +68,33 @@ public class SubCaste {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    public SubCaste() {}
+    // =====================================================
+    // SOFT DELETE
+    // =====================================================
 
-    // 🔥 Lifecycle hooks (fixed)
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
+    @Column(name = "deleted_by")
+    private Long deletedBy;
+
+    // =====================================================
+    // ENTITY LIFECYCLE
+    // =====================================================
+
     @PrePersist
     protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
 
-        if (this.isActive == null) {
-            this.isActive = true;
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+
+        if (isActive == null) {
+            isActive = true;
         }
     }
 
     @PreUpdate
     protected void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
-    }
-
-    // ===== Getters =====
-
-    public Long getId() {
-        return id;
-    }
-
-    public Admin getAdmin() {
-        return admin;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public Caste getCaste() {
-        return caste;
-    }
-
-    public Boolean getIsActive() {   // ✅ FIXED
-        return isActive;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    // ===== Setters =====
-
-    public void setAdmin(Admin admin) {
-        this.admin = admin;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public void setCaste(Caste caste) {
-        this.caste = caste;
-    }
-
-    public void setIsActive(Boolean isActive) {
-        this.isActive = isActive;
+        updatedAt = LocalDateTime.now();
     }
 }

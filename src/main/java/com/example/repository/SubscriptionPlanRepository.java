@@ -7,33 +7,76 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+
 @Repository
 public interface SubscriptionPlanRepository
         extends JpaRepository<SubscriptionPlan, Long>,
         JpaSpecificationExecutor<SubscriptionPlan> {
 
-    // 🔍 Find by name (admin-specific)
-    Optional<SubscriptionPlan> findByNameIgnoreCaseAndAdminId(String name, Long adminId);
+    // =====================================================
+    // BASIC
+    // =====================================================
 
-    // 🔍 Find by name only (for public access)
-    Optional<SubscriptionPlan> findByName(String name);
+    Optional<SubscriptionPlan> findByIdAndDeletedAtIsNull(Long id);
 
-    // 🔍 Check duplicate (admin-specific)
-    boolean existsByNameIgnoreCaseAndAdminId(String name, Long adminId);
+    Optional<SubscriptionPlan> findByIdAndDeletedAtIsNotNull(Long id);
 
-    // 🔍 Get all records by admin
-    List<SubscriptionPlan> findByAdminId(Long adminId);
+    List<SubscriptionPlan> findAllByDeletedAtIsNull();
 
-    // 🔍 Active records by admin
-    List<SubscriptionPlan> findByAdminIdAndIsActiveTrue(Long adminId);
+    List<SubscriptionPlan> findByDeletedAtIsNotNull();
 
-    // 🔍 Inactive records by admin
-    List<SubscriptionPlan> findByAdminIdAndIsActiveFalse(Long adminId);
+    // =====================================================
+    // DUPLICATE CHECK
+    // =====================================================
 
-    // 🔍 Search (admin + keyword)
-    List<SubscriptionPlan> findByAdminIdAndNameContainingIgnoreCase(Long adminId, String keyword);
-    // 📊 Statistics
-    long countByIsActiveTrue();
+    boolean existsByNameIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+            String name,
+            Long adminId
+    );
 
-    long countByIsActiveFalse();
+    Optional<SubscriptionPlan> findByNameIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+            String name,
+            Long adminId
+    );
+
+    // =====================================================
+    // ACTIVE / INACTIVE
+    // =====================================================
+
+    List<SubscriptionPlan> findByIsActiveTrueAndDeletedAtIsNull();
+
+    List<SubscriptionPlan> findByIsActiveFalseAndDeletedAtIsNull();
+
+    // =====================================================
+    // ADMIN
+    // =====================================================
+
+    List<SubscriptionPlan> findByAdmin_IdAndDeletedAtIsNull(Long adminId);
+
+    List<SubscriptionPlan> findByAdmin_IdAndIsActiveTrueAndDeletedAtIsNull(Long adminId);
+
+    List<SubscriptionPlan> findByAdmin_IdAndIsActiveFalseAndDeletedAtIsNull(Long adminId);
+
+    // =====================================================
+    // SEARCH
+    // =====================================================
+
+    List<SubscriptionPlan> findByNameContainingIgnoreCaseAndDeletedAtIsNull(
+            String keyword
+    );
+
+    List<SubscriptionPlan> findByAdmin_IdAndNameContainingIgnoreCaseAndDeletedAtIsNull(
+            Long adminId,
+            String keyword
+    );
+
+    // =====================================================
+    // STATISTICS
+    // =====================================================
+
+    long countByDeletedAtIsNull();
+
+    long countByIsActiveTrueAndDeletedAtIsNull();
+
+    long countByIsActiveFalseAndDeletedAtIsNull();
 }

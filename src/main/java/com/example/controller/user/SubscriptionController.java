@@ -1,6 +1,7 @@
 package com.example.controller.user;
 
 import com.example.dto.request.UserSubscriptionRequestDTO;
+import com.example.dto.response.SubscriptionPlanResponseDTO;
 import com.example.dto.response.SubscriptionResponseDto;
 import com.example.dto.response.UserSubscriptionResponseDTO;
 import com.example.model.SubscriptionPlan;
@@ -32,7 +33,7 @@ public class SubscriptionController {
     // =====================================================
 
     @GetMapping("/plans")
-    public ResponseEntity<List<SubscriptionPlan>> getAllPlans() {
+    public ResponseEntity<List<SubscriptionPlanResponseDTO>> getAllPlans() {
 
         return ResponseEntity.ok(
                 subscriptionPlanService.getAll()
@@ -44,13 +45,11 @@ public class SubscriptionController {
     // =====================================================
 
     @GetMapping("/plan/{id}")
-    public ResponseEntity<SubscriptionPlan> getPlanById(
+    public ResponseEntity<SubscriptionPlanResponseDTO> getPlanById(
             @PathVariable Long id) {
 
-        SubscriptionPlan plan =
-                subscriptionPlanService.getById(id)
-                        .orElseThrow(() ->
-                                new RuntimeException("Plan not found"));
+        SubscriptionPlanResponseDTO plan =
+                subscriptionPlanService.getById(id);
 
         return ResponseEntity.ok(plan);
     }

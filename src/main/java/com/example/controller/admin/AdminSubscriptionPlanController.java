@@ -51,7 +51,7 @@ public class AdminSubscriptionPlanController {
 
         SubscriptionPlanFilterDTO filter = new SubscriptionPlanFilterDTO();
 
-        filter.setSearch(search);
+        filter.setKeyword(search);
         filter.setIsActive(active);
 
         return new ApiResponse<>(

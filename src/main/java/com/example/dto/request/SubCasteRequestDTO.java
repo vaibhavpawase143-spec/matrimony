@@ -14,7 +14,7 @@ public class SubCasteRequestDTO {
     @NotNull(message = "Caste ID is required")
     private Long casteId;
 
-    @NotBlank(message = "SubCaste name is required")
+    @NotBlank(message = "Sub Caste name is required")
     @Size(max = 120, message = "Name must be less than 120 characters")
     private String name;
 

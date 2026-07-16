@@ -10,21 +10,60 @@ import java.util.Optional;
 @Repository
 public interface WeightRepository extends JpaRepository<Weight, Long> {
 
-    // 🔍 Find by value (admin-specific, case-insensitive)
-    Optional<Weight> findByValueIgnoreCaseAndAdminId(String value, Long adminId);
+    // =====================================================
+    // BASIC
+    // =====================================================
 
-    // 🔍 Check duplicate (admin-specific)
-    boolean existsByValueIgnoreCaseAndAdminId(String value, Long adminId);
+    Optional<Weight> findByIdAndDeletedAtIsNull(Long id);
 
-    // 🔍 Get all weights by admin
-    List<Weight> findByAdminId(Long adminId);
+    Optional<Weight> findByIdAndDeletedAtIsNotNull(Long id);
 
-    // 🔍 Active weights by admin
-    List<Weight> findByAdminIdAndIsActiveTrue(Long adminId);
+    List<Weight> findAllByDeletedAtIsNull();
 
-    // 🔍 Inactive weights by admin
-    List<Weight> findByAdminIdAndIsActiveFalse(Long adminId);
+    List<Weight> findByDeletedAtIsNotNull();
 
-    // 🔍 Search (admin + keyword)
-    List<Weight> findByAdminIdAndValueContainingIgnoreCase(Long adminId, String keyword);
+    // =====================================================
+    // DUPLICATE CHECK
+    // =====================================================
+
+    boolean existsByValueIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+            String value,
+            Long adminId
+    );
+
+    Optional<Weight> findByValueIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+            String value,
+            Long adminId
+    );
+
+    // =====================================================
+    // ACTIVE / INACTIVE
+    // =====================================================
+
+    List<Weight> findByIsActiveTrueAndDeletedAtIsNull();
+
+    List<Weight> findByIsActiveFalseAndDeletedAtIsNull();
+
+    // =====================================================
+    // ADMIN
+    // =====================================================
+
+    List<Weight> findByAdmin_IdAndDeletedAtIsNull(Long adminId);
+
+    List<Weight> findByAdmin_IdAndIsActiveTrueAndDeletedAtIsNull(Long adminId);
+
+    List<Weight> findByAdmin_IdAndIsActiveFalseAndDeletedAtIsNull(Long adminId);
+
+    // =====================================================
+    // SEARCH
+    // =====================================================
+
+    List<Weight> findByValueContainingIgnoreCaseAndDeletedAtIsNull(
+            String keyword
+    );
+
+    List<Weight> findByAdmin_IdAndValueContainingIgnoreCaseAndDeletedAtIsNull(
+            Long adminId,
+            String keyword
+    );
 }

@@ -1,178 +1,259 @@
 package com.example.controller.master;
 
+import com.example.dto.request.SubscriptionPlanFilterDTO;
 import com.example.dto.request.SubscriptionPlanRequestDTO;
+import com.example.dto.response.ApiResponse;
 import com.example.dto.response.SubscriptionPlanResponseDTO;
-import com.example.model.Admin;
-import com.example.model.SubscriptionPlan;
+import com.example.dto.response.SubscriptionPlanStatsDTO;
 import com.example.service.SubscriptionPlanService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/master/subscription-plans")
 @RequiredArgsConstructor
+@PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
 public class SubscriptionPlanController {
 
-    private final SubscriptionPlanService service;
+    private final SubscriptionPlanService subscriptionPlanService;
 
-    // =========================
+    // =====================================================
     // CREATE
-    // =========================
+    // =====================================================
+
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
-    public SubscriptionPlanResponseDTO create(
-            @Valid @RequestBody SubscriptionPlanRequestDTO dto) {
+    public ApiResponse<SubscriptionPlanResponseDTO> create(
+            @Valid @RequestBody SubscriptionPlanRequestDTO requestDto) {
 
-        SubscriptionPlan entity = mapToEntity(dto);
-
-        SubscriptionPlan saved = service.create(entity);
-
-        return mapToResponse(saved);
+        return ApiResponse.success(
+                "Subscription plan created successfully.",
+                subscriptionPlanService.create(requestDto)
+        );
     }
 
-    // =========================
+    // =====================================================
     // UPDATE
-    // =========================
+    // =====================================================
+
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
-    public SubscriptionPlanResponseDTO update(
+    public ApiResponse<SubscriptionPlanResponseDTO> update(
             @PathVariable Long id,
-            @Valid @RequestBody SubscriptionPlanRequestDTO dto) {
+            @Valid @RequestBody SubscriptionPlanRequestDTO requestDto) {
 
-        SubscriptionPlan entity = mapToEntity(dto);
-
-        SubscriptionPlan updated = service.update(id, entity);
-
-        return mapToResponse(updated);
+        return ApiResponse.success(
+                "Subscription plan updated successfully.",
+                subscriptionPlanService.update(id, requestDto)
+        );
     }
 
-    // =========================
+    // =====================================================
     // GET BY ID
-    // =========================
+    // =====================================================
+
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
-    public SubscriptionPlanResponseDTO getById(@PathVariable Long id) {
+    public ApiResponse<SubscriptionPlanResponseDTO> getById(
+            @PathVariable Long id) {
 
-        SubscriptionPlan plan = service.getById(id)
-                .orElseThrow(() -> new RuntimeException("Plan not found"));
-
-        return mapToResponse(plan);
+        return ApiResponse.success(
+                "Subscription plan fetched successfully.",
+                subscriptionPlanService.getById(id)
+        );
     }
 
-    // =========================
+    // =====================================================
     // GET ALL
-    // =========================
-    @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
-    public List<SubscriptionPlanResponseDTO> getAll() {
+    // =====================================================
 
-        return service.getAll()
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+    @GetMapping
+    public ApiResponse<List<SubscriptionPlanResponseDTO>> getAll() {
+
+        return ApiResponse.success(
+                "Subscription plans fetched successfully.",
+                subscriptionPlanService.getAll()
+        );
     }
 
-    // =========================
-    // ADMIN APIs
-    // =========================
+    // =====================================================
+    // GET DELETED
+    // =====================================================
+
+    @GetMapping("/deleted")
+    public ApiResponse<List<SubscriptionPlanResponseDTO>> getDeleted() {
+
+        return ApiResponse.success(
+                "Deleted subscription plans fetched successfully.",
+                subscriptionPlanService.getDeleted()
+        );
+    }
+
+    // =====================================================
+    // ACTIVE / INACTIVE
+    // =====================================================
+
+    @GetMapping("/active")
+    public ApiResponse<List<SubscriptionPlanResponseDTO>> getActive() {
+
+        return ApiResponse.success(
+                "Active subscription plans fetched successfully.",
+                subscriptionPlanService.getActive()
+        );
+    }
+
+    @GetMapping("/inactive")
+    public ApiResponse<List<SubscriptionPlanResponseDTO>> getInactive() {
+
+        return ApiResponse.success(
+                "Inactive subscription plans fetched successfully.",
+                subscriptionPlanService.getInactive()
+        );
+    }
+
+    // =====================================================
+    // ADMIN
+    // =====================================================
 
     @GetMapping("/admin/{adminId}")
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
-    public List<SubscriptionPlanResponseDTO> getByAdmin(@PathVariable Long adminId) {
+    public ApiResponse<List<SubscriptionPlanResponseDTO>> getByAdmin(
+            @PathVariable Long adminId) {
 
-        return service.getByAdmin(adminId)
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+        return ApiResponse.success(
+                "Subscription plans fetched successfully.",
+                subscriptionPlanService.getByAdmin(adminId)
+        );
     }
 
     @GetMapping("/admin/{adminId}/active")
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
-    public List<SubscriptionPlanResponseDTO> getActive(@PathVariable Long adminId) {
+    public ApiResponse<List<SubscriptionPlanResponseDTO>> getActiveByAdmin(
+            @PathVariable Long adminId) {
 
-        return service.getActiveByAdmin(adminId)
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+        return ApiResponse.success(
+                "Active subscription plans fetched successfully.",
+                subscriptionPlanService.getActiveByAdmin(adminId)
+        );
     }
 
     @GetMapping("/admin/{adminId}/inactive")
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
-    public List<SubscriptionPlanResponseDTO> getInactive(@PathVariable Long adminId) {
+    public ApiResponse<List<SubscriptionPlanResponseDTO>> getInactiveByAdmin(
+            @PathVariable Long adminId) {
 
-        return service.getInactiveByAdmin(adminId)
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+        return ApiResponse.success(
+                "Inactive subscription plans fetched successfully.",
+                subscriptionPlanService.getInactiveByAdmin(adminId)
+        );
     }
 
-    // =========================
+    // =====================================================
     // SEARCH
-    // =========================
+    // =====================================================
+
+    @GetMapping("/search")
+    public ApiResponse<List<SubscriptionPlanResponseDTO>> search(
+            @RequestParam String keyword) {
+
+        return ApiResponse.success(
+                "Search completed successfully.",
+                subscriptionPlanService.search(keyword)
+        );
+    }
+
     @GetMapping("/admin/{adminId}/search")
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
-    public List<SubscriptionPlanResponseDTO> search(
+    public ApiResponse<List<SubscriptionPlanResponseDTO>> searchByAdmin(
             @PathVariable Long adminId,
             @RequestParam String keyword) {
 
-        return service.searchByAdmin(adminId, keyword)
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+        return ApiResponse.success(
+                "Search completed successfully.",
+                subscriptionPlanService.searchByAdmin(adminId, keyword)
+        );
     }
 
-    // =========================
-    // DELETE (SOFT)
-    // =========================
+    // =====================================================
+    // STATISTICS
+    // =====================================================
+
+    @GetMapping("/statistics")
+    public ApiResponse<SubscriptionPlanStatsDTO> getStatistics() {
+
+        return ApiResponse.success(
+                "Subscription plan statistics fetched successfully.",
+                subscriptionPlanService.getStatistics()
+        );
+    }
+
+    // =====================================================
+    // PAGINATION
+    // =====================================================
+
+    @PostMapping("/filter")
+    public ApiResponse<Page<SubscriptionPlanResponseDTO>> getAllPlans(
+            @RequestBody(required = false) SubscriptionPlanFilterDTO filter,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "DESC") String direction) {
+
+        return ApiResponse.success(
+                "Subscription plans fetched successfully.",
+                subscriptionPlanService.getAllPlans(
+                        filter,
+                        page,
+                        size,
+                        sortBy,
+                        direction
+                )
+        );
+    }
+
+    // =====================================================
+    // SOFT DELETE
+    // =====================================================
+
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
-    public String delete(@PathVariable Long id) {
-        service.delete(id);
-        return "Subscription plan deactivated successfully";
+    public ApiResponse<Void> softDelete(
+            @PathVariable Long id) {
+
+        subscriptionPlanService.softDelete(id);
+
+        return ApiResponse.success(
+                "Subscription plan deleted successfully.",
+                null
+        );
     }
 
-    // =========================
-    // 🔥 MAPPING
-    // =========================
+    // =====================================================
+    // RESTORE
+    // =====================================================
 
-    private SubscriptionPlan mapToEntity(SubscriptionPlanRequestDTO dto) {
+    @PutMapping("/{id}/restore")
+    public ApiResponse<Void> restore(
+            @PathVariable Long id) {
 
-        SubscriptionPlan plan = new SubscriptionPlan();
+        subscriptionPlanService.restore(id);
 
-        Admin admin = new Admin();
-        admin.setId(dto.getAdminId());
-        plan.setAdmin(admin);
-
-        plan.setName(dto.getName());
-        plan.setPrice(dto.getPrice());
-        plan.setDuration(dto.getDuration());
-        plan.setDescription(dto.getDescription());
-
-        if (dto.getIsActive() != null) {
-            plan.setIsActive(dto.getIsActive());
-        }
-
-        return plan;
+        return ApiResponse.success(
+                "Subscription plan restored successfully.",
+                null
+        );
     }
 
-    private SubscriptionPlanResponseDTO mapToResponse(SubscriptionPlan plan) {
+    // =====================================================
+    // HARD DELETE
+    // =====================================================
 
-        return SubscriptionPlanResponseDTO.builder()
-                .id(plan.getId())
-                .adminId(plan.getAdmin() != null ? plan.getAdmin().getId() : null)
-                .adminName(plan.getAdmin() != null ? plan.getAdmin().getName() : null)
-                .name(plan.getName())
-                .price(plan.getPrice())
-                .duration(plan.getDuration())
-                .description(plan.getDescription())
-                .isActive(plan.getIsActive())
-                .createdAt(plan.getCreatedAt())
-                .updatedAt(plan.getUpdatedAt())
-                .build();
+    @DeleteMapping("/{id}/hard")
+    public ApiResponse<Void> hardDelete(
+            @PathVariable Long id) {
+
+        subscriptionPlanService.hardDelete(id);
+
+        return ApiResponse.success(
+                "Subscription plan permanently deleted successfully.",
+                null
+        );
     }
 }

@@ -12,7 +12,7 @@ public class WeightRequestDTO {
     private Long adminId;
 
     @NotBlank(message = "Weight value is required")
-    @Size(max = 20)
+    @Size(max = 20, message = "Weight must be less than 20 characters")
     private String value;
 
     private Boolean isActive;

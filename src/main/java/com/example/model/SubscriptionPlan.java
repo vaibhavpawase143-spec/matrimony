@@ -1,40 +1,69 @@
 package com.example.model;
 
 import jakarta.persistence.*;
+import lombok.*;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(
         name = "subscription_plans",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"admin_id", "name"}),
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_subscription_plan_admin_name",
+                        columnNames = {"admin_id", "name"}
+                )
+        },
         indexes = {
-                @Index(name = "idx_plan_name", columnList = "name")
+                @Index(name = "idx_subscription_plan_name", columnList = "name"),
+                @Index(name = "idx_subscription_plan_admin", columnList = "admin_id"),
+                @Index(name = "idx_subscription_plan_active", columnList = "is_active"),
+                @Index(name = "idx_subscription_plan_deleted", columnList = "deleted_at")
         }
 )
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class SubscriptionPlan {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Example: Gold Plan
+    // =====================================================
+    // RELATIONSHIP
+    // =====================================================
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "admin_id", nullable = false)
+    private Admin admin;
+
+    // =====================================================
+    // BASIC DETAILS
+    // =====================================================
+
     @Column(nullable = false, length = 100)
     private String name;
 
-    // 🔥 Use BigDecimal for money
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
 
-    // Duration in days
     @Column(nullable = false)
     private Integer duration;
 
     @Column(length = 500)
     private String description;
 
+    @Builder.Default
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
+
+    // =====================================================
+    // AUDIT FIELDS
+    // =====================================================
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -42,93 +71,33 @@ public class SubscriptionPlan {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "admin_id")
-    private Admin admin;
+    // =====================================================
+    // SOFT DELETE
+    // =====================================================
 
-    public SubscriptionPlan() {}
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 
-    // 🔥 Lifecycle hooks (fixed)
+    @Column(name = "deleted_by")
+    private Long deletedBy;
+
+    // =====================================================
+    // ENTITY LIFECYCLE
+    // =====================================================
+
     @PrePersist
     protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
 
-        if (this.isActive == null) {
-            this.isActive = true;
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+
+        if (isActive == null) {
+            isActive = true;
         }
     }
 
     @PreUpdate
     protected void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
-    }
-
-    // ===== Getters =====
-
-    public Long getId() {
-        return id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public BigDecimal getPrice() {
-        return price;
-    }
-
-    public Integer getDuration() {
-        return duration;
-    }
-
-    public Integer getDurationInDays() {
-        return duration;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public Boolean getIsActive() {
-        return isActive;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public Admin getAdmin() {
-        return admin;
-    }
-
-    // ===== Setters =====
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public void setPrice(BigDecimal price) {
-        this.price = price;
-    }
-
-    public void setDuration(Integer duration) {
-        this.duration = duration;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public void setIsActive(Boolean isActive) {
-        this.isActive = isActive;
-    }
-
-    public void setAdmin(Admin admin) {
-        this.admin = admin;
+        updatedAt = LocalDateTime.now();
     }
 }

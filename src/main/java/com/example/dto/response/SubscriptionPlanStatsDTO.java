@@ -11,10 +11,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class SubscriptionPlanStatsDTO {
 
-    private long totalPlans;
+    private Long totalPlans;
 
-    private long activePlans;
+    private Long activePlans;
 
-    private long inactivePlans;
-
+    private Long inactivePlans;
 }

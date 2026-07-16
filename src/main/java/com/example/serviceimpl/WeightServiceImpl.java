@@ -1,127 +1,336 @@
 package com.example.serviceimpl;
 
+import com.example.dto.request.WeightRequestDTO;
+import com.example.dto.response.WeightResponseDTO;
+import com.example.exception.BadRequestException;
+import com.example.exception.ResourceNotFoundException;
+import com.example.model.Admin;
 import com.example.model.Weight;
+import com.example.repository.AdminRepository;
 import com.example.repository.WeightRepository;
+import com.example.service.CurrentAdminService;
 import com.example.service.WeightService;
-
-import org.springframework.security.core.context.SecurityContextHolder;
+import com.example.util.AuditHelper;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
 public class WeightServiceImpl implements WeightService {
 
-    private final WeightRepository repository;
+    private final WeightRepository weightRepository;
+    private final AdminRepository adminRepository;
+    private final CurrentAdminService currentAdminService;
+    private final AuditHelper auditHelper;
 
-    public WeightServiceImpl(WeightRepository repository) {
-        this.repository = repository;
-    }
+    private static final String MODULE = "Master";
+    private static final String ENTITY = "Weight";
 
-    // =========================
-    // ✅ SAVE (WITH DUPLICATE CHECK)
-    // =========================
+    // =====================================================
+    // CREATE
+    // =====================================================
+
     @Override
-    public Weight save(Weight weight) {
+    public WeightResponseDTO create(WeightRequestDTO requestDto) {
 
-        if (weight.getAdmin() == null || weight.getAdmin().getId() == null) {
-            throw new RuntimeException("Admin is required");
+        Admin admin = adminRepository.findById(requestDto.getAdminId())
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Admin not found."));
+
+        if (weightRepository.existsByValueIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+                requestDto.getValue(),
+                admin.getId())) {
+
+            throw new BadRequestException("Weight already exists.");
         }
 
-        String value = weight.getValue();
-        Long adminId = weight.getAdmin().getId();
+        Weight entity = Weight.builder()
+                .admin(admin)
+                .value(requestDto.getValue().trim())
+                .isActive(
+                        requestDto.getIsActive() != null
+                                ? requestDto.getIsActive()
+                                : true
+                )
+                .build();
 
-        Optional<Weight> existing =
-                repository.findByValueIgnoreCaseAndAdminId(value, adminId);
+        entity = weightRepository.save(entity);
 
-        if (existing.isPresent() &&
-                (weight.getId() == null || !existing.get().getId().equals(weight.getId()))) {
-            throw new RuntimeException("Weight already exists for this admin!");
+        auditHelper.logCreate(
+                MODULE,
+                ENTITY,
+                entity.getId(),
+                entity.getValue(),
+                entity.getValue()
+        );
+
+        return mapToResponse(entity);
+    }
+
+    // =====================================================
+    // UPDATE
+    // =====================================================
+
+    @Override
+    public WeightResponseDTO update(Long id,
+                                    WeightRequestDTO requestDto) {
+
+        Weight entity = weightRepository
+                .findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Weight not found."));
+
+        Admin admin = adminRepository.findById(requestDto.getAdminId())
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Admin not found."));
+
+        if (!entity.getValue().equalsIgnoreCase(requestDto.getValue())
+                &&
+                weightRepository.existsByValueIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+                        requestDto.getValue(),
+                        admin.getId())) {
+
+            throw new BadRequestException("Weight already exists.");
         }
 
-        return repository.save(weight);
+        String oldValue = entity.getValue();
+        Boolean oldStatus = entity.getIsActive();
+
+        entity.setAdmin(admin);
+        entity.setValue(requestDto.getValue().trim());
+        entity.setIsActive(requestDto.getIsActive());
+
+        entity = weightRepository.save(entity);
+
+        auditHelper.logUpdate(
+                MODULE,
+                ENTITY,
+                entity.getId(),
+                entity.getValue(),
+                oldValue,
+                entity.getValue(),
+                oldStatus,
+                entity.getIsActive()
+        );
+
+        return mapToResponse(entity);
     }
 
-    // =========================
-    // 🔍 GET BY ID
-    // =========================
+    // =====================================================
+    // SOFT DELETE
+    // =====================================================
+
     @Override
-    public Optional<Weight> getById(Long id) {
-        return repository.findById(id);
+    public void softDelete(Long id) {
+
+        Weight entity = weightRepository
+                .findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Weight not found."));
+
+        entity.setDeletedAt(LocalDateTime.now());
+        entity.setDeletedBy(currentAdminService.getCurrentAdmin().getId());
+
+        weightRepository.save(entity);
+
+        auditHelper.logDelete(
+                MODULE,
+                ENTITY,
+                entity.getId(),
+                entity.getValue(),
+                entity.getValue()
+        );
     }
 
-    // =========================
-    // 🔍 GET ALL
-    // =========================
+    // =====================================================
+    // RESTORE
+    // =====================================================
+
     @Override
-    public List<Weight> getAll() {
-        return repository.findAll();
+    public void restore(Long id) {
+
+        Weight entity = weightRepository
+                .findByIdAndDeletedAtIsNotNull(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Deleted Weight not found."));
+
+        entity.setDeletedAt(null);
+        entity.setDeletedBy(null);
+
+        weightRepository.save(entity);
+
+        auditHelper.logRestore(
+                MODULE,
+                ENTITY,
+                entity.getId(),
+                entity.getValue(),
+                entity.getValue()
+        );
     }
 
-    // =========================
-    // 🔍 GET BY ADMIN
-    // =========================
+    // =====================================================
+    // HARD DELETE
+    // =====================================================
+
     @Override
-    public List<Weight> getByAdmin(Long adminId) {
-        return repository.findByAdminId(adminId);
+    public void hardDelete(Long id) {
+
+        Weight entity = weightRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Weight not found."));
+
+        auditHelper.logHardDelete(
+                MODULE,
+                ENTITY,
+                entity.getId(),
+                entity.getValue(),
+                entity.getValue()
+        );
+
+        weightRepository.delete(entity);
+    }
+    // =====================================================
+    // GET BY ID
+    // =====================================================
+
+    @Override
+    public WeightResponseDTO getById(Long id) {
+
+        Weight entity = weightRepository
+                .findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Weight not found."));
+
+        return mapToResponse(entity);
     }
 
-    // =========================
-    // 🔍 ACTIVE BY ADMIN
-    // =========================
+    // =====================================================
+    // GET ALL
+    // =====================================================
+
     @Override
-    public List<Weight> getActiveByAdmin(Long adminId) {
-        return repository.findByAdminIdAndIsActiveTrue(adminId);
+    public List<WeightResponseDTO> getAll() {
+
+        return weightRepository.findAllByDeletedAtIsNull()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
     }
 
-    // =========================
-    // 🔍 INACTIVE BY ADMIN
-    // =========================
     @Override
-    public List<Weight> getInactiveByAdmin(Long adminId) {
-        return repository.findByAdminIdAndIsActiveFalse(adminId);
+    public List<WeightResponseDTO> getDeleted() {
+
+        return weightRepository.findByDeletedAtIsNotNull()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
     }
 
-    // =========================
-    // 🔍 SEARCH BY ADMIN
-    // =========================
+    // =====================================================
+    // ACTIVE / INACTIVE
+    // =====================================================
+
     @Override
-    public List<Weight> searchByAdmin(Long adminId, String keyword) {
-        return repository.findByAdminIdAndValueContainingIgnoreCase(adminId, keyword);
+    public List<WeightResponseDTO> getActive() {
+
+        return weightRepository.findByIsActiveTrueAndDeletedAtIsNull()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
     }
 
-    // =========================
-    // 🔍 FIND BY VALUE + ADMIN
-    // =========================
     @Override
-    public Optional<Weight> getByValueAndAdmin(String value, Long adminId) {
-        return repository.findByValueIgnoreCaseAndAdminId(value, adminId);
+    public List<WeightResponseDTO> getInactive() {
+
+        return weightRepository.findByIsActiveFalseAndDeletedAtIsNull()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
     }
 
-    // =========================
-    // ❌ DELETE (SOFT DELETE + BASIC OWNERSHIP)
-    // =========================
+    // =====================================================
+    // ADMIN
+    // =====================================================
+
     @Override
-    public void delete(Long id) {
+    public List<WeightResponseDTO> getByAdmin(Long adminId) {
 
-        Weight weight = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Weight not found!"));
+        return weightRepository.findByAdmin_IdAndDeletedAtIsNull(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
 
-        // 🔥 GET LOGGED-IN USER EMAIL (for future enhancement)
-        String email = SecurityContextHolder
-                .getContext()
-                .getAuthentication()
-                .getName();
+    @Override
+    public List<WeightResponseDTO> getActiveByAdmin(Long adminId) {
 
-        // ⚠️ BASIC SAFETY CHECK
-        if (weight.getAdmin() == null || weight.getAdmin().getId() == null) {
-            throw new RuntimeException("Invalid data: admin not found");
-        }
+        return weightRepository
+                .findByAdmin_IdAndIsActiveTrueAndDeletedAtIsNull(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
 
-        // 👉 Since no user mapping, we allow operation but keep structure ready
-        weight.setIsActive(false);
+    @Override
+    public List<WeightResponseDTO> getInactiveByAdmin(Long adminId) {
 
-        repository.save(weight);
+        return weightRepository
+                .findByAdmin_IdAndIsActiveFalseAndDeletedAtIsNull(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    // =====================================================
+    // SEARCH
+    // =====================================================
+
+    @Override
+    public List<WeightResponseDTO> search(String keyword) {
+
+        return weightRepository
+                .findByValueContainingIgnoreCaseAndDeletedAtIsNull(keyword)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Override
+    public List<WeightResponseDTO> searchByAdmin(Long adminId,
+                                                 String keyword) {
+
+        return weightRepository
+                .findByAdmin_IdAndValueContainingIgnoreCaseAndDeletedAtIsNull(
+                        adminId,
+                        keyword
+                )
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    // =====================================================
+    // DTO MAPPING
+    // =====================================================
+
+    private WeightResponseDTO mapToResponse(Weight entity) {
+
+        return WeightResponseDTO.builder()
+                .id(entity.getId())
+                .adminId(entity.getAdmin() != null
+                        ? entity.getAdmin().getId()
+                        : null)
+                .adminName(entity.getAdmin() != null
+                        ? entity.getAdmin().getName()
+                        : null)
+                .name(entity.getValue())
+                .value(entity.getValue())
+                .isActive(entity.getIsActive())
+                .createdAt(entity.getCreatedAt())
+                .updatedAt(entity.getUpdatedAt())
+                .build();
     }
 }

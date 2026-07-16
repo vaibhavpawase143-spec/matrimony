@@ -24,15 +24,15 @@ public class SubscriptionPlanSpecification {
 
             // ================= SEARCH =================
 
-            if (filter.getSearch() != null &&
-                    !filter.getSearch().trim().isEmpty()) {
+            if (filter.getKeyword() != null &&
+                    !filter.getKeyword().trim().isEmpty()) {
 
-                String search = "%" + filter.getSearch().toLowerCase() + "%";
+                String keyword = "%" + filter.getKeyword().trim().toLowerCase() + "%";
 
                 predicates.add(
                         cb.or(
-                                cb.like(cb.lower(root.get("name")), search),
-                                cb.like(cb.lower(root.get("description")), search)
+                                cb.like(cb.lower(root.get("name")), keyword),
+                                cb.like(cb.lower(root.get("description")), keyword)
                         )
                 );
             }
