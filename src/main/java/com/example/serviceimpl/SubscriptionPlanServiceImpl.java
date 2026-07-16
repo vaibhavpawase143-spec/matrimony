@@ -59,9 +59,7 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
                 saved.getId(),
                 "Created subscription plan: " + saved.getName(),
                 null,
-                "Name=" + saved.getName() + ", Price=" + saved.getPrice() + ", Duration=" + saved.getDuration() + " days, Active=" + saved.getIsActive(),
-                "SYSTEM",
-                "SYSTEM"
+                "Name=" + saved.getName() + ", Price=" + saved.getPrice() + ", Duration=" + saved.getDuration() + " days, Active=" + saved.getIsActive()
         );
 
         return saved;
@@ -153,9 +151,7 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
                 saved.getId(),
                 "Updated subscription plan: " + saved.getName(),
                 oldValueDescription,
-                newValueDescription,
-                "SYSTEM",
-                "SYSTEM"
+                newValueDescription
         );
 
         return saved;
@@ -182,9 +178,7 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
                     saved.getId(),
                     "Soft deleted (deactivated) subscription plan: " + saved.getName(),
                     "Active=true",
-                    "Active=false",
-                    "SYSTEM",
-                    "SYSTEM"
+                    "Active=false"
             );
         }
     }

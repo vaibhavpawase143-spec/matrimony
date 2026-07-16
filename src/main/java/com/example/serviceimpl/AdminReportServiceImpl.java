@@ -109,9 +109,7 @@ public class AdminReportServiceImpl implements AdminReportService {
                 updatedReport.getId(),
                 "Marked report " + id + " as under review",
                 "Status = " + oldStatus,
-                "Status = " + ReportStatus.UNDER_REVIEW,
-                "SYSTEM",
-                "SYSTEM"
+                "Status = " + ReportStatus.UNDER_REVIEW
         );
 
         return adminReportMapper.toDTO(updatedReport);
@@ -149,9 +147,7 @@ public class AdminReportServiceImpl implements AdminReportService {
                 updatedReport.getId(),
                 "Approved report " + id,
                 "Status = " + oldStatus,
-                "Status = " + ReportStatus.APPROVED,
-                "SYSTEM",
-                "SYSTEM"
+                "Status = " + ReportStatus.APPROVED
         );
 
         return adminReportMapper.toDTO(updatedReport);
@@ -189,9 +185,7 @@ public class AdminReportServiceImpl implements AdminReportService {
                 updatedReport.getId(),
                 "Rejected report " + id,
                 "Status = " + oldStatus,
-                "Status = " + ReportStatus.REJECTED,
-                "SYSTEM",
-                "SYSTEM"
+                "Status = " + ReportStatus.REJECTED
         );
 
         return adminReportMapper.toDTO(updatedReport);

@@ -145,9 +145,7 @@ public class AdminPaymentServiceImpl
                 "Refunded payment of user: " + saved.getUser().getFullName(),
                 "Status=" + oldStatus,
                 "Status=REFUNDED, Refund Amount=" + refundAmount +
-                        ", Reason=" + refundReason,
-                "SYSTEM",
-                "SYSTEM"
+                        ", Reason=" + refundReason
         );
 
         return mapToResponse(saved);
@@ -180,9 +178,7 @@ public class AdminPaymentServiceImpl
                 saved.getId(),
                 "Marked payment as SUCCESS for user: " + saved.getUser().getFullName(),
                 "Status=" + oldStatus,
-                "Status=SUCCESS",
-                "SYSTEM",
-                "SYSTEM"
+                "Status=SUCCESS"
         );
 
         return mapToResponse(saved);
@@ -217,9 +213,7 @@ public class AdminPaymentServiceImpl
                 saved.getId(),
                 "Marked payment as FAILED for user: " + saved.getUser().getFullName(),
                 "Status=" + oldStatus,
-                "Status=FAILED, Reason=" + reason,
-                "SYSTEM",
-                "SYSTEM"
+                "Status=FAILED, Reason=" + reason
         );
 
         return mapToResponse(saved);

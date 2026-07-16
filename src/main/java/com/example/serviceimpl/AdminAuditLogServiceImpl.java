@@ -7,6 +7,7 @@ import com.example.model.AdminAuditLog;
 import com.example.repository.AdminAuditLogRepository;
 import com.example.repository.AdminRepository;
 import com.example.service.AdminAuditLogService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -22,7 +23,7 @@ public class AdminAuditLogServiceImpl implements AdminAuditLogService {
 
     private final AdminAuditLogRepository auditLogRepository;
     private final AdminRepository adminRepository;
-
+    private final HttpServletRequest request;
     @Override
     public void log(
             Long adminId,
@@ -32,10 +33,9 @@ public class AdminAuditLogServiceImpl implements AdminAuditLogService {
             Long entityId,
             String description,
             String oldValue,
-            String newValue,
-            String ipAddress,
-            String userAgent
-    ) {
+            String newValue
+    )
+    {
 
         Admin admin = adminRepository.findById(adminId)
                 .orElseThrow(() ->
@@ -51,12 +51,30 @@ public class AdminAuditLogServiceImpl implements AdminAuditLogService {
         auditLog.setDescription(description);
         auditLog.setOldValue(oldValue);
         auditLog.setNewValue(newValue);
-        auditLog.setIpAddress(ipAddress);
-        auditLog.setUserAgent(userAgent);
+        auditLog.setIpAddress(getClientIp());
+        auditLog.setUserAgent(getUserAgent());
 
         auditLogRepository.save(auditLog);
     }
+    private String getClientIp() {
 
+        String forwarded = request.getHeader("X-Forwarded-For");
+
+        if (forwarded != null && !forwarded.isBlank()) {
+            return forwarded.split(",")[0].trim();
+        }
+
+        return request.getRemoteAddr();
+    }
+
+    private String getUserAgent() {
+
+        String userAgent = request.getHeader("User-Agent");
+
+        return (userAgent == null || userAgent.isBlank())
+                ? "UNKNOWN"
+                : userAgent;
+    }
     @Override
     @Transactional(readOnly = true)
     public Page<AdminAuditLogResponseDTO> getAuditLogs(

@@ -113,7 +113,8 @@ public class AdminController {
 
     // ================= UPDATE ADMIN =================
     @PutMapping("/{id}")
-    public ApiResponse<AdminResponseDTO> update(@PathVariable Long id,
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    public ApiResponse<AdminResponseDTO> update(@PathVariable Long id,@Valid
                                                 @RequestBody AdminRequestDTO dto) {
 
         AdminResponseDTO existing = adminService.getById(id); // ✅ FIX
