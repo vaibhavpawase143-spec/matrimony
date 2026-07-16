@@ -5,12 +5,11 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+
 @Getter
 @Setter
 @Entity
-@Table(
-        name = "blood_groups"
-)
+@Table(name = "blood_groups")
 public class BloodGroup {
 
     @Id
@@ -18,7 +17,7 @@ public class BloodGroup {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "admin_id") // add nullable=false if required
+    @JoinColumn(name = "admin_id")
     private Admin admin;
 
     @Column(nullable = false, unique = true, length = 5)
@@ -33,53 +32,27 @@ public class BloodGroup {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    public BloodGroup() {}
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
+    @Column(name = "deleted_by")
+    private Long deletedBy;
+
+    public BloodGroup() {
+    }
 
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+
+        if (isActive == null) {
+            isActive = true;
+        }
     }
 
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
-    }
-
-    // ================= GETTERS & SETTERS =================
-
-    public Long getId() {
-        return id;
-    }
-
-    public Admin getAdmin() {
-        return admin;
-    }
-
-    public void setAdmin(Admin admin) {
-        this.admin = admin;
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public void setType(String type) {
-        this.type = type;
-    }
-
-    public Boolean getIsActive() {   // ✅ FIXED
-        return isActive;
-    }
-
-    public void setIsActive(Boolean isActive) {
-        this.isActive = isActive;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
     }
 }

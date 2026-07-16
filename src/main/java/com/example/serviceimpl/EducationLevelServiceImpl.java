@@ -1,127 +1,287 @@
 package com.example.serviceimpl;
 
+import com.example.dto.request.EducationLevelRequestDto;
+import com.example.dto.response.EducationLevelResponseDto;
+import com.example.exception.BadRequestException;
+import com.example.exception.ResourceNotFoundException;
+import com.example.model.Admin;
 import com.example.model.EducationLevel;
+import com.example.repository.AdminRepository;
 import com.example.repository.EducationLevelRepository;
 import com.example.service.EducationLevelService;
+import com.example.util.AuditHelper;
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
+@Transactional
 public class EducationLevelServiceImpl implements EducationLevelService {
 
+    private static final String MODULE = "MASTER";
+    private static final String ENTITY = "EDUCATION_LEVEL";
+
     private final EducationLevelRepository educationLevelRepository;
+    private final AdminRepository adminRepository;
+    private final AuditHelper auditHelper;
 
-    public EducationLevelServiceImpl(EducationLevelRepository educationLevelRepository) {
-        this.educationLevelRepository = educationLevelRepository;
-    }
-
-    // ✅ Create
     @Override
-    public EducationLevel create(EducationLevel educationLevel) {
+    public EducationLevelResponseDto create(EducationLevelRequestDto requestDto) {
 
-        if (educationLevelRepository.existsByNameIgnoreCase(educationLevel.getName())) {
-            throw new RuntimeException("Education level already exists: " + educationLevel.getName());
+        Admin admin = adminRepository.findById(requestDto.getAdminId())
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Admin not found."));
+
+        if (educationLevelRepository.existsByNameIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+                requestDto.getName(),
+                requestDto.getAdminId())) {
+
+            throw new BadRequestException("Education Level already exists.");
         }
 
-        return educationLevelRepository.save(educationLevel);
-    }
+        EducationLevel educationLevel = EducationLevel.builder()
+                .admin(admin)
+                .name(requestDto.getName().trim())
+                .isActive(requestDto.getIsActive())
+                .build();
 
-    // 🔄 Update
-    @Override
-    public EducationLevel update(Long id, EducationLevel educationLevel) {
+        EducationLevel saved = educationLevelRepository.save(educationLevel);
 
-        EducationLevel existing = educationLevelRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Education level not found with id: " + id));
+        auditHelper.logCreate(
+                MODULE,
+                ENTITY,
+                saved.getId(),
+                saved.getName(),
+                saved.getName()
+        );
 
-        educationLevelRepository.findByNameIgnoreCase(educationLevel.getName())
-                .ifPresent(e -> {
-                    if (!e.getId().equals(id)) {
-                        throw new RuntimeException("Education level already exists: " + educationLevel.getName());
-                    }
-                });
-
-        // ✏️ Update fields
-        existing.setName(educationLevel.getName());
-        existing.setIsActive(educationLevel.getIsActive());
-
-        return educationLevelRepository.save(existing);
-    }
-
-    // ❌ Delete
-    @Override
-    public void delete(Long id) {
-        EducationLevel existing = educationLevelRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Education level not found with id: " + id));
-
-        educationLevelRepository.delete(existing);
-    }
-
-    // 🔍 Get by ID
-    @Override
-    public Optional<EducationLevel> getById(Long id) {
-        return educationLevelRepository.findById(id);
-    }
-
-    // 🔍 Get all
-    @Override
-    public List<EducationLevel> getAll() {
-        return educationLevelRepository.findAll();
-    }
-
-    // 🔍 Find by name
-    @Override
-    public Optional<EducationLevel> getByName(String name) {
-        return educationLevelRepository.findByName(name);
+        return mapToResponse(saved);
     }
 
     @Override
-    public Optional<EducationLevel> getByNameIgnoreCase(String name) {
-        return educationLevelRepository.findByNameIgnoreCase(name);
+    public EducationLevelResponseDto update(Long id,
+                                            EducationLevelRequestDto requestDto) {
+
+        EducationLevel educationLevel = educationLevelRepository
+                .findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Education Level not found."));
+
+        boolean oldStatus = educationLevel.getIsActive();
+
+        if (educationLevelRepository
+                .findByNameIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+                        requestDto.getName(),
+                        requestDto.getAdminId())
+                .filter(e -> !e.getId().equals(id))
+                .isPresent()) {
+
+            throw new BadRequestException("Education Level already exists.");
+        }
+
+        Admin admin = adminRepository.findById(requestDto.getAdminId())
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Admin not found."));
+
+        String oldValue = educationLevel.getName();
+
+        educationLevel.setAdmin(admin);
+        educationLevel.setName(requestDto.getName().trim());
+        educationLevel.setIsActive(requestDto.getIsActive());
+
+        EducationLevel updated = educationLevelRepository.save(educationLevel);
+
+        auditHelper.logUpdate(
+                MODULE,
+                ENTITY,
+                updated.getId(),
+                updated.getName(),
+                oldValue,
+                updated.getName(),
+                oldStatus,
+                updated.getIsActive()
+        );
+
+        return mapToResponse(updated);
     }
 
-    // ✅ Duplicate check
     @Override
-    public boolean existsByName(String name) {
-        return educationLevelRepository.existsByName(name);
+    public void softDelete(Long id) {
+
+        EducationLevel educationLevel = educationLevelRepository
+                .findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Education Level not found."));
+
+        educationLevel.setDeletedAt(LocalDateTime.now());
+
+        educationLevelRepository.save(educationLevel);
+
+        auditHelper.logDelete(
+                MODULE,
+                ENTITY,
+                educationLevel.getId(),
+                educationLevel.getName(),
+                educationLevel.getName()
+        );
+    }
+    @Override
+    public void restore(Long id) {
+
+        EducationLevel educationLevel = educationLevelRepository
+                .findByIdAndDeletedAtIsNotNull(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Deleted Education Level not found."));
+
+        if (educationLevelRepository.existsByNameIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+                educationLevel.getName(),
+                educationLevel.getAdmin().getId())) {
+
+            throw new BadRequestException("Education Level already exists.");
+        }
+
+        educationLevel.setDeletedAt(null);
+        educationLevel.setDeletedBy(null);
+
+        educationLevelRepository.save(educationLevel);
+
+        auditHelper.logRestore(
+                MODULE,
+                ENTITY,
+                educationLevel.getId(),
+                educationLevel.getName(),
+                educationLevel.getName()
+        );
     }
 
     @Override
-    public boolean existsByNameIgnoreCase(String name) {
-        return educationLevelRepository.existsByNameIgnoreCase(name);
-    }
+    public void hardDelete(Long id) {
 
-    // 🔍 Active / Inactive
-    @Override
-    public List<EducationLevel> getActive() {
-        return educationLevelRepository.findByIsActiveTrue();
-    }
+        EducationLevel educationLevel = educationLevelRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Education Level not found."));
 
-    @Override
-    public List<EducationLevel> getInactive() {
-        return educationLevelRepository.findByIsActiveFalse();
-    }
+        auditHelper.logHardDelete(
+                MODULE,
+                ENTITY,
+                educationLevel.getId(),
+                educationLevel.getName(),
+                educationLevel.getName()
+        );
 
-    // 🔍 Admin-based
-    @Override
-    public List<EducationLevel> getByAdmin(Long adminId) {
-        return educationLevelRepository.findByAdminId(adminId);
+        educationLevelRepository.delete(educationLevel);
     }
 
     @Override
-    public List<EducationLevel> getActiveByAdmin(Long adminId) {
-        return educationLevelRepository.findByAdminIdAndIsActiveTrue(adminId);
+    public EducationLevelResponseDto getById(Long id) {
+
+        return mapToResponse(
+                educationLevelRepository.findByIdAndDeletedAtIsNull(id)
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException("Education Level not found."))
+        );
     }
 
-    // 🔍 Search
     @Override
-    public List<EducationLevel> search(String keyword) {
-        return educationLevelRepository.findByNameContainingIgnoreCase(keyword);
+    public List<EducationLevelResponseDto> getAll() {
+
+        return educationLevelRepository.findAllByDeletedAtIsNull()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
     }
 
     @Override
-    public List<EducationLevel> searchByAdmin(Long adminId, String keyword) {
-        return educationLevelRepository.findByAdminIdAndNameContainingIgnoreCase(adminId, keyword);
+    public List<EducationLevelResponseDto> getDeleted() {
+
+        return educationLevelRepository.findByDeletedAtIsNotNull()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Override
+    public List<EducationLevelResponseDto> getActive() {
+
+        return educationLevelRepository.findByIsActiveTrueAndDeletedAtIsNull()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Override
+    public List<EducationLevelResponseDto> getInactive() {
+
+        return educationLevelRepository.findByIsActiveFalseAndDeletedAtIsNull()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Override
+    public List<EducationLevelResponseDto> getByAdmin(Long adminId) {
+
+        return educationLevelRepository.findByAdmin_IdAndDeletedAtIsNull(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Override
+    public List<EducationLevelResponseDto> getActiveByAdmin(Long adminId) {
+
+        return educationLevelRepository
+                .findByAdmin_IdAndIsActiveTrueAndDeletedAtIsNull(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Override
+    public List<EducationLevelResponseDto> getInactiveByAdmin(Long adminId) {
+
+        return educationLevelRepository
+                .findByAdmin_IdAndIsActiveFalseAndDeletedAtIsNull(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Override
+    public List<EducationLevelResponseDto> search(String keyword) {
+
+        return educationLevelRepository
+                .findByNameContainingIgnoreCaseAndDeletedAtIsNull(keyword)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Override
+    public List<EducationLevelResponseDto> searchByAdmin(Long adminId, String keyword) {
+
+        return educationLevelRepository
+                .findByAdmin_IdAndNameContainingIgnoreCaseAndDeletedAtIsNull(adminId, keyword)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    private EducationLevelResponseDto mapToResponse(EducationLevel entity) {
+
+        return EducationLevelResponseDto.builder()
+                .id(entity.getId())
+                .adminId(entity.getAdmin().getId())
+                .name(entity.getName())
+                .isActive(entity.getIsActive())
+                .createdAt(entity.getCreatedAt())
+                .updatedAt(entity.getUpdatedAt())
+                .createdAt(entity.getDeletedAt())
+                .deletedBy(entity.getDeletedBy())
+                .build();
     }
 }

@@ -2,18 +2,27 @@ package com.example.model;
 
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.springframework.web.bind.annotation.GetMapping;
 
 import java.time.LocalDateTime;
+
 @Getter
 @Setter
-
+@NoArgsConstructor
 @Entity
 @Table(
         name = "disability_statuses",
         uniqueConstraints = {
-                @UniqueConstraint(columnNames = {"value", "admin_id"})
+                @UniqueConstraint(
+                        name = "uk_disability_status_value_admin",
+                        columnNames = {"value", "admin_id"}
+                )
+        },
+        indexes = {
+                @Index(name = "idx_disability_admin", columnList = "admin_id"),
+                @Index(name = "idx_disability_active", columnList = "is_active"),
+                @Index(name = "idx_disability_deleted", columnList = "deleted_at")
         }
 )
 public class DisabilityStatus {
@@ -25,8 +34,7 @@ public class DisabilityStatus {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "admin_id")
     private Admin admin;
-    @Column(name = "admin_id", insertable = false, updatable = false)
-    private Long adminId;
+
     @Column(nullable = false, length = 100)
     private String value;
 
@@ -39,54 +47,24 @@ public class DisabilityStatus {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    public DisabilityStatus() {}
+    // ==========================
+    // SOFT DELETE
+    // ==========================
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
+    @Column(name = "deleted_by")
+    private Long deletedBy;
 
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
     }
 
     @PreUpdate
     protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
-
-    // --- Getters & Setters ---
-
-    public Long getId() {
-        return id;
-    }
-
-    public Admin getAdmin() {
-        return admin;
-    }
-
-    public void setAdmin(Admin admin) {
-        this.admin = admin;
-    }
-
-    public String getValue() {
-        return value;
-    }
-
-    public void setValue(String value) {
-        this.value = value;
-    }
-
-    public Boolean getIsActive() {   // ✅ FIXED
-        return isActive;
-    }
-
-    public void setIsActive(Boolean isActive) {
-        this.isActive = isActive;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
+        this.updatedAt = LocalDateTime.now();
     }
 }

@@ -1,157 +1,215 @@
 package com.example.controller.master;
 
 import com.example.dto.request.HeightRequestDTO;
+import com.example.dto.response.ApiResponse;
 import com.example.dto.response.HeightResponseDTO;
-import com.example.model.Admin;
-import com.example.model.Height;
 import com.example.service.HeightService;
-
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/heights")
+@RequestMapping("/api/master/heights")
 @RequiredArgsConstructor
 public class HeightController {
 
     private final HeightService heightService;
 
-    // ✅ Create
+    // =========================
+    // CREATE
+    // =========================
+
     @PostMapping
-    public HeightResponseDTO create(@RequestBody HeightRequestDTO dto) {
+    @ResponseStatus(HttpStatus.CREATED)
+    public ApiResponse<HeightResponseDTO> create(
+            @Valid @RequestBody HeightRequestDTO requestDto) {
 
-        Height entity = mapToEntity(dto);
-
-        Height saved = heightService.create(entity);
-
-        return mapToResponse(saved);
+        return ApiResponse.success(
+                "Height created successfully.",
+                heightService.create(requestDto)
+        );
     }
 
-    // 🔄 Update
+    // =========================
+    // UPDATE
+    // =========================
+
     @PutMapping("/{id}")
-    public HeightResponseDTO update(
+    public ApiResponse<HeightResponseDTO> update(
             @PathVariable Long id,
-            @RequestBody HeightRequestDTO dto
-    ) {
+            @Valid @RequestBody HeightRequestDTO requestDto) {
 
-        Height entity = mapToEntity(dto);
-
-        Height updated = heightService.update(id, entity);
-
-        return mapToResponse(updated);
+        return ApiResponse.success(
+                "Height updated successfully.",
+                heightService.update(id, requestDto)
+        );
     }
 
-    // ❌ Delete
+    // =========================
+    // SOFT DELETE
+    // =========================
+
     @DeleteMapping("/{id}")
-    public String delete(@PathVariable Long id) {
+    public ApiResponse<Void> softDelete(@PathVariable Long id) {
 
-        heightService.delete(id);
+        heightService.softDelete(id);
 
-        return "Height deleted successfully";
+        return ApiResponse.success(
+                "Height deleted successfully.",
+                null
+        );
     }
 
-    // 🔍 Get by ID
+    // =========================
+    // RESTORE
+    // =========================
+
+    @PatchMapping("/{id}/restore")
+    public ApiResponse<Void> restore(@PathVariable Long id) {
+
+        heightService.restore(id);
+
+        return ApiResponse.success(
+                "Height restored successfully.",
+                null
+        );
+    }
+
+    // =========================
+    // HARD DELETE
+    // =========================
+
+    @DeleteMapping("/{id}/hard")
+    public ApiResponse<Void> hardDelete(@PathVariable Long id) {
+
+        heightService.hardDelete(id);
+
+        return ApiResponse.success(
+                "Height permanently deleted.",
+                null
+        );
+    }
+
+    // =========================
+    // GET BY ID
+    // =========================
+
     @GetMapping("/{id}")
-    public HeightResponseDTO getById(@PathVariable Long id) {
+    public ApiResponse<HeightResponseDTO> getById(@PathVariable Long id) {
 
-        Height height = heightService.getById(id)
-                .orElseThrow(() -> new RuntimeException("Height not found"));
-
-        return mapToResponse(height);
+        return ApiResponse.success(
+                "Height fetched successfully.",
+                heightService.getById(id)
+        );
     }
 
-    // 🔍 Get all
+    // =========================
+    // GET ALL
+    // =========================
+
     @GetMapping
-    public List<HeightResponseDTO> getAll() {
+    public ApiResponse<List<HeightResponseDTO>> getAll() {
 
-        return heightService.getAll()
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+        return ApiResponse.success(
+                "Heights fetched successfully.",
+                heightService.getAll()
+        );
     }
 
-    // 🔍 Get active
+    // =========================
+    // GET DELETED
+    // =========================
+
+    @GetMapping("/deleted")
+    public ApiResponse<List<HeightResponseDTO>> getDeleted() {
+
+        return ApiResponse.success(
+                "Deleted Heights fetched successfully.",
+                heightService.getDeleted()
+        );
+    }
+
+    // =========================
+    // ACTIVE / INACTIVE
+    // =========================
+
     @GetMapping("/active")
-    public List<HeightResponseDTO> getActive() {
+    public ApiResponse<List<HeightResponseDTO>> getActive() {
 
-        return heightService.getActive()
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+        return ApiResponse.success(
+                "Active Heights fetched successfully.",
+                heightService.getActive()
+        );
     }
 
-    // 🔍 Get by admin
+    @GetMapping("/inactive")
+    public ApiResponse<List<HeightResponseDTO>> getInactive() {
+
+        return ApiResponse.success(
+                "Inactive Heights fetched successfully.",
+                heightService.getInactive()
+        );
+    }
+
+    // =========================
+    // ADMIN WISE
+    // =========================
+
     @GetMapping("/admin/{adminId}")
-    public List<HeightResponseDTO> getByAdmin(
-            @PathVariable Long adminId
-    ) {
+    public ApiResponse<List<HeightResponseDTO>> getByAdmin(
+            @PathVariable Long adminId) {
 
-        return heightService.getByAdmin(adminId)
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+        return ApiResponse.success(
+                "Heights fetched successfully.",
+                heightService.getByAdmin(adminId)
+        );
     }
 
-    // 🔍 Search
+    @GetMapping("/admin/{adminId}/active")
+    public ApiResponse<List<HeightResponseDTO>> getActiveByAdmin(
+            @PathVariable Long adminId) {
+
+        return ApiResponse.success(
+                "Active Heights fetched successfully.",
+                heightService.getActiveByAdmin(adminId)
+        );
+    }
+
+    @GetMapping("/admin/{adminId}/inactive")
+    public ApiResponse<List<HeightResponseDTO>> getInactiveByAdmin(
+            @PathVariable Long adminId) {
+
+        return ApiResponse.success(
+                "Inactive Heights fetched successfully.",
+                heightService.getInactiveByAdmin(adminId)
+        );
+    }
+
+    // =========================
+    // SEARCH
+    // =========================
+
     @GetMapping("/search")
-    public List<HeightResponseDTO> search(
-            @RequestParam String keyword
-    ) {
+    public ApiResponse<List<HeightResponseDTO>> search(
+            @RequestParam String keyword) {
 
-        return heightService.search(keyword)
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+        return ApiResponse.success(
+                "Search completed successfully.",
+                heightService.search(keyword)
+        );
     }
 
-    // ===============================
-    // 🔁 MAPPING METHODS
-    // ===============================
+    @GetMapping("/admin/{adminId}/search")
+    public ApiResponse<List<HeightResponseDTO>> searchByAdmin(
+            @PathVariable Long adminId,
+            @RequestParam String keyword) {
 
-    private Height mapToEntity(HeightRequestDTO dto) {
-
-        Height entity = new Height();
-
-        entity.setHeight(dto.getHeight());
-
-        entity.setIsActive(dto.getIsActive());
-
-        if (dto.getAdminId() != null) {
-
-            Admin admin = new Admin();
-
-            admin.setId(dto.getAdminId());
-
-            entity.setAdmin(admin);
-        }
-
-        return entity;
-    }
-
-    private HeightResponseDTO mapToResponse(Height entity) {
-
-        HeightResponseDTO dto = new HeightResponseDTO();
-
-        dto.setId(entity.getId());
-
-        // IMPORTANT FOR FRONTEND
-        dto.setName(entity.getHeight());
-
-        dto.setHeight(entity.getHeight());
-
-        dto.setIsActive(entity.getIsActive());
-
-        dto.setCreatedAt(entity.getCreatedAt());
-
-        dto.setUpdatedAt(entity.getUpdatedAt());
-
-        if (entity.getAdmin() != null) {
-            dto.setAdminId(entity.getAdmin().getId());
-        }
-
-        return dto;
+        return ApiResponse.success(
+                "Search completed successfully.",
+                heightService.searchByAdmin(adminId, keyword)
+        );
     }
 }

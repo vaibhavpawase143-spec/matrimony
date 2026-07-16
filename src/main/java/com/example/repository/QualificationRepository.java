@@ -10,21 +10,60 @@ import java.util.Optional;
 @Repository
 public interface QualificationRepository extends JpaRepository<Qualification, Long> {
 
-    // 🔍 Find by name (admin-specific)
-    Optional<Qualification> findByNameIgnoreCaseAndAdminId(String name, Long adminId);
+    // =========================
+    // BASIC
+    // =========================
 
-    // 🔍 Check duplicate (admin-specific)
-    boolean existsByNameIgnoreCaseAndAdminId(String name, Long adminId);
+    Optional<Qualification> findByIdAndDeletedAtIsNull(Long id);
 
-    // 🔍 Get all records by admin
-    List<Qualification> findByAdminId(Long adminId);
+    Optional<Qualification> findByIdAndDeletedAtIsNotNull(Long id);
 
-    // 🔍 Active records by admin
-    List<Qualification> findByAdminIdAndIsActiveTrue(Long adminId);
+    List<Qualification> findAllByDeletedAtIsNull();
 
-    // 🔍 Inactive records by admin
-    List<Qualification> findByAdminIdAndIsActiveFalse(Long adminId);
+    List<Qualification> findByDeletedAtIsNotNull();
 
-    // 🔍 Search (admin + keyword)
-    List<Qualification> findByAdminIdAndNameContainingIgnoreCase(Long adminId, String keyword);
+    // =========================
+    // DUPLICATE CHECK
+    // =========================
+
+    boolean existsByNameIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+            String name,
+            Long adminId
+    );
+
+    Optional<Qualification> findByNameIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+            String name,
+            Long adminId
+    );
+
+    // =========================
+    // ACTIVE / INACTIVE
+    // =========================
+
+    List<Qualification> findByIsActiveTrueAndDeletedAtIsNull();
+
+    List<Qualification> findByIsActiveFalseAndDeletedAtIsNull();
+
+    // =========================
+    // ADMIN
+    // =========================
+
+    List<Qualification> findByAdmin_IdAndDeletedAtIsNull(Long adminId);
+
+    List<Qualification> findByAdmin_IdAndIsActiveTrueAndDeletedAtIsNull(Long adminId);
+
+    List<Qualification> findByAdmin_IdAndIsActiveFalseAndDeletedAtIsNull(Long adminId);
+
+    // =========================
+    // SEARCH
+    // =========================
+
+    List<Qualification> findByNameContainingIgnoreCaseAndDeletedAtIsNull(
+            String keyword
+    );
+
+    List<Qualification> findByAdmin_IdAndNameContainingIgnoreCaseAndDeletedAtIsNull(
+            Long adminId,
+            String keyword
+    );
 }

@@ -1,7 +1,8 @@
 package com.example.controller.master;
 
 import com.example.dto.request.BodyTypeRequestDTO;
-import com.example.dto.responce.BodyTypeResponseDTO;
+import com.example.dto.response.ApiResponse;
+import com.example.dto.response.BodyTypeResponseDTO;
 import com.example.model.BodyType;
 import com.example.service.BodyTypeService;
 import jakarta.validation.Valid;
@@ -37,81 +38,100 @@ public class BodyTypeController {
     // =========================================
 
     @PostMapping("/api/admins/{adminId}/body-types")
-    public BodyTypeResponseDTO create(
+    public ApiResponse<BodyTypeResponseDTO> create(
             @PathVariable Long adminId,
             @Valid @RequestBody BodyTypeRequestDTO dto
     ) {
 
-        BodyType saved =
-                bodyTypeService.create(
-                        mapToEntity(dto),
-                        adminId
-                );
+        BodyType saved = bodyTypeService.create(
+                mapToEntity(dto),
+                adminId
+        );
 
-        return mapToResponse(saved);
+        return ApiResponse.<BodyTypeResponseDTO>builder()
+                .success(true)
+                .message("Body type created successfully.")
+                .data(mapToResponse(saved))
+                .build();
     }
-
     @GetMapping("/api/admins/{adminId}/body-types/{id}")
-    public BodyTypeResponseDTO getById(
+    public ApiResponse<BodyTypeResponseDTO> getById(
             @PathVariable Long adminId,
             @PathVariable Long id
     ) {
 
-        return mapToResponse(
-                bodyTypeService.getById(id, adminId)
-        );
-    }
+        BodyType bodyType = bodyTypeService.getById(id, adminId);
 
+        return ApiResponse.<BodyTypeResponseDTO>builder()
+                .success(true)
+                .message("Body type retrieved successfully.")
+                .data(mapToResponse(bodyType))
+                .build();
+    }
     @GetMapping("/api/admins/{adminId}/body-types")
-    public List<BodyTypeResponseDTO> getAll(
+    public ApiResponse<List<BodyTypeResponseDTO>> getAll(
             @PathVariable Long adminId
     ) {
 
-        return bodyTypeService.getAll(adminId)
+        List<BodyTypeResponseDTO> bodyTypes = bodyTypeService.getAll(adminId)
                 .stream()
                 .map(this::mapToResponse)
-                .collect(Collectors.toList());
-    }
+                .toList();
 
+        return ApiResponse.<List<BodyTypeResponseDTO>>builder()
+                .success(true)
+                .message("Body types retrieved successfully.")
+                .data(bodyTypes)
+                .build();
+    }
     @GetMapping("/api/admins/{adminId}/body-types/active")
-    public List<BodyTypeResponseDTO> getActive(
+    public ApiResponse<List<BodyTypeResponseDTO>> getActive(
             @PathVariable Long adminId
     ) {
 
-        return bodyTypeService.getActive(adminId)
+        List<BodyTypeResponseDTO> activeBodyTypes = bodyTypeService.getActive(adminId)
                 .stream()
                 .map(this::mapToResponse)
-                .collect(Collectors.toList());
-    }
+                .toList();
 
+        return ApiResponse.<List<BodyTypeResponseDTO>>builder()
+                .success(true)
+                .message("Active body types retrieved successfully.")
+                .data(activeBodyTypes)
+                .build();
+    }
     @PutMapping("/api/admins/{adminId}/body-types/{id}")
-    public BodyTypeResponseDTO update(
+    public ApiResponse<BodyTypeResponseDTO> update(
             @PathVariable Long adminId,
             @PathVariable Long id,
             @Valid @RequestBody BodyTypeRequestDTO dto
     ) {
 
-        BodyType updated =
-                bodyTypeService.update(
-                        id,
-                        mapToEntity(dto),
-                        adminId
-                );
+        BodyType updated = bodyTypeService.update(
+                id,
+                mapToEntity(dto),
+                adminId
+        );
 
-        return mapToResponse(updated);
+        return ApiResponse.<BodyTypeResponseDTO>builder()
+                .success(true)
+                .message("Body type updated successfully.")
+                .data(mapToResponse(updated))
+                .build();
     }
-
     @DeleteMapping("/api/admins/{adminId}/body-types/{id}")
-    public String delete(
+    public ApiResponse<String> delete(
             @PathVariable Long adminId,
             @PathVariable Long id
     ) {
 
         bodyTypeService.delete(id, adminId);
 
-        return "Body type deleted successfully";
+        return ApiResponse.<String>builder()
+                .success(true)
+                .message("Body type deleted successfully.")
+                .build();
     }
-
     // =========================================
     // MAPPERS
     // =========================================
@@ -153,4 +173,51 @@ public class BodyTypeController {
 
         return dto;
     }
+    @GetMapping("/api/admins/{adminId}/body-types/deleted")
+    public ApiResponse<List<BodyTypeResponseDTO>> getDeleted(
+            @PathVariable Long adminId
+    ) {
+
+        List<BodyTypeResponseDTO> deleted = bodyTypeService
+                .getDeleted(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+
+        return ApiResponse.<List<BodyTypeResponseDTO>>builder()
+                .success(true)
+                .message("Deleted body types retrieved successfully.")
+                .data(deleted)
+                .build();
+    }
+
+    @PutMapping("/api/admins/{adminId}/body-types/restore/{id}")
+    public ApiResponse<BodyTypeResponseDTO> restore(
+            @PathVariable Long adminId,
+            @PathVariable Long id
+    ) {
+
+        BodyType restored = bodyTypeService.restore(id);
+
+        return ApiResponse.<BodyTypeResponseDTO>builder()
+                .success(true)
+                .message("Body type restored successfully.")
+                .data(mapToResponse(restored))
+                .build();
+    }
+
+    @DeleteMapping("/api/admins/{adminId}/body-types/hard-delete/{id}")
+    public ApiResponse<String> hardDelete(
+            @PathVariable Long adminId,
+            @PathVariable Long id
+    ) {
+
+        bodyTypeService.hardDelete(id);
+
+        return ApiResponse.<String>builder()
+                .success(true)
+                .message("Body type permanently deleted successfully.")
+                .build();
+    }
+
 }

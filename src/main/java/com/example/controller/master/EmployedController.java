@@ -1,149 +1,214 @@
 package com.example.controller.master;
 
 import com.example.dto.request.EmployedRequestDto;
+import com.example.dto.response.ApiResponse;
 import com.example.dto.response.EmployedResponseDto;
-import com.example.model.Admin;
-import com.example.model.Employed;
 import com.example.service.EmployedService;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/master/employed")
+@RequiredArgsConstructor
 public class EmployedController {
 
     private final EmployedService employedService;
 
-    public EmployedController(EmployedService employedService) {
-        this.employedService = employedService;
-    }
+    // =========================
+    // CREATE
+    // =========================
 
-    // ✅ Create
     @PostMapping
-    public EmployedResponseDto create(@Valid @RequestBody EmployedRequestDto dto) {
-        Employed entity = mapToEntity(dto);
-        return mapToResponse(employedService.create(entity));
+    @ResponseStatus(HttpStatus.CREATED)
+    public ApiResponse<EmployedResponseDto> create(
+            @Valid @RequestBody EmployedRequestDto requestDto) {
+
+        return ApiResponse.success(
+                "Employed created successfully.",
+                employedService.create(requestDto)
+        );
     }
 
-    // 🔄 Update
+    // =========================
+    // UPDATE
+    // =========================
+
     @PutMapping("/{id}")
-    public EmployedResponseDto update(@PathVariable Long id,
-                                      @Valid @RequestBody EmployedRequestDto dto) {
-        Employed entity = mapToEntity(dto);
-        return mapToResponse(employedService.update(id, entity));
+    public ApiResponse<EmployedResponseDto> update(
+            @PathVariable Long id,
+            @Valid @RequestBody EmployedRequestDto requestDto) {
+
+        return ApiResponse.success(
+                "Employed updated successfully.",
+                employedService.update(id, requestDto)
+        );
     }
 
-    // ❌ Delete
+    // =========================
+    // SOFT DELETE
+    // =========================
+
     @DeleteMapping("/{id}")
-    public String delete(@PathVariable Long id) {
-        employedService.delete(id);
-        return "Employed deleted successfully";
+    public ApiResponse<Void> softDelete(@PathVariable Long id) {
+
+        employedService.softDelete(id);
+
+        return ApiResponse.success(
+                "Employed deleted successfully.",
+                null
+        );
     }
 
-    // 🔍 Get by ID
+    // =========================
+    // RESTORE
+    // =========================
+
+    @PatchMapping("/{id}/restore")
+    public ApiResponse<Void> restore(@PathVariable Long id) {
+
+        employedService.restore(id);
+
+        return ApiResponse.success(
+                "Employed restored successfully.",
+                null
+        );
+    }
+
+    // =========================
+    // HARD DELETE
+    // =========================
+
+    @DeleteMapping("/{id}/hard")
+    public ApiResponse<Void> hardDelete(@PathVariable Long id) {
+
+        employedService.hardDelete(id);
+
+        return ApiResponse.success(
+                "Employed permanently deleted.",
+                null
+        );
+    }
+    // =========================
+    // GET BY ID
+    // =========================
+
     @GetMapping("/{id}")
-    public EmployedResponseDto getById(@PathVariable Long id) {
-        return employedService.getById(id)
-                .map(this::mapToResponse)
-                .orElseThrow(() -> new RuntimeException("Employed not found"));
+    public ApiResponse<EmployedResponseDto> getById(@PathVariable Long id) {
+
+        return ApiResponse.success(
+                "Employed fetched successfully.",
+                employedService.getById(id)
+        );
     }
 
-    // 🔍 Get all
+    // =========================
+    // GET ALL
+    // =========================
+
     @GetMapping
-    public List<EmployedResponseDto> getAll() {
-        return employedService.getAll()
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+    public ApiResponse<List<EmployedResponseDto>> getAll() {
+
+        return ApiResponse.success(
+                "Employed records fetched successfully.",
+                employedService.getAll()
+        );
     }
 
-    // 🔍 Active
+    // =========================
+    // GET DELETED
+    // =========================
+
+    @GetMapping("/deleted")
+    public ApiResponse<List<EmployedResponseDto>> getDeleted() {
+
+        return ApiResponse.success(
+                "Deleted employed records fetched successfully.",
+                employedService.getDeleted()
+        );
+    }
+
+    // =========================
+    // ACTIVE / INACTIVE
+    // =========================
+
     @GetMapping("/active")
-    public List<EmployedResponseDto> getActive() {
-        return employedService.getActive()
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+    public ApiResponse<List<EmployedResponseDto>> getActive() {
+
+        return ApiResponse.success(
+                "Active employed records fetched successfully.",
+                employedService.getActive()
+        );
     }
 
-    // 🔍 Inactive
     @GetMapping("/inactive")
-    public List<EmployedResponseDto> getInactive() {
-        return employedService.getInactive()
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+    public ApiResponse<List<EmployedResponseDto>> getInactive() {
+
+        return ApiResponse.success(
+                "Inactive employed records fetched successfully.",
+                employedService.getInactive()
+        );
     }
 
-    // 🔍 By Admin
+    // =========================
+    // ADMIN WISE
+    // =========================
+
     @GetMapping("/admin/{adminId}")
-    public List<EmployedResponseDto> getByAdmin(@PathVariable Long adminId) {
-        return employedService.getByAdmin(adminId)
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+    public ApiResponse<List<EmployedResponseDto>> getByAdmin(
+            @PathVariable Long adminId) {
+
+        return ApiResponse.success(
+                "Employed records fetched successfully.",
+                employedService.getByAdmin(adminId)
+        );
     }
 
-    // 🔍 Active by Admin
     @GetMapping("/admin/{adminId}/active")
-    public List<EmployedResponseDto> getActiveByAdmin(@PathVariable Long adminId) {
-        return employedService.getActiveByAdmin(adminId)
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+    public ApiResponse<List<EmployedResponseDto>> getActiveByAdmin(
+            @PathVariable Long adminId) {
+
+        return ApiResponse.success(
+                "Active employed records fetched successfully.",
+                employedService.getActiveByAdmin(adminId)
+        );
     }
 
-    // 🔍 Search
+    @GetMapping("/admin/{adminId}/inactive")
+    public ApiResponse<List<EmployedResponseDto>> getInactiveByAdmin(
+            @PathVariable Long adminId) {
+
+        return ApiResponse.success(
+                "Inactive employed records fetched successfully.",
+                employedService.getInactiveByAdmin(adminId)
+        );
+    }
+
+    // =========================
+    // SEARCH
+    // =========================
+
     @GetMapping("/search")
-    public List<EmployedResponseDto> search(@RequestParam String keyword) {
-        return employedService.search(keyword)
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+    public ApiResponse<List<EmployedResponseDto>> search(
+            @RequestParam String keyword) {
+
+        return ApiResponse.success(
+                "Search completed successfully.",
+                employedService.search(keyword)
+        );
     }
 
-    // 🔍 Search by Admin
     @GetMapping("/admin/{adminId}/search")
-    public List<EmployedResponseDto> searchByAdmin(@PathVariable Long adminId,
-                                                   @RequestParam String keyword) {
-        return employedService.searchByAdmin(adminId, keyword)
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
-    }
+    public ApiResponse<List<EmployedResponseDto>> searchByAdmin(
+            @PathVariable Long adminId,
+            @RequestParam String keyword) {
 
-    // =========================
-    // 🔁 MAPPING METHODS
-    // =========================
-
-    private Employed mapToEntity(EmployedRequestDto dto) {
-        Employed entity = new Employed();
-
-        Admin admin = new Admin();
-        admin.setId(dto.getAdminId());
-
-        entity.setAdmin(admin);
-        entity.setName(dto.getName());
-        entity.setIsActive(dto.getIsActive());
-
-        return entity;
-    }
-
-    private EmployedResponseDto mapToResponse(Employed entity) {
-        EmployedResponseDto dto = new EmployedResponseDto();
-
-        dto.setId(entity.getId());
-        dto.setName(entity.getName());
-        dto.setIsActive(entity.getIsActive());
-        dto.setCreatedAt(entity.getCreatedAt());
-        dto.setUpdatedAt(entity.getUpdatedAt());
-
-        // 🔥 Use direct adminId (better performance)
-        dto.setAdminId(entity.getAdminId());
-
-        return dto;
+        return ApiResponse.success(
+                "Search completed successfully.",
+                employedService.searchByAdmin(adminId, keyword)
+        );
     }
 }

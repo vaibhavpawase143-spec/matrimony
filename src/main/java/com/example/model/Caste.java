@@ -1,17 +1,28 @@
 package com.example.model;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 import java.time.LocalDateTime;
 
+@Getter
+@Setter
+@NoArgsConstructor
 @Entity
 @Table(
         name = "castes",
-        uniqueConstraints = {
-                @UniqueConstraint(columnNames = {"name", "religion_id"})
-        },
         indexes = {
+                @Index(name = "idx_caste_name", columnList = "name"),
                 @Index(name = "idx_caste_religion", columnList = "religion_id"),
                 @Index(name = "idx_caste_active", columnList = "is_active")
+        },
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_caste_admin_religion_name",
+                        columnNames = {"admin_id", "religion_id", "name"}
+                )
         }
 )
 public class Caste {
@@ -28,7 +39,7 @@ public class Caste {
     private String name;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "religion_id") // add nullable=false if required
+    @JoinColumn(name = "religion_id", nullable = false)
     private Religion religion;
 
     @Column(name = "is_active", nullable = false)
@@ -40,61 +51,24 @@ public class Caste {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    public Caste() {}
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
+    @Column(name = "deleted_by")
+    private Long deletedBy;
 
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+
+        if (isActive == null) {
+            isActive = true;
+        }
     }
 
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
-    }
-
-    // ================= GETTERS & SETTERS =================
-
-    public Long getId() {
-        return id;
-    }
-
-    public Admin getAdmin() {
-        return admin;
-    }
-
-    public void setAdmin(Admin admin) {
-        this.admin = admin;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public Religion getReligion() {
-        return religion;
-    }
-
-    public void setReligion(Religion religion) {
-        this.religion = religion;
-    }
-
-    public Boolean getIsActive() {   // ✅ FIXED
-        return isActive;
-    }
-
-    public void setIsActive(Boolean isActive) {
-        this.isActive = isActive;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
     }
 }

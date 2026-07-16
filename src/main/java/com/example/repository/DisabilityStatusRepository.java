@@ -5,35 +5,48 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
-import java.util.Optional;
 
 @Repository
 public interface DisabilityStatusRepository extends JpaRepository<DisabilityStatus, Long> {
 
-    // 🔍 Find by value
-    Optional<DisabilityStatus> findByValue(String value);
+    // ==========================
+    // DUPLICATE CHECK
+    // ==========================
 
-    // 🔥 Case-insensitive (important)
-    Optional<DisabilityStatus> findByValueIgnoreCase(String value);
+    boolean existsByValueIgnoreCaseAndDeletedAtIsNull(String value);
 
-    // ✅ Duplicate check
-    boolean existsByValue(String value);
+    // ==========================
+    // GET
+    // ==========================
 
-    boolean existsByValueIgnoreCase(String value);
+    List<DisabilityStatus> findByDeletedAtIsNull();
 
-    // 🔍 Active / Inactive
-    List<DisabilityStatus> findByIsActiveTrue();
-    List<DisabilityStatus> findByIsActiveFalse();
+    List<DisabilityStatus> findByDeletedAtIsNotNull();
 
-    // 🔍 Admin-based filtering
-    List<DisabilityStatus> findByAdminId(Long adminId);
+    List<DisabilityStatus> findByIsActiveTrueAndDeletedAtIsNull();
 
-    // ✅ Active by admin
-    List<DisabilityStatus> findByAdminIdAndIsActiveTrue(Long adminId);
+    List<DisabilityStatus> findByIsActiveFalseAndDeletedAtIsNull();
 
-    // 🔍 Search (global)
-    List<DisabilityStatus> findByValueContainingIgnoreCase(String keyword);
+    // ==========================
+    // ADMIN
+    // ==========================
 
-    // 🔥 Search within admin (multi-tenant support)
-    List<DisabilityStatus> findByAdminIdAndValueContainingIgnoreCase(Long adminId, String keyword);
+    List<DisabilityStatus> findByAdmin_IdAndDeletedAtIsNull(Long adminId);
+
+    List<DisabilityStatus> findByAdmin_IdAndDeletedAtIsNotNull(Long adminId);
+
+    List<DisabilityStatus> findByAdmin_IdAndIsActiveTrueAndDeletedAtIsNull(Long adminId);
+
+    // ==========================
+    // SEARCH
+    // ==========================
+
+    List<DisabilityStatus> findByValueContainingIgnoreCaseAndDeletedAtIsNull(
+            String keyword
+    );
+
+    List<DisabilityStatus> findByAdmin_IdAndValueContainingIgnoreCaseAndDeletedAtIsNull(
+            Long adminId,
+            String keyword
+    );
 }

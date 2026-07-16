@@ -10,30 +10,74 @@ import java.util.Optional;
 @Repository
 public interface EducationLevelRepository extends JpaRepository<EducationLevel, Long> {
 
-    // 🔍 Find by name
-    Optional<EducationLevel> findByName(String name);
+    // =========================
+    // Get By ID
+    // =========================
 
-    // 🔥 Case-insensitive
-    Optional<EducationLevel> findByNameIgnoreCase(String name);
+    Optional<EducationLevel> findByIdAndDeletedAtIsNull(Long id);
 
-    // ✅ Duplicate check
-    boolean existsByName(String name);
+    // =========================
+    // Get All
+    // =========================
 
-    boolean existsByNameIgnoreCase(String name);
+    List<EducationLevel> findAllByDeletedAtIsNull();
 
-    // 🔍 Active / Inactive
-    List<EducationLevel> findByIsActiveTrue();
-    List<EducationLevel> findByIsActiveFalse();
+    // =========================
+    // Find By Name
+    // =========================
 
-    // 🔍 Admin-based filtering
-    List<EducationLevel> findByAdminId(Long adminId);
+    Optional<EducationLevel> findByNameIgnoreCaseAndDeletedAtIsNull(String name);
 
-    // ✅ Active by admin
-    List<EducationLevel> findByAdminIdAndIsActiveTrue(Long adminId);
+    Optional<EducationLevel> findByNameIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+            String name,
+            Long adminId
+    );
 
-    // 🔍 Search (global)
-    List<EducationLevel> findByNameContainingIgnoreCase(String keyword);
+    // =========================
+    // Duplicate Check
+    // =========================
 
-    // 🔥 Search within admin (multi-tenant support)
-    List<EducationLevel> findByAdminIdAndNameContainingIgnoreCase(Long adminId, String keyword);
+    boolean existsByNameIgnoreCaseAndDeletedAtIsNull(String name);
+
+    boolean existsByNameIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+            String name,
+            Long adminId
+    );
+
+    // =========================
+    // Active / Inactive
+    // =========================
+
+    List<EducationLevel> findByIsActiveTrueAndDeletedAtIsNull();
+
+    List<EducationLevel> findByIsActiveFalseAndDeletedAtIsNull();
+
+    // =========================
+    // Admin Wise
+    // =========================
+
+    List<EducationLevel> findByAdmin_IdAndDeletedAtIsNull(Long adminId);
+
+    List<EducationLevel> findByAdmin_IdAndIsActiveTrueAndDeletedAtIsNull(Long adminId);
+
+    List<EducationLevel> findByAdmin_IdAndIsActiveFalseAndDeletedAtIsNull(Long adminId);
+
+    // =========================
+    // Search
+    // =========================
+
+    List<EducationLevel> findByNameContainingIgnoreCaseAndDeletedAtIsNull(String keyword);
+
+    List<EducationLevel> findByAdmin_IdAndNameContainingIgnoreCaseAndDeletedAtIsNull(
+            Long adminId,
+            String keyword
+    );
+
+    // =========================
+    // Soft Deleted Records
+    // =========================
+
+    List<EducationLevel> findByDeletedAtIsNotNull();
+
+    Optional<EducationLevel> findByIdAndDeletedAtIsNotNull(Long id);
 }

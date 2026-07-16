@@ -10,21 +10,60 @@ import java.util.Optional;
 @Repository
 public interface ProfileTypeRepository extends JpaRepository<ProfileType, Long> {
 
-    // 🔍 Find by name (admin-specific)
-    Optional<ProfileType> findByNameIgnoreCaseAndAdminId(String name, Long adminId);
+    // =========================
+    // BASIC
+    // =========================
 
-    // 🔍 Check duplicate (admin-specific)
-    boolean existsByNameIgnoreCaseAndAdminId(String name, Long adminId);
+    Optional<ProfileType> findByIdAndDeletedAtIsNull(Long id);
 
-    // 🔍 Get all records by admin
-    List<ProfileType> findByAdminId(Long adminId);
+    Optional<ProfileType> findByIdAndDeletedAtIsNotNull(Long id);
 
-    // 🔍 Active records by admin
-    List<ProfileType> findByAdminIdAndIsActiveTrue(Long adminId);
+    List<ProfileType> findAllByDeletedAtIsNull();
 
-    // 🔍 Inactive records by admin
-    List<ProfileType> findByAdminIdAndIsActiveFalse(Long adminId);
+    List<ProfileType> findByDeletedAtIsNotNull();
 
-    // 🔍 Search (admin + keyword)
-    List<ProfileType> findByAdminIdAndNameContainingIgnoreCase(Long adminId, String keyword);
+    // =========================
+    // DUPLICATE CHECK
+    // =========================
+
+    boolean existsByNameIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+            String name,
+            Long adminId
+    );
+
+    Optional<ProfileType> findByNameIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+            String name,
+            Long adminId
+    );
+
+    // =========================
+    // ACTIVE / INACTIVE
+    // =========================
+
+    List<ProfileType> findByIsActiveTrueAndDeletedAtIsNull();
+
+    List<ProfileType> findByIsActiveFalseAndDeletedAtIsNull();
+
+    // =========================
+    // ADMIN
+    // =========================
+
+    List<ProfileType> findByAdmin_IdAndDeletedAtIsNull(Long adminId);
+
+    List<ProfileType> findByAdmin_IdAndIsActiveTrueAndDeletedAtIsNull(Long adminId);
+
+    List<ProfileType> findByAdmin_IdAndIsActiveFalseAndDeletedAtIsNull(Long adminId);
+
+    // =========================
+    // SEARCH
+    // =========================
+
+    List<ProfileType> findByNameContainingIgnoreCaseAndDeletedAtIsNull(
+            String keyword
+    );
+
+    List<ProfileType> findByAdmin_IdAndNameContainingIgnoreCaseAndDeletedAtIsNull(
+            Long adminId,
+            String keyword
+    );
 }

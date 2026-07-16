@@ -1,45 +1,59 @@
 package com.example.service;
 
-import com.example.model.MaritalStatus;
+import com.example.dto.request.MaritalStatusRequestDTO;
+import com.example.dto.response.MaritalStatusResponseDTO;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface MaritalStatusService {
 
-    // 🔍 Basic CRUD
-    MaritalStatus create(MaritalStatus maritalStatus);
+    // =========================
+    // CRUD
+    // =========================
 
-    MaritalStatus update(Long id, MaritalStatus maritalStatus);
+    MaritalStatusResponseDTO create(MaritalStatusRequestDTO requestDto);
 
-    void delete(Long id);
+    MaritalStatusResponseDTO update(Long id, MaritalStatusRequestDTO requestDto);
 
-    Optional<MaritalStatus> getById(Long id);
+    void softDelete(Long id);
 
-    List<MaritalStatus> getAll();
+    void restore(Long id);
 
-    // 🔍 Find by name
-    Optional<MaritalStatus> getByName(String name);
+    void hardDelete(Long id);
 
-    Optional<MaritalStatus> getByNameIgnoreCase(String name);
+    // =========================
+    // GET
+    // =========================
 
-    // ✅ Duplicate check
-    boolean existsByName(String name);
+    MaritalStatusResponseDTO getById(Long id);
 
-    boolean existsByNameIgnoreCase(String name);
+    List<MaritalStatusResponseDTO> getAll();
 
-    // 🔍 Active / Inactive
-    List<MaritalStatus> getActive();
+    List<MaritalStatusResponseDTO> getDeleted();
 
-    List<MaritalStatus> getInactive();
+    // =========================
+    // ACTIVE / INACTIVE
+    // =========================
 
-    // 🔍 Admin-based
-    List<MaritalStatus> getByAdmin(Long adminId);
+    List<MaritalStatusResponseDTO> getActive();
 
-    List<MaritalStatus> getActiveByAdmin(Long adminId);
+    List<MaritalStatusResponseDTO> getInactive();
 
-    // 🔍 Search
-    List<MaritalStatus> search(String keyword);
+    // =========================
+    // ADMIN
+    // =========================
 
-    List<MaritalStatus> searchByAdmin(Long adminId, String keyword);
+    List<MaritalStatusResponseDTO> getByAdmin(Long adminId);
+
+    List<MaritalStatusResponseDTO> getActiveByAdmin(Long adminId);
+
+    List<MaritalStatusResponseDTO> getInactiveByAdmin(Long adminId);
+
+    // =========================
+    // SEARCH
+    // =========================
+
+    List<MaritalStatusResponseDTO> search(String keyword);
+
+    List<MaritalStatusResponseDTO> searchByAdmin(Long adminId, String keyword);
 }

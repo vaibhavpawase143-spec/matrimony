@@ -1,210 +1,254 @@
 package com.example.controller.master;
 
 import com.example.dto.request.StateRequestDTO;
+import com.example.dto.response.ApiResponse;
 import com.example.dto.response.StateResponseDTO;
-import com.example.model.Admin;
-import com.example.model.Country;
-import com.example.model.State;
 import com.example.service.StateService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/master/states")
 @RequiredArgsConstructor
 public class StateController {
 
-    private final StateService service;
+    private final StateService stateService;
 
-    // =========================
+    // =====================================================
     // CREATE
-    // =========================
+    // =====================================================
+
     @PostMapping
-    public StateResponseDTO create(@Valid @RequestBody StateRequestDTO dto) {
+    public ApiResponse<StateResponseDTO> create(
+            @Valid @RequestBody StateRequestDTO requestDto) {
 
-        State entity = mapToEntity(dto);
-        State saved = service.save(entity);
-
-        return mapToResponse(saved);
+        return ApiResponse.success(
+                "State created successfully.",
+                stateService.create(requestDto)
+        );
     }
 
-    // =========================
+    // =====================================================
     // UPDATE
-    // =========================
+    // =====================================================
+
     @PutMapping("/{id}")
-    public StateResponseDTO update(
+    public ApiResponse<StateResponseDTO> update(
             @PathVariable Long id,
-            @Valid @RequestBody StateRequestDTO dto) {
+            @Valid @RequestBody StateRequestDTO requestDto) {
 
-        State existing = service.getById(id)
-                .orElseThrow(() -> new RuntimeException("State not found"));
-
-        updateEntity(existing, dto);
-
-        State updated = service.save(existing);
-
-        return mapToResponse(updated);
+        return ApiResponse.success(
+                "State updated successfully.",
+                stateService.update(id, requestDto)
+        );
     }
 
-    // =========================
+    // =====================================================
     // GET BY ID
-    // =========================
+    // =====================================================
+
     @GetMapping("/{id}")
-    public StateResponseDTO getById(@PathVariable Long id) {
+    public ApiResponse<StateResponseDTO> getById(
+            @PathVariable Long id) {
 
-        State s = service.getById(id)
-                .orElseThrow(() -> new RuntimeException("State not found"));
-
-        return mapToResponse(s);
+        return ApiResponse.success(
+                "State fetched successfully.",
+                stateService.getById(id)
+        );
     }
 
-    // =========================
+    // =====================================================
     // GET ALL
-    // =========================
-    @GetMapping
-    public List<StateResponseDTO> getAll() {
+    // =====================================================
 
-        return service.getAll()
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+    @GetMapping
+    public ApiResponse<List<StateResponseDTO>> getAll() {
+
+        return ApiResponse.success(
+                "States fetched successfully.",
+                stateService.getAll()
+        );
     }
 
-    // =========================
-    // ADMIN APIs
-    // =========================
+    // =====================================================
+    // GET DELETED
+    // =====================================================
+
+    @GetMapping("/deleted")
+    public ApiResponse<List<StateResponseDTO>> getDeleted() {
+
+        return ApiResponse.success(
+                "Deleted states fetched successfully.",
+                stateService.getDeleted()
+        );
+    }
+
+    // =====================================================
+    // ACTIVE / INACTIVE
+    // =====================================================
+
+    @GetMapping("/active")
+    public ApiResponse<List<StateResponseDTO>> getActive() {
+
+        return ApiResponse.success(
+                "Active states fetched successfully.",
+                stateService.getActive()
+        );
+    }
+
+    @GetMapping("/inactive")
+    public ApiResponse<List<StateResponseDTO>> getInactive() {
+
+        return ApiResponse.success(
+                "Inactive states fetched successfully.",
+                stateService.getInactive()
+        );
+    }
+
+    // =====================================================
+    // ADMIN
+    // =====================================================
 
     @GetMapping("/admin/{adminId}")
-    public List<StateResponseDTO> getByAdmin(@PathVariable Long adminId) {
+    public ApiResponse<List<StateResponseDTO>> getByAdmin(
+            @PathVariable Long adminId) {
 
-        return service.getByAdmin(adminId)
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+        return ApiResponse.success(
+                "States fetched successfully.",
+                stateService.getByAdmin(adminId)
+        );
     }
 
     @GetMapping("/admin/{adminId}/active")
-    public List<StateResponseDTO> getActive(@PathVariable Long adminId) {
+    public ApiResponse<List<StateResponseDTO>> getActiveByAdmin(
+            @PathVariable Long adminId) {
 
-        return service.getActiveByAdmin(adminId)
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+        return ApiResponse.success(
+                "Active states fetched successfully.",
+                stateService.getActiveByAdmin(adminId)
+        );
     }
 
-    // =========================
-    // COUNTRY FILTER
-    // =========================
+    @GetMapping("/admin/{adminId}/inactive")
+    public ApiResponse<List<StateResponseDTO>> getInactiveByAdmin(
+            @PathVariable Long adminId) {
+
+        return ApiResponse.success(
+                "Inactive states fetched successfully.",
+                stateService.getInactiveByAdmin(adminId)
+        );
+    }
+
+    // =====================================================
+    // COUNTRY
+    // =====================================================
 
     @GetMapping("/country/{countryId}/admin/{adminId}")
-    public List<StateResponseDTO> getByCountryAndAdmin(
+    public ApiResponse<List<StateResponseDTO>> getByCountryAndAdmin(
             @PathVariable Long countryId,
             @PathVariable Long adminId) {
 
-        return service.getByCountryAndAdmin(countryId, adminId)
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+        return ApiResponse.success(
+                "States fetched successfully.",
+                stateService.getByCountryAndAdmin(countryId, adminId)
+        );
     }
 
     @GetMapping("/country/{countryId}/admin/{adminId}/active")
-    public List<StateResponseDTO> getActiveByCountryAndAdmin(
+    public ApiResponse<List<StateResponseDTO>> getActiveByCountryAndAdmin(
             @PathVariable Long countryId,
             @PathVariable Long adminId) {
 
-        return service.getActiveByCountryAndAdmin(countryId, adminId)
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+        return ApiResponse.success(
+                "Active states fetched successfully.",
+                stateService.getActiveByCountryAndAdmin(countryId, adminId)
+        );
     }
 
-    // =========================
+    @GetMapping("/country/{countryId}/admin/{adminId}/inactive")
+    public ApiResponse<List<StateResponseDTO>> getInactiveByCountryAndAdmin(
+            @PathVariable Long countryId,
+            @PathVariable Long adminId) {
+
+        return ApiResponse.success(
+                "Inactive states fetched successfully.",
+                stateService.getInactiveByCountryAndAdmin(countryId, adminId)
+        );
+    }
+
+    // =====================================================
     // SEARCH
-    // =========================
+    // =====================================================
+
+    @GetMapping("/search")
+    public ApiResponse<List<StateResponseDTO>> search(
+            @RequestParam String keyword) {
+
+        return ApiResponse.success(
+                "Search completed successfully.",
+                stateService.search(keyword)
+        );
+    }
+
     @GetMapping("/admin/{adminId}/search")
-    public List<StateResponseDTO> search(
+    public ApiResponse<List<StateResponseDTO>> searchByAdmin(
             @PathVariable Long adminId,
             @RequestParam String keyword) {
 
-        return service.searchByAdmin(adminId, keyword)
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+        return ApiResponse.success(
+                "Search completed successfully.",
+                stateService.searchByAdmin(adminId, keyword)
+        );
     }
 
-    // =========================
-    // DELETE
-    // =========================
+    // =====================================================
+    // SOFT DELETE
+    // =====================================================
+
     @DeleteMapping("/{id}")
-    public String delete(@PathVariable Long id) {
-        service.delete(id);
-        return "State deleted successfully";
+    public ApiResponse<Void> softDelete(
+            @PathVariable Long id) {
+
+        stateService.softDelete(id);
+
+        return ApiResponse.success(
+                "State deleted successfully.",
+                null
+        );
     }
 
-    // =========================
-    // 🔥 MAPPING
-    // =========================
+    // =====================================================
+    // RESTORE
+    // =====================================================
 
-    private State mapToEntity(StateRequestDTO dto) {
+    @PutMapping("/{id}/restore")
+    public ApiResponse<Void> restore(
+            @PathVariable Long id) {
 
-        State s = new State();
+        stateService.restore(id);
 
-        Admin admin = new Admin();
-        admin.setId(dto.getAdminId());
-        s.setAdmin(admin);
-
-        Country country = new Country();
-        country.setId(dto.getCountryId());
-        s.setCountry(country);
-
-        s.setName(dto.getName());
-
-        if (dto.getIsActive() != null) {
-            s.setIsActive(dto.getIsActive());
-        }
-
-        return s;
+        return ApiResponse.success(
+                "State restored successfully.",
+                null
+        );
     }
 
-    private void updateEntity(State s, StateRequestDTO dto) {
+    // =====================================================
+    // HARD DELETE
+    // =====================================================
 
-        // 🚫 DO NOT update admin
+    @DeleteMapping("/{id}/hard")
+    public ApiResponse<Void> hardDelete(
+            @PathVariable Long id) {
 
-        if (dto.getCountryId() != null) {
-            Country country = new Country();
-            country.setId(dto.getCountryId());
-            s.setCountry(country);
-        }
+        stateService.hardDelete(id);
 
-        if (dto.getName() != null) {
-            s.setName(dto.getName());
-        }
-
-        if (dto.getIsActive() != null) {
-            s.setIsActive(dto.getIsActive());
-        }
-    }
-
-    private StateResponseDTO mapToResponse(State s) {
-
-        return StateResponseDTO.builder()
-                .id(s.getId())
-
-                // ✅ SAFE (ONLY ID)
-                .adminId(s.getAdmin() != null ? s.getAdmin().getId() : null)
-                .adminName(null)
-
-                .countryId(s.getCountry() != null ? s.getCountry().getId() : null)
-                .countryName(null)
-
-                .name(s.getName())
-                .isActive(s.getIsActive())
-                .createdAt(s.getCreatedAt())
-                .updatedAt(s.getUpdatedAt())
-                .build();
+        return ApiResponse.success(
+                "State permanently deleted successfully.",
+                null
+        );
     }
 }

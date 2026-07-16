@@ -10,29 +10,66 @@ import java.util.Optional;
 
 @Repository
 public interface FamilyDetailsRepository extends JpaRepository<FamilyDetails, Long> {
-    FamilyDetails findByProfile(Profile profile);
 
+    // =========================
+    // Get By ID
+    // =========================
 
-    // 🔍 One-to-One mapping (Profile ↔ FamilyDetails)
-    Optional<FamilyDetails> findByProfile_Id(Long profileId);
+    Optional<FamilyDetails> findByIdAndDeletedAtIsNull(Long id);
 
-    boolean existsByProfile_Id(Long profileId);
+    // =========================
+    // Get All
+    // =========================
 
-    // 🔍 FamilyType filtering
-    List<FamilyDetails> findByFamilyType_Id(Long familyTypeId);
+    List<FamilyDetails> findAllByDeletedAtIsNull();
 
-    // 🔍 Family filtering
-    List<FamilyDetails> findByFamily_Id(Long familyId);
+    // =========================
+    // Profile
+    // =========================
 
-    // 🔥 Family + Active (ONLY if Family has isActive field)
-    List<FamilyDetails> findByFamily_IdAndFamily_IsActiveTrue(Long familyId);
+    FamilyDetails findByProfileAndDeletedAtIsNull(Profile profile);
 
-    // 🔍 BrotherType filtering
-    List<FamilyDetails> findByBrotherType_Id(Long brotherTypeId);
+    Optional<FamilyDetails> findByProfile_IdAndDeletedAtIsNull(Long profileId);
 
-    // 🔍 SisterType filtering
-    List<FamilyDetails> findBySisterType_Id(Long sisterTypeId);
+    boolean existsByProfile_IdAndDeletedAtIsNull(Long profileId);
 
-    // 🔥 Optional: Profile + Active (if FamilyDetails has isActive)
-    List<FamilyDetails> findByProfile_IdAndIsActiveTrue(Long profileId);
+    // =========================
+    // Family Type
+    // =========================
+
+    List<FamilyDetails> findByFamilyType_IdAndDeletedAtIsNull(Long familyTypeId);
+
+    // =========================
+    // Family
+    // =========================
+
+    List<FamilyDetails> findByFamily_IdAndDeletedAtIsNull(Long familyId);
+
+    List<FamilyDetails> findByFamily_IdAndFamily_IsActiveTrueAndDeletedAtIsNull(Long familyId);
+
+    // =========================
+    // Brother Type
+    // =========================
+
+    List<FamilyDetails> findByBrotherType_IdAndDeletedAtIsNull(Long brotherTypeId);
+
+    // =========================
+    // Sister Type
+    // =========================
+
+    List<FamilyDetails> findBySisterType_IdAndDeletedAtIsNull(Long sisterTypeId);
+
+    // =========================
+    // Profile Active
+    // =========================
+
+    List<FamilyDetails> findByProfile_IdAndIsActiveTrueAndDeletedAtIsNull(Long profileId);
+
+    // =========================
+    // Soft Deleted
+    // =========================
+
+    List<FamilyDetails> findByDeletedAtIsNotNull();
+
+    Optional<FamilyDetails> findByIdAndDeletedAtIsNotNull(Long id);
 }

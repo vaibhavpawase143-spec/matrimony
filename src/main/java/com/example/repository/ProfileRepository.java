@@ -391,5 +391,15 @@ ORDER BY p.isPremium DESC,
 
 """)
     List<Profile> findDiscoverProfiles(Long loggedInUserId);
+// =====================================================
+// AUDIT METHODS
+// =====================================================
 
+    List<Profile> findByIsDeletedFalse();
+
+    Optional<Profile> findByUser_IdAndIsDeletedFalse(Long userId);
+
+    List<Profile> findByCreatedBy(Long createdBy);
+
+    List<Profile> findByUpdatedBy(Long updatedBy);
 }

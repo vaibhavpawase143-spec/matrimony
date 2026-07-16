@@ -1,15 +1,26 @@
 package com.example.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
+import lombok.*;
+
 import java.time.LocalDateTime;
 
 @Entity
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @Table(
         name = "smoking",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"admin_id", "value"}),
+        uniqueConstraints = {
+                @UniqueConstraint(columnNames = {"admin_id", "value"})
+        },
         indexes = {
-                @Index(name = "idx_smoking_value", columnList = "value")
+                @Index(name = "idx_smoking_admin", columnList = "admin_id"),
+                @Index(name = "idx_smoking_value", columnList = "value"),
+                @Index(name = "idx_smoking_active", columnList = "is_active"),
+                @Index(name = "idx_smoking_deleted", columnList = "deleted_at")
         }
 )
 public class Smoking {
@@ -21,13 +32,12 @@ public class Smoking {
     @Column(nullable = false, length = 50)
     private String value;
 
-    // ✅ SAFE LAZY
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "admin_id")
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    @JoinColumn(name = "admin_id", nullable = false)
     private Admin admin;
 
     @Column(name = "is_active", nullable = false)
+    @Builder.Default
     private Boolean isActive = true;
 
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -36,61 +46,25 @@ public class Smoking {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    public Smoking() {}
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 
-    // 🔥 Lifecycle
+    @Column(name = "deleted_by")
+    private Long deletedBy;
+
     @PrePersist
     protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
 
-        if (this.isActive == null) {
-            this.isActive = true;
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+
+        if (isActive == null) {
+            isActive = true;
         }
     }
 
     @PreUpdate
     protected void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
-    }
-
-    // ===== Getters =====
-
-    public Long getId() {
-        return id;
-    }
-
-    public String getValue() {
-        return value;
-    }
-
-    public Admin getAdmin() {
-        return admin;
-    }
-
-    public Boolean getIsActive() {
-        return isActive;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    // ===== Setters =====
-
-    public void setValue(String value) {
-        this.value = value;
-    }
-
-    public void setAdmin(Admin admin) {
-        this.admin = admin;
-    }
-
-    public void setIsActive(Boolean isActive) {
-        this.isActive = isActive;
+        updatedAt = LocalDateTime.now();
     }
 }

@@ -4,224 +4,316 @@ import com.example.dto.request.ReligionRequestDTO;
 import com.example.dto.response.ReligionResponseDTO;
 import com.example.exception.BadRequestException;
 import com.example.exception.ResourceNotFoundException;
-import com.example.mapper.ReligionMapper;
 import com.example.model.Admin;
 import com.example.model.Religion;
-import com.example.repository.AdminRepository;
 import com.example.repository.ReligionRepository;
+import com.example.service.CurrentAdminService;
 import com.example.service.ReligionService;
+import com.example.util.AuditHelper;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
-/**
- * Implementation of ReligionService with business logic for CRUD, soft delete, and search operations.
- * All queries exclude soft-deleted records by default.
- */
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class ReligionServiceImpl implements ReligionService {
 
     private final ReligionRepository religionRepository;
-    private final AdminRepository adminRepository;
 
-    // ================= CRUD OPERATIONS =================
+    private final CurrentAdminService currentAdminService;
+    private final AuditHelper auditHelper;
+
+    private static final String MODULE = "Master";
+    private static final String ENTITY = "Religion";
+
+    // =====================================================
+    // CREATE
+    // =====================================================
 
     @Override
-    @Transactional
-    public ReligionResponseDTO create(ReligionRequestDTO dto, Long adminId) {
-        log.debug("Creating new religion: {} for admin: {}", dto.getName(), adminId);
+    public ReligionResponseDTO create(ReligionRequestDTO requestDto) {
+        Admin admin = currentAdminService.getCurrentAdmin();
 
-        // Validate admin exists
-        Admin admin = adminRepository.findById(adminId)
-                .orElseThrow(() -> {
-                    log.error("Admin not found: {}", adminId);
-                    return new ResourceNotFoundException("Admin not found");
-                });
+        if (religionRepository.existsByNameIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+                requestDto.getName(),
+                admin.getId())) {
 
-        // Check for duplicates
-        if (religionRepository.existsByNameIgnoreCaseAndAdmin(dto.getName(), adminId)) {
-            log.warn("Religion already exists: {} for admin: {}", dto.getName(), adminId);
-            throw new BadRequestException("Religion '" + dto.getName() + "' already exists for this admin");
+            throw new BadRequestException("Religion already exists.");
         }
 
-        // Create and save
-        Religion religion = ReligionMapper.toEntity(dto, admin);
-        Religion saved = religionRepository.save(religion);
-        log.info("Religion created successfully with ID: {}", saved.getId());
+        Religion entity = Religion.builder()
+                .admin(admin)
+                .name(requestDto.getName())
+                .isActive(requestDto.getIsActive())
+                .build();
 
-        return ReligionMapper.toResponseDTO(saved);
+        entity = religionRepository.save(entity);
+
+        auditHelper.logCreate(
+                MODULE,
+                ENTITY,
+                entity.getId(),
+                entity.getName(),
+                entity.getName()
+        );
+
+        return mapToResponse(entity);
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public ReligionResponseDTO getById(Long id) {
-        log.debug("Fetching religion by ID: {}", id);
-
-        Religion religion = religionRepository.findById(id)
-                .filter(r -> r.getDeletedAt() == null) // Exclude soft-deleted
-                .orElseThrow(() -> {
-                    log.warn("Religion not found: {}", id);
-                    return new ResourceNotFoundException("Religion not found");
-                });
-
-        return ReligionMapper.toResponseDTO(religion);
-    }
+    // =====================================================
+    // UPDATE
+    // =====================================================
 
     @Override
-    @Transactional(readOnly = true)
-    public List<ReligionResponseDTO> getAll() {
-        log.debug("Fetching all non-deleted religions");
-        return religionRepository.findAllActive()
-                .stream()
-                .map(ReligionMapper::toResponseDTO)
-                .collect(Collectors.toList());
-    }
+    public ReligionResponseDTO update(Long id,
+                                      ReligionRequestDTO requestDto) {
 
-    @Override
-    @Transactional
-    public ReligionResponseDTO update(Long id, ReligionRequestDTO dto) {
-        log.debug("Updating religion ID: {}", id);
+        Religion entity = religionRepository
+                .findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Religion not found."));
 
-        Religion religion = religionRepository.findById(id)
-                .filter(r -> r.getDeletedAt() == null)
-                .orElseThrow(() -> {
-                    log.warn("Religion not found for update: {}", id);
-                    return new ResourceNotFoundException("Religion not found");
-                });
+        if (!entity.getName().equalsIgnoreCase(requestDto.getName())
+                && religionRepository.existsByNameIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+                requestDto.getName(),
+                entity.getAdmin().getId())) {
 
-        // Check for name conflicts (if name is being changed)
-        if (dto.getName() != null && !dto.getName().equalsIgnoreCase(religion.getName())) {
-            if (religionRepository.existsByNameIgnoreCaseAndAdmin(dto.getName(), religion.getAdmin().getId())) {
-                log.warn("Religion name already exists: {} for admin: {}", dto.getName(), religion.getAdmin().getId());
-                throw new BadRequestException("Religion '" + dto.getName() + "' already exists for this admin");
-            }
+            throw new BadRequestException("Religion already exists.");
         }
 
-        ReligionMapper.updateEntity(religion, dto);
-        Religion updated = religionRepository.save(religion);
-        log.info("Religion updated successfully with ID: {}", updated.getId());
+        String oldValue = entity.getName();
+        Boolean oldActive = entity.getIsActive();
 
-        return ReligionMapper.toResponseDTO(updated);
+        entity.setName(requestDto.getName());
+        entity.setIsActive(requestDto.getIsActive());
+
+        entity = religionRepository.save(entity);
+
+        auditHelper.logUpdate(
+                MODULE,
+                ENTITY,
+                entity.getId(),
+                entity.getName(),
+                oldValue,
+                entity.getName(),
+                oldActive,
+                entity.getIsActive()
+        );
+
+        return mapToResponse(entity);
     }
 
+    // =====================================================
+    // SOFT DELETE
+    // =====================================================
+
     @Override
-    @Transactional
-    public void delete(Long id, Long deletedBy) {
-        log.debug("Soft deleting religion ID: {} by admin: {}", id, deletedBy);
+    public void softDelete(Long id) {
 
-        Religion religion = religionRepository.findById(id)
-                .filter(r -> r.getDeletedAt() == null)
-                .orElseThrow(() -> {
-                    log.warn("Religion not found for deletion: {}", id);
-                    return new ResourceNotFoundException("Religion not found");
-                });
+        Religion entity = religionRepository
+                .findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Religion not found."));
 
-        religion.setDeletedAt(LocalDateTime.now());
-        religion.setDeletedBy(deletedBy);
-        religionRepository.save(religion);
-        log.info("Religion soft deleted successfully with ID: {}", id);
+        entity.setDeletedAt(LocalDateTime.now());
+        entity.setDeletedBy(currentAdminService.getCurrentAdmin().getId());
+
+        religionRepository.save(entity);
+
+        auditHelper.logDelete(
+                MODULE,
+                ENTITY,
+                entity.getId(),
+                entity.getName(),
+                entity.getName()
+        );
+    }
+    // =====================================================
+    // RESTORE
+    // =====================================================
+
+    @Override
+    public void restore(Long id) {
+
+        Religion entity = religionRepository
+                .findByIdAndDeletedAtIsNotNull(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Deleted Religion not found."));
+
+        entity.setDeletedAt(null);
+        entity.setDeletedBy(null);
+
+        religionRepository.save(entity);
+
+        auditHelper.logRestore(
+                MODULE,
+                ENTITY,
+                entity.getId(),
+                entity.getName(),
+                entity.getName()
+        );
     }
 
+    // =====================================================
+    // HARD DELETE
+    // =====================================================
+
     @Override
-    @Transactional
     public void hardDelete(Long id) {
-        log.warn("Hard deleting religion ID: {} - This is a permanent operation", id);
 
-        if (!religionRepository.existsById(id)) {
-            log.error("Religion not found for hard deletion: {}", id);
-            throw new ResourceNotFoundException("Religion not found");
-        }
+        Religion entity = religionRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Religion not found."));
 
-        religionRepository.deleteById(id);
-        log.info("Religion hard deleted successfully with ID: {}", id);
+        auditHelper.logHardDelete(
+                MODULE,
+                ENTITY,
+                entity.getId(),
+                entity.getName(),
+                entity.getName()
+        );
+
+        religionRepository.delete(entity);
     }
 
-    // ================= ADMIN-SPECIFIC QUERIES =================
+    // =====================================================
+    // GET BY ID
+    // =====================================================
 
     @Override
-    @Transactional(readOnly = true)
+    public ReligionResponseDTO getById(Long id) {
+
+        Religion entity = religionRepository
+                .findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Religion not found."));
+
+        return mapToResponse(entity);
+    }
+
+    // =====================================================
+    // GET ALL
+    // =====================================================
+
+    @Override
+    public List<ReligionResponseDTO> getAll() {
+
+        return religionRepository.findAllByDeletedAtIsNull()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Override
+    public List<ReligionResponseDTO> getDeleted() {
+
+        return religionRepository.findByDeletedAtIsNotNull()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    // =====================================================
+    // ACTIVE / INACTIVE
+    // =====================================================
+
+    @Override
+    public List<ReligionResponseDTO> getActive() {
+
+        return religionRepository.findByIsActiveTrueAndDeletedAtIsNull()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Override
+    public List<ReligionResponseDTO> getInactive() {
+
+        return religionRepository.findByIsActiveFalseAndDeletedAtIsNull()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    // =====================================================
+    // ADMIN
+    // =====================================================
+
+    @Override
     public List<ReligionResponseDTO> getByAdmin(Long adminId) {
-        log.debug("Fetching all religions for admin: {}", adminId);
-        return religionRepository.findByAdminIdAndDeletedAtIsNull(adminId)
+
+        return religionRepository.findByAdmin_IdAndDeletedAtIsNull(adminId)
                 .stream()
-                .map(ReligionMapper::toResponseDTO)
-                .collect(Collectors.toList());
+                .map(this::mapToResponse)
+                .toList();
     }
 
     @Override
-    @Transactional(readOnly = true)
     public List<ReligionResponseDTO> getActiveByAdmin(Long adminId) {
-        log.debug("Fetching active religions for admin: {}", adminId);
-        return religionRepository.findByAdminIdAndIsActiveTrueAndDeletedAtIsNull(adminId)
+
+        return religionRepository
+                .findByAdmin_IdAndIsActiveTrueAndDeletedAtIsNull(adminId)
                 .stream()
-                .map(ReligionMapper::toResponseDTO)
-                .collect(Collectors.toList());
+                .map(this::mapToResponse)
+                .toList();
     }
 
     @Override
-    @Transactional(readOnly = true)
     public List<ReligionResponseDTO> getInactiveByAdmin(Long adminId) {
-        log.debug("Fetching inactive religions for admin: {}", adminId);
-        return religionRepository.findByAdminIdAndIsActiveFalseAndDeletedAtIsNull(adminId)
+
+        return religionRepository
+                .findByAdmin_IdAndIsActiveFalseAndDeletedAtIsNull(adminId)
                 .stream()
-                .map(ReligionMapper::toResponseDTO)
-                .collect(Collectors.toList());
+                .map(this::mapToResponse)
+                .toList();
     }
 
+    // =====================================================
+    // SEARCH
+    // =====================================================
+
     @Override
-    @Transactional(readOnly = true)
-    public List<ReligionResponseDTO> searchByAdmin(Long adminId, String keyword) {
-        log.debug("Searching religions for admin: {} with keyword: {}", adminId, keyword);
-        if (keyword == null || keyword.trim().isEmpty()) {
-            return getByAdmin(adminId);
-        }
-        return religionRepository.searchByAdminAndKeyword(adminId, keyword)
+    public List<ReligionResponseDTO> search(String keyword) {
+
+        return religionRepository
+                .findByNameContainingIgnoreCaseAndDeletedAtIsNull(keyword)
                 .stream()
-                .map(ReligionMapper::toResponseDTO)
-                .collect(Collectors.toList());
+                .map(this::mapToResponse)
+                .toList();
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public List<ReligionResponseDTO> getDeletedByAdmin(Long adminId) {
-        log.debug("Fetching deleted religions for admin: {}", adminId);
-        return religionRepository.findByAdminIdAndDeletedAtIsNotNull(adminId)
+    public List<ReligionResponseDTO> searchByAdmin(Long adminId,
+                                                   String keyword) {
+
+        return religionRepository
+                .findByAdmin_IdAndNameContainingIgnoreCaseAndDeletedAtIsNull(
+                        adminId,
+                        keyword
+                )
                 .stream()
-                .map(ReligionMapper::toResponseDTO)
-                .collect(Collectors.toList());
+                .map(this::mapToResponse)
+                .toList();
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public boolean existsForAdmin(String name, Long adminId) {
-        log.debug("Checking if religion exists: {} for admin: {}", name, adminId);
-        return religionRepository.existsByNameIgnoreCaseAndAdmin(name, adminId);
-    }
+    // =====================================================
+    // DTO MAPPING
+    // =====================================================
 
-    @Override
-    @Transactional
-    public ReligionResponseDTO restore(Long id) {
-        log.debug("Restoring deleted religion ID: {}", id);
+    private ReligionResponseDTO mapToResponse(Religion entity) {
 
-        Religion religion = religionRepository.findById(id)
-                .filter(r -> r.getDeletedAt() != null)
-                .orElseThrow(() -> {
-                    log.warn("Deleted religion not found for restoration: {}", id);
-                    return new ResourceNotFoundException("Deleted religion not found");
-                });
-
-        religion.setDeletedAt(null);
-        religion.setDeletedBy(null);
-        Religion restored = religionRepository.save(religion);
-        log.info("Religion restored successfully with ID: {}", restored.getId());
-
-        return ReligionMapper.toResponseDTO(restored);
+        return ReligionResponseDTO.builder()
+                .id(entity.getId())
+                .adminId(entity.getAdmin() != null ? entity.getAdmin().getId() : null)
+                .adminName(null) // Avoid LazyInitializationException
+                .name(entity.getName())
+                .isActive(entity.getIsActive())
+                .createdAt(entity.getCreatedAt())
+                .updatedAt(entity.getUpdatedAt())
+                .deletedAt(entity.getDeletedAt())
+                .deletedBy(entity.getDeletedBy())
+                .build();
     }
 }

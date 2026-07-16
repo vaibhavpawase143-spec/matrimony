@@ -1,127 +1,321 @@
 package com.example.serviceimpl;
 
+import com.example.dto.request.ManglikStatusRequestDTO;
+import com.example.dto.response.ManglikStatusResponseDTO;
+import com.example.exception.BadRequestException;
+import com.example.exception.ResourceNotFoundException;
+import com.example.model.Admin;
 import com.example.model.ManglikStatus;
+import com.example.repository.AdminRepository;
 import com.example.repository.ManglikStatusRepository;
+import com.example.service.CurrentAdminService;
 import com.example.service.ManglikStatusService;
+import com.example.util.AuditHelper;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
 public class ManglikStatusServiceImpl implements ManglikStatusService {
 
     private final ManglikStatusRepository manglikStatusRepository;
+    private final AdminRepository adminRepository;
+    private final CurrentAdminService currentAdminService;
+    private final AuditHelper auditHelper;
 
-    public ManglikStatusServiceImpl(ManglikStatusRepository manglikStatusRepository) {
-        this.manglikStatusRepository = manglikStatusRepository;
-    }
+    private static final String MODULE = "Master";
+    private static final String ENTITY = "Manglik Status";
 
-    // ✅ Create
+    // =====================================================
+    // CREATE
+    // =====================================================
+
     @Override
-    public ManglikStatus create(ManglikStatus manglikStatus) {
+    public ManglikStatusResponseDTO create(ManglikStatusRequestDTO requestDto) {
 
-        if (manglikStatusRepository.existsByNameIgnoreCase(manglikStatus.getName())) {
-            throw new RuntimeException("ManglikStatus already exists: " + manglikStatus.getName());
+        Admin admin = adminRepository.findById(requestDto.getAdminId())
+                .orElseThrow(() -> new ResourceNotFoundException("Admin not found."));
+
+        if (manglikStatusRepository.existsByNameIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+                requestDto.getName(),
+                admin.getId())) {
+
+            throw new BadRequestException("Manglik Status already exists.");
         }
 
-        return manglikStatusRepository.save(manglikStatus);
+        ManglikStatus entity = ManglikStatus.builder()
+                .admin(admin)
+                .name(requestDto.getName())
+                .isActive(requestDto.getIsActive())
+                .build();
+
+        entity = manglikStatusRepository.save(entity);
+
+        auditHelper.logCreate(
+                MODULE,
+                ENTITY,
+                entity.getId(),
+                entity.getName(),
+                entity.getName()
+        );
+
+        return mapToResponse(entity);
     }
 
-    // 🔄 Update
+    // =====================================================
+    // UPDATE
+    // =====================================================
+
     @Override
-    public ManglikStatus update(Long id, ManglikStatus manglikStatus) {
+    public ManglikStatusResponseDTO update(Long id,
+                                           ManglikStatusRequestDTO requestDto) {
 
-        ManglikStatus existing = manglikStatusRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("ManglikStatus not found with id: " + id));
+        ManglikStatus entity = manglikStatusRepository
+                .findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Manglik Status not found."));
 
-        manglikStatusRepository.findByNameIgnoreCase(manglikStatus.getName())
-                .ifPresent(m -> {
-                    if (!m.getId().equals(id)) {
-                        throw new RuntimeException("ManglikStatus already exists: " + manglikStatus.getName());
-                    }
-                });
+        if (!entity.getName().equalsIgnoreCase(requestDto.getName())
+                && manglikStatusRepository.existsByNameIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+                requestDto.getName(),
+                entity.getAdmin().getId())) {
 
-        // ✏️ Update fields
-        existing.setName(manglikStatus.getName());
-        existing.setIsActive(manglikStatus.getIsActive());
+            throw new BadRequestException("Manglik Status already exists.");
+        }
 
-        return manglikStatusRepository.save(existing);
+        String oldValue = entity.getName();
+        Boolean oldActive = entity.getIsActive();
+
+        entity.setName(requestDto.getName());
+        entity.setIsActive(requestDto.getIsActive());
+
+        entity = manglikStatusRepository.save(entity);
+
+        auditHelper.logUpdate(
+                MODULE,
+                ENTITY,
+                entity.getId(),
+                entity.getName(),
+                oldValue,
+                entity.getName(),
+                oldActive,
+                entity.getIsActive()
+        );
+
+        return mapToResponse(entity);
     }
 
-    // ❌ Delete
-    @Override
-    public void delete(Long id) {
-        ManglikStatus existing = manglikStatusRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("ManglikStatus not found with id: " + id));
+    // =====================================================
+    // SOFT DELETE
+    // =====================================================
 
-        manglikStatusRepository.delete(existing);
+    @Override
+    public void softDelete(Long id) {
+
+        ManglikStatus entity = manglikStatusRepository
+                .findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Manglik Status not found."));
+
+        entity.setDeletedAt(LocalDateTime.now());
+        entity.setDeletedBy(currentAdminService.getCurrentAdmin().getId());
+
+        manglikStatusRepository.save(entity);
+
+        auditHelper.logDelete(
+                MODULE,
+                ENTITY,
+                entity.getId(),
+                entity.getName(),
+                entity.getName()
+        );
+    }
+    // =====================================================
+    // RESTORE
+    // =====================================================
+
+    @Override
+    public void restore(Long id) {
+
+        ManglikStatus entity = manglikStatusRepository
+                .findByIdAndDeletedAtIsNotNull(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Deleted Manglik Status not found."));
+
+        entity.setDeletedAt(null);
+        entity.setDeletedBy(null);
+
+        manglikStatusRepository.save(entity);
+
+        auditHelper.logRestore(
+                MODULE,
+                ENTITY,
+                entity.getId(),
+                entity.getName(),
+                entity.getName()
+        );
     }
 
-    // 🔍 Get by ID
-    @Override
-    public Optional<ManglikStatus> getById(Long id) {
-        return manglikStatusRepository.findById(id);
-    }
-
-    // 🔍 Get all
-    @Override
-    public List<ManglikStatus> getAll() {
-        return manglikStatusRepository.findAll();
-    }
-
-    // 🔍 Find by name
-    @Override
-    public Optional<ManglikStatus> getByName(String name) {
-        return manglikStatusRepository.findByName(name);
-    }
+    // =====================================================
+    // HARD DELETE
+    // =====================================================
 
     @Override
-    public Optional<ManglikStatus> getByNameIgnoreCase(String name) {
-        return manglikStatusRepository.findByNameIgnoreCase(name);
+    public void hardDelete(Long id) {
+
+        ManglikStatus entity = manglikStatusRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Manglik Status not found."));
+
+        auditHelper.logHardDelete(
+                MODULE,
+                ENTITY,
+                entity.getId(),
+                entity.getName(),
+                entity.getName()
+        );
+
+        manglikStatusRepository.delete(entity);
     }
 
-    // ✅ Duplicate check
-    @Override
-    public boolean existsByName(String name) {
-        return manglikStatusRepository.existsByName(name);
-    }
+    // =====================================================
+    // GET BY ID
+    // =====================================================
 
     @Override
-    public boolean existsByNameIgnoreCase(String name) {
-        return manglikStatusRepository.existsByNameIgnoreCase(name);
+    public ManglikStatusResponseDTO getById(Long id) {
+
+        ManglikStatus entity = manglikStatusRepository
+                .findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Manglik Status not found."));
+
+        return mapToResponse(entity);
     }
 
-    // 🔍 Active / Inactive
-    @Override
-    public List<ManglikStatus> getActive() {
-        return manglikStatusRepository.findByIsActiveTrue();
-    }
+    // =====================================================
+    // GET ALL
+    // =====================================================
 
     @Override
-    public List<ManglikStatus> getInactive() {
-        return manglikStatusRepository.findByIsActiveFalse();
-    }
+    public List<ManglikStatusResponseDTO> getAll() {
 
-    // 🔍 Admin-based
-    @Override
-    public List<ManglikStatus> getByAdmin(Long adminId) {
-        return manglikStatusRepository.findByAdminId(adminId);
-    }
-
-    @Override
-    public List<ManglikStatus> getActiveByAdmin(Long adminId) {
-        return manglikStatusRepository.findByAdminIdAndIsActiveTrue(adminId);
-    }
-
-    // 🔍 Search
-    @Override
-    public List<ManglikStatus> search(String keyword) {
-        return manglikStatusRepository.findByNameContainingIgnoreCase(keyword);
+        return manglikStatusRepository.findAllByDeletedAtIsNull()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
     }
 
     @Override
-    public List<ManglikStatus> searchByAdmin(Long adminId, String keyword) {
-        return manglikStatusRepository.findByAdminIdAndNameContainingIgnoreCase(adminId, keyword);
+    public List<ManglikStatusResponseDTO> getDeleted() {
+
+        return manglikStatusRepository.findByDeletedAtIsNotNull()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    // =====================================================
+    // ACTIVE / INACTIVE
+    // =====================================================
+
+    @Override
+    public List<ManglikStatusResponseDTO> getActive() {
+
+        return manglikStatusRepository.findByIsActiveTrueAndDeletedAtIsNull()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Override
+    public List<ManglikStatusResponseDTO> getInactive() {
+
+        return manglikStatusRepository.findByIsActiveFalseAndDeletedAtIsNull()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    // =====================================================
+    // ADMIN
+    // =====================================================
+
+    @Override
+    public List<ManglikStatusResponseDTO> getByAdmin(Long adminId) {
+
+        return manglikStatusRepository.findByAdmin_IdAndDeletedAtIsNull(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Override
+    public List<ManglikStatusResponseDTO> getActiveByAdmin(Long adminId) {
+
+        return manglikStatusRepository
+                .findByAdmin_IdAndIsActiveTrueAndDeletedAtIsNull(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Override
+    public List<ManglikStatusResponseDTO> getInactiveByAdmin(Long adminId) {
+
+        return manglikStatusRepository
+                .findByAdmin_IdAndIsActiveFalseAndDeletedAtIsNull(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    // =====================================================
+    // SEARCH
+    // =====================================================
+
+    @Override
+    public List<ManglikStatusResponseDTO> search(String keyword) {
+
+        return manglikStatusRepository
+                .findByNameContainingIgnoreCaseAndDeletedAtIsNull(keyword)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Override
+    public List<ManglikStatusResponseDTO> searchByAdmin(Long adminId,
+                                                        String keyword) {
+
+        return manglikStatusRepository
+                .findByAdmin_IdAndNameContainingIgnoreCaseAndDeletedAtIsNull(
+                        adminId,
+                        keyword
+                )
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    // =====================================================
+    // DTO MAPPING
+    // =====================================================
+
+    private ManglikStatusResponseDTO mapToResponse(ManglikStatus entity) {
+
+        return ManglikStatusResponseDTO.builder()
+                .id(entity.getId())
+                .adminId(entity.getAdmin() != null ? entity.getAdmin().getId() : null)
+                .name(entity.getName())
+                .isActive(entity.getIsActive())
+                .createdAt(entity.getCreatedAt())
+                .updatedAt(entity.getUpdatedAt())
+                .deletedAt(entity.getDeletedAt())
+                .deletedBy(entity.getDeletedBy())
+                .build();
     }
 }

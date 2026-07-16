@@ -1,127 +1,322 @@
 package com.example.serviceimpl;
 
+import com.example.dto.request.MaritalStatusRequestDTO;
+import com.example.dto.response.MaritalStatusResponseDTO;
+import com.example.exception.BadRequestException;
+import com.example.exception.ResourceNotFoundException;
+import com.example.model.Admin;
 import com.example.model.MaritalStatus;
+import com.example.repository.AdminRepository;
 import com.example.repository.MaritalStatusRepository;
+import com.example.service.CurrentAdminService;
 import com.example.service.MaritalStatusService;
+import com.example.util.AuditHelper;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
 public class MaritalStatusServiceImpl implements MaritalStatusService {
 
     private final MaritalStatusRepository maritalStatusRepository;
+    private final AdminRepository adminRepository;
+    private final CurrentAdminService currentAdminService;
+    private final AuditHelper auditHelper;
 
-    public MaritalStatusServiceImpl(MaritalStatusRepository maritalStatusRepository) {
-        this.maritalStatusRepository = maritalStatusRepository;
-    }
+    private static final String MODULE = "Master";
+    private static final String ENTITY = "Marital Status";
 
-    // ✅ Create
+    // =====================================================
+    // CREATE
+    // =====================================================
+
     @Override
-    public MaritalStatus create(MaritalStatus maritalStatus) {
+    public MaritalStatusResponseDTO create(MaritalStatusRequestDTO requestDto) {
 
-        if (maritalStatusRepository.existsByNameIgnoreCase(maritalStatus.getName())) {
-            throw new RuntimeException("MaritalStatus already exists: " + maritalStatus.getName());
+        Admin admin = adminRepository.findById(requestDto.getAdminId())
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Admin not found."));
+
+        if (maritalStatusRepository.existsByNameIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+                requestDto.getName(),
+                admin.getId())) {
+
+            throw new BadRequestException("Marital Status already exists.");
         }
 
-        return maritalStatusRepository.save(maritalStatus);
+        MaritalStatus entity = MaritalStatus.builder()
+                .admin(admin)
+                .name(requestDto.getName())
+                .isActive(requestDto.getIsActive())
+                .build();
+
+        entity = maritalStatusRepository.save(entity);
+
+        auditHelper.logCreate(
+                MODULE,
+                ENTITY,
+                entity.getId(),
+                entity.getName(),
+                entity.getName()
+        );
+
+        return mapToResponse(entity);
     }
 
-    // 🔄 Update
+    // =====================================================
+    // UPDATE
+    // =====================================================
+
     @Override
-    public MaritalStatus update(Long id, MaritalStatus maritalStatus) {
+    public MaritalStatusResponseDTO update(Long id,
+                                           MaritalStatusRequestDTO requestDto) {
 
-        MaritalStatus existing = maritalStatusRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("MaritalStatus not found with id: " + id));
+        MaritalStatus entity = maritalStatusRepository
+                .findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Marital Status not found."));
 
-        maritalStatusRepository.findByNameIgnoreCase(maritalStatus.getName())
-                .ifPresent(m -> {
-                    if (!m.getId().equals(id)) {
-                        throw new RuntimeException("MaritalStatus already exists: " + maritalStatus.getName());
-                    }
-                });
+        if (!entity.getName().equalsIgnoreCase(requestDto.getName())
+                && maritalStatusRepository.existsByNameIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+                requestDto.getName(),
+                entity.getAdmin().getId())) {
 
-        // ✏️ Update fields
-        existing.setName(maritalStatus.getName());
-        existing.setIsActive(maritalStatus.getIsActive());
+            throw new BadRequestException("Marital Status already exists.");
+        }
 
-        return maritalStatusRepository.save(existing);
+        String oldValue = entity.getName();
+        Boolean oldActive = entity.getIsActive();
+
+        entity.setName(requestDto.getName());
+        entity.setIsActive(requestDto.getIsActive());
+
+        entity = maritalStatusRepository.save(entity);
+
+        auditHelper.logUpdate(
+                MODULE,
+                ENTITY,
+                entity.getId(),
+                entity.getName(),
+                oldValue,
+                entity.getName(),
+                oldActive,
+                entity.getIsActive()
+        );
+
+        return mapToResponse(entity);
     }
 
-    // ❌ Delete
-    @Override
-    public void delete(Long id) {
-        MaritalStatus existing = maritalStatusRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("MaritalStatus not found with id: " + id));
+    // =====================================================
+    // SOFT DELETE
+    // =====================================================
 
-        maritalStatusRepository.delete(existing);
+    @Override
+    public void softDelete(Long id) {
+
+        MaritalStatus entity = maritalStatusRepository
+                .findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Marital Status not found."));
+
+        entity.setDeletedAt(LocalDateTime.now());
+        entity.setDeletedBy(currentAdminService.getCurrentAdmin().getId());
+
+        maritalStatusRepository.save(entity);
+
+        auditHelper.logDelete(
+                MODULE,
+                ENTITY,
+                entity.getId(),
+                entity.getName(),
+                entity.getName()
+        );
+    }
+    // =====================================================
+    // RESTORE
+    // =====================================================
+
+    @Override
+    public void restore(Long id) {
+
+        MaritalStatus entity = maritalStatusRepository
+                .findByIdAndDeletedAtIsNotNull(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Deleted Marital Status not found."));
+
+        entity.setDeletedAt(null);
+        entity.setDeletedBy(null);
+
+        maritalStatusRepository.save(entity);
+
+        auditHelper.logRestore(
+                MODULE,
+                ENTITY,
+                entity.getId(),
+                entity.getName(),
+                entity.getName()
+        );
     }
 
-    // 🔍 Get by ID
-    @Override
-    public Optional<MaritalStatus> getById(Long id) {
-        return maritalStatusRepository.findById(id);
-    }
-
-    // 🔍 Get all
-    @Override
-    public List<MaritalStatus> getAll() {
-        return maritalStatusRepository.findAll();
-    }
-
-    // 🔍 Find by name
-    @Override
-    public Optional<MaritalStatus> getByName(String name) {
-        return maritalStatusRepository.findByName(name);
-    }
+    // =====================================================
+    // HARD DELETE
+    // =====================================================
 
     @Override
-    public Optional<MaritalStatus> getByNameIgnoreCase(String name) {
-        return maritalStatusRepository.findByNameIgnoreCase(name);
+    public void hardDelete(Long id) {
+
+        MaritalStatus entity = maritalStatusRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Marital Status not found."));
+
+        auditHelper.logHardDelete(
+                MODULE,
+                ENTITY,
+                entity.getId(),
+                entity.getName(),
+                entity.getName()
+        );
+
+        maritalStatusRepository.delete(entity);
     }
 
-    // ✅ Duplicate check
-    @Override
-    public boolean existsByName(String name) {
-        return maritalStatusRepository.existsByName(name);
-    }
+    // =====================================================
+    // GET BY ID
+    // =====================================================
 
     @Override
-    public boolean existsByNameIgnoreCase(String name) {
-        return maritalStatusRepository.existsByNameIgnoreCase(name);
+    public MaritalStatusResponseDTO getById(Long id) {
+
+        MaritalStatus entity = maritalStatusRepository
+                .findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Marital Status not found."));
+
+        return mapToResponse(entity);
     }
 
-    // 🔍 Active / Inactive
-    @Override
-    public List<MaritalStatus> getActive() {
-        return maritalStatusRepository.findByIsActiveTrue();
-    }
+    // =====================================================
+    // GET ALL
+    // =====================================================
 
     @Override
-    public List<MaritalStatus> getInactive() {
-        return maritalStatusRepository.findByIsActiveFalse();
-    }
+    public List<MaritalStatusResponseDTO> getAll() {
 
-    // 🔍 Admin-based
-    @Override
-    public List<MaritalStatus> getByAdmin(Long adminId) {
-        return maritalStatusRepository.findByAdminId(adminId);
-    }
-
-    @Override
-    public List<MaritalStatus> getActiveByAdmin(Long adminId) {
-        return maritalStatusRepository.findByAdminIdAndIsActiveTrue(adminId);
-    }
-
-    // 🔍 Search
-    @Override
-    public List<MaritalStatus> search(String keyword) {
-        return maritalStatusRepository.findByNameContainingIgnoreCase(keyword);
+        return maritalStatusRepository.findAllByDeletedAtIsNull()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
     }
 
     @Override
-    public List<MaritalStatus> searchByAdmin(Long adminId, String keyword) {
-        return maritalStatusRepository.findByAdminIdAndNameContainingIgnoreCase(adminId, keyword);
+    public List<MaritalStatusResponseDTO> getDeleted() {
+
+        return maritalStatusRepository.findByDeletedAtIsNotNull()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    // =====================================================
+    // ACTIVE / INACTIVE
+    // =====================================================
+
+    @Override
+    public List<MaritalStatusResponseDTO> getActive() {
+
+        return maritalStatusRepository.findByIsActiveTrueAndDeletedAtIsNull()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Override
+    public List<MaritalStatusResponseDTO> getInactive() {
+
+        return maritalStatusRepository.findByIsActiveFalseAndDeletedAtIsNull()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    // =====================================================
+    // ADMIN
+    // =====================================================
+
+    @Override
+    public List<MaritalStatusResponseDTO> getByAdmin(Long adminId) {
+
+        return maritalStatusRepository.findByAdmin_IdAndDeletedAtIsNull(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Override
+    public List<MaritalStatusResponseDTO> getActiveByAdmin(Long adminId) {
+
+        return maritalStatusRepository
+                .findByAdmin_IdAndIsActiveTrueAndDeletedAtIsNull(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Override
+    public List<MaritalStatusResponseDTO> getInactiveByAdmin(Long adminId) {
+
+        return maritalStatusRepository
+                .findByAdmin_IdAndIsActiveFalseAndDeletedAtIsNull(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    // =====================================================
+    // SEARCH
+    // =====================================================
+
+    @Override
+    public List<MaritalStatusResponseDTO> search(String keyword) {
+
+        return maritalStatusRepository
+                .findByNameContainingIgnoreCaseAndDeletedAtIsNull(keyword)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Override
+    public List<MaritalStatusResponseDTO> searchByAdmin(Long adminId,
+                                                        String keyword) {
+
+        return maritalStatusRepository
+                .findByAdmin_IdAndNameContainingIgnoreCaseAndDeletedAtIsNull(
+                        adminId,
+                        keyword
+                )
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    // =====================================================
+    // DTO MAPPING
+    // =====================================================
+
+    private MaritalStatusResponseDTO mapToResponse(MaritalStatus entity) {
+
+        return MaritalStatusResponseDTO.builder()
+                .id(entity.getId())
+                .adminId(entity.getAdmin() != null ? entity.getAdmin().getId() : null)
+                .name(entity.getName())
+                .isActive(entity.getIsActive())
+                .createdAt(entity.getCreatedAt())
+                .updatedAt(entity.getUpdatedAt())
+                .deletedAt(entity.getDeletedAt())
+                .deletedBy(entity.getDeletedBy())
+                .build();
     }
 }

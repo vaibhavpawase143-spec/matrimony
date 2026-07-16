@@ -10,21 +10,60 @@ import java.util.Optional;
 @Repository
 public interface SisterTypeRepository extends JpaRepository<SisterType, Long> {
 
-    // 🔍 Find by value (admin-specific)
-    Optional<SisterType> findByValueIgnoreCaseAndAdminId(String value, Long adminId);
+    // =====================================================
+    // BASIC
+    // =====================================================
 
-    // 🔍 Check duplicate (admin-specific)
-    boolean existsByValueIgnoreCaseAndAdminId(String value, Long adminId);
+    Optional<SisterType> findByIdAndDeletedAtIsNull(Long id);
 
-    // 🔍 Get all records by admin
-    List<SisterType> findByAdminId(Long adminId);
+    Optional<SisterType> findByIdAndDeletedAtIsNotNull(Long id);
 
-    // 🔍 Active records by admin
-    List<SisterType> findByAdminIdAndIsActiveTrue(Long adminId);
+    List<SisterType> findAllByDeletedAtIsNull();
 
-    // 🔍 Inactive records by admin
-    List<SisterType> findByAdminIdAndIsActiveFalse(Long adminId);
+    List<SisterType> findByDeletedAtIsNotNull();
 
-    // 🔍 Search (admin + keyword)
-    List<SisterType> findByAdminIdAndValueContainingIgnoreCase(Long adminId, String keyword);
+    // =====================================================
+    // DUPLICATE CHECK
+    // =====================================================
+
+    boolean existsByValueIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+            String value,
+            Long adminId
+    );
+
+    Optional<SisterType> findByValueIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+            String value,
+            Long adminId
+    );
+
+    // =====================================================
+    // ACTIVE / INACTIVE
+    // =====================================================
+
+    List<SisterType> findByIsActiveTrueAndDeletedAtIsNull();
+
+    List<SisterType> findByIsActiveFalseAndDeletedAtIsNull();
+
+    // =====================================================
+    // ADMIN
+    // =====================================================
+
+    List<SisterType> findByAdmin_IdAndDeletedAtIsNull(Long adminId);
+
+    List<SisterType> findByAdmin_IdAndIsActiveTrueAndDeletedAtIsNull(Long adminId);
+
+    List<SisterType> findByAdmin_IdAndIsActiveFalseAndDeletedAtIsNull(Long adminId);
+
+    // =====================================================
+    // SEARCH
+    // =====================================================
+
+    List<SisterType> findByValueContainingIgnoreCaseAndDeletedAtIsNull(
+            String keyword
+    );
+
+    List<SisterType> findByAdmin_IdAndValueContainingIgnoreCaseAndDeletedAtIsNull(
+            Long adminId,
+            String keyword
+    );
 }

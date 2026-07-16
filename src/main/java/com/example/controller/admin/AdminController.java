@@ -11,6 +11,7 @@ import com.example.dto.response.ApiResponse;
 import com.example.model.Admin;
 import com.example.model.RefreshToken;
 import com.example.security.JwtUtil;
+import com.example.service.AdminAuditLogService;
 import com.example.service.AdminService;
 import com.example.service.RefreshTokenService;
 import jakarta.validation.Valid;
@@ -22,6 +23,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admins")
@@ -32,7 +34,7 @@ public class AdminController {
     private final AdminService adminService;
     private final JwtUtil jwtUtil;
     private final RefreshTokenService refreshTokenService;
-
+    private final AdminAuditLogService adminAuditLogService;
     // ================= CREATE ADMIN =================
     @PostMapping
     @PreAuthorize("hasRole('SUPER_ADMIN')")
@@ -47,7 +49,20 @@ public class AdminController {
         admin.setPassword(dto.getPassword());
 
         Admin saved = adminService.create(admin);
+        Admin loggedInAdmin = adminService.findByEmail(getLoggedInEmail());
 
+        adminAuditLogService.log(
+                loggedInAdmin.getId(),
+                "ADMIN_MANAGEMENT",
+                "ADMIN_CREATED",
+                "ADMIN",
+                saved.getId(),
+                "Created new admin: " + saved.getEmail(),
+                null,
+                "Admin Created",
+                "SYSTEM",
+                "SYSTEM"
+        );
         return new ApiResponse<>(
                 true,
                 "Admin created successfully",
@@ -67,7 +82,18 @@ public class AdminController {
         );
 
         RefreshToken refreshToken = refreshTokenService.createToken(admin.getEmail());
-
+        adminAuditLogService.log(
+                admin.getId(),
+                "AUTHENTICATION",
+                "ADMIN_LOGIN",
+                "ADMIN",
+                admin.getId(),
+                "Admin logged in successfully: " + admin.getEmail(),
+                null,
+                null,
+                "SYSTEM",
+                "SYSTEM"
+        );
         return new ApiResponse<>(
                 true,
                 "Login successful",
@@ -133,7 +159,20 @@ public class AdminController {
         updated.setPassword(dto.getPassword());
 
         Admin saved = adminService.update(id, updated);
+        Admin loggedInAdmin = adminService.findByEmail(getLoggedInEmail());
 
+        adminAuditLogService.log(
+                loggedInAdmin.getId(),
+                "ADMIN_MANAGEMENT",
+                "ADMIN_UPDATED",
+                "ADMIN",
+                saved.getId(),
+                "Updated admin: " + saved.getEmail(),
+                "Previous Admin Details",
+                "Updated Admin Details",
+                "SYSTEM",
+                "SYSTEM"
+        );
         return new ApiResponse<>(
                 true,
                 "Admin updated successfully",
@@ -146,21 +185,57 @@ public class AdminController {
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ApiResponse<String> delete(@PathVariable Long id) {
 
+        AdminResponseDTO adminToDelete = adminService.getById(id);
+
         adminService.delete(id);
+
+        Admin loggedInAdmin = adminService.findByEmail(getLoggedInEmail());
+
+        adminAuditLogService.log(
+                loggedInAdmin.getId(),
+                "ADMIN_MANAGEMENT",
+                "ADMIN_DELETED",
+                "ADMIN",
+                id,
+                "Deleted admin: " + adminToDelete.getEmail(),
+                "Admin Existed",
+                "Admin Deleted",
+                "SYSTEM",
+                "SYSTEM"
+        );
 
         return new ApiResponse<>(true, "Admin deleted successfully", null);
     }
-
     // ================= LOGOUT =================
     @PostMapping("/logout")
-    public ApiResponse<String> logout(@RequestBody java.util.Map<String, String> request) {
+    public ApiResponse<String> logout(
+            @RequestBody Map<String, String> request) {
 
         String email = request.get("email");
+
+        Admin admin = adminService.findByEmail(email);
+
         refreshTokenService.deleteByEmail(email);
 
-        return new ApiResponse<>(true, "Logged out successfully", null);
-    }
+        adminAuditLogService.log(
+                admin.getId(),
+                "AUTHENTICATION",
+                "ADMIN_LOGOUT",
+                "ADMIN",
+                admin.getId(),
+                "Admin logged out: " + admin.getEmail(),
+                null,
+                null,
+                "SYSTEM",
+                "SYSTEM"
+        );
 
+        return new ApiResponse<>(
+                true,
+                "Logged out successfully",
+                null
+        );
+    }
     // ================= REFRESH TOKEN =================
     @PostMapping("/refresh")
     public ApiResponse<String> refresh(@RequestBody java.util.Map<String, String> request) {
@@ -238,9 +313,22 @@ public class AdminController {
     public ApiResponse<String> activateAdmin(
             @PathVariable Long id
     ) {
-
+        AdminResponseDTO adminToActivate = adminService.getById(id);
         adminService.activateAdmin(id);
+        Admin loggedInAdmin = adminService.findByEmail(getLoggedInEmail());
 
+        adminAuditLogService.log(
+                loggedInAdmin.getId(),
+                "ADMIN_MANAGEMENT",
+                "ADMIN_ACTIVATED",
+                "ADMIN",
+                id,
+                "Activated admin: " + adminToActivate.getEmail(),
+                "Status = INACTIVE",
+                "Status = ACTIVE",
+                "SYSTEM",
+                "SYSTEM"
+        );
         return ApiResponse.<String>builder()
                 .success(true)
                 .message("Admin activated successfully")
@@ -252,9 +340,22 @@ public class AdminController {
     public ApiResponse<String> deactivateAdmin(
             @PathVariable Long id
     ) {
-
+        AdminResponseDTO adminToDeactivate = adminService.getById(id);
         adminService.deactivateAdmin(id);
+        Admin loggedInAdmin = adminService.findByEmail(getLoggedInEmail());
 
+        adminAuditLogService.log(
+                loggedInAdmin.getId(),
+                "ADMIN_MANAGEMENT",
+                "ADMIN_DEACTIVATED",
+                "ADMIN",
+                id,
+                "Deactivated admin: " + adminToDeactivate.getEmail(),
+                "Status = ACTIVE",
+                "Status = INACTIVE",
+                "SYSTEM",
+                "SYSTEM"
+        );
         return ApiResponse.<String>builder()
                 .success(true)
                 .message("Admin deactivated successfully")
@@ -267,9 +368,22 @@ public class AdminController {
             @PathVariable Long id,
             @Valid @RequestBody AdminResetPasswordDTO dto
     ) {
-
+        AdminResponseDTO adminToReset = adminService.getById(id);
         adminService.resetPassword(id, dto);
+        Admin loggedInAdmin = adminService.findByEmail(getLoggedInEmail());
 
+        adminAuditLogService.log(
+                loggedInAdmin.getId(),
+                "ADMIN_MANAGEMENT",
+                "ADMIN_PASSWORD_RESET",
+                "ADMIN",
+                id,
+                "Password reset for admin: " + adminToReset.getEmail(),
+                "Old Password",
+                "New Password",
+                "SYSTEM",
+                "SYSTEM"
+        );
         return ApiResponse.<String>builder()
                 .success(true)
                 .message("Password reset successfully")

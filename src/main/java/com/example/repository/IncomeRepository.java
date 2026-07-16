@@ -10,30 +10,74 @@ import java.util.Optional;
 @Repository
 public interface IncomeRepository extends JpaRepository<Income, Long> {
 
-    // 🔍 Find by range
-    Optional<Income> findByRange(String range);
+    // =========================
+    // GET BY ID
+    // =========================
 
-    // 🔥 Case-insensitive
-    Optional<Income> findByRangeIgnoreCase(String range);
+    Optional<Income> findByIdAndDeletedAtIsNull(Long id);
 
-    // ✅ Duplicate check
-    boolean existsByRange(String range);
+    // =========================
+    // GET ALL
+    // =========================
 
-    boolean existsByRangeIgnoreCase(String range);
+    List<Income> findAllByDeletedAtIsNull();
 
-    // 🔍 Active / Inactive
-    List<Income> findByIsActiveTrue();
-    List<Income> findByIsActiveFalse();
+    // =========================
+    // FIND BY RANGE
+    // =========================
 
-    // 🔍 Admin-based filtering
-    List<Income> findByAdminId(Long adminId);
+    Optional<Income> findByRangeIgnoreCaseAndDeletedAtIsNull(String range);
 
-    // ✅ Active by admin
-    List<Income> findByAdminIdAndIsActiveTrue(Long adminId);
+    Optional<Income> findByRangeIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+            String range,
+            Long adminId
+    );
 
-    // 🔍 Search (global)
-    List<Income> findByRangeContainingIgnoreCase(String keyword);
+    // =========================
+    // DUPLICATE CHECK
+    // =========================
 
-    // 🔥 Search within admin
-    List<Income> findByAdminIdAndRangeContainingIgnoreCase(Long adminId, String keyword);
+    boolean existsByRangeIgnoreCaseAndDeletedAtIsNull(String range);
+
+    boolean existsByRangeIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+            String range,
+            Long adminId
+    );
+
+    // =========================
+    // ACTIVE / INACTIVE
+    // =========================
+
+    List<Income> findByIsActiveTrueAndDeletedAtIsNull();
+
+    List<Income> findByIsActiveFalseAndDeletedAtIsNull();
+
+    // =========================
+    // ADMIN WISE
+    // =========================
+
+    List<Income> findByAdmin_IdAndDeletedAtIsNull(Long adminId);
+
+    List<Income> findByAdmin_IdAndIsActiveTrueAndDeletedAtIsNull(Long adminId);
+
+    List<Income> findByAdmin_IdAndIsActiveFalseAndDeletedAtIsNull(Long adminId);
+
+    // =========================
+    // SEARCH
+    // =========================
+
+    List<Income> findByRangeContainingIgnoreCaseAndDeletedAtIsNull(String keyword);
+
+    List<Income> findByAdmin_IdAndRangeContainingIgnoreCaseAndDeletedAtIsNull(
+            Long adminId,
+            String keyword
+    );
+
+    // =========================
+    // DELETED
+    // =========================
+
+    List<Income> findByDeletedAtIsNotNull();
+
+    Optional<Income> findByIdAndDeletedAtIsNotNull(Long id);
 }

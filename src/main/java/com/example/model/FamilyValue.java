@@ -1,6 +1,11 @@
 package com.example.model;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 
@@ -8,113 +13,61 @@ import java.time.LocalDateTime;
 @Table(
         name = "family_values",
         uniqueConstraints = {
-                @UniqueConstraint(
-                        columnNames = {
-                                "name",
-                                "admin_id"
-                        }
-                )
+                @UniqueConstraint(columnNames = {"name", "admin_id"})
         },
         indexes = {
-                @Index(
-                        name = "idx_family_value_name",
-                        columnList = "name"
-                )
+                @Index(name = "idx_family_value_name", columnList = "name"),
+                @Index(name = "idx_family_value_active", columnList = "is_active"),
+                @Index(name = "idx_family_value_deleted_at", columnList = "deleted_at")
         }
 )
+@Getter
+@Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class FamilyValue {
 
     @Id
-    @GeneratedValue(
-            strategy = GenerationType.IDENTITY
-    )
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "admin_id", nullable = false)
+    private Admin admin;
+
+    @Column(nullable = false, length = 100)
     private String name;
 
-    @Column(name = "is_active")
+    @Builder.Default
+    @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 
-    @Column(name = "admin_id")
-    private Long adminId;
-
-    // ==========================
-    // CREATED AT
-    // ==========================
-
-    @Column(
-            name = "created_at",
-            nullable = false,
-            updatable = false
-    )
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    // ==========================
-    // UPDATED AT
-    // ==========================
-
-    @Column(
-            name = "updated_at"
-    )
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    // =========================
+    // SOFT DELETE
+    // =========================
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
+    @Column(name = "deleted_by")
+    private Long deletedBy;
+
     @PrePersist
-    public void prePersist() {
-
-        this.createdAt = LocalDateTime.now();
-
-        this.updatedAt = LocalDateTime.now();
-
+    protected void onCreate() {
+        LocalDateTime now = LocalDateTime.now();
+        this.createdAt = now;
+        this.updatedAt = now;
     }
 
     @PreUpdate
-    public void preUpdate() {
-
+    protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
-
     }
-
-    public FamilyValue() {}
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id=id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name=name;
-    }
-
-    public Boolean getIsActive() {
-        return isActive;
-    }
-
-    public void setIsActive(Boolean isActive) {
-        this.isActive=isActive;
-    }
-
-    public Long getAdminId() {
-        return adminId;
-    }
-
-    public void setAdminId(Long adminId) {
-        this.adminId=adminId;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
 }

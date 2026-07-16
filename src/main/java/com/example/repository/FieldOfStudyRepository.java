@@ -10,30 +10,74 @@ import java.util.Optional;
 @Repository
 public interface FieldOfStudyRepository extends JpaRepository<FieldOfStudy, Long> {
 
-    // 🔍 Find by name
-    Optional<FieldOfStudy> findByName(String name);
+    // =========================
+    // GET BY ID
+    // =========================
 
-    // 🔥 Case-insensitive
-    Optional<FieldOfStudy> findByNameIgnoreCase(String name);
+    Optional<FieldOfStudy> findByIdAndDeletedAtIsNull(Long id);
 
-    // ✅ Duplicate check
-    boolean existsByName(String name);
+    // =========================
+    // GET ALL
+    // =========================
 
-    boolean existsByNameIgnoreCase(String name);
+    List<FieldOfStudy> findAllByDeletedAtIsNull();
 
-    // 🔍 Active / Inactive
-    List<FieldOfStudy> findByIsActiveTrue();
-    List<FieldOfStudy> findByIsActiveFalse();
+    // =========================
+    // FIND BY NAME
+    // =========================
 
-    // 🔍 Admin-based filtering
-    List<FieldOfStudy> findByAdminId(Long adminId);
+    Optional<FieldOfStudy> findByNameIgnoreCaseAndDeletedAtIsNull(String name);
 
-    // ✅ Active by admin
-    List<FieldOfStudy> findByAdminIdAndIsActiveTrue(Long adminId);
+    Optional<FieldOfStudy> findByNameIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+            String name,
+            Long adminId
+    );
 
-    // 🔍 Search (global)
-    List<FieldOfStudy> findByNameContainingIgnoreCase(String keyword);
+    // =========================
+    // DUPLICATE CHECK
+    // =========================
 
-    // 🔥 Search within admin
-    List<FieldOfStudy> findByAdminIdAndNameContainingIgnoreCase(Long adminId, String keyword);
+    boolean existsByNameIgnoreCaseAndDeletedAtIsNull(String name);
+
+    boolean existsByNameIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+            String name,
+            Long adminId
+    );
+
+    // =========================
+    // ACTIVE / INACTIVE
+    // =========================
+
+    List<FieldOfStudy> findByIsActiveTrueAndDeletedAtIsNull();
+
+    List<FieldOfStudy> findByIsActiveFalseAndDeletedAtIsNull();
+
+    // =========================
+    // ADMIN WISE
+    // =========================
+
+    List<FieldOfStudy> findByAdmin_IdAndDeletedAtIsNull(Long adminId);
+
+    List<FieldOfStudy> findByAdmin_IdAndIsActiveTrueAndDeletedAtIsNull(Long adminId);
+
+    List<FieldOfStudy> findByAdmin_IdAndIsActiveFalseAndDeletedAtIsNull(Long adminId);
+
+    // =========================
+    // SEARCH
+    // =========================
+
+    List<FieldOfStudy> findByNameContainingIgnoreCaseAndDeletedAtIsNull(String keyword);
+
+    List<FieldOfStudy> findByAdmin_IdAndNameContainingIgnoreCaseAndDeletedAtIsNull(
+            Long adminId,
+            String keyword
+    );
+
+    // =========================
+    // DELETED
+    // =========================
+
+    List<FieldOfStudy> findByDeletedAtIsNotNull();
+
+    Optional<FieldOfStudy> findByIdAndDeletedAtIsNotNull(Long id);
 }

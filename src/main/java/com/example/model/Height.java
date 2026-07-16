@@ -1,6 +1,12 @@
 package com.example.model;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -10,9 +16,16 @@ import java.time.LocalDateTime;
                 @UniqueConstraint(columnNames = {"height", "admin_id"})
         },
         indexes = {
-                @Index(name = "idx_height_value", columnList = "height")
+                @Index(name = "idx_height_value", columnList = "height"),
+                @Index(name = "idx_height_active", columnList = "is_active"),
+                @Index(name = "idx_height_deleted_at", columnList = "deleted_at")
         }
 )
+@Getter
+@Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class Height {
 
     @Id
@@ -20,12 +33,13 @@ public class Height {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "admin_id")
+    @JoinColumn(name = "admin_id", nullable = false)
     private Admin admin;
 
     @Column(nullable = false, length = 20)
     private String height;
 
+    @Builder.Default
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 
@@ -35,60 +49,25 @@ public class Height {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    public Height() {}
+    // =========================
+    // SOFT DELETE
+    // =========================
 
-    // 🔥 Lifecycle hooks (improved)
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
+    @Column(name = "deleted_by")
+    private Long deletedBy;
+
     @PrePersist
     protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
-
-        if (this.isActive == null) {
-            this.isActive = true;
-        }
+        LocalDateTime now = LocalDateTime.now();
+        this.createdAt = now;
+        this.updatedAt = now;
     }
 
     @PreUpdate
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
     }
-
-    // ===== Getters & Setters =====
-
-    public Long getId() {
-        return id;
-    }
-
-    public Admin getAdmin() {
-        return admin;
-    }
-
-    public void setAdmin(Admin admin) {
-        this.admin = admin;
-    }
-
-    public String getHeight() {
-        return height;
-    }
-
-    public void setHeight(String height) {
-        this.height = height;
-    }
-
-    public Boolean getIsActive() {
-        return isActive;
-    }
-
-    public void setIsActive(Boolean isActive) {
-        this.isActive = isActive;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
 }

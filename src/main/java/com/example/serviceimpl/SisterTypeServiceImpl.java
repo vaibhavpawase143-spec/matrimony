@@ -1,84 +1,323 @@
 package com.example.serviceimpl;
 
+import com.example.dto.request.SisterTypeRequestDTO;
+import com.example.dto.response.SisterTypeResponseDTO;
+import com.example.exception.BadRequestException;
+import com.example.exception.ResourceNotFoundException;
+import com.example.model.Admin;
 import com.example.model.SisterType;
+import com.example.repository.AdminRepository;
 import com.example.repository.SisterTypeRepository;
+import com.example.service.CurrentAdminService;
 import com.example.service.SisterTypeService;
+import com.example.util.AuditHelper;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
 public class SisterTypeServiceImpl implements SisterTypeService {
 
-    private final SisterTypeRepository repository;
+    private final SisterTypeRepository sisterTypeRepository;
+    private final AdminRepository adminRepository;
+    private final CurrentAdminService currentAdminService;
+    private final AuditHelper auditHelper;
 
-    public SisterTypeServiceImpl(SisterTypeRepository repository) {
-        this.repository = repository;
-    }
+    private static final String MODULE = "Master";
+    private static final String ENTITY = "Sister Type";
 
-    // ✅ Save (admin-wise duplicate check using value)
+    // =====================================================
+    // CREATE
+    // =====================================================
+
     @Override
-    public SisterType save(SisterType sisterType) {
+    public SisterTypeResponseDTO create(SisterTypeRequestDTO requestDto) {
 
-        String value = sisterType.getValue();
-        Long adminId = sisterType.getAdmin().getId();
+        Admin admin = adminRepository.findById(requestDto.getAdminId())
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Admin not found."));
 
-        Optional<SisterType> existing =
-                repository.findByValueIgnoreCaseAndAdminId(value, adminId);
+        if (sisterTypeRepository.existsByValueIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+                requestDto.getValue(),
+                admin.getId())) {
 
-        if (existing.isPresent() &&
-                !existing.get().getId().equals(sisterType.getId())) {
-            throw new RuntimeException("SisterType already exists for this admin!");
+            throw new BadRequestException("Sister Type already exists.");
         }
 
-        return repository.save(sisterType);
+        SisterType entity = SisterType.builder()
+                .admin(admin)
+                .value(requestDto.getValue())
+                .isActive(requestDto.getIsActive())
+                .build();
+
+        entity = sisterTypeRepository.save(entity);
+
+        auditHelper.logCreate(
+                MODULE,
+                ENTITY,
+                entity.getId(),
+                entity.getValue(),
+                entity.getValue()
+        );
+
+        return mapToResponse(entity);
     }
 
-    // ✅ Get by ID
-    @Override
-    public Optional<SisterType> getById(Long id) {
-        return repository.findById(id);
-    }
-
-    // 🔍 Get all
-    @Override
-    public List<SisterType> getAll() {
-        return repository.findAll();
-    }
-
-    // 🔍 Get by admin
-    @Override
-    public List<SisterType> getByAdmin(Long adminId) {
-        return repository.findByAdminId(adminId);
-    }
-
-    // 🔍 Active / Inactive
-    @Override
-    public List<SisterType> getActiveByAdmin(Long adminId) {
-        return repository.findByAdminIdAndIsActiveTrue(adminId);
-    }
+    // =====================================================
+    // UPDATE
+    // =====================================================
 
     @Override
-    public List<SisterType> getInactiveByAdmin(Long adminId) {
-        return repository.findByAdminIdAndIsActiveFalse(adminId);
+    public SisterTypeResponseDTO update(Long id,
+                                        SisterTypeRequestDTO requestDto) {
+
+        SisterType entity = sisterTypeRepository
+                .findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Sister Type not found."));
+
+        if (!entity.getValue().equalsIgnoreCase(requestDto.getValue())
+                && sisterTypeRepository.existsByValueIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+                requestDto.getValue(),
+                entity.getAdmin().getId())) {
+
+            throw new BadRequestException("Sister Type already exists.");
+        }
+
+        String oldValue = entity.getValue();
+        Boolean oldActive = entity.getIsActive();
+
+        entity.setValue(requestDto.getValue());
+        entity.setIsActive(requestDto.getIsActive());
+
+        entity = sisterTypeRepository.save(entity);
+
+        auditHelper.logUpdate(
+                MODULE,
+                ENTITY,
+                entity.getId(),
+                entity.getValue(),
+                oldValue,
+                entity.getValue(),
+                oldActive,
+                entity.getIsActive()
+        );
+
+        return mapToResponse(entity);
     }
 
-    // 🔍 Search
+    // =====================================================
+    // SOFT DELETE
+    // =====================================================
+
     @Override
-    public List<SisterType> searchByAdmin(Long adminId, String keyword) {
-        return repository.findByAdminIdAndValueContainingIgnoreCase(adminId, keyword);
+    public void softDelete(Long id) {
+
+        SisterType entity = sisterTypeRepository
+                .findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Sister Type not found."));
+
+        entity.setDeletedAt(LocalDateTime.now());
+        entity.setDeletedBy(currentAdminService.getCurrentAdmin().getId());
+
+        sisterTypeRepository.save(entity);
+
+        auditHelper.logDelete(
+                MODULE,
+                ENTITY,
+                entity.getId(),
+                entity.getValue(),
+                entity.getValue()
+        );
+    }
+    // =====================================================
+    // RESTORE
+    // =====================================================
+
+    @Override
+    public void restore(Long id) {
+
+        SisterType entity = sisterTypeRepository
+                .findByIdAndDeletedAtIsNotNull(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Deleted Sister Type not found."));
+
+        entity.setDeletedAt(null);
+        entity.setDeletedBy(null);
+
+        sisterTypeRepository.save(entity);
+
+        auditHelper.logRestore(
+                MODULE,
+                ENTITY,
+                entity.getId(),
+                entity.getValue(),
+                entity.getValue()
+        );
     }
 
-    // 🔍 Find by value
+    // =====================================================
+    // HARD DELETE
+    // =====================================================
+
     @Override
-    public Optional<SisterType> getByValueAndAdmin(String value, Long adminId) {
-        return repository.findByValueIgnoreCaseAndAdminId(value, adminId);
+    public void hardDelete(Long id) {
+
+        SisterType entity = sisterTypeRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Sister Type not found."));
+
+        auditHelper.logHardDelete(
+                MODULE,
+                ENTITY,
+                entity.getId(),
+                entity.getValue(),
+                entity.getValue()
+        );
+
+        sisterTypeRepository.delete(entity);
     }
 
-    // ✅ Delete
+    // =====================================================
+    // GET BY ID
+    // =====================================================
+
     @Override
-    public void delete(Long id) {
-        repository.deleteById(id);
+    public SisterTypeResponseDTO getById(Long id) {
+
+        SisterType entity = sisterTypeRepository
+                .findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Sister Type not found."));
+
+        return mapToResponse(entity);
+    }
+
+    // =====================================================
+    // GET ALL
+    // =====================================================
+
+    @Override
+    public List<SisterTypeResponseDTO> getAll() {
+
+        return sisterTypeRepository.findAllByDeletedAtIsNull()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Override
+    public List<SisterTypeResponseDTO> getDeleted() {
+
+        return sisterTypeRepository.findByDeletedAtIsNotNull()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    // =====================================================
+    // ACTIVE / INACTIVE
+    // =====================================================
+
+    @Override
+    public List<SisterTypeResponseDTO> getActive() {
+
+        return sisterTypeRepository.findByIsActiveTrueAndDeletedAtIsNull()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Override
+    public List<SisterTypeResponseDTO> getInactive() {
+
+        return sisterTypeRepository.findByIsActiveFalseAndDeletedAtIsNull()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    // =====================================================
+    // ADMIN
+    // =====================================================
+
+    @Override
+    public List<SisterTypeResponseDTO> getByAdmin(Long adminId) {
+
+        return sisterTypeRepository.findByAdmin_IdAndDeletedAtIsNull(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Override
+    public List<SisterTypeResponseDTO> getActiveByAdmin(Long adminId) {
+
+        return sisterTypeRepository
+                .findByAdmin_IdAndIsActiveTrueAndDeletedAtIsNull(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Override
+    public List<SisterTypeResponseDTO> getInactiveByAdmin(Long adminId) {
+
+        return sisterTypeRepository
+                .findByAdmin_IdAndIsActiveFalseAndDeletedAtIsNull(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    // =====================================================
+    // SEARCH
+    // =====================================================
+
+    @Override
+    public List<SisterTypeResponseDTO> search(String keyword) {
+
+        return sisterTypeRepository
+                .findByValueContainingIgnoreCaseAndDeletedAtIsNull(keyword)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Override
+    public List<SisterTypeResponseDTO> searchByAdmin(Long adminId,
+                                                     String keyword) {
+
+        return sisterTypeRepository
+                .findByAdmin_IdAndValueContainingIgnoreCaseAndDeletedAtIsNull(
+                        adminId,
+                        keyword
+                )
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    // =====================================================
+    // DTO MAPPING
+    // =====================================================
+
+    private SisterTypeResponseDTO mapToResponse(SisterType entity) {
+
+        return SisterTypeResponseDTO.builder()
+                .id(entity.getId())
+                .adminId(entity.getAdmin() != null ? entity.getAdmin().getId() : null)
+                .adminName(null) // Avoid LazyInitializationException
+                .value(entity.getValue())
+                .isActive(entity.getIsActive())
+                .createdAt(entity.getCreatedAt())
+                .updatedAt(entity.getUpdatedAt())
+                .deletedAt(entity.getDeletedAt())
+                .deletedBy(entity.getDeletedBy())
+                .build();
     }
 }

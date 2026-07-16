@@ -5,35 +5,46 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
-import java.util.Optional;
 
 @Repository
 public interface DietRepository extends JpaRepository<Diet, Long> {
 
-    // 🔍 Find by name
-    Optional<Diet> findByName(String name);
+    // ==========================
+    // DUPLICATE CHECK
+    // ==========================
 
-    // 🔥 Case-insensitive (important)
-    Optional<Diet> findByNameIgnoreCase(String name);
+    boolean existsByNameIgnoreCaseAndDeletedAtIsNull(String name);
 
-    // ✅ Duplicate check
-    boolean existsByName(String name);
+    // ==========================
+    // GET
+    // ==========================
 
-    boolean existsByNameIgnoreCase(String name);
+    List<Diet> findByDeletedAtIsNull();
 
-    // 🔍 Active / Inactive
-    List<Diet> findByIsActiveTrue();
-    List<Diet> findByIsActiveFalse();
+    List<Diet> findByDeletedAtIsNotNull();
 
-    // 🔍 Admin-based filtering
-    List<Diet> findByAdminId(Long adminId);
+    List<Diet> findByIsActiveTrueAndDeletedAtIsNull();
 
-    // ✅ Active by admin
-    List<Diet> findByAdminIdAndIsActiveTrue(Long adminId);
+    List<Diet> findByIsActiveFalseAndDeletedAtIsNull();
 
-    // 🔍 Search (global)
-    List<Diet> findByNameContainingIgnoreCase(String keyword);
+    // ==========================
+    // ADMIN
+    // ==========================
 
-    // 🔥 Search within admin (multi-tenant support)
-    List<Diet> findByAdminIdAndNameContainingIgnoreCase(Long adminId, String keyword);
+    List<Diet> findByAdmin_IdAndDeletedAtIsNull(Long adminId);
+
+    List<Diet> findByAdmin_IdAndDeletedAtIsNotNull(Long adminId);
+
+    List<Diet> findByAdmin_IdAndIsActiveTrueAndDeletedAtIsNull(Long adminId);
+
+    // ==========================
+    // SEARCH
+    // ==========================
+
+    List<Diet> findByNameContainingIgnoreCaseAndDeletedAtIsNull(String keyword);
+
+    List<Diet> findByAdmin_IdAndNameContainingIgnoreCaseAndDeletedAtIsNull(
+            Long adminId,
+            String keyword
+    );
 }

@@ -1,35 +1,59 @@
 package com.example.service;
 
-import com.example.model.Qualification;
+import com.example.dto.request.QualificationRequestDTO;
+import com.example.dto.response.QualificationResponseDTO;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface QualificationService {
 
-    // ✅ Create / Save
-    Qualification save(Qualification qualification);
+    // =========================
+    // CRUD
+    // =========================
 
-    // ✅ Get by ID
-    Optional<Qualification> getById(Long id);
+    QualificationResponseDTO create(QualificationRequestDTO requestDto);
 
-    // 🔍 Get all
-    List<Qualification> getAll();
+    QualificationResponseDTO update(Long id, QualificationRequestDTO requestDto);
 
-    // 🔍 Get by admin
-    List<Qualification> getByAdmin(Long adminId);
+    void softDelete(Long id);
 
-    // 🔍 Active / Inactive
-    List<Qualification> getActiveByAdmin(Long adminId);
+    void restore(Long id);
 
-    List<Qualification> getInactiveByAdmin(Long adminId);
+    void hardDelete(Long id);
 
-    // 🔍 Search
-    List<Qualification> searchByAdmin(Long adminId, String keyword);
+    // =========================
+    // GET
+    // =========================
 
-    // 🔍 Find by name (admin-specific)
-    Optional<Qualification> getByNameAndAdmin(String name, Long adminId);
+    QualificationResponseDTO getById(Long id);
 
-    // ✅ Delete
-    void delete(Long id);
+    List<QualificationResponseDTO> getAll();
+
+    List<QualificationResponseDTO> getDeleted();
+
+    // =========================
+    // ACTIVE / INACTIVE
+    // =========================
+
+    List<QualificationResponseDTO> getActive();
+
+    List<QualificationResponseDTO> getInactive();
+
+    // =========================
+    // ADMIN
+    // =========================
+
+    List<QualificationResponseDTO> getByAdmin(Long adminId);
+
+    List<QualificationResponseDTO> getActiveByAdmin(Long adminId);
+
+    List<QualificationResponseDTO> getInactiveByAdmin(Long adminId);
+
+    // =========================
+    // SEARCH
+    // =========================
+
+    List<QualificationResponseDTO> search(String keyword);
+
+    List<QualificationResponseDTO> searchByAdmin(Long adminId, String keyword);
 }

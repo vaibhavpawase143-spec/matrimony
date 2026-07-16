@@ -2,29 +2,64 @@ package com.example.repository;
 
 import com.example.model.Smoking;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
 
-@Repository
 public interface SmokingRepository extends JpaRepository<Smoking, Long> {
 
-    // 🔍 Find by value (admin-specific, case-insensitive)
-    Optional<Smoking> findByValueIgnoreCaseAndAdminId(String value, Long adminId);
+    // =====================================================
+    // GET
+    // =====================================================
 
-    // 🔍 Check duplicate (admin-specific)
-    boolean existsByValueIgnoreCaseAndAdminId(String value, Long adminId);
+    Optional<Smoking> findByIdAndDeletedAtIsNull(Long id);
 
-    // 🔍 Get all records by admin
-    List<Smoking> findByAdminId(Long adminId);
+    Optional<Smoking> findByIdAndDeletedAtIsNotNull(Long id);
 
-    // 🔍 Active records by admin
-    List<Smoking> findByAdminIdAndIsActiveTrue(Long adminId);
+    List<Smoking> findAllByDeletedAtIsNull();
 
-    // 🔍 Inactive records by admin
-    List<Smoking> findByAdminIdAndIsActiveFalse(Long adminId);
+    List<Smoking> findByDeletedAtIsNotNull();
 
-    // 🔍 Search (admin + keyword)
-    List<Smoking> findByAdminIdAndValueContainingIgnoreCase(Long adminId, String keyword);
+    // =====================================================
+    // ACTIVE / INACTIVE
+    // =====================================================
+
+    List<Smoking> findByIsActiveTrueAndDeletedAtIsNull();
+
+    List<Smoking> findByIsActiveFalseAndDeletedAtIsNull();
+
+    // =====================================================
+    // ADMIN
+    // =====================================================
+
+    List<Smoking> findByAdmin_IdAndDeletedAtIsNull(Long adminId);
+
+    List<Smoking> findByAdmin_IdAndIsActiveTrueAndDeletedAtIsNull(Long adminId);
+
+    List<Smoking> findByAdmin_IdAndIsActiveFalseAndDeletedAtIsNull(Long adminId);
+
+    // =====================================================
+    // SEARCH
+    // =====================================================
+
+    List<Smoking> findByValueContainingIgnoreCaseAndDeletedAtIsNull(String keyword);
+
+    List<Smoking> findByAdmin_IdAndValueContainingIgnoreCaseAndDeletedAtIsNull(
+            Long adminId,
+            String keyword
+    );
+
+    // =====================================================
+    // DUPLICATE CHECK
+    // =====================================================
+
+    boolean existsByValueIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+            String value,
+            Long adminId
+    );
+
+    Optional<Smoking> findByValueIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+            String value,
+            Long adminId
+    );
 }

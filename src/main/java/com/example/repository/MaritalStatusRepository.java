@@ -10,30 +10,53 @@ import java.util.Optional;
 @Repository
 public interface MaritalStatusRepository extends JpaRepository<MaritalStatus, Long> {
 
-    // 🔍 Find by name
-    Optional<MaritalStatus> findByName(String name);
+    // =========================
+    // BASIC
+    // =========================
 
-    // 🔥 Case-insensitive
-    Optional<MaritalStatus> findByNameIgnoreCase(String name);
+    Optional<MaritalStatus> findByIdAndDeletedAtIsNull(Long id);
 
-    // ✅ Duplicate check
-    boolean existsByName(String name);
+    Optional<MaritalStatus> findByIdAndDeletedAtIsNotNull(Long id);
 
-    boolean existsByNameIgnoreCase(String name);
+    List<MaritalStatus> findAllByDeletedAtIsNull();
 
-    // 🔍 Active / Inactive
-    List<MaritalStatus> findByIsActiveTrue();
-    List<MaritalStatus> findByIsActiveFalse();
+    List<MaritalStatus> findByDeletedAtIsNotNull();
 
-    // 🔍 Admin-based filtering
-    List<MaritalStatus> findByAdminId(Long adminId);
+    // =========================
+    // DUPLICATE CHECK
+    // =========================
 
-    // ✅ Active by admin
-    List<MaritalStatus> findByAdminIdAndIsActiveTrue(Long adminId);
+    boolean existsByNameIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+            String name,
+            Long adminId
+    );
 
-    // 🔍 Search (global)
-    List<MaritalStatus> findByNameContainingIgnoreCase(String keyword);
+    // =========================
+    // ACTIVE / INACTIVE
+    // =========================
 
-    // 🔥 Search within admin
-    List<MaritalStatus> findByAdminIdAndNameContainingIgnoreCase(Long adminId, String keyword);
+    List<MaritalStatus> findByIsActiveTrueAndDeletedAtIsNull();
+
+    List<MaritalStatus> findByIsActiveFalseAndDeletedAtIsNull();
+
+    // =========================
+    // ADMIN
+    // =========================
+
+    List<MaritalStatus> findByAdmin_IdAndDeletedAtIsNull(Long adminId);
+
+    List<MaritalStatus> findByAdmin_IdAndIsActiveTrueAndDeletedAtIsNull(Long adminId);
+
+    List<MaritalStatus> findByAdmin_IdAndIsActiveFalseAndDeletedAtIsNull(Long adminId);
+
+    // =========================
+    // SEARCH
+    // =========================
+
+    List<MaritalStatus> findByNameContainingIgnoreCaseAndDeletedAtIsNull(String keyword);
+
+    List<MaritalStatus> findByAdmin_IdAndNameContainingIgnoreCaseAndDeletedAtIsNull(
+            Long adminId,
+            String keyword
+    );
 }

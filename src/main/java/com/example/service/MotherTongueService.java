@@ -1,37 +1,59 @@
 package com.example.service;
 
-import com.example.model.MotherTongue;
+import com.example.dto.request.MotherTongueRequestDTO;
+import com.example.dto.response.MotherTongueResponseDTO;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface MotherTongueService {
 
-    // 🔹 CRUD
-    MotherTongue create(MotherTongue motherTongue);
+    // =========================
+    // CRUD
+    // =========================
 
-    MotherTongue update(Long id, MotherTongue motherTongue);
+    MotherTongueResponseDTO create(MotherTongueRequestDTO requestDto);
 
-    void delete(Long id);
+    MotherTongueResponseDTO update(Long id, MotherTongueRequestDTO requestDto);
 
-    Optional<MotherTongue> getById(Long id);
+    void softDelete(Long id);
 
-    // 🔹 Get all (FIXED ✅)
-    List<MotherTongue> getAll();
+    void restore(Long id);
 
-    // 🔹 Admin-based
-    List<MotherTongue> getByAdmin(Long adminId);
+    void hardDelete(Long id);
 
-    List<MotherTongue> getActiveByAdmin(Long adminId);
+    // =========================
+    // GET
+    // =========================
 
-    List<MotherTongue> getInactiveByAdmin(Long adminId);
+    MotherTongueResponseDTO getById(Long id);
 
-    // 🔹 Find by name
-    Optional<MotherTongue> getByNameAndAdmin(String name, Long adminId);
+    List<MotherTongueResponseDTO> getAll();
 
-    // 🔹 Duplicate check
-    boolean existsByNameAndAdmin(String name, Long adminId);
+    List<MotherTongueResponseDTO> getDeleted();
 
-    // 🔹 Search
-    List<MotherTongue> searchByAdmin(Long adminId, String keyword);
+    // =========================
+    // ACTIVE / INACTIVE
+    // =========================
+
+    List<MotherTongueResponseDTO> getActive();
+
+    List<MotherTongueResponseDTO> getInactive();
+
+    // =========================
+    // ADMIN
+    // =========================
+
+    List<MotherTongueResponseDTO> getByAdmin(Long adminId);
+
+    List<MotherTongueResponseDTO> getActiveByAdmin(Long adminId);
+
+    List<MotherTongueResponseDTO> getInactiveByAdmin(Long adminId);
+
+    // =========================
+    // SEARCH
+    // =========================
+
+    List<MotherTongueResponseDTO> search(String keyword);
+
+    List<MotherTongueResponseDTO> searchByAdmin(Long adminId, String keyword);
 }

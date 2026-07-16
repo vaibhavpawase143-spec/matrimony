@@ -1,84 +1,323 @@
 package com.example.serviceimpl;
 
+import com.example.dto.request.SmokingRequestDTO;
+import com.example.dto.response.SmokingResponseDTO;
+import com.example.exception.BadRequestException;
+import com.example.exception.ResourceNotFoundException;
+import com.example.model.Admin;
 import com.example.model.Smoking;
+import com.example.repository.AdminRepository;
 import com.example.repository.SmokingRepository;
+import com.example.service.CurrentAdminService;
 import com.example.service.SmokingService;
+import com.example.util.AuditHelper;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
 public class SmokingServiceImpl implements SmokingService {
 
-    private final SmokingRepository repository;
+    private final SmokingRepository smokingRepository;
+    private final AdminRepository adminRepository;
+    private final CurrentAdminService currentAdminService;
+    private final AuditHelper auditHelper;
 
-    public SmokingServiceImpl(SmokingRepository repository) {
-        this.repository = repository;
-    }
+    private static final String MODULE = "Master";
+    private static final String ENTITY = "Smoking";
 
-    // ✅ Save (admin-wise duplicate check using value)
+    // =====================================================
+    // CREATE
+    // =====================================================
+
     @Override
-    public Smoking save(Smoking smoking) {
+    public SmokingResponseDTO create(SmokingRequestDTO requestDto) {
 
-        String value = smoking.getValue();
-        Long adminId = smoking.getAdmin().getId();
+        Admin admin = adminRepository.findById(requestDto.getAdminId())
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Admin not found."));
 
-        Optional<Smoking> existing =
-                repository.findByValueIgnoreCaseAndAdminId(value, adminId);
+        if (smokingRepository.existsByValueIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+                requestDto.getValue(),
+                admin.getId())) {
 
-        if (existing.isPresent() &&
-                !existing.get().getId().equals(smoking.getId())) {
-            throw new RuntimeException("Smoking type already exists for this admin!");
+            throw new BadRequestException("Smoking already exists.");
         }
 
-        return repository.save(smoking);
+        Smoking entity = Smoking.builder()
+                .admin(admin)
+                .value(requestDto.getValue())
+                .isActive(requestDto.getIsActive())
+                .build();
+
+        entity = smokingRepository.save(entity);
+
+        auditHelper.logCreate(
+                MODULE,
+                ENTITY,
+                entity.getId(),
+                entity.getValue(),
+                entity.getValue()
+        );
+
+        return mapToResponse(entity);
     }
 
-    // ✅ Get by ID
-    @Override
-    public Optional<Smoking> getById(Long id) {
-        return repository.findById(id);
-    }
-
-    // 🔍 Get all
-    @Override
-    public List<Smoking> getAll() {
-        return repository.findAll();
-    }
-
-    // 🔍 Get by admin
-    @Override
-    public List<Smoking> getByAdmin(Long adminId) {
-        return repository.findByAdminId(adminId);
-    }
-
-    // 🔍 Active / Inactive
-    @Override
-    public List<Smoking> getActiveByAdmin(Long adminId) {
-        return repository.findByAdminIdAndIsActiveTrue(adminId);
-    }
+    // =====================================================
+    // UPDATE
+    // =====================================================
 
     @Override
-    public List<Smoking> getInactiveByAdmin(Long adminId) {
-        return repository.findByAdminIdAndIsActiveFalse(adminId);
+    public SmokingResponseDTO update(Long id,
+                                     SmokingRequestDTO requestDto) {
+
+        Smoking entity = smokingRepository
+                .findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Smoking not found."));
+
+        if (!entity.getValue().equalsIgnoreCase(requestDto.getValue())
+                && smokingRepository.existsByValueIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+                requestDto.getValue(),
+                entity.getAdmin().getId())) {
+
+            throw new BadRequestException("Smoking already exists.");
+        }
+
+        String oldValue = entity.getValue();
+        Boolean oldActive = entity.getIsActive();
+
+        entity.setValue(requestDto.getValue());
+        entity.setIsActive(requestDto.getIsActive());
+
+        entity = smokingRepository.save(entity);
+
+        auditHelper.logUpdate(
+                MODULE,
+                ENTITY,
+                entity.getId(),
+                entity.getValue(),
+                oldValue,
+                entity.getValue(),
+                oldActive,
+                entity.getIsActive()
+        );
+
+        return mapToResponse(entity);
+    }
+    // =====================================================
+    // SOFT DELETE
+    // =====================================================
+
+    @Override
+    public void softDelete(Long id) {
+
+        Smoking entity = smokingRepository
+                .findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Smoking not found."));
+
+        entity.setDeletedAt(LocalDateTime.now());
+        entity.setDeletedBy(currentAdminService.getCurrentAdmin().getId());
+
+        smokingRepository.save(entity);
+
+        auditHelper.logDelete(
+                MODULE,
+                ENTITY,
+                entity.getId(),
+                entity.getValue(),
+                entity.getValue()
+        );
     }
 
-    // 🔍 Search
+    // =====================================================
+    // RESTORE
+    // =====================================================
+
     @Override
-    public List<Smoking> searchByAdmin(Long adminId, String keyword) {
-        return repository.findByAdminIdAndValueContainingIgnoreCase(adminId, keyword);
+    public void restore(Long id) {
+
+        Smoking entity = smokingRepository
+                .findByIdAndDeletedAtIsNotNull(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Deleted Smoking not found."));
+
+        entity.setDeletedAt(null);
+        entity.setDeletedBy(null);
+
+        smokingRepository.save(entity);
+
+        auditHelper.logRestore(
+                MODULE,
+                ENTITY,
+                entity.getId(),
+                entity.getValue(),
+                entity.getValue()
+        );
     }
 
-    // 🔍 Find by value
+    // =====================================================
+    // HARD DELETE
+    // =====================================================
+
     @Override
-    public Optional<Smoking> getByValueAndAdmin(String value, Long adminId) {
-        return repository.findByValueIgnoreCaseAndAdminId(value, adminId);
+    public void hardDelete(Long id) {
+
+        Smoking entity = smokingRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Smoking not found."));
+
+        auditHelper.logHardDelete(
+                MODULE,
+                ENTITY,
+                entity.getId(),
+                entity.getValue(),
+                entity.getValue()
+        );
+
+        smokingRepository.delete(entity);
     }
 
-    // ✅ Delete
+    // =====================================================
+    // GET BY ID
+    // =====================================================
+
     @Override
-    public void delete(Long id) {
-        repository.deleteById(id);
+    public SmokingResponseDTO getById(Long id) {
+
+        Smoking entity = smokingRepository
+                .findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Smoking not found."));
+
+        return mapToResponse(entity);
+    }
+
+    // =====================================================
+    // GET ALL
+    // =====================================================
+
+    @Override
+    public List<SmokingResponseDTO> getAll() {
+
+        return smokingRepository.findAllByDeletedAtIsNull()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Override
+    public List<SmokingResponseDTO> getDeleted() {
+
+        return smokingRepository.findByDeletedAtIsNotNull()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    // =====================================================
+    // ACTIVE / INACTIVE
+    // =====================================================
+
+    @Override
+    public List<SmokingResponseDTO> getActive() {
+
+        return smokingRepository.findByIsActiveTrueAndDeletedAtIsNull()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Override
+    public List<SmokingResponseDTO> getInactive() {
+
+        return smokingRepository.findByIsActiveFalseAndDeletedAtIsNull()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    // =====================================================
+    // ADMIN
+    // =====================================================
+
+    @Override
+    public List<SmokingResponseDTO> getByAdmin(Long adminId) {
+
+        return smokingRepository.findByAdmin_IdAndDeletedAtIsNull(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Override
+    public List<SmokingResponseDTO> getActiveByAdmin(Long adminId) {
+
+        return smokingRepository
+                .findByAdmin_IdAndIsActiveTrueAndDeletedAtIsNull(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Override
+    public List<SmokingResponseDTO> getInactiveByAdmin(Long adminId) {
+
+        return smokingRepository
+                .findByAdmin_IdAndIsActiveFalseAndDeletedAtIsNull(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    // =====================================================
+    // SEARCH
+    // =====================================================
+
+    @Override
+    public List<SmokingResponseDTO> search(String keyword) {
+
+        return smokingRepository
+                .findByValueContainingIgnoreCaseAndDeletedAtIsNull(keyword)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Override
+    public List<SmokingResponseDTO> searchByAdmin(Long adminId,
+                                                  String keyword) {
+
+        return smokingRepository
+                .findByAdmin_IdAndValueContainingIgnoreCaseAndDeletedAtIsNull(
+                        adminId,
+                        keyword
+                )
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    // =====================================================
+    // DTO MAPPING
+    // =====================================================
+
+    private SmokingResponseDTO mapToResponse(Smoking entity) {
+
+        return SmokingResponseDTO.builder()
+                .id(entity.getId())
+                .adminId(entity.getAdmin() != null ? entity.getAdmin().getId() : null)
+                .adminName(null)
+                .value(entity.getValue())
+                .isActive(entity.getIsActive())
+                .createdAt(entity.getCreatedAt())
+                .updatedAt(entity.getUpdatedAt())
+                .deletedAt(entity.getDeletedAt())
+                .deletedBy(entity.getDeletedBy())
+                .build();
     }
 }

@@ -1,45 +1,59 @@
 package com.example.service;
 
-import com.example.model.Income;
+import com.example.dto.request.IncomeRequestDTO;
+import com.example.dto.response.IncomeResponseDTO;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface IncomeService {
 
-    // 🔍 Basic CRUD
-    Income create(Income income);
+    // =========================
+    // CRUD
+    // =========================
 
-    Income update(Long id, Income income);
+    IncomeResponseDTO create(IncomeRequestDTO requestDto);
 
-    void delete(Long id);
+    IncomeResponseDTO update(Long id, IncomeRequestDTO requestDto);
 
-    Optional<Income> getById(Long id);
+    void softDelete(Long id);
 
-    List<Income> getAll();
+    void restore(Long id);
 
-    // 🔍 Find by range
-    Optional<Income> getByRange(String range);
+    void hardDelete(Long id);
 
-    Optional<Income> getByRangeIgnoreCase(String range);
+    // =========================
+    // GET
+    // =========================
 
-    // ✅ Duplicate check
-    boolean existsByRange(String range);
+    IncomeResponseDTO getById(Long id);
 
-    boolean existsByRangeIgnoreCase(String range);
+    List<IncomeResponseDTO> getAll();
 
-    // 🔍 Active / Inactive
-    List<Income> getActive();
+    List<IncomeResponseDTO> getDeleted();
 
-    List<Income> getInactive();
+    // =========================
+    // ACTIVE / INACTIVE
+    // =========================
 
-    // 🔍 Admin-based
-    List<Income> getByAdmin(Long adminId);
+    List<IncomeResponseDTO> getActive();
 
-    List<Income> getActiveByAdmin(Long adminId);
+    List<IncomeResponseDTO> getInactive();
 
-    // 🔍 Search
-    List<Income> search(String keyword);
+    // =========================
+    // ADMIN WISE
+    // =========================
 
-    List<Income> searchByAdmin(Long adminId, String keyword);
+    List<IncomeResponseDTO> getByAdmin(Long adminId);
+
+    List<IncomeResponseDTO> getActiveByAdmin(Long adminId);
+
+    List<IncomeResponseDTO> getInactiveByAdmin(Long adminId);
+
+    // =========================
+    // SEARCH
+    // =========================
+
+    List<IncomeResponseDTO> search(String keyword);
+
+    List<IncomeResponseDTO> searchByAdmin(Long adminId, String keyword);
 }

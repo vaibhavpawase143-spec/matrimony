@@ -1,133 +1,215 @@
 package com.example.controller.master;
 
 import com.example.dto.request.IncomeRequestDTO;
+import com.example.dto.response.ApiResponse;
 import com.example.dto.response.IncomeResponseDTO;
-import com.example.model.Admin;
-import com.example.model.Income;
 import com.example.service.IncomeService;
-
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/incomes")
+@RequestMapping("/api/master/incomes")
 @RequiredArgsConstructor
 public class IncomeController {
 
     private final IncomeService incomeService;
 
-    // ✅ Create
+    // =========================
+    // CREATE
+    // =========================
+
     @PostMapping
-    public IncomeResponseDTO create(@Valid @RequestBody IncomeRequestDTO dto) {
+    @ResponseStatus(HttpStatus.CREATED)
+    public ApiResponse<IncomeResponseDTO> create(
+            @Valid @RequestBody IncomeRequestDTO requestDto) {
 
-        Income entity = mapToEntity(dto);
-        Income saved = incomeService.create(entity);
-
-        return mapToResponse(saved);
+        return ApiResponse.success(
+                "Income created successfully.",
+                incomeService.create(requestDto)
+        );
     }
 
-    // 🔄 Update
+    // =========================
+    // UPDATE
+    // =========================
+
     @PutMapping("/{id}")
-    public IncomeResponseDTO update(
+    public ApiResponse<IncomeResponseDTO> update(
             @PathVariable Long id,
-            @Valid @RequestBody IncomeRequestDTO dto
-    ) {
-        Income entity = mapToEntity(dto);
-        Income updated = incomeService.update(id, entity);
+            @Valid @RequestBody IncomeRequestDTO requestDto) {
 
-        return mapToResponse(updated);
+        return ApiResponse.success(
+                "Income updated successfully.",
+                incomeService.update(id, requestDto)
+        );
     }
 
-    // ❌ Delete
+    // =========================
+    // SOFT DELETE
+    // =========================
+
     @DeleteMapping("/{id}")
-    public String delete(@PathVariable Long id) {
-        incomeService.delete(id);
-        return "Income deleted successfully";
+    public ApiResponse<Void> softDelete(@PathVariable Long id) {
+
+        incomeService.softDelete(id);
+
+        return ApiResponse.success(
+                "Income deleted successfully.",
+                null
+        );
     }
 
-    // 🔍 Get by ID
+    // =========================
+    // RESTORE
+    // =========================
+
+    @PatchMapping("/{id}/restore")
+    public ApiResponse<Void> restore(@PathVariable Long id) {
+
+        incomeService.restore(id);
+
+        return ApiResponse.success(
+                "Income restored successfully.",
+                null
+        );
+    }
+
+    // =========================
+    // HARD DELETE
+    // =========================
+
+    @DeleteMapping("/{id}/hard")
+    public ApiResponse<Void> hardDelete(@PathVariable Long id) {
+
+        incomeService.hardDelete(id);
+
+        return ApiResponse.success(
+                "Income permanently deleted.",
+                null
+        );
+    }
+
+    // =========================
+    // GET BY ID
+    // =========================
+
     @GetMapping("/{id}")
-    public IncomeResponseDTO getById(@PathVariable Long id) {
-        Income income = incomeService.getById(id)
-                .orElseThrow(() -> new RuntimeException("Income not found"));
+    public ApiResponse<IncomeResponseDTO> getById(@PathVariable Long id) {
 
-        return mapToResponse(income);
+        return ApiResponse.success(
+                "Income fetched successfully.",
+                incomeService.getById(id)
+        );
     }
 
-    // 🔍 Get all
+    // =========================
+    // GET ALL
+    // =========================
+
     @GetMapping
-    public List<IncomeResponseDTO> getAll() {
-        return incomeService.getAll()
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+    public ApiResponse<List<IncomeResponseDTO>> getAll() {
+
+        return ApiResponse.success(
+                "Incomes fetched successfully.",
+                incomeService.getAll()
+        );
     }
 
-    // 🔍 Active
+    // =========================
+    // GET DELETED
+    // =========================
+
+    @GetMapping("/deleted")
+    public ApiResponse<List<IncomeResponseDTO>> getDeleted() {
+
+        return ApiResponse.success(
+                "Deleted Incomes fetched successfully.",
+                incomeService.getDeleted()
+        );
+    }
+
+    // =========================
+    // ACTIVE / INACTIVE
+    // =========================
+
     @GetMapping("/active")
-    public List<IncomeResponseDTO> getActive() {
-        return incomeService.getActive()
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+    public ApiResponse<List<IncomeResponseDTO>> getActive() {
+
+        return ApiResponse.success(
+                "Active Incomes fetched successfully.",
+                incomeService.getActive()
+        );
     }
 
-    // 🔍 By admin
+    @GetMapping("/inactive")
+    public ApiResponse<List<IncomeResponseDTO>> getInactive() {
+
+        return ApiResponse.success(
+                "Inactive Incomes fetched successfully.",
+                incomeService.getInactive()
+        );
+    }
+
+    // =========================
+    // ADMIN WISE
+    // =========================
+
     @GetMapping("/admin/{adminId}")
-    public List<IncomeResponseDTO> getByAdmin(@PathVariable Long adminId) {
-        return incomeService.getByAdmin(adminId)
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+    public ApiResponse<List<IncomeResponseDTO>> getByAdmin(
+            @PathVariable Long adminId) {
+
+        return ApiResponse.success(
+                "Incomes fetched successfully.",
+                incomeService.getByAdmin(adminId)
+        );
     }
 
-    // 🔍 Search
+    @GetMapping("/admin/{adminId}/active")
+    public ApiResponse<List<IncomeResponseDTO>> getActiveByAdmin(
+            @PathVariable Long adminId) {
+
+        return ApiResponse.success(
+                "Active Incomes fetched successfully.",
+                incomeService.getActiveByAdmin(adminId)
+        );
+    }
+
+    @GetMapping("/admin/{adminId}/inactive")
+    public ApiResponse<List<IncomeResponseDTO>> getInactiveByAdmin(
+            @PathVariable Long adminId) {
+
+        return ApiResponse.success(
+                "Inactive Incomes fetched successfully.",
+                incomeService.getInactiveByAdmin(adminId)
+        );
+    }
+
+    // =========================
+    // SEARCH
+    // =========================
+
     @GetMapping("/search")
-    public List<IncomeResponseDTO> search(@RequestParam String keyword) {
-        return incomeService.search(keyword)
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+    public ApiResponse<List<IncomeResponseDTO>> search(
+            @RequestParam String keyword) {
+
+        return ApiResponse.success(
+                "Search completed successfully.",
+                incomeService.search(keyword)
+        );
     }
 
-    // ===============================
-    // 🔁 MAPPING METHODS
-    // ===============================
+    @GetMapping("/admin/{adminId}/search")
+    public ApiResponse<List<IncomeResponseDTO>> searchByAdmin(
+            @PathVariable Long adminId,
+            @RequestParam String keyword) {
 
-    private Income mapToEntity(IncomeRequestDTO dto) {
-
-        Income entity = new Income();
-
-        entity.setRange(dto.getRange());
-        entity.setIsActive(dto.getIsActive());
-
-        if (dto.getAdminId() != null) {
-            Admin admin = new Admin();
-            admin.setId(dto.getAdminId());
-            entity.setAdmin(admin);
-        }
-
-        return entity;
-    }
-
-    private IncomeResponseDTO mapToResponse(Income entity) {
-
-        IncomeResponseDTO dto = new IncomeResponseDTO();
-
-        dto.setId(entity.getId());
-        dto.setRange(entity.getRange());
-        dto.setIsActive(entity.getIsActive());
-        dto.setCreatedAt(entity.getCreatedAt());
-        dto.setUpdatedAt(entity.getUpdatedAt());
-
-        if (entity.getAdmin() != null) {
-            dto.setAdminId(entity.getAdmin().getId());
-        }
-
-        return dto;
+        return ApiResponse.success(
+                "Search completed successfully.",
+                incomeService.searchByAdmin(adminId, keyword)
+        );
     }
 }

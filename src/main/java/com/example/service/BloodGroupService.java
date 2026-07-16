@@ -15,5 +15,11 @@ public interface BloodGroupService {
 
     BloodGroup update(Long id, BloodGroup bloodGroup, Long adminId);
 
-    void delete(Long id, Long adminId);
+    void delete(Long id, Long deletedBy);
+
+    void hardDelete(Long id);
+
+    BloodGroup restore(Long id);
+
+    List<BloodGroup> getDeleted(Long adminId);
 }

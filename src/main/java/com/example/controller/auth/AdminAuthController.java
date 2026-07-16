@@ -6,10 +6,9 @@ import com.example.model.Admin;
 import com.example.model.RefreshToken;
 import com.example.repository.AdminRepository;
 import com.example.security.JwtUtil;
+import com.example.service.AdminAuditLogService;
 import com.example.service.RefreshTokenService;
-
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
@@ -26,7 +25,7 @@ public class AdminAuthController {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final RefreshTokenService refreshTokenService;
-
+    private final AdminAuditLogService adminAuditLogService;
     // 🔐 ADMIN LOGIN (JSON SUPPORT)
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request) {
@@ -48,7 +47,18 @@ public class AdminAuthController {
 
         // 🔄 Generate Refresh Token
         RefreshToken refreshToken = refreshTokenService.createToken(admin.getEmail());
-
+        adminAuditLogService.log(
+                admin.getId(),
+                "AUTHENTICATION",
+                "ADMIN_LOGIN",
+                "ADMIN",
+                admin.getId(),
+                "Admin logged in successfully: " + admin.getEmail(),
+                null,
+                null,
+                "SYSTEM",
+                "SYSTEM"
+        );
         // ✅ Return response
         return ResponseEntity.ok(
                 new LoginResponse(accessToken, refreshToken.getToken(), null)

@@ -1,34 +1,59 @@
 package com.example.service;
 
-import com.example.model.Family;
+import com.example.dto.request.FamilyRequestDto;
+import com.example.dto.response.FamilyResponseDto;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface FamilyService {
 
-    Family create(Family family);
+    // =========================
+    // CRUD
+    // =========================
 
-    Family update(Long id, Family family);
+    FamilyResponseDto create(FamilyRequestDto requestDto);
 
-    void delete(Long id);
+    FamilyResponseDto update(Long id, FamilyRequestDto requestDto);
 
-    Optional<Family> getById(Long id);
+    void softDelete(Long id);
 
-    List<Family> getAll();
+    void restore(Long id);
 
-    Optional<Family> getByName(String name);
-    Optional<Family> getByNameIgnoreCase(String name);
+    void hardDelete(Long id);
 
-    boolean existsByName(String name);
-    boolean existsByNameIgnoreCase(String name);
+    // =========================
+    // GET
+    // =========================
 
-    List<Family> getActive();
-    List<Family> getInactive();
+    FamilyResponseDto getById(Long id);
 
-    List<Family> getByAdmin(Long adminId);
-    List<Family> getActiveByAdmin(Long adminId);
+    List<FamilyResponseDto> getAll();
 
-    List<Family> search(String keyword);
-    List<Family> searchByAdmin(Long adminId, String keyword);
+    List<FamilyResponseDto> getDeleted();
+
+    // =========================
+    // ACTIVE / INACTIVE
+    // =========================
+
+    List<FamilyResponseDto> getActive();
+
+    List<FamilyResponseDto> getInactive();
+
+    // =========================
+    // ADMIN WISE
+    // =========================
+
+    List<FamilyResponseDto> getByAdmin(Long adminId);
+
+    List<FamilyResponseDto> getActiveByAdmin(Long adminId);
+
+    List<FamilyResponseDto> getInactiveByAdmin(Long adminId);
+
+    // =========================
+    // SEARCH
+    // =========================
+
+    List<FamilyResponseDto> search(String keyword);
+
+    List<FamilyResponseDto> searchByAdmin(Long adminId, String keyword);
 }

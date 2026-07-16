@@ -33,4 +33,17 @@ public interface BloodGroupRepository extends JpaRepository<BloodGroup, Long> {
 
     // 🔥 Optional (best practice combo filter)
     List<BloodGroup> findByAdminIdAndTypeIgnoreCase(Long adminId, String type);
+    boolean existsByTypeIgnoreCaseAndDeletedAtIsNull(String type);
+
+    Optional<BloodGroup> findByTypeIgnoreCaseAndAdminId(String type, Long adminId);
+
+
+
+    List<BloodGroup> findByAdminIdAndDeletedAtIsNull(Long adminId);
+
+    List<BloodGroup> findByAdminIdAndIsActiveTrueAndDeletedAtIsNull(Long adminId);
+
+    List<BloodGroup> findByAdminIdAndIsActiveFalseAndDeletedAtIsNull(Long adminId);
+
+    List<BloodGroup> findByAdminIdAndDeletedAtIsNotNull(Long adminId);
 }

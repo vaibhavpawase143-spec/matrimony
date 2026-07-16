@@ -1,157 +1,217 @@
 package com.example.serviceimpl;
 
+import com.example.exception.BadRequestException;
+import com.example.exception.ResourceNotFoundException;
 import com.example.model.Admin;
 import com.example.model.BloodGroup;
 import com.example.repository.AdminRepository;
 import com.example.repository.BloodGroupRepository;
 import com.example.service.BloodGroupService;
+import com.example.util.AuditHelper;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
-
 @Service
 @RequiredArgsConstructor
 public class BloodGroupServiceImpl implements BloodGroupService {
 
     private final BloodGroupRepository bloodGroupRepository;
     private final AdminRepository adminRepository;
-
+    private final AuditHelper auditHelper;
     // ✅ Create
     @Override
+    @Transactional
     public BloodGroup create(BloodGroup bloodGroup, Long adminId) {
 
-        Admin admin = null;
+        Admin admin = adminRepository.findById(adminId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Admin not found"));
+        if (bloodGroupRepository.existsByTypeIgnoreCaseAndDeletedAtIsNull(
+                bloodGroup.getType())) {
 
-        if(adminId != null){
-
-            admin = adminRepository.findById(adminId)
-                    .orElseThrow(
-                            () -> new RuntimeException(
-                                    "Admin not found"
-                            )
-                    );
-
+            throw new BadRequestException("Blood group already exists");
         }
-        // 🔍 Duplicate check
-        boolean exists = bloodGroupRepository.findAll().stream()
-                .anyMatch(bg -> bg.getType().equalsIgnoreCase(bloodGroup.getType())
-                        && bg.getAdmin().getId().equals(adminId));
-
-        if (exists) {
-            throw new RuntimeException("Blood group already exists");
-        }
-
         bloodGroup.setAdmin(admin);
 
-        return bloodGroupRepository.save(bloodGroup);
-    }
+        BloodGroup saved = bloodGroupRepository.save(bloodGroup);
+
+        auditHelper.logCreate(
+                "MASTER_DATA",
+                "BLOOD_GROUP",
+                saved.getId(),
+                saved.getType(),
+                "Type=" + saved.getType()
+                        + ", Active=" + saved.getIsActive()
+        );
+
+        return saved;    }
 
     // ✅ Get by ID
     @Override
     public BloodGroup getById(Long id, Long adminId) {
 
-        BloodGroup bg = bloodGroupRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Blood group not found"));
+        BloodGroup bloodGroup = bloodGroupRepository.findById(id)
+                .filter(bg -> bg.getDeletedAt() == null)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Blood group not found"));
+        if (adminId != null
+                && bloodGroup.getAdmin() != null
+                && !bloodGroup.getAdmin().getId().equals(adminId)) {
 
-        if(
-                adminId != null &&
-                        bg.getAdmin()!=null &&
-                        !bg.getAdmin().getId().equals(adminId)
-        ){
-
-            throw new RuntimeException(
-                    "Unauthorized access"
-            );
-
+            throw new BadRequestException("Unauthorized access");
         }
 
-        return bg;
+        return bloodGroup;
     }
-
     // ✅ Get all
     @Override
     public List<BloodGroup> getAll(Long adminId) {
 
-        if(adminId == null){
-
-            return bloodGroupRepository.findAll();
-
+        if (adminId == null) {
+            return bloodGroupRepository.findAll()
+                    .stream()
+                    .filter(bg -> bg.getDeletedAt() == null)
+                    .toList();
         }
 
-        return bloodGroupRepository.findAll()
-                .stream()
-                .filter(
-                        bg ->
-                                bg.getAdmin()!=null &&
-                                        bg.getAdmin()
-                                                .getId()
-                                                .equals(adminId)
-                )
-                .toList();
+        return bloodGroupRepository.findByAdminIdAndDeletedAtIsNull(adminId);
     }
-
     // ✅ Get active
     @Override
     public List<BloodGroup> getActive(Long adminId) {
 
-        if(adminId == null){
+        if (adminId == null) {
 
             return bloodGroupRepository.findAll()
                     .stream()
-                    .filter(
-                            bg ->
-                                    Boolean.TRUE.equals(
-                                            bg.getIsActive()
-                                    )
-                    )
+                    .filter(bg ->
+                            bg.getDeletedAt() == null &&
+                                    Boolean.TRUE.equals(bg.getIsActive()))
                     .toList();
-
         }
 
-        return bloodGroupRepository.findAll()
-                .stream()
-                .filter(
-                        bg ->
-                                bg.getAdmin()!=null &&
-                                        bg.getAdmin()
-                                                .getId()
-                                                .equals(adminId)
-                                        &&
-                                        Boolean.TRUE.equals(
-                                                bg.getIsActive()
-                                        )
-                )
-                .toList();
+        return bloodGroupRepository.findByAdminIdAndIsActiveTrueAndDeletedAtIsNull(adminId);
     }
-
     // ✅ Update
     @Override
+    @Transactional
     public BloodGroup update(Long id, BloodGroup updated, Long adminId) {
 
         BloodGroup existing = getById(id, adminId);
+        String oldValue = "Type=" + existing.getType()
+                + ", Active=" + existing.getIsActive();
 
-        // 🔍 Duplicate check (exclude current record)
-        boolean exists = bloodGroupRepository.findAll().stream()
-                .anyMatch(bg -> bg.getType().equalsIgnoreCase(updated.getType())
-                        && bg.getAdmin().getId().equals(adminId)
-                        && !bg.getId().equals(id));
+        boolean wasActive = Boolean.TRUE.equals(existing.getIsActive());
+        if (bloodGroupRepository.existsByTypeIgnoreCaseAndDeletedAtIsNull(
+                updated.getType())
+                && !existing.getType().equalsIgnoreCase(updated.getType())) {
 
-        if (exists) {
-            throw new RuntimeException("Blood group already exists");
+            throw new BadRequestException("Blood group already exists");
         }
-
-        existing.setType(updated.getType());
+        existing.setType(updated.getType().trim());
         existing.setIsActive(updated.getIsActive());
 
-        return bloodGroupRepository.save(existing);
+        BloodGroup saved = bloodGroupRepository.save(existing);
+
+        String newValue = "Type=" + saved.getType()
+                + ", Active=" + saved.getIsActive();
+
+        boolean isActive = Boolean.TRUE.equals(saved.getIsActive());
+
+        auditHelper.logUpdate(
+                "MASTER_DATA",
+                "BLOOD_GROUP",
+                saved.getId(),
+                saved.getType(),
+                oldValue,
+                newValue,
+                wasActive,
+                isActive
+        );
+
+        return saved;
     }
 
     // ✅ Delete
     @Override
-    public void delete(Long id, Long adminId) {
+    @Transactional
+    public void delete(Long id, Long deletedBy) {
 
-        BloodGroup bg = getById(id, adminId);
-        bloodGroupRepository.delete(bg);
+        BloodGroup bloodGroup = bloodGroupRepository.findById(id)
+                .filter(bg -> bg.getDeletedAt() == null)
+                .orElseThrow(() -> new ResourceNotFoundException("Blood group not found"));
+
+        String oldValue = "Type=" + bloodGroup.getType()
+                + ", Active=" + bloodGroup.getIsActive();
+
+        bloodGroup.setDeletedAt(LocalDateTime.now());
+        bloodGroup.setDeletedBy(deletedBy);
+
+        bloodGroupRepository.save(bloodGroup);
+
+        auditHelper.logDelete(
+                "MASTER_DATA",
+                "BLOOD_GROUP",
+                bloodGroup.getId(),
+                bloodGroup.getType(),
+                oldValue
+        );
+    }
+
+    @Override
+    @Transactional
+    public void hardDelete(Long id) {
+
+        BloodGroup bloodGroup = bloodGroupRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Blood group not found"));
+
+        String oldValue = "Type=" + bloodGroup.getType()
+                + ", Active=" + bloodGroup.getIsActive();
+
+        bloodGroupRepository.delete(bloodGroup);
+
+        auditHelper.logHardDelete(
+                "MASTER_DATA",
+                "BLOOD_GROUP",
+                bloodGroup.getId(),
+                bloodGroup.getType(),
+                oldValue
+        );
+    }
+    @Override
+    @Transactional
+    public BloodGroup restore(Long id) {
+
+        BloodGroup bloodGroup = bloodGroupRepository.findById(id)
+                .filter(bg -> bg.getDeletedAt() != null)
+                .orElseThrow(() -> new ResourceNotFoundException("Deleted blood group not found"));
+
+        bloodGroup.setDeletedAt(null);
+        bloodGroup.setDeletedBy(null);
+
+        BloodGroup restored = bloodGroupRepository.save(bloodGroup);
+
+        auditHelper.logRestore(
+                "MASTER_DATA",
+                "BLOOD_GROUP",
+                restored.getId(),
+                restored.getType(),
+                "Type=" + restored.getType()
+                        + ", Active=" + restored.getIsActive()
+        );
+
+        return restored;
+    }
+    @Override
+    @Transactional
+    public List<BloodGroup> getDeleted(Long adminId) {
+
+        return bloodGroupRepository.findAll()
+                .stream()
+                .filter(bg -> bg.getDeletedAt() != null)
+                .toList();
     }
 }

@@ -1,127 +1,280 @@
 package com.example.serviceimpl;
 
+import com.example.exception.BadRequestException;
+import com.example.exception.ResourceNotFoundException;
+import com.example.model.Admin;
 import com.example.model.DisabilityStatus;
+import com.example.repository.AdminRepository;
 import com.example.repository.DisabilityStatusRepository;
 import com.example.service.DisabilityStatusService;
+import com.example.util.AuditHelper;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
+@Transactional
 public class DisabilityStatusServiceImpl implements DisabilityStatusService {
 
     private final DisabilityStatusRepository disabilityStatusRepository;
+    private final AdminRepository adminRepository;
+    private final AuditHelper auditHelper;
 
-    public DisabilityStatusServiceImpl(DisabilityStatusRepository disabilityStatusRepository) {
-        this.disabilityStatusRepository = disabilityStatusRepository;
-    }
+    // ================= CREATE =================
 
-    // ✅ Create
     @Override
+    @Transactional
     public DisabilityStatus create(DisabilityStatus disabilityStatus) {
 
-        if (disabilityStatusRepository.existsByValueIgnoreCase(disabilityStatus.getValue())) {
-            throw new RuntimeException("Disability status already exists: " + disabilityStatus.getValue());
+        Admin admin = adminRepository.findById(
+                disabilityStatus.getAdmin().getId()
+        ).orElseThrow(() ->
+                new ResourceNotFoundException("Admin not found"));
+
+        disabilityStatus.setValue(disabilityStatus.getValue().trim());
+
+        if (disabilityStatusRepository
+                .existsByValueIgnoreCaseAndDeletedAtIsNull(
+                        disabilityStatus.getValue())) {
+
+            throw new BadRequestException("Disability status already exists");
         }
 
-        return disabilityStatusRepository.save(disabilityStatus);
+        disabilityStatus.setAdmin(admin);
+
+        DisabilityStatus saved = disabilityStatusRepository.save(disabilityStatus);
+
+        auditHelper.logCreate(
+                "MASTER_DATA",
+                "DISABILITY_STATUS",
+                saved.getId(),
+                saved.getValue(),
+                "Value=" + saved.getValue()
+                        + ", Active=" + saved.getIsActive()
+        );
+
+        return saved;
     }
 
-    // 🔄 Update
+    // ================= UPDATE =================
+
     @Override
-    public DisabilityStatus update(Long id, DisabilityStatus disabilityStatus) {
+    @Transactional
+    public DisabilityStatus update(Long id, DisabilityStatus updated) {
 
-        DisabilityStatus existing = disabilityStatusRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Disability status not found with id: " + id));
+        DisabilityStatus existing = getById(id);
 
-        disabilityStatusRepository.findByValueIgnoreCase(disabilityStatus.getValue())
-                .ifPresent(d -> {
-                    if (!d.getId().equals(id)) {
-                        throw new RuntimeException("Disability status already exists: " + disabilityStatus.getValue());
-                    }
-                });
+        String oldValue = "Value=" + existing.getValue()
+                + ", Active=" + existing.getIsActive();
 
-        // ✏️ Update fields
-        existing.setValue(disabilityStatus.getValue());
-        existing.setIsActive(disabilityStatus.getIsActive());
+        boolean wasActive = Boolean.TRUE.equals(existing.getIsActive());
 
-        return disabilityStatusRepository.save(existing);
+        updated.setValue(updated.getValue().trim());
+
+        if (!existing.getValue().equalsIgnoreCase(updated.getValue())
+                && disabilityStatusRepository
+                .existsByValueIgnoreCaseAndDeletedAtIsNull(updated.getValue())) {
+
+            throw new BadRequestException("Disability status already exists");
+        }
+
+        existing.setValue(updated.getValue());
+
+        existing.setIsActive(
+                updated.getIsActive() != null
+                        ? updated.getIsActive()
+                        : existing.getIsActive()
+        );
+
+        DisabilityStatus saved = disabilityStatusRepository.save(existing);
+
+        String newValue = "Value=" + saved.getValue()
+                + ", Active=" + saved.getIsActive();
+
+        auditHelper.logUpdate(
+                "MASTER_DATA",
+                "DISABILITY_STATUS",
+                saved.getId(),
+                saved.getValue(),
+                oldValue,
+                newValue,
+                wasActive,
+                Boolean.TRUE.equals(saved.getIsActive())
+        );
+
+        return saved;
     }
 
-    // ❌ Delete
-    @Override
-    public void delete(Long id) {
-        DisabilityStatus existing = disabilityStatusRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Disability status not found with id: " + id));
+    // ================= DELETE =================
 
-        disabilityStatusRepository.delete(existing);
+    @Override
+    @Transactional
+    public void delete(Long id, Long deletedBy) {
+
+        DisabilityStatus disabilityStatus = getById(id);
+
+        String oldValue = "Value=" + disabilityStatus.getValue()
+                + ", Active=" + disabilityStatus.getIsActive();
+
+        disabilityStatus.setDeletedAt(LocalDateTime.now());
+        disabilityStatus.setDeletedBy(deletedBy);
+
+        disabilityStatusRepository.save(disabilityStatus);
+
+        auditHelper.logDelete(
+                "MASTER_DATA",
+                "DISABILITY_STATUS",
+                disabilityStatus.getId(),
+                disabilityStatus.getValue(),
+                oldValue
+        );
     }
 
-    // 🔍 Get by ID
+    // ================= HARD DELETE =================
+
     @Override
-    public Optional<DisabilityStatus> getById(Long id) {
-        return disabilityStatusRepository.findById(id);
+    @Transactional
+    public void hardDelete(Long id) {
+
+        DisabilityStatus disabilityStatus = disabilityStatusRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Disability status not found"));
+
+        String oldValue = "Value=" + disabilityStatus.getValue()
+                + ", Active=" + disabilityStatus.getIsActive();
+
+        disabilityStatusRepository.delete(disabilityStatus);
+
+        auditHelper.logHardDelete(
+                "MASTER_DATA",
+                "DISABILITY_STATUS",
+                disabilityStatus.getId(),
+                disabilityStatus.getValue(),
+                oldValue
+        );
     }
 
-    // 🔍 Get all
+    // ================= RESTORE =================
+
     @Override
+    @Transactional
+    public DisabilityStatus restore(Long id) {
+
+        DisabilityStatus disabilityStatus = disabilityStatusRepository.findById(id)
+                .filter(d -> d.getDeletedAt() != null)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Deleted disability status not found"));
+
+        disabilityStatus.setDeletedAt(null);
+        disabilityStatus.setDeletedBy(null);
+        disabilityStatus.setUpdatedAt(LocalDateTime.now());
+
+        DisabilityStatus restored = disabilityStatusRepository.save(disabilityStatus);
+
+        auditHelper.logRestore(
+                "MASTER_DATA",
+                "DISABILITY_STATUS",
+                restored.getId(),
+                restored.getValue(),
+                "Value=" + restored.getValue()
+                        + ", Active=" + restored.getIsActive()
+        );
+
+        return restored;
+    }
+
+    // ================= GET BY ID =================
+
+    @Override
+    @Transactional(readOnly = true)
+    public DisabilityStatus getById(Long id) {
+
+        return disabilityStatusRepository.findById(id)
+                .filter(disabilityStatus -> disabilityStatus.getDeletedAt() == null)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Disability status not found"));
+    }
+
+    // ================= GET ALL =================
+
+    @Override
+    @Transactional(readOnly = true)
     public List<DisabilityStatus> getAll() {
-        return disabilityStatusRepository.findAll();
+
+        return disabilityStatusRepository.findByDeletedAtIsNull();
     }
 
-    // 🔍 Find by value
-    @Override
-    public Optional<DisabilityStatus> getByValue(String value) {
-        return disabilityStatusRepository.findByValue(value);
-    }
+    // ================= GET DELETED =================
 
     @Override
-    public Optional<DisabilityStatus> getByValueIgnoreCase(String value) {
-        return disabilityStatusRepository.findByValueIgnoreCase(value);
+    @Transactional(readOnly = true)
+    public List<DisabilityStatus> getDeleted() {
+
+        return disabilityStatusRepository.findByDeletedAtIsNotNull();
     }
 
-    // ✅ Duplicate check
-    @Override
-    public boolean existsByValue(String value) {
-        return disabilityStatusRepository.existsByValue(value);
-    }
+    // ================= ACTIVE =================
 
     @Override
-    public boolean existsByValueIgnoreCase(String value) {
-        return disabilityStatusRepository.existsByValueIgnoreCase(value);
-    }
-
-    // 🔍 Active / Inactive
-    @Override
+    @Transactional(readOnly = true)
     public List<DisabilityStatus> getActive() {
-        return disabilityStatusRepository.findByIsActiveTrue();
+
+        return disabilityStatusRepository.findByIsActiveTrueAndDeletedAtIsNull();
     }
+    // ================= INACTIVE =================
 
     @Override
+    @Transactional(readOnly = true)
     public List<DisabilityStatus> getInactive() {
-        return disabilityStatusRepository.findByIsActiveFalse();
+
+        return disabilityStatusRepository.findByIsActiveFalseAndDeletedAtIsNull();
     }
 
-    // 🔍 Admin-based
+    // ================= BY ADMIN =================
+
     @Override
+    @Transactional(readOnly = true)
     public List<DisabilityStatus> getByAdmin(Long adminId) {
-        return disabilityStatusRepository.findByAdminId(adminId);
+
+        return disabilityStatusRepository.findByAdmin_IdAndDeletedAtIsNull(adminId);
     }
 
+    // ================= ACTIVE BY ADMIN =================
+
     @Override
+    @Transactional(readOnly = true)
     public List<DisabilityStatus> getActiveByAdmin(Long adminId) {
-        return disabilityStatusRepository.findByAdminIdAndIsActiveTrue(adminId);
+
+        return disabilityStatusRepository
+                .findByAdmin_IdAndIsActiveTrueAndDeletedAtIsNull(adminId);
     }
 
-    // 🔍 Search
+    // ================= SEARCH =================
+
     @Override
+    @Transactional(readOnly = true)
     public List<DisabilityStatus> search(String keyword) {
-        return disabilityStatusRepository.findByValueContainingIgnoreCase(keyword);
+
+        return disabilityStatusRepository
+                .findByValueContainingIgnoreCaseAndDeletedAtIsNull(
+                        keyword.trim()
+                );
     }
 
+    // ================= SEARCH BY ADMIN =================
+
     @Override
+    @Transactional(readOnly = true)
     public List<DisabilityStatus> searchByAdmin(Long adminId, String keyword) {
-        return disabilityStatusRepository.findByAdminIdAndValueContainingIgnoreCase(adminId, keyword);
+
+        return disabilityStatusRepository
+                .findByAdmin_IdAndValueContainingIgnoreCaseAndDeletedAtIsNull(
+                        adminId,
+                        keyword.trim()
+                );
     }
 }

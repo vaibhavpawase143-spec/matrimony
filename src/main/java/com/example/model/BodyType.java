@@ -1,16 +1,27 @@
 package com.example.model;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 import java.time.LocalDateTime;
 
+@Getter
+@Setter
+@NoArgsConstructor
 @Entity
 @Table(
         name = "body_types",
-        uniqueConstraints = {
-                @UniqueConstraint(columnNames = {"value"})
-        },
         indexes = {
+                @Index(name = "idx_body_type_value", columnList = "value"),
                 @Index(name = "idx_body_type_active", columnList = "is_active")
+        },
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_body_type_admin_value",
+                        columnNames = {"admin_id", "value"}
+                )
         }
 )
 public class BodyType {
@@ -35,51 +46,24 @@ public class BodyType {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    public BodyType() {}
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
+    @Column(name = "deleted_by")
+    private Long deletedBy;
 
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+
+        if (isActive == null) {
+            isActive = true;
+        }
     }
 
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public Admin getAdmin() {
-        return admin;
-    }
-
-    public void setAdmin(Admin admin) {
-        this.admin = admin;
-    }
-
-    public String getValue() {
-        return value;
-    }
-
-    public void setValue(String value) {
-        this.value = value;
-    }
-
-    public Boolean getIsActive() {
-        return isActive;
-    }
-
-    public void setIsActive(Boolean isActive) {
-        this.isActive = isActive;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
     }
 }

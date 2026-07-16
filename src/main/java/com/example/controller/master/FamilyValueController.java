@@ -1,111 +1,215 @@
 package com.example.controller.master;
 
 import com.example.dto.request.FamilyValueRequestDto;
+import com.example.dto.response.ApiResponse;
 import com.example.dto.response.FamilyValueResponseDto;
-import com.example.model.FamilyValue;
 import com.example.service.FamilyValueService;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/master/family-values")
+@RequiredArgsConstructor
 public class FamilyValueController {
 
-    private final FamilyValueService service;
+    private final FamilyValueService familyValueService;
 
-    public FamilyValueController(FamilyValueService service) {
-        this.service = service;
-    }
+    // =========================
+    // CREATE
+    // =========================
 
-    // ✅ Create
     @PostMapping
-    public FamilyValueResponseDto create(@Valid @RequestBody FamilyValueRequestDto dto) {
-        return mapToResponse(service.create(mapToEntity(dto)));
+    @ResponseStatus(HttpStatus.CREATED)
+    public ApiResponse<FamilyValueResponseDto> create(
+            @Valid @RequestBody FamilyValueRequestDto requestDto) {
+
+        return ApiResponse.success(
+                "Family Value created successfully.",
+                familyValueService.create(requestDto)
+        );
     }
 
-    // 🔄 Update
+    // =========================
+    // UPDATE
+    // =========================
+
     @PutMapping("/{id}")
-    public FamilyValueResponseDto update(@PathVariable Long id,
-                                         @Valid @RequestBody FamilyValueRequestDto dto) {
-        return mapToResponse(service.update(id, mapToEntity(dto)));
+    public ApiResponse<FamilyValueResponseDto> update(
+            @PathVariable Long id,
+            @Valid @RequestBody FamilyValueRequestDto requestDto) {
+
+        return ApiResponse.success(
+                "Family Value updated successfully.",
+                familyValueService.update(id, requestDto)
+        );
     }
 
-    // ❌ Delete
+    // =========================
+    // SOFT DELETE
+    // =========================
+
     @DeleteMapping("/{id}")
-    public String delete(@PathVariable Long id) {
-        service.delete(id);
-        return "FamilyValue deleted successfully";
+    public ApiResponse<Void> softDelete(@PathVariable Long id) {
+
+        familyValueService.softDelete(id);
+
+        return ApiResponse.success(
+                "Family Value deleted successfully.",
+                null
+        );
     }
 
-    // 🔍 Get by ID
+    // =========================
+    // RESTORE
+    // =========================
+
+    @PatchMapping("/{id}/restore")
+    public ApiResponse<Void> restore(@PathVariable Long id) {
+
+        familyValueService.restore(id);
+
+        return ApiResponse.success(
+                "Family Value restored successfully.",
+                null
+        );
+    }
+
+    // =========================
+    // HARD DELETE
+    // =========================
+
+    @DeleteMapping("/{id}/hard")
+    public ApiResponse<Void> hardDelete(@PathVariable Long id) {
+
+        familyValueService.hardDelete(id);
+
+        return ApiResponse.success(
+                "Family Value permanently deleted.",
+                null
+        );
+    }
+
+    // =========================
+    // GET BY ID
+    // =========================
+
     @GetMapping("/{id}")
-    public FamilyValueResponseDto getById(@PathVariable Long id) {
-        return service.getById(id)
-                .map(this::mapToResponse)
-                .orElseThrow(() -> new RuntimeException("FamilyValue not found"));
+    public ApiResponse<FamilyValueResponseDto> getById(@PathVariable Long id) {
+
+        return ApiResponse.success(
+                "Family Value fetched successfully.",
+                familyValueService.getById(id)
+        );
     }
 
-    // 🔍 Get all
+    // =========================
+    // GET ALL
+    // =========================
+
     @GetMapping
-    public List<FamilyValueResponseDto> getAll() {
-        return service.getAll()
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+    public ApiResponse<List<FamilyValueResponseDto>> getAll() {
+
+        return ApiResponse.success(
+                "Family Values fetched successfully.",
+                familyValueService.getAll()
+        );
     }
 
-    // 🔍 Active
+    // =========================
+    // GET DELETED
+    // =========================
+
+    @GetMapping("/deleted")
+    public ApiResponse<List<FamilyValueResponseDto>> getDeleted() {
+
+        return ApiResponse.success(
+                "Deleted Family Values fetched successfully.",
+                familyValueService.getDeleted()
+        );
+    }
+
+    // =========================
+    // ACTIVE / INACTIVE
+    // =========================
+
     @GetMapping("/active")
-    public List<FamilyValueResponseDto> getActive() {
-        return service.getActive()
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+    public ApiResponse<List<FamilyValueResponseDto>> getActive() {
+
+        return ApiResponse.success(
+                "Active Family Values fetched successfully.",
+                familyValueService.getActive()
+        );
     }
 
-    // 🔍 By Admin
+    @GetMapping("/inactive")
+    public ApiResponse<List<FamilyValueResponseDto>> getInactive() {
+
+        return ApiResponse.success(
+                "Inactive Family Values fetched successfully.",
+                familyValueService.getInactive()
+        );
+    }
+
+    // =========================
+    // ADMIN WISE
+    // =========================
+
     @GetMapping("/admin/{adminId}")
-    public List<FamilyValueResponseDto> getByAdmin(@PathVariable Long adminId) {
-        return service.getByAdmin(adminId)
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+    public ApiResponse<List<FamilyValueResponseDto>> getByAdmin(
+            @PathVariable Long adminId) {
+
+        return ApiResponse.success(
+                "Family Values fetched successfully.",
+                familyValueService.getByAdmin(adminId)
+        );
     }
 
-    // 🔍 Search
+    @GetMapping("/admin/{adminId}/active")
+    public ApiResponse<List<FamilyValueResponseDto>> getActiveByAdmin(
+            @PathVariable Long adminId) {
+
+        return ApiResponse.success(
+                "Active Family Values fetched successfully.",
+                familyValueService.getActiveByAdmin(adminId)
+        );
+    }
+
+    @GetMapping("/admin/{adminId}/inactive")
+    public ApiResponse<List<FamilyValueResponseDto>> getInactiveByAdmin(
+            @PathVariable Long adminId) {
+
+        return ApiResponse.success(
+                "Inactive Family Values fetched successfully.",
+                familyValueService.getInactiveByAdmin(adminId)
+        );
+    }
+
+    // =========================
+    // SEARCH
+    // =========================
+
     @GetMapping("/search")
-    public List<FamilyValueResponseDto> search(@RequestParam String keyword) {
-        return service.search(keyword)
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+    public ApiResponse<List<FamilyValueResponseDto>> search(
+            @RequestParam String keyword) {
+
+        return ApiResponse.success(
+                "Search completed successfully.",
+                familyValueService.search(keyword)
+        );
     }
 
-    // =========================
-    // 🔁 MAPPING
-    // =========================
+    @GetMapping("/admin/{adminId}/search")
+    public ApiResponse<List<FamilyValueResponseDto>> searchByAdmin(
+            @PathVariable Long adminId,
+            @RequestParam String keyword) {
 
-    private FamilyValue mapToEntity(FamilyValueRequestDto dto) {
-
-        FamilyValue entity = new FamilyValue();
-
-        entity.setName(dto.getName());
-        entity.setIsActive(dto.getIsActive());
-        entity.setAdminId(dto.getAdminId());
-
-        return entity;
-    }
-
-    private FamilyValueResponseDto mapToResponse(FamilyValue entity) {
-
-        return FamilyValueResponseDto.builder()
-                .id(entity.getId())
-                .name(entity.getName())
-                .isActive(entity.getIsActive())
-                .adminId(entity.getAdminId())
-                .build();
+        return ApiResponse.success(
+                "Search completed successfully.",
+                familyValueService.searchByAdmin(adminId, keyword)
+        );
     }
 }

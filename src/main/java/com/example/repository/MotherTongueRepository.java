@@ -10,21 +10,60 @@ import java.util.Optional;
 @Repository
 public interface MotherTongueRepository extends JpaRepository<MotherTongue, Long> {
 
-    // 🔍 Find by name (admin-specific)
-    Optional<MotherTongue> findByNameIgnoreCaseAndAdminId(String name, Long adminId);
+    // =========================
+    // BASIC
+    // =========================
 
-    // 🔍 Check duplicate (admin-specific)
-    boolean existsByNameIgnoreCaseAndAdminId(String name, Long adminId);
+    Optional<MotherTongue> findByIdAndDeletedAtIsNull(Long id);
 
-    // 🔍 Get all records by admin
-    List<MotherTongue> findByAdminId(Long adminId);
+    Optional<MotherTongue> findByIdAndDeletedAtIsNotNull(Long id);
 
-    // 🔍 Active records by admin
-    List<MotherTongue> findByAdminIdAndIsActiveTrue(Long adminId);
+    List<MotherTongue> findAllByDeletedAtIsNull();
 
-    // 🔍 Inactive records by admin
-    List<MotherTongue> findByAdminIdAndIsActiveFalse(Long adminId);
+    List<MotherTongue> findByDeletedAtIsNotNull();
 
-    // 🔍 Search (admin + keyword)
-    List<MotherTongue> findByAdminIdAndNameContainingIgnoreCase(Long adminId, String keyword);
+    // =========================
+    // DUPLICATE CHECK
+    // =========================
+
+    boolean existsByNameIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+            String name,
+            Long adminId
+    );
+
+    Optional<MotherTongue> findByNameIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+            String name,
+            Long adminId
+    );
+
+    // =========================
+    // ACTIVE / INACTIVE
+    // =========================
+
+    List<MotherTongue> findByIsActiveTrueAndDeletedAtIsNull();
+
+    List<MotherTongue> findByIsActiveFalseAndDeletedAtIsNull();
+
+    // =========================
+    // ADMIN
+    // =========================
+
+    List<MotherTongue> findByAdmin_IdAndDeletedAtIsNull(Long adminId);
+
+    List<MotherTongue> findByAdmin_IdAndIsActiveTrueAndDeletedAtIsNull(Long adminId);
+
+    List<MotherTongue> findByAdmin_IdAndIsActiveFalseAndDeletedAtIsNull(Long adminId);
+
+    // =========================
+    // SEARCH
+    // =========================
+
+    List<MotherTongue> findByNameContainingIgnoreCaseAndDeletedAtIsNull(
+            String keyword
+    );
+
+    List<MotherTongue> findByAdmin_IdAndNameContainingIgnoreCaseAndDeletedAtIsNull(
+            Long adminId,
+            String keyword
+    );
 }

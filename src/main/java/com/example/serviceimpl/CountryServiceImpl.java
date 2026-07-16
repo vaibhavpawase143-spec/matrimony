@@ -1,129 +1,245 @@
 package com.example.serviceimpl;
 
+import com.example.exception.BadRequestException;
+import com.example.exception.ResourceNotFoundException;
+import com.example.model.Admin;
 import com.example.model.Country;
+import com.example.repository.AdminRepository;
 import com.example.repository.CountryRepository;
 import com.example.service.CountryService;
+import com.example.util.AuditHelper;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
+@Transactional
 public class CountryServiceImpl implements CountryService {
 
     private final CountryRepository countryRepository;
-
-    public CountryServiceImpl(CountryRepository countryRepository) {
-        this.countryRepository = countryRepository;
-    }
-
+    private final AdminRepository adminRepository;
+    private final AuditHelper auditHelper;
     // ✅ Create
     @Override
+    @Transactional
     public Country create(Country country) {
 
-        // 🔥 Duplicate check
-        if (countryRepository.existsByNameIgnoreCase(country.getName())) {
-            throw new RuntimeException("Country already exists: " + country.getName());
+        Admin admin = adminRepository.findById(
+                country.getAdmin().getId()
+        ).orElseThrow(() ->
+                new ResourceNotFoundException("Admin not found"));
+
+        country.setName(country.getName().trim());
+
+        if (countryRepository.existsByNameIgnoreCaseAndDeletedAtIsNull(
+                country.getName())) {
+
+            throw new BadRequestException("Country already exists");
         }
 
-        return countryRepository.save(country);
+        country.setAdmin(admin);
+
+        Country saved = countryRepository.save(country);
+
+        auditHelper.logCreate(
+                "MASTER_DATA",
+                "COUNTRY",
+                saved.getId(),
+                saved.getName(),
+                "Name=" + saved.getName()
+                        + ", Active=" + saved.getIsActive()
+        );
+
+        return saved;
     }
 
     // 🔄 Update
     @Override
-    public Country update(Long id, Country country) {
+    @Transactional
+    public Country update(Long id, Country updated) {
 
-        Country existing = countryRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Country not found with id: " + id));
+        Country existing = getById(id);
 
-        // 🔥 Duplicate check (exclude same record)
-        countryRepository.findByNameIgnoreCase(country.getName())
-                .ifPresent(c -> {
-                    if (!c.getId().equals(id)) {
-                        throw new RuntimeException("Country already exists: " + country.getName());
-                    }
-                });
+        String oldValue = "Name=" + existing.getName()
+                + ", Active=" + existing.getIsActive();
 
-        // ✏️ Update fields
-        existing.setName(country.getName());
-        existing.setIsActive(country.getIsActive());
+        boolean wasActive = Boolean.TRUE.equals(existing.getIsActive());
 
-        return countryRepository.save(existing);
+        updated.setName(updated.getName().trim());
+
+        if (!existing.getName().equalsIgnoreCase(updated.getName())
+                && countryRepository.existsByNameIgnoreCaseAndDeletedAtIsNull(
+                updated.getName())) {
+
+            throw new BadRequestException("Country already exists");
+        }
+
+        existing.setName(updated.getName());
+
+        existing.setIsActive(
+                updated.getIsActive() != null
+                        ? updated.getIsActive()
+                        : existing.getIsActive()
+        );
+
+        Country saved = countryRepository.save(existing);
+
+        String newValue = "Name=" + saved.getName()
+                + ", Active=" + saved.getIsActive();
+
+        auditHelper.logUpdate(
+                "MASTER_DATA",
+                "COUNTRY",
+                saved.getId(),
+                saved.getName(),
+                oldValue,
+                newValue,
+                wasActive,
+                Boolean.TRUE.equals(saved.getIsActive())
+        );
+
+        return saved;
     }
-
     // ❌ Delete
     @Override
-    public void delete(Long id) {
-        Country existing = countryRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Country not found with id: " + id));
+    @Transactional
+    public void delete(Long id, Long deletedBy) {
 
-        countryRepository.delete(existing);
+        Country country = getById(id);
+
+        String oldValue = "Name=" + country.getName()
+                + ", Active=" + country.getIsActive();
+
+        country.setDeletedAt(LocalDateTime.now());
+        country.setDeletedBy(deletedBy);
+
+        countryRepository.save(country);
+
+        auditHelper.logDelete(
+                "MASTER_DATA",
+                "COUNTRY",
+                country.getId(),
+                country.getName(),
+                oldValue
+        );
     }
+    @Override
+    @Transactional
+    public void hardDelete(Long id) {
 
+        Country country = countryRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Country not found"));
+
+        String oldValue = "Name=" + country.getName()
+                + ", Active=" + country.getIsActive();
+
+        countryRepository.delete(country);
+
+        auditHelper.logHardDelete(
+                "MASTER_DATA",
+                "COUNTRY",
+                country.getId(),
+                country.getName(),
+                oldValue
+        );
+    }
+    @Override
+    @Transactional
+    public Country restore(Long id) {
+
+        Country country = countryRepository.findById(id)
+                .filter(c -> c.getDeletedAt() != null)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Deleted country not found"));
+
+        country.setDeletedAt(null);
+        country.setDeletedBy(null);
+        country.setUpdatedAt(LocalDateTime.now());
+
+        Country restored = countryRepository.save(country);
+
+        auditHelper.logRestore(
+                "MASTER_DATA",
+                "COUNTRY",
+                restored.getId(),
+                restored.getName(),
+                "Name=" + restored.getName()
+                        + ", Active=" + restored.getIsActive()
+        );
+
+        return restored;
+    }
+    @Override
+    @Transactional(readOnly = true)
+    public List<Country> getDeleted() {
+
+        return countryRepository.findByDeletedAtIsNotNull();
+    }
     // 🔍 Get by ID
     @Override
-    public Optional<Country> getById(Long id) {
-        return countryRepository.findById(id);
-    }
+    @Transactional(readOnly = true)
+    public Country getById(Long id) {
 
+        return countryRepository.findById(id)
+                .filter(country -> country.getDeletedAt() == null)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Country not found"));
+    }
     // 🔍 Get all
     @Override
+    @Transactional(readOnly = true)
     public List<Country> getAll() {
-        return countryRepository.findAll();
-    }
 
+        return countryRepository.findByDeletedAtIsNull();
+    }
     // 🔍 Find by name
-    @Override
-    public Optional<Country> getByName(String name) {
-        return countryRepository.findByName(name);
-    }
-
-    @Override
-    public Optional<Country> getByNameIgnoreCase(String name) {
-        return countryRepository.findByNameIgnoreCase(name);
-    }
-
-    // ✅ Duplicate check
-    @Override
-    public boolean existsByName(String name) {
-        return countryRepository.existsByName(name);
-    }
-
-    @Override
-    public boolean existsByNameIgnoreCase(String name) {
-        return countryRepository.existsByNameIgnoreCase(name);
-    }
 
     // 🔍 Active / Inactive
     @Override
+    @Transactional(readOnly = true)
     public List<Country> getActive() {
-        return countryRepository.findByIsActiveTrue();
+
+        return countryRepository.findByIsActiveTrueAndDeletedAtIsNull();
     }
 
-    @Override
-    public List<Country> getInactive() {
-        return countryRepository.findByIsActiveFalse();
-    }
 
     // 🔍 Admin-based
     @Override
+    @Transactional(readOnly = true)
     public List<Country> getByAdmin(Long adminId) {
-        return countryRepository.findByAdminId(adminId);
+
+        return countryRepository.findByAdminIdAndDeletedAtIsNull(adminId);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Country> getActiveByAdmin(Long adminId) {
-        return countryRepository.findByAdminIdAndIsActiveTrue(adminId);
+
+        return countryRepository.findByAdminIdAndIsActiveTrueAndDeletedAtIsNull(adminId);
     }
 
     // 🔍 Search
     @Override
+    @Transactional(readOnly = true)
     public List<Country> search(String keyword) {
-        return countryRepository.findByNameContainingIgnoreCase(keyword);
+
+        return countryRepository.findByNameContainingIgnoreCaseAndDeletedAtIsNull(
+                keyword.trim()
+        );
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Country> searchByAdmin(Long adminId, String keyword) {
-        return countryRepository.findByAdminIdAndNameContainingIgnoreCase(adminId, keyword);
+
+        return countryRepository.findByAdminIdAndNameContainingIgnoreCaseAndDeletedAtIsNull(
+                adminId,
+                keyword.trim()
+        );
     }
 }

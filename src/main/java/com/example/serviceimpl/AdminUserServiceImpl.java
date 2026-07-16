@@ -151,9 +151,25 @@ public class AdminUserServiceImpl implements AdminUserService {
         user.setEmailVerified(true);
         user.setEmailVerifiedAt(LocalDateTime.now());
 
-        return AdminUserMapper.toDTO(userRepository.save(user));
-    }
+        User savedUser = userRepository.save(user);
 
+        Admin admin = currentAdminService.getCurrentAdmin();
+
+        adminAuditLogService.log(
+                admin.getId(),
+                "USER_MANAGEMENT",
+                "EMAIL_VERIFIED",
+                "USER",
+                savedUser.getId(),
+                "Verified email for user: " + savedUser.getEmail(),
+                "Email Verified = false",
+                "Email Verified = true",
+                "SYSTEM",
+                "SYSTEM"
+        );
+
+        return AdminUserMapper.toDTO(savedUser);
+    }
     @Override
     public AdminUserResponseDTO verifyPhone(Long id) {
 
@@ -162,9 +178,25 @@ public class AdminUserServiceImpl implements AdminUserService {
         user.setPhoneVerified(true);
         user.setPhoneVerifiedAt(LocalDateTime.now());
 
-        return AdminUserMapper.toDTO(userRepository.save(user));
-    }
+        User savedUser = userRepository.save(user);
 
+        Admin admin = currentAdminService.getCurrentAdmin();
+
+        adminAuditLogService.log(
+                admin.getId(),
+                "USER_MANAGEMENT",
+                "PHONE_VERIFIED",
+                "USER",
+                savedUser.getId(),
+                "Verified phone for user: " + savedUser.getEmail(),
+                "Phone Verified = false",
+                "Phone Verified = true",
+                "SYSTEM",
+                "SYSTEM"
+        );
+
+        return AdminUserMapper.toDTO(savedUser);
+    }
     @Override
     public AdminUserResponseDTO blockUser(Long id) {
 
@@ -242,12 +274,30 @@ public class AdminUserServiceImpl implements AdminUserService {
     @Override
     public void deleteUser(Long id) {
 
-        if (!userRepository.existsById(id)) {
-            throw new ResourceNotFoundException("User not found");
-        }
+        User user = userRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("User not found"));
 
-        userRepository.deleteById(id);
+        String email = user.getEmail();
+
+        userRepository.delete(user);
+
+        Admin admin = currentAdminService.getCurrentAdmin();
+
+        adminAuditLogService.log(
+                admin.getId(),
+                "USER_MANAGEMENT",
+                "USER_DELETED",
+                "USER",
+                id,
+                "Deleted user: " + email,
+                "User existed",
+                "User deleted",
+                "SYSTEM",
+                "SYSTEM"
+        );
     }
+
     @Override
     @Transactional(readOnly = true)
     public AdminUserStatsDTO getUserStatistics() {

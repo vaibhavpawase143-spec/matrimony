@@ -21,10 +21,10 @@ public class GenderServiceImpl implements GenderService {
         List<Gender> genders = genderRepository.findByIsActiveTrue();
 
         return genders.stream()
-                .map(gender -> new GenderResponseDTO(
-                        gender.getId(),
-                        gender.getName()
-                ))
+                .map(gender -> GenderResponseDTO.builder()
+                        .id(gender.getId())
+                        .name(gender.getName())
+                        .build())
                 .toList();
     }
 }

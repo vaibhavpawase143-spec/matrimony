@@ -1,133 +1,215 @@
 package com.example.controller.master;
 
 import com.example.dto.request.FieldOfStudyRequestDTO;
+import com.example.dto.response.ApiResponse;
 import com.example.dto.response.FieldOfStudyResponseDTO;
-import com.example.model.Admin;
-import com.example.model.FieldOfStudy;
 import com.example.service.FieldOfStudyService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/fields-of-study")
+@RequestMapping("/api/master/fields-of-study")
 @RequiredArgsConstructor
 public class FieldOfStudyController {
 
     private final FieldOfStudyService fieldOfStudyService;
 
-    // ✅ Create
+    // =========================
+    // CREATE
+    // =========================
+
     @PostMapping
-    public FieldOfStudyResponseDTO create(@RequestBody FieldOfStudyRequestDTO dto) {
+    @ResponseStatus(HttpStatus.CREATED)
+    public ApiResponse<FieldOfStudyResponseDTO> create(
+            @Valid @RequestBody FieldOfStudyRequestDTO requestDto) {
 
-        FieldOfStudy entity = mapToEntity(dto);
-
-        FieldOfStudy saved = fieldOfStudyService.create(entity);
-
-        return mapToResponse(saved);
+        return ApiResponse.success(
+                "Field Of Study created successfully.",
+                fieldOfStudyService.create(requestDto)
+        );
     }
 
-    // 🔄 Update
+    // =========================
+    // UPDATE
+    // =========================
+
     @PutMapping("/{id}")
-    public FieldOfStudyResponseDTO update(
+    public ApiResponse<FieldOfStudyResponseDTO> update(
             @PathVariable Long id,
-            @RequestBody FieldOfStudyRequestDTO dto
-    ) {
-        FieldOfStudy entity = mapToEntity(dto);
+            @Valid @RequestBody FieldOfStudyRequestDTO requestDto) {
 
-        FieldOfStudy updated = fieldOfStudyService.update(id, entity);
-
-        return mapToResponse(updated);
+        return ApiResponse.success(
+                "Field Of Study updated successfully.",
+                fieldOfStudyService.update(id, requestDto)
+        );
     }
 
-    // ❌ Delete
+    // =========================
+    // SOFT DELETE
+    // =========================
+
     @DeleteMapping("/{id}")
-    public String delete(@PathVariable Long id) {
-        fieldOfStudyService.delete(id);
-        return "FieldOfStudy deleted successfully";
+    public ApiResponse<Void> softDelete(@PathVariable Long id) {
+
+        fieldOfStudyService.softDelete(id);
+
+        return ApiResponse.success(
+                "Field Of Study deleted successfully.",
+                null
+        );
     }
 
-    // 🔍 Get by ID
+    // =========================
+    // RESTORE
+    // =========================
+
+    @PatchMapping("/{id}/restore")
+    public ApiResponse<Void> restore(@PathVariable Long id) {
+
+        fieldOfStudyService.restore(id);
+
+        return ApiResponse.success(
+                "Field Of Study restored successfully.",
+                null
+        );
+    }
+
+    // =========================
+    // HARD DELETE
+    // =========================
+
+    @DeleteMapping("/{id}/hard")
+    public ApiResponse<Void> hardDelete(@PathVariable Long id) {
+
+        fieldOfStudyService.hardDelete(id);
+
+        return ApiResponse.success(
+                "Field Of Study permanently deleted.",
+                null
+        );
+    }
+
+    // =========================
+    // GET BY ID
+    // =========================
+
     @GetMapping("/{id}")
-    public FieldOfStudyResponseDTO getById(@PathVariable Long id) {
-        FieldOfStudy field = fieldOfStudyService.getById(id)
-                .orElseThrow(() -> new RuntimeException("FieldOfStudy not found"));
+    public ApiResponse<FieldOfStudyResponseDTO> getById(@PathVariable Long id) {
 
-        return mapToResponse(field);
+        return ApiResponse.success(
+                "Field Of Study fetched successfully.",
+                fieldOfStudyService.getById(id)
+        );
     }
 
-    // 🔍 Get all
+    // =========================
+    // GET ALL
+    // =========================
+
     @GetMapping
-    public List<FieldOfStudyResponseDTO> getAll() {
-        return fieldOfStudyService.getAll()
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+    public ApiResponse<List<FieldOfStudyResponseDTO>> getAll() {
+
+        return ApiResponse.success(
+                "Field Of Studies fetched successfully.",
+                fieldOfStudyService.getAll()
+        );
     }
 
-    // 🔍 Get active
+    // =========================
+    // GET DELETED
+    // =========================
+
+    @GetMapping("/deleted")
+    public ApiResponse<List<FieldOfStudyResponseDTO>> getDeleted() {
+
+        return ApiResponse.success(
+                "Deleted Field Of Studies fetched successfully.",
+                fieldOfStudyService.getDeleted()
+        );
+    }
+
+    // =========================
+    // ACTIVE / INACTIVE
+    // =========================
+
     @GetMapping("/active")
-    public List<FieldOfStudyResponseDTO> getActive() {
-        return fieldOfStudyService.getActive()
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+    public ApiResponse<List<FieldOfStudyResponseDTO>> getActive() {
+
+        return ApiResponse.success(
+                "Active Field Of Studies fetched successfully.",
+                fieldOfStudyService.getActive()
+        );
     }
 
-    // 🔍 Get by admin
+    @GetMapping("/inactive")
+    public ApiResponse<List<FieldOfStudyResponseDTO>> getInactive() {
+
+        return ApiResponse.success(
+                "Inactive Field Of Studies fetched successfully.",
+                fieldOfStudyService.getInactive()
+        );
+    }
+
+    // =========================
+    // ADMIN WISE
+    // =========================
+
     @GetMapping("/admin/{adminId}")
-    public List<FieldOfStudyResponseDTO> getByAdmin(@PathVariable Long adminId) {
-        return fieldOfStudyService.getByAdmin(adminId)
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+    public ApiResponse<List<FieldOfStudyResponseDTO>> getByAdmin(
+            @PathVariable Long adminId) {
+
+        return ApiResponse.success(
+                "Field Of Studies fetched successfully.",
+                fieldOfStudyService.getByAdmin(adminId)
+        );
     }
 
-    // 🔍 Search
+    @GetMapping("/admin/{adminId}/active")
+    public ApiResponse<List<FieldOfStudyResponseDTO>> getActiveByAdmin(
+            @PathVariable Long adminId) {
+
+        return ApiResponse.success(
+                "Active Field Of Studies fetched successfully.",
+                fieldOfStudyService.getActiveByAdmin(adminId)
+        );
+    }
+
+    @GetMapping("/admin/{adminId}/inactive")
+    public ApiResponse<List<FieldOfStudyResponseDTO>> getInactiveByAdmin(
+            @PathVariable Long adminId) {
+
+        return ApiResponse.success(
+                "Inactive Field Of Studies fetched successfully.",
+                fieldOfStudyService.getInactiveByAdmin(adminId)
+        );
+    }
+
+    // =========================
+    // SEARCH
+    // =========================
+
     @GetMapping("/search")
-    public List<FieldOfStudyResponseDTO> search(@RequestParam String keyword) {
-        return fieldOfStudyService.search(keyword)
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+    public ApiResponse<List<FieldOfStudyResponseDTO>> search(
+            @RequestParam String keyword) {
+
+        return ApiResponse.success(
+                "Search completed successfully.",
+                fieldOfStudyService.search(keyword)
+        );
     }
 
-    // ===============================
-    // 🔁 MAPPING METHODS
-    // ===============================
+    @GetMapping("/admin/{adminId}/search")
+    public ApiResponse<List<FieldOfStudyResponseDTO>> searchByAdmin(
+            @PathVariable Long adminId,
+            @RequestParam String keyword) {
 
-    private FieldOfStudy mapToEntity(FieldOfStudyRequestDTO dto) {
-
-        FieldOfStudy entity = new FieldOfStudy();
-
-        entity.setName(dto.getName());
-        entity.setIsActive(dto.getIsActive());
-
-        if (dto.getAdminId() != null) {
-            Admin admin = new Admin();
-            admin.setId(dto.getAdminId());
-            entity.setAdmin(admin);
-        }
-
-        return entity;
-    }
-
-    private FieldOfStudyResponseDTO mapToResponse(FieldOfStudy entity) {
-
-        FieldOfStudyResponseDTO dto = new FieldOfStudyResponseDTO();
-
-        dto.setId(entity.getId());
-        dto.setName(entity.getName());
-        dto.setIsActive(entity.getIsActive());
-        dto.setCreatedAt(entity.getCreatedAt());
-        dto.setUpdatedAt(entity.getUpdatedAt());
-
-        if (entity.getAdmin() != null) {
-            dto.setAdminId(entity.getAdmin().getId());
-        }
-
-        return dto;
+        return ApiResponse.success(
+                "Search completed successfully.",
+                fieldOfStudyService.searchByAdmin(adminId, keyword)
+        );
     }
 }

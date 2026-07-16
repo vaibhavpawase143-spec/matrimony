@@ -1,127 +1,334 @@
 package com.example.serviceimpl;
 
+import com.example.dto.request.EmployedRequestDto;
+import com.example.dto.response.EmployedResponseDto;
+import com.example.exception.BadRequestException;
+import com.example.exception.ResourceNotFoundException;
+import com.example.model.Admin;
 import com.example.model.Employed;
+import com.example.repository.AdminRepository;
 import com.example.repository.EmployedRepository;
 import com.example.service.EmployedService;
+import com.example.util.AuditHelper;
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
+@Transactional
 public class EmployedServiceImpl implements EmployedService {
 
+    private static final String MODULE = "MASTER";
+    private static final String ENTITY = "EMPLOYED";
+
     private final EmployedRepository employedRepository;
+    private final AdminRepository adminRepository;
+    private final AuditHelper auditHelper;
 
-    public EmployedServiceImpl(EmployedRepository employedRepository) {
-        this.employedRepository = employedRepository;
-    }
+    // =========================
+    // CREATE
+    // =========================
 
-    // ✅ Create
     @Override
-    public Employed create(Employed employed) {
+    public EmployedResponseDto create(EmployedRequestDto requestDto) {
 
-        if (employedRepository.existsByNameIgnoreCase(employed.getName())) {
-            throw new RuntimeException("Employed already exists: " + employed.getName());
+        Admin admin = adminRepository.findById(requestDto.getAdminId())
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Admin not found."));
+
+        if (employedRepository.existsByNameIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+                requestDto.getName(),
+                requestDto.getAdminId())) {
+
+            throw new BadRequestException("Employed already exists.");
         }
 
-        return employedRepository.save(employed);
+        Employed employed = Employed.builder()
+                .admin(admin)
+                .name(requestDto.getName().trim())
+                .isActive(requestDto.getIsActive())
+                .build();
+
+        Employed saved = employedRepository.save(employed);
+
+        auditHelper.logCreate(
+                MODULE,
+                ENTITY,
+                saved.getId(),
+                saved.getName(),
+                saved.getName()
+        );
+
+        return mapToResponse(saved);
     }
 
-    // 🔄 Update
+    // =========================
+    // UPDATE
+    // =========================
+
     @Override
-    public Employed update(Long id, Employed employed) {
+    public EmployedResponseDto update(Long id,
+                                      EmployedRequestDto requestDto) {
 
-        Employed existing = employedRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Employed not found with id: " + id));
+        Employed employed = employedRepository
+                .findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Employed not found."));
 
-        employedRepository.findByNameIgnoreCase(employed.getName())
-                .ifPresent(e -> {
-                    if (!e.getId().equals(id)) {
-                        throw new RuntimeException("Employed already exists: " + employed.getName());
-                    }
-                });
+        boolean oldStatus = employed.getIsActive();
 
-        // ✏️ Update fields
-        existing.setName(employed.getName());
-        existing.setIsActive(employed.getIsActive());
+        if (employedRepository
+                .findByNameIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+                        requestDto.getName(),
+                        requestDto.getAdminId())
+                .filter(e -> !e.getId().equals(id))
+                .isPresent()) {
 
-        return employedRepository.save(existing);
+            throw new BadRequestException("Employed already exists.");
+        }
+
+        Admin admin = adminRepository.findById(requestDto.getAdminId())
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Admin not found."));
+
+        String oldValue = employed.getName();
+
+        employed.setAdmin(admin);
+        employed.setName(requestDto.getName().trim());
+        employed.setIsActive(requestDto.getIsActive());
+
+        Employed updated = employedRepository.save(employed);
+
+        auditHelper.logUpdate(
+                MODULE,
+                ENTITY,
+                updated.getId(),
+                updated.getName(),
+                oldValue,
+                updated.getName(),
+                oldStatus,
+                updated.getIsActive()
+        );
+
+        return mapToResponse(updated);
     }
 
-    // ❌ Delete
-    @Override
-    public void delete(Long id) {
-        Employed existing = employedRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Employed not found with id: " + id));
+    // =========================
+    // SOFT DELETE
+    // =========================
 
-        employedRepository.delete(existing);
+    @Override
+    public void softDelete(Long id) {
+
+        Employed employed = employedRepository
+                .findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Employed not found."));
+
+        employed.setDeletedAt(LocalDateTime.now());
+
+        employedRepository.save(employed);
+
+        auditHelper.logDelete(
+                MODULE,
+                ENTITY,
+                employed.getId(),
+                employed.getName(),
+                employed.getName()
+        );
+    }
+    // =========================
+    // RESTORE
+    // =========================
+
+    @Override
+    public void restore(Long id) {
+
+        Employed employed = employedRepository
+                .findByIdAndDeletedAtIsNotNull(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Deleted Employed not found."));
+
+        if (employedRepository.existsByNameIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+                employed.getName(),
+                employed.getAdmin().getId())) {
+
+            throw new BadRequestException("Employed already exists.");
+        }
+
+        employed.setDeletedAt(null);
+        employed.setDeletedBy(null);
+
+        employedRepository.save(employed);
+
+        auditHelper.logRestore(
+                MODULE,
+                ENTITY,
+                employed.getId(),
+                employed.getName(),
+                employed.getName()
+        );
     }
 
-    // 🔍 Get by ID
-    @Override
-    public Optional<Employed> getById(Long id) {
-        return employedRepository.findById(id);
-    }
-
-    // 🔍 Get all
-    @Override
-    public List<Employed> getAll() {
-        return employedRepository.findAll();
-    }
-
-    // 🔍 Find by name
-    @Override
-    public Optional<Employed> getByName(String name) {
-        return employedRepository.findByName(name);
-    }
+    // =========================
+    // HARD DELETE
+    // =========================
 
     @Override
-    public Optional<Employed> getByNameIgnoreCase(String name) {
-        return employedRepository.findByNameIgnoreCase(name);
+    public void hardDelete(Long id) {
+
+        Employed employed = employedRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Employed not found."));
+
+        auditHelper.logHardDelete(
+                MODULE,
+                ENTITY,
+                employed.getId(),
+                employed.getName(),
+                employed.getName()
+        );
+
+        employedRepository.delete(employed);
     }
 
-    // ✅ Duplicate check
-    @Override
-    public boolean existsByName(String name) {
-        return employedRepository.existsByName(name);
-    }
+    // =========================
+    // GET BY ID
+    // =========================
 
     @Override
-    public boolean existsByNameIgnoreCase(String name) {
-        return employedRepository.existsByNameIgnoreCase(name);
+    public EmployedResponseDto getById(Long id) {
+
+        return mapToResponse(
+                employedRepository.findByIdAndDeletedAtIsNull(id)
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException("Employed not found."))
+        );
     }
 
-    // 🔍 Active / Inactive
-    @Override
-    public List<Employed> getActive() {
-        return employedRepository.findByIsActiveTrue();
-    }
+    // =========================
+    // GET ALL
+    // =========================
 
     @Override
-    public List<Employed> getInactive() {
-        return employedRepository.findByIsActiveFalse();
-    }
+    public List<EmployedResponseDto> getAll() {
 
-    // 🔍 Admin-based
-    @Override
-    public List<Employed> getByAdmin(Long adminId) {
-        return employedRepository.findByAdminId(adminId);
-    }
-
-    @Override
-    public List<Employed> getActiveByAdmin(Long adminId) {
-        return employedRepository.findByAdminIdAndIsActiveTrue(adminId);
-    }
-
-    // 🔍 Search
-    @Override
-    public List<Employed> search(String keyword) {
-        return employedRepository.findByNameContainingIgnoreCase(keyword);
+        return employedRepository.findAllByDeletedAtIsNull()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
     }
 
     @Override
-    public List<Employed> searchByAdmin(Long adminId, String keyword) {
-        return employedRepository.findByAdminIdAndNameContainingIgnoreCase(adminId, keyword);
+    public List<EmployedResponseDto> getDeleted() {
+
+        return employedRepository.findByDeletedAtIsNotNull()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    // =========================
+    // ACTIVE / INACTIVE
+    // =========================
+
+    @Override
+    public List<EmployedResponseDto> getActive() {
+
+        return employedRepository.findByIsActiveTrueAndDeletedAtIsNull()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Override
+    public List<EmployedResponseDto> getInactive() {
+
+        return employedRepository.findByIsActiveFalseAndDeletedAtIsNull()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    // =========================
+    // ADMIN WISE
+    // =========================
+
+    @Override
+    public List<EmployedResponseDto> getByAdmin(Long adminId) {
+
+        return employedRepository.findByAdmin_IdAndDeletedAtIsNull(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Override
+    public List<EmployedResponseDto> getActiveByAdmin(Long adminId) {
+
+        return employedRepository
+                .findByAdmin_IdAndIsActiveTrueAndDeletedAtIsNull(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Override
+    public List<EmployedResponseDto> getInactiveByAdmin(Long adminId) {
+
+        return employedRepository
+                .findByAdmin_IdAndIsActiveFalseAndDeletedAtIsNull(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    // =========================
+    // SEARCH
+    // =========================
+
+    @Override
+    public List<EmployedResponseDto> search(String keyword) {
+
+        return employedRepository
+                .findByNameContainingIgnoreCaseAndDeletedAtIsNull(keyword)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Override
+    public List<EmployedResponseDto> searchByAdmin(Long adminId,
+                                                   String keyword) {
+
+        return employedRepository
+                .findByAdmin_IdAndNameContainingIgnoreCaseAndDeletedAtIsNull(
+                        adminId,
+                        keyword)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    // =========================
+    // DTO MAPPING
+    // =========================
+
+    private EmployedResponseDto mapToResponse(Employed entity) {
+
+        return EmployedResponseDto.builder()
+                .id(entity.getId())
+                .adminId(entity.getAdmin().getId())
+                .name(entity.getName())
+                .isActive(entity.getIsActive())
+                .createdAt(entity.getCreatedAt())
+                .updatedAt(entity.getUpdatedAt())
+                .deletedAt(entity.getDeletedAt())
+                .deletedBy(entity.getDeletedBy())
+                .build();
     }
 }

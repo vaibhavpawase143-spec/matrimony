@@ -1,116 +1,322 @@
 package com.example.serviceimpl;
 
+import com.example.dto.request.OccupationRequestDTO;
+import com.example.dto.response.OccupationResponseDTO;
+import com.example.exception.BadRequestException;
+import com.example.exception.ResourceNotFoundException;
+import com.example.model.Admin;
 import com.example.model.Occupation;
+import com.example.repository.AdminRepository;
 import com.example.repository.OccupationRepository;
+import com.example.service.CurrentAdminService;
 import com.example.service.OccupationService;
+import com.example.util.AuditHelper;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
 public class OccupationServiceImpl implements OccupationService {
 
     private final OccupationRepository occupationRepository;
+    private final AdminRepository adminRepository;
+    private final CurrentAdminService currentAdminService;
+    private final AuditHelper auditHelper;
 
-    public OccupationServiceImpl(OccupationRepository occupationRepository) {
-        this.occupationRepository = occupationRepository;
-    }
+    private static final String MODULE = "Master";
+    private static final String ENTITY = "Occupation";
 
-    // ✅ Create
+    // =====================================================
+    // CREATE
+    // =====================================================
+
     @Override
-    public Occupation create(Occupation occupation) {
+    public OccupationResponseDTO create(OccupationRequestDTO requestDto) {
 
-        Long adminId = occupation.getAdmin().getId();
+        Admin admin = adminRepository.findById(requestDto.getAdminId())
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Admin not found."));
 
-        if (occupationRepository.existsByNameIgnoreCaseAndAdminId(
-                occupation.getName(), adminId)) {
-            throw new RuntimeException(
-                    "Occupation already exists for this admin: " + occupation.getName()
-            );
+        if (occupationRepository.existsByNameIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+                requestDto.getName(),
+                admin.getId())) {
+
+            throw new BadRequestException("Occupation already exists.");
         }
 
-        return occupationRepository.save(occupation);
+        Occupation entity = Occupation.builder()
+                .admin(admin)
+                .name(requestDto.getName())
+                .isActive(requestDto.getIsActive())
+                .build();
+
+        entity = occupationRepository.save(entity);
+
+        auditHelper.logCreate(
+                MODULE,
+                ENTITY,
+                entity.getId(),
+                entity.getName(),
+                entity.getName()
+        );
+
+        return mapToResponse(entity);
     }
 
-    // 🔄 Update
+    // =====================================================
+    // UPDATE
+    // =====================================================
+
     @Override
-    public Occupation update(Long id, Occupation occupation) {
+    public OccupationResponseDTO update(Long id,
+                                        OccupationRequestDTO requestDto) {
 
-        Occupation existing = occupationRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Occupation not found with id: " + id));
+        Occupation entity = occupationRepository
+                .findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Occupation not found."));
 
-        Long adminId = existing.getAdmin().getId();
+        if (!entity.getName().equalsIgnoreCase(requestDto.getName())
+                && occupationRepository.existsByNameIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+                requestDto.getName(),
+                entity.getAdmin().getId())) {
 
-        occupationRepository.findByNameIgnoreCaseAndAdminId(
-                occupation.getName(), adminId
-        ).ifPresent(o -> {
-            if (!o.getId().equals(id)) {
-                throw new RuntimeException(
-                        "Occupation already exists for this admin: " + occupation.getName()
-                );
-            }
-        });
+            throw new BadRequestException("Occupation already exists.");
+        }
 
-        existing.setName(occupation.getName());
-        existing.setIsActive(occupation.getIsActive());
+        String oldValue = entity.getName();
+        Boolean oldActive = entity.getIsActive();
 
-        return occupationRepository.save(existing);
+        entity.setName(requestDto.getName());
+        entity.setIsActive(requestDto.getIsActive());
+
+        entity = occupationRepository.save(entity);
+
+        auditHelper.logUpdate(
+                MODULE,
+                ENTITY,
+                entity.getId(),
+                entity.getName(),
+                oldValue,
+                entity.getName(),
+                oldActive,
+                entity.getIsActive()
+        );
+
+        return mapToResponse(entity);
     }
 
-    // ❌ Delete
-    @Override
-    public void delete(Long id) {
-        Occupation existing = occupationRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Occupation not found with id: " + id));
+    // =====================================================
+    // SOFT DELETE
+    // =====================================================
 
-        occupationRepository.delete(existing);
+    @Override
+    public void softDelete(Long id) {
+
+        Occupation entity = occupationRepository
+                .findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Occupation not found."));
+
+        entity.setDeletedAt(LocalDateTime.now());
+        entity.setDeletedBy(currentAdminService.getCurrentAdmin().getId());
+
+        occupationRepository.save(entity);
+
+        auditHelper.logDelete(
+                MODULE,
+                ENTITY,
+                entity.getId(),
+                entity.getName(),
+                entity.getName()
+        );
+    }
+    // =====================================================
+    // RESTORE
+    // =====================================================
+
+    @Override
+    public void restore(Long id) {
+
+        Occupation entity = occupationRepository
+                .findByIdAndDeletedAtIsNotNull(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Deleted Occupation not found."));
+
+        entity.setDeletedAt(null);
+        entity.setDeletedBy(null);
+
+        occupationRepository.save(entity);
+
+        auditHelper.logRestore(
+                MODULE,
+                ENTITY,
+                entity.getId(),
+                entity.getName(),
+                entity.getName()
+        );
     }
 
-    // 🔍 Get by ID
-    @Override
-    public Optional<Occupation> getById(Long id) {
-        return occupationRepository.findById(id);
-    }
-
-    // 🔍 Get all
-    @Override
-    public List<Occupation> getAll() {
-        return occupationRepository.findAll();
-    }
-
-    // 🔍 Admin-based
-    @Override
-    public List<Occupation> getByAdmin(Long adminId) {
-        return occupationRepository.findByAdminId(adminId);
-    }
+    // =====================================================
+    // HARD DELETE
+    // =====================================================
 
     @Override
-    public List<Occupation> getActiveByAdmin(Long adminId) {
-        return occupationRepository.findByAdminIdAndIsActiveTrue(adminId);
+    public void hardDelete(Long id) {
+
+        Occupation entity = occupationRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Occupation not found."));
+
+        auditHelper.logHardDelete(
+                MODULE,
+                ENTITY,
+                entity.getId(),
+                entity.getName(),
+                entity.getName()
+        );
+
+        occupationRepository.delete(entity);
+    }
+
+    // =====================================================
+    // GET BY ID
+    // =====================================================
+
+    @Override
+    public OccupationResponseDTO getById(Long id) {
+
+        Occupation entity = occupationRepository
+                .findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Occupation not found."));
+
+        return mapToResponse(entity);
+    }
+
+    // =====================================================
+    // GET ALL
+    // =====================================================
+
+    @Override
+    public List<OccupationResponseDTO> getAll() {
+
+        return occupationRepository.findAllByDeletedAtIsNull()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
     }
 
     @Override
-    public List<Occupation> getInactiveByAdmin(Long adminId) {
-        return occupationRepository.findByAdminIdAndIsActiveFalse(adminId);
+    public List<OccupationResponseDTO> getDeleted() {
+
+        return occupationRepository.findByDeletedAtIsNotNull()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
     }
 
-    // 🔍 Find by name
+    // =====================================================
+    // ACTIVE / INACTIVE
+    // =====================================================
+
     @Override
-    public Optional<Occupation> getByNameAndAdmin(String name, Long adminId) {
-        return occupationRepository.findByNameIgnoreCaseAndAdminId(name, adminId);
+    public List<OccupationResponseDTO> getActive() {
+
+        return occupationRepository.findByIsActiveTrueAndDeletedAtIsNull()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
     }
 
-    // ✅ Exists
     @Override
-    public boolean existsByNameAndAdmin(String name, Long adminId) {
-        return occupationRepository.existsByNameIgnoreCaseAndAdminId(name, adminId);
+    public List<OccupationResponseDTO> getInactive() {
+
+        return occupationRepository.findByIsActiveFalseAndDeletedAtIsNull()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
     }
 
-    // 🔍 Search
+    // =====================================================
+    // ADMIN
+    // =====================================================
+
     @Override
-    public List<Occupation> searchByAdmin(Long adminId, String keyword) {
+    public List<OccupationResponseDTO> getByAdmin(Long adminId) {
+
+        return occupationRepository.findByAdmin_IdAndDeletedAtIsNull(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Override
+    public List<OccupationResponseDTO> getActiveByAdmin(Long adminId) {
+
         return occupationRepository
-                .findByAdminIdAndNameContainingIgnoreCase(adminId, keyword);
+                .findByAdmin_IdAndIsActiveTrueAndDeletedAtIsNull(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Override
+    public List<OccupationResponseDTO> getInactiveByAdmin(Long adminId) {
+
+        return occupationRepository
+                .findByAdmin_IdAndIsActiveFalseAndDeletedAtIsNull(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    // =====================================================
+    // SEARCH
+    // =====================================================
+
+    @Override
+    public List<OccupationResponseDTO> search(String keyword) {
+
+        return occupationRepository
+                .findByNameContainingIgnoreCaseAndDeletedAtIsNull(keyword)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Override
+    public List<OccupationResponseDTO> searchByAdmin(Long adminId,
+                                                     String keyword) {
+
+        return occupationRepository
+                .findByAdmin_IdAndNameContainingIgnoreCaseAndDeletedAtIsNull(
+                        adminId,
+                        keyword
+                )
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    // =====================================================
+    // DTO MAPPING
+    // =====================================================
+
+    private OccupationResponseDTO mapToResponse(Occupation entity) {
+
+        return OccupationResponseDTO.builder()
+                .id(entity.getId())
+                .adminId(entity.getAdmin() != null ? entity.getAdmin().getId() : null)
+                .name(entity.getName())
+                .isActive(entity.getIsActive())
+                .createdAt(entity.getCreatedAt())
+                .updatedAt(entity.getUpdatedAt())
+                .deletedAt(entity.getDeletedAt())
+                .deletedBy(entity.getDeletedBy())
+                .build();
     }
 }

@@ -2,6 +2,7 @@ package com.example.controller.master;
 
 import com.example.dto.request.BrotherTypeRequestDTO;
 import com.example.dto.responce.BrotherTypeResponseDTO;
+import com.example.dto.response.ApiResponse;
 import com.example.model.BrotherType;
 import com.example.service.BrotherTypeService;
 import jakarta.validation.Valid;
@@ -9,7 +10,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/admins/{adminId}/brother-types")
@@ -18,71 +18,104 @@ public class BrotherTypeController {
 
     private final BrotherTypeService brotherTypeService;
 
-    // ================= CREATE =================
     @PostMapping
-    public BrotherTypeResponseDTO create(@PathVariable Long adminId,
-                                         @Valid @RequestBody BrotherTypeRequestDTO dto) {
+    public ApiResponse<BrotherTypeResponseDTO> create(
+            @PathVariable Long adminId,
+            @Valid @RequestBody BrotherTypeRequestDTO dto) {
 
-        BrotherType saved = brotherTypeService.create(mapToEntity(dto), adminId);
-        return mapToResponse(saved);
+        BrotherType saved = brotherTypeService.create(
+                mapToEntity(dto),
+                adminId
+        );
+
+        return ApiResponse.<BrotherTypeResponseDTO>builder()
+                .success(true)
+                .message("Brother type created successfully.")
+                .data(mapToResponse(saved))
+                .build();
     }
-
     // ================= GET BY ID =================
     @GetMapping("/{id}")
-    public BrotherTypeResponseDTO getById(@PathVariable Long adminId,
-                                          @PathVariable Long id) {
+    public ApiResponse<BrotherTypeResponseDTO> getById(
+            @PathVariable Long adminId,
+            @PathVariable Long id) {
 
-        return mapToResponse(brotherTypeService.getById(id, adminId));
+        BrotherType brotherType = brotherTypeService.getById(id, adminId);
+
+        return ApiResponse.<BrotherTypeResponseDTO>builder()
+                .success(true)
+                .message("Brother type retrieved successfully.")
+                .data(mapToResponse(brotherType))
+                .build();
     }
-
     // ================= GET ALL =================
     @GetMapping
-    public List<BrotherTypeResponseDTO> getAll(@PathVariable Long adminId) {
+    public ApiResponse<List<BrotherTypeResponseDTO>> getAll(
+            @PathVariable Long adminId) {
 
-        return brotherTypeService.getAll(adminId)
+        List<BrotherTypeResponseDTO> brotherTypes = brotherTypeService.getAll(adminId)
                 .stream()
                 .map(this::mapToResponse)
-                .collect(Collectors.toList());
+                .toList();
+
+        return ApiResponse.<List<BrotherTypeResponseDTO>>builder()
+                .success(true)
+                .message("Brother types retrieved successfully.")
+                .data(brotherTypes)
+                .build();
     }
 
     // ================= GET ACTIVE =================
     @GetMapping("/active")
-    public List<BrotherTypeResponseDTO> getActive(@PathVariable Long adminId) {
+    public ApiResponse<List<BrotherTypeResponseDTO>> getActive(
+            @PathVariable Long adminId) {
 
-        return brotherTypeService.getActive(adminId)
+        List<BrotherTypeResponseDTO> activeBrotherTypes = brotherTypeService.getActive(adminId)
                 .stream()
                 .map(this::mapToResponse)
-                .collect(Collectors.toList());
-    }
+                .toList();
 
+        return ApiResponse.<List<BrotherTypeResponseDTO>>builder()
+                .success(true)
+                .message("Active brother types retrieved successfully.")
+                .data(activeBrotherTypes)
+                .build();
+    }
     // ================= SEARCH =================
-    @GetMapping("/search")
-    public List<BrotherTypeResponseDTO> search(@PathVariable Long adminId,
-                                               @RequestParam String keyword) {
 
-        return brotherTypeService.search(keyword, adminId)
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
-    }
 
     // ================= UPDATE =================
     @PutMapping("/{id}")
-    public BrotherTypeResponseDTO update(@PathVariable Long adminId,
-                                         @PathVariable Long id,
-                                         @Valid @RequestBody BrotherTypeRequestDTO dto) {
+    public ApiResponse<BrotherTypeResponseDTO> update(
+            @PathVariable Long adminId,
+            @PathVariable Long id,
+            @Valid @RequestBody BrotherTypeRequestDTO dto) {
 
-        BrotherType updated = brotherTypeService.update(id, mapToEntity(dto), adminId);
-        return mapToResponse(updated);
+        BrotherType updated = brotherTypeService.update(
+                id,
+                mapToEntity(dto),
+                adminId
+        );
+
+        return ApiResponse.<BrotherTypeResponseDTO>builder()
+                .success(true)
+                .message("Brother type updated successfully.")
+                .data(mapToResponse(updated))
+                .build();
     }
 
     // ================= DELETE =================
     @DeleteMapping("/{id}")
-    public String delete(@PathVariable Long adminId,
-                         @PathVariable Long id) {
+    public ApiResponse<String> delete(
+            @PathVariable Long adminId,
+            @PathVariable Long id) {
 
         brotherTypeService.delete(id, adminId);
-        return "Brother type deleted successfully";
+
+        return ApiResponse.<String>builder()
+                .success(true)
+                .message("Brother type deleted successfully.")
+                .build();
     }
 
     // ================= MAPPERS =================
@@ -112,4 +145,46 @@ public class BrotherTypeController {
 
         return dto;
     }
+    @GetMapping("/deleted")
+    public ApiResponse<List<BrotherTypeResponseDTO>> getDeleted(
+            @PathVariable Long adminId) {
+
+        List<BrotherTypeResponseDTO> deleted = brotherTypeService
+                .getDeleted(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+
+        return ApiResponse.<List<BrotherTypeResponseDTO>>builder()
+                .success(true)
+                .message("Deleted brother types retrieved successfully.")
+                .data(deleted)
+                .build();
+    }
+    @PutMapping("/restore/{id}")
+    public ApiResponse<BrotherTypeResponseDTO> restore(
+            @PathVariable Long adminId,
+            @PathVariable Long id) {
+
+        BrotherType restored = brotherTypeService.restore(id);
+
+        return ApiResponse.<BrotherTypeResponseDTO>builder()
+                .success(true)
+                .message("Brother type restored successfully.")
+                .data(mapToResponse(restored))
+                .build();
+    }
+    @DeleteMapping("/hard-delete/{id}")
+    public ApiResponse<String> hardDelete(
+            @PathVariable Long adminId,
+            @PathVariable Long id) {
+
+        brotherTypeService.hardDelete(id);
+
+        return ApiResponse.<String>builder()
+                .success(true)
+                .message("Brother type permanently deleted successfully.")
+                .build();
+    }
+
 }

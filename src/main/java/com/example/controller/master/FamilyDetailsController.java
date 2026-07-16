@@ -1,93 +1,247 @@
 package com.example.controller.master;
 
 import com.example.dto.request.FamilyDetailsRequestDto;
+import com.example.dto.response.ApiResponse;
 import com.example.dto.response.FamilyDetailsResponseDto;
-import com.example.model.FamilyDetails;
 import com.example.service.FamilyDetailsService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/family-details")
 @RequiredArgsConstructor
 public class FamilyDetailsController {
 
-    private final FamilyDetailsService service;
+    private final FamilyDetailsService familyDetailsService;
 
-    // ================= CREATE =================
+    // =========================
+    // CREATE
+    // =========================
+
     @PostMapping
-    public ResponseEntity<FamilyDetailsResponseDto> create(
-            @RequestBody FamilyDetailsRequestDto dto) {
+    @ResponseStatus(HttpStatus.CREATED)
+    public ApiResponse<FamilyDetailsResponseDto> create(
+            @Valid @RequestBody FamilyDetailsRequestDto requestDto) {
 
-        FamilyDetails entity = service.create(dto);
-        return ResponseEntity.ok(mapToDto(entity));
+        return ApiResponse.success(
+                "Family Details created successfully.",
+                familyDetailsService.create(requestDto)
+        );
     }
 
-    // ================= GET BY ID =================
-    @GetMapping("/{id}")
-    public ResponseEntity<FamilyDetailsResponseDto> getById(@PathVariable Long id) {
+    // =========================
+    // UPDATE
+    // =========================
 
-        FamilyDetails entity = service.getById(id)
-                .orElseThrow(() -> new RuntimeException("Not found"));
-
-        return ResponseEntity.ok(mapToDto(entity));
-    }
-
-    // ================= GET ALL (ADDED) =================
-    @GetMapping
-    public ResponseEntity<List<FamilyDetailsResponseDto>> getAll() {
-
-        List<FamilyDetailsResponseDto> list = service.getAll()
-                .stream()
-                .map(this::mapToDto)
-                .collect(Collectors.toList());
-
-        return ResponseEntity.ok(list);
-    }
-
-    // ================= GET BY PROFILE (IMPORTANT) =================
-    @GetMapping("/profile/{profileId}")
-    public ResponseEntity<FamilyDetailsResponseDto> getByProfile(@PathVariable Long profileId) {
-
-        FamilyDetails entity = service.getByProfile(profileId)
-                .orElseThrow(() -> new RuntimeException("Not found"));
-
-        return ResponseEntity.ok(mapToDto(entity));
-    }
-
-    // ================= UPDATE =================
     @PutMapping("/{id}")
-    public ResponseEntity<FamilyDetailsResponseDto> update(
+    public ApiResponse<FamilyDetailsResponseDto> update(
             @PathVariable Long id,
-            @RequestBody FamilyDetailsRequestDto dto) {
+            @Valid @RequestBody FamilyDetailsRequestDto requestDto) {
 
-        FamilyDetails entity = service.update(id, dto);
-        return ResponseEntity.ok(mapToDto(entity));
+        return ApiResponse.success(
+                "Family Details updated successfully.",
+                familyDetailsService.update(id, requestDto)
+        );
     }
 
-    // ================= DELETE =================
+    // =========================
+    // SOFT DELETE
+    // =========================
+
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> delete(@PathVariable Long id) {
+    public ApiResponse<Void> softDelete(@PathVariable Long id) {
 
-        service.delete(id);
-        return ResponseEntity.ok("Deleted successfully");
+        familyDetailsService.softDelete(id);
+
+        return ApiResponse.success(
+                "Family Details deleted successfully.",
+                null
+        );
     }
 
-    // ================= DTO MAPPING =================
-    private FamilyDetailsResponseDto mapToDto(FamilyDetails e) {
-        return FamilyDetailsResponseDto.builder()
-                .id(e.getId())
-                .profileId(e.getProfile() != null ? e.getProfile().getId() : null)
-                .familyTypeId(e.getFamilyType() != null ? e.getFamilyType().getId() : null)
-                .familyId(e.getFamily() != null ? e.getFamily().getId() : null)
-                .brotherTypeId(e.getBrotherType() != null ? e.getBrotherType().getId() : null)
-                .sisterTypeId(e.getSisterType() != null ? e.getSisterType().getId() : null)
-                .fatherOccupation(e.getFatherOccupation())
-                .motherOccupation(e.getMotherOccupation())
-                .build();
+    // =========================
+    // RESTORE
+    // =========================
+
+    @PatchMapping("/{id}/restore")
+    public ApiResponse<Void> restore(@PathVariable Long id) {
+
+        familyDetailsService.restore(id);
+
+        return ApiResponse.success(
+                "Family Details restored successfully.",
+                null
+        );
     }
+
+    // =========================
+    // HARD DELETE
+    // =========================
+
+    @DeleteMapping("/{id}/hard")
+    public ApiResponse<Void> hardDelete(@PathVariable Long id) {
+
+        familyDetailsService.hardDelete(id);
+
+        return ApiResponse.success(
+                "Family Details permanently deleted.",
+                null
+        );
+    }
+
+    // =========================
+    // GET BY ID
+    // =========================
+
+    @GetMapping("/{id}")
+    public ApiResponse<FamilyDetailsResponseDto> getById(@PathVariable Long id) {
+
+        return ApiResponse.success(
+                "Family Details fetched successfully.",
+                familyDetailsService.getById(id)
+        );
+    }
+
+    // =========================
+    // GET ALL
+    // =========================
+
+    @GetMapping
+    public ApiResponse<List<FamilyDetailsResponseDto>> getAll() {
+
+        return ApiResponse.success(
+                "Family Details fetched successfully.",
+                familyDetailsService.getAll()
+        );
+    }
+
+    // =========================
+    // GET DELETED
+    // =========================
+
+    @GetMapping("/deleted")
+    public ApiResponse<List<FamilyDetailsResponseDto>> getDeleted() {
+
+        return ApiResponse.success(
+                "Deleted Family Details fetched successfully.",
+                familyDetailsService.getDeleted()
+        );
+    }
+
+    // =========================
+    // GET BY PROFILE
+    // =========================
+
+    @GetMapping("/profile/{profileId}")
+    public ApiResponse<FamilyDetailsResponseDto> getByProfile(
+            @PathVariable Long profileId) {
+
+        return ApiResponse.success(
+                "Family Details fetched successfully.",
+                familyDetailsService.getByProfile(profileId)
+        );
+    }
+
+    // =========================
+    // EXISTS BY PROFILE
+    // =========================
+
+    @GetMapping("/profile/{profileId}/exists")
+    public ApiResponse<Boolean> existsByProfile(
+            @PathVariable Long profileId) {
+
+        return ApiResponse.success(
+                "Profile check completed.",
+                familyDetailsService.existsByProfile(profileId)
+        );
+    }
+
+    // =========================
+    // GET ACTIVE BY PROFILE
+    // =========================
+
+    @GetMapping("/profile/{profileId}/active")
+    public ApiResponse<List<FamilyDetailsResponseDto>> getActiveByProfile(
+            @PathVariable Long profileId) {
+
+        return ApiResponse.success(
+                "Active Family Details fetched successfully.",
+                familyDetailsService.getActiveByProfile(profileId)
+        );
+    }
+
+    // =========================
+    // GET BY FAMILY TYPE
+    // =========================
+
+    @GetMapping("/family-type/{familyTypeId}")
+    public ApiResponse<List<FamilyDetailsResponseDto>> getByFamilyType(
+            @PathVariable Long familyTypeId) {
+
+        return ApiResponse.success(
+                "Family Details fetched successfully.",
+                familyDetailsService.getByFamilyType(familyTypeId)
+        );
+    }
+
+    // =========================
+    // GET BY FAMILY
+    // =========================
+
+    @GetMapping("/family/{familyId}")
+    public ApiResponse<List<FamilyDetailsResponseDto>> getByFamily(
+            @PathVariable Long familyId) {
+
+        return ApiResponse.success(
+                "Family Details fetched successfully.",
+                familyDetailsService.getByFamily(familyId)
+        );
+    }
+
+    // =========================
+    // GET ACTIVE BY FAMILY
+    // =========================
+
+    @GetMapping("/family/{familyId}/active")
+    public ApiResponse<List<FamilyDetailsResponseDto>> getActiveByFamily(
+            @PathVariable Long familyId) {
+
+        return ApiResponse.success(
+                "Active Family Details fetched successfully.",
+                familyDetailsService.getActiveByFamily(familyId)
+        );
+    }
+
+    // =========================
+    // GET BY BROTHER TYPE
+    // =========================
+
+    @GetMapping("/brother-type/{brotherTypeId}")
+    public ApiResponse<List<FamilyDetailsResponseDto>> getByBrotherType(
+            @PathVariable Long brotherTypeId) {
+
+        return ApiResponse.success(
+                "Family Details fetched successfully.",
+                familyDetailsService.getByBrotherType(brotherTypeId)
+        );
+    }
+
+    // =========================
+    // GET BY SISTER TYPE
+    // =========================
+
+    @GetMapping("/sister-type/{sisterTypeId}")
+    public ApiResponse<List<FamilyDetailsResponseDto>> getBySisterType(
+            @PathVariable Long sisterTypeId) {
+
+        return ApiResponse.success(
+                "Family Details fetched successfully.",
+                familyDetailsService.getBySisterType(sisterTypeId)
+        );
+    }
+
 }

@@ -3,42 +3,49 @@ package com.example.service;
 import com.example.model.Drinking;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface DrinkingService {
 
-    // 🔍 Basic CRUD
+    // ==========================
+    // CRUD
+    // ==========================
+
     Drinking create(Drinking drinking);
 
     Drinking update(Long id, Drinking drinking);
 
-    void delete(Long id);
+    void delete(Long id, Long deletedBy);
 
-    Optional<Drinking> getById(Long id);
+    void hardDelete(Long id);
+
+    Drinking restore(Long id);
+
+    // ==========================
+    // GET
+    // ==========================
+
+    Drinking getById(Long id);
 
     List<Drinking> getAll();
 
-    // 🔍 Find by value
-    Optional<Drinking> getByValue(String value);
+    List<Drinking> getDeleted();
 
-    Optional<Drinking> getByValueIgnoreCase(String value);
-
-    // ✅ Duplicate check
-    boolean existsByValue(String value);
-
-    boolean existsByValueIgnoreCase(String value);
-
-    // 🔍 Active / Inactive
     List<Drinking> getActive();
 
     List<Drinking> getInactive();
 
-    // 🔍 Admin-based
+    // ==========================
+    // ADMIN
+    // ==========================
+
     List<Drinking> getByAdmin(Long adminId);
 
     List<Drinking> getActiveByAdmin(Long adminId);
 
-    // 🔍 Search
+    // ==========================
+    // SEARCH
+    // ==========================
+
     List<Drinking> search(String keyword);
 
     List<Drinking> searchByAdmin(Long adminId, String keyword);

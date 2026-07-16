@@ -1,17 +1,20 @@
 package com.example.model;
 
 import jakarta.persistence.*;
+import lombok.*;
+
 import java.time.LocalDateTime;
 
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @Entity
 @Table(
         name = "genders",
-        uniqueConstraints = {
-                @UniqueConstraint(columnNames = {"name"})
-        },
-        indexes = {
-                @Index(name = "idx_gender_name", columnList = "name")
-        }
+        uniqueConstraints = @UniqueConstraint(columnNames = "name"),
+        indexes = @Index(name = "idx_gender_name", columnList = "name")
 )
 public class Gender {
 
@@ -22,6 +25,7 @@ public class Gender {
     @Column(nullable = false, length = 20)
     private String name;
 
+    @Builder.Default
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 
@@ -31,57 +35,15 @@ public class Gender {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    public Gender() {
-    }
-
-    // =========================
-    // Lifecycle Hooks
-    // =========================
-
     @PrePersist
     protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
-
-        if (this.isActive == null) {
-            this.isActive = true;
-        }
+        LocalDateTime now = LocalDateTime.now();
+        createdAt = now;
+        updatedAt = now;
     }
 
     @PreUpdate
     protected void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
-    }
-
-    // =========================
-    // Getters & Setters
-    // =========================
-
-    public Long getId() {
-        return id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public Boolean getIsActive() {
-        return isActive;
-    }
-
-    public void setIsActive(Boolean active) {
-        isActive = active;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
+        updatedAt = LocalDateTime.now();
     }
 }

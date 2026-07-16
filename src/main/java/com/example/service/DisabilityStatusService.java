@@ -3,42 +3,49 @@ package com.example.service;
 import com.example.model.DisabilityStatus;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface DisabilityStatusService {
 
-    // 🔍 Basic CRUD
+    // ==========================
+    // CRUD
+    // ==========================
+
     DisabilityStatus create(DisabilityStatus disabilityStatus);
 
     DisabilityStatus update(Long id, DisabilityStatus disabilityStatus);
 
-    void delete(Long id);
+    void delete(Long id, Long deletedBy);
 
-    Optional<DisabilityStatus> getById(Long id);
+    void hardDelete(Long id);
+
+    DisabilityStatus restore(Long id);
+
+    DisabilityStatus getById(Long id);
 
     List<DisabilityStatus> getAll();
 
-    // 🔍 Find by value
-    Optional<DisabilityStatus> getByValue(String value);
+    List<DisabilityStatus> getDeleted();
 
-    Optional<DisabilityStatus> getByValueIgnoreCase(String value);
+    // ==========================
+    // ACTIVE / INACTIVE
+    // ==========================
 
-    // ✅ Duplicate check
-    boolean existsByValue(String value);
-
-    boolean existsByValueIgnoreCase(String value);
-
-    // 🔍 Active / Inactive
     List<DisabilityStatus> getActive();
 
     List<DisabilityStatus> getInactive();
 
-    // 🔍 Admin-based
+    // ==========================
+    // ADMIN
+    // ==========================
+
     List<DisabilityStatus> getByAdmin(Long adminId);
 
     List<DisabilityStatus> getActiveByAdmin(Long adminId);
 
-    // 🔍 Search
+    // ==========================
+    // SEARCH
+    // ==========================
+
     List<DisabilityStatus> search(String keyword);
 
     List<DisabilityStatus> searchByAdmin(Long adminId, String keyword);

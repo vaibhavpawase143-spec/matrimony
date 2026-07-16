@@ -1,14 +1,28 @@
 package com.example.model;
 
 import jakarta.persistence.*;
+import lombok.*;
+
 import java.time.LocalDateTime;
 
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @Entity
 @Table(
         name = "occupations",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"admin_id", "name"}),
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_occupation_name_admin",
+                        columnNames = {"name", "admin_id"}
+                )
+        },
         indexes = {
-                @Index(name = "idx_occupation_name", columnList = "name")
+                @Index(name = "idx_occupation_name", columnList = "name"),
+                @Index(name = "idx_occupation_active", columnList = "is_active"),
+                @Index(name = "idx_occupation_deleted", columnList = "deleted_at")
         }
 )
 public class Occupation {
@@ -18,12 +32,13 @@ public class Occupation {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "admin_id")
+    @JoinColumn(name = "admin_id", nullable = false)
     private Admin admin;
 
     @Column(nullable = false, length = 120)
     private String name;
 
+    @Builder.Default
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 
@@ -33,61 +48,33 @@ public class Occupation {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    public Occupation() {}
+    // =========================
+    // SOFT DELETE
+    // =========================
 
-    // 🔥 Lifecycle hooks (improved)
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
+    @Column(name = "deleted_by")
+    private Long deletedBy;
+
+    // =========================
+    // LIFECYCLE
+    // =========================
+
     @PrePersist
     protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
 
-        if (this.isActive == null) {
-            this.isActive = true;
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+
+        if (isActive == null) {
+            isActive = true;
         }
     }
 
     @PreUpdate
     protected void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
-    }
-
-    // ===== Getters =====
-
-    public Long getId() {
-        return id;
-    }
-
-    public Admin getAdmin() {
-        return admin;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public Boolean getIsActive() {
-        return isActive;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    // ===== Setters (only required ones) =====
-
-    public void setAdmin(Admin admin) {
-        this.admin = admin;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public void setIsActive(Boolean isActive) {
-        this.isActive = isActive;
+        updatedAt = LocalDateTime.now();
     }
 }

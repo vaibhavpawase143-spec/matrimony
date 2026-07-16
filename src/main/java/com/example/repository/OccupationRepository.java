@@ -2,21 +2,68 @@ package com.example.repository;
 
 import com.example.model.Occupation;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
 
+@Repository
 public interface OccupationRepository extends JpaRepository<Occupation, Long> {
 
-    List<Occupation> findByAdminId(Long adminId);
+    // =========================
+    // BASIC
+    // =========================
 
-    List<Occupation> findByAdminIdAndIsActiveTrue(Long adminId);
+    Optional<Occupation> findByIdAndDeletedAtIsNull(Long id);
 
-    List<Occupation> findByAdminIdAndIsActiveFalse(Long adminId);
+    Optional<Occupation> findByIdAndDeletedAtIsNotNull(Long id);
 
-    Optional<Occupation> findByNameIgnoreCaseAndAdminId(String name, Long adminId);
+    List<Occupation> findAllByDeletedAtIsNull();
 
-    boolean existsByNameIgnoreCaseAndAdminId(String name, Long adminId);
+    List<Occupation> findByDeletedAtIsNotNull();
 
-    List<Occupation> findByAdminIdAndNameContainingIgnoreCase(Long adminId, String keyword);
+    // =========================
+    // DUPLICATE CHECK
+    // =========================
+
+    boolean existsByNameIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+            String name,
+            Long adminId
+    );
+
+    Optional<Occupation> findByNameIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+            String name,
+            Long adminId
+    );
+
+    // =========================
+    // ACTIVE / INACTIVE
+    // =========================
+
+    List<Occupation> findByIsActiveTrueAndDeletedAtIsNull();
+
+    List<Occupation> findByIsActiveFalseAndDeletedAtIsNull();
+
+    // =========================
+    // ADMIN
+    // =========================
+
+    List<Occupation> findByAdmin_IdAndDeletedAtIsNull(Long adminId);
+
+    List<Occupation> findByAdmin_IdAndIsActiveTrueAndDeletedAtIsNull(Long adminId);
+
+    List<Occupation> findByAdmin_IdAndIsActiveFalseAndDeletedAtIsNull(Long adminId);
+
+    // =========================
+    // SEARCH
+    // =========================
+
+    List<Occupation> findByNameContainingIgnoreCaseAndDeletedAtIsNull(
+            String keyword
+    );
+
+    List<Occupation> findByAdmin_IdAndNameContainingIgnoreCaseAndDeletedAtIsNull(
+            Long adminId,
+            String keyword
+    );
 }

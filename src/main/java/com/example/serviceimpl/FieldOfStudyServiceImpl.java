@@ -1,127 +1,335 @@
 package com.example.serviceimpl;
 
+import com.example.dto.request.FieldOfStudyRequestDTO;
+import com.example.dto.response.FieldOfStudyResponseDTO;
+import com.example.exception.BadRequestException;
+import com.example.exception.ResourceNotFoundException;
+import com.example.model.Admin;
 import com.example.model.FieldOfStudy;
+import com.example.repository.AdminRepository;
 import com.example.repository.FieldOfStudyRepository;
 import com.example.service.FieldOfStudyService;
+import com.example.util.AuditHelper;
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
+@Transactional
 public class FieldOfStudyServiceImpl implements FieldOfStudyService {
 
+    private static final String MODULE = "MASTER";
+    private static final String ENTITY = "FIELD_OF_STUDY";
+
     private final FieldOfStudyRepository fieldOfStudyRepository;
+    private final AdminRepository adminRepository;
+    private final AuditHelper auditHelper;
 
-    public FieldOfStudyServiceImpl(FieldOfStudyRepository fieldOfStudyRepository) {
-        this.fieldOfStudyRepository = fieldOfStudyRepository;
-    }
+    // =========================
+    // CREATE
+    // =========================
 
-    // ✅ Create
     @Override
-    public FieldOfStudy create(FieldOfStudy fieldOfStudy) {
+    public FieldOfStudyResponseDTO create(FieldOfStudyRequestDTO requestDto) {
 
-        if (fieldOfStudyRepository.existsByNameIgnoreCase(fieldOfStudy.getName())) {
-            throw new RuntimeException("FieldOfStudy already exists: " + fieldOfStudy.getName());
+        Admin admin = adminRepository.findById(requestDto.getAdminId())
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Admin not found."));
+
+        if (fieldOfStudyRepository.existsByNameIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+                requestDto.getName(),
+                requestDto.getAdminId())) {
+
+            throw new BadRequestException("Field Of Study already exists.");
         }
 
-        return fieldOfStudyRepository.save(fieldOfStudy);
+        FieldOfStudy entity = FieldOfStudy.builder()
+                .admin(admin)
+                .name(requestDto.getName().trim())
+                .isActive(requestDto.getIsActive())
+                .build();
+
+        FieldOfStudy saved = fieldOfStudyRepository.save(entity);
+
+        auditHelper.logCreate(
+                MODULE,
+                ENTITY,
+                saved.getId(),
+                saved.getName(),
+                saved.getName()
+        );
+
+        return mapToResponse(saved);
     }
 
-    // 🔄 Update
+    // =========================
+    // UPDATE
+    // =========================
+
     @Override
-    public FieldOfStudy update(Long id, FieldOfStudy fieldOfStudy) {
+    public FieldOfStudyResponseDTO update(Long id,
+                                          FieldOfStudyRequestDTO requestDto) {
 
-        FieldOfStudy existing = fieldOfStudyRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("FieldOfStudy not found with id: " + id));
+        FieldOfStudy entity = fieldOfStudyRepository
+                .findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Field Of Study not found."));
 
-        fieldOfStudyRepository.findByNameIgnoreCase(fieldOfStudy.getName())
-                .ifPresent(f -> {
-                    if (!f.getId().equals(id)) {
-                        throw new RuntimeException("FieldOfStudy already exists: " + fieldOfStudy.getName());
-                    }
-                });
+        boolean oldStatus = entity.getIsActive();
 
-        // ✏️ Update fields
-        existing.setName(fieldOfStudy.getName());
-        existing.setIsActive(fieldOfStudy.getIsActive());
+        if (fieldOfStudyRepository
+                .findByNameIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+                        requestDto.getName(),
+                        requestDto.getAdminId())
+                .filter(e -> !e.getId().equals(id))
+                .isPresent()) {
 
-        return fieldOfStudyRepository.save(existing);
+            throw new BadRequestException("Field Of Study already exists.");
+        }
+
+        Admin admin = adminRepository.findById(requestDto.getAdminId())
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Admin not found."));
+
+        String oldValue = entity.getName();
+
+        entity.setAdmin(admin);
+        entity.setName(requestDto.getName().trim());
+        entity.setIsActive(requestDto.getIsActive());
+
+        FieldOfStudy updated = fieldOfStudyRepository.save(entity);
+
+        auditHelper.logUpdate(
+                MODULE,
+                ENTITY,
+                updated.getId(),
+                updated.getName(),
+                oldValue,
+                updated.getName(),
+                oldStatus,
+                updated.getIsActive()
+        );
+
+        return mapToResponse(updated);
     }
 
-    // ❌ Delete
-    @Override
-    public void delete(Long id) {
-        FieldOfStudy existing = fieldOfStudyRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("FieldOfStudy not found with id: " + id));
+    // =========================
+    // SOFT DELETE
+    // =========================
 
-        fieldOfStudyRepository.delete(existing);
+    @Override
+    public void softDelete(Long id) {
+
+        FieldOfStudy entity = fieldOfStudyRepository
+                .findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Field Of Study not found."));
+
+        entity.setDeletedAt(LocalDateTime.now());
+
+        fieldOfStudyRepository.save(entity);
+
+        auditHelper.logDelete(
+                MODULE,
+                ENTITY,
+                entity.getId(),
+                entity.getName(),
+                entity.getName()
+        );
     }
 
-    // 🔍 Get by ID
-    @Override
-    public Optional<FieldOfStudy> getById(Long id) {
-        return fieldOfStudyRepository.findById(id);
-    }
-
-    // 🔍 Get all
-    @Override
-    public List<FieldOfStudy> getAll() {
-        return fieldOfStudyRepository.findAll();
-    }
-
-    // 🔍 Find by name
-    @Override
-    public Optional<FieldOfStudy> getByName(String name) {
-        return fieldOfStudyRepository.findByName(name);
-    }
+    // =========================
+    // RESTORE
+    // =========================
 
     @Override
-    public Optional<FieldOfStudy> getByNameIgnoreCase(String name) {
-        return fieldOfStudyRepository.findByNameIgnoreCase(name);
+    public void restore(Long id) {
+
+        FieldOfStudy entity = fieldOfStudyRepository
+                .findByIdAndDeletedAtIsNotNull(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Deleted Field Of Study not found."));
+
+        if (fieldOfStudyRepository.existsByNameIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+                entity.getName(),
+                entity.getAdmin().getId())) {
+
+            throw new BadRequestException("Field Of Study already exists.");
+        }
+
+        entity.setDeletedAt(null);
+        entity.setDeletedBy(null);
+
+        fieldOfStudyRepository.save(entity);
+
+        auditHelper.logRestore(
+                MODULE,
+                ENTITY,
+                entity.getId(),
+                entity.getName(),
+                entity.getName()
+        );
     }
 
-    // ✅ Duplicate check
+    // =========================
+    // HARD DELETE
+    // =========================
+
     @Override
-    public boolean existsByName(String name) {
-        return fieldOfStudyRepository.existsByName(name);
+    public void hardDelete(Long id) {
+
+        FieldOfStudy entity = fieldOfStudyRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Field Of Study not found."));
+
+        auditHelper.logHardDelete(
+                MODULE,
+                ENTITY,
+                entity.getId(),
+                entity.getName(),
+                entity.getName()
+        );
+
+        fieldOfStudyRepository.delete(entity);
+    }
+
+    // =========================
+    // GET BY ID
+    // =========================
+
+    @Override
+    public FieldOfStudyResponseDTO getById(Long id) {
+
+        return mapToResponse(
+                fieldOfStudyRepository.findByIdAndDeletedAtIsNull(id)
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException("Field Of Study not found."))
+        );
+    }
+
+    // =========================
+    // GET ALL
+    // =========================
+
+    @Override
+    public List<FieldOfStudyResponseDTO> getAll() {
+
+        return fieldOfStudyRepository.findAllByDeletedAtIsNull()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
     }
 
     @Override
-    public boolean existsByNameIgnoreCase(String name) {
-        return fieldOfStudyRepository.existsByNameIgnoreCase(name);
+    public List<FieldOfStudyResponseDTO> getDeleted() {
+
+        return fieldOfStudyRepository.findByDeletedAtIsNotNull()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
     }
 
-    // 🔍 Active / Inactive
-    @Override
-    public List<FieldOfStudy> getActive() {
-        return fieldOfStudyRepository.findByIsActiveTrue();
-    }
+    // =========================
+    // ACTIVE / INACTIVE
+    // =========================
 
     @Override
-    public List<FieldOfStudy> getInactive() {
-        return fieldOfStudyRepository.findByIsActiveFalse();
-    }
+    public List<FieldOfStudyResponseDTO> getActive() {
 
-    // 🔍 Admin-based
-    @Override
-    public List<FieldOfStudy> getByAdmin(Long adminId) {
-        return fieldOfStudyRepository.findByAdminId(adminId);
-    }
-
-    @Override
-    public List<FieldOfStudy> getActiveByAdmin(Long adminId) {
-        return fieldOfStudyRepository.findByAdminIdAndIsActiveTrue(adminId);
-    }
-
-    // 🔍 Search
-    @Override
-    public List<FieldOfStudy> search(String keyword) {
-        return fieldOfStudyRepository.findByNameContainingIgnoreCase(keyword);
+        return fieldOfStudyRepository.findByIsActiveTrueAndDeletedAtIsNull()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
     }
 
     @Override
-    public List<FieldOfStudy> searchByAdmin(Long adminId, String keyword) {
-        return fieldOfStudyRepository.findByAdminIdAndNameContainingIgnoreCase(adminId, keyword);
+    public List<FieldOfStudyResponseDTO> getInactive() {
+
+        return fieldOfStudyRepository.findByIsActiveFalseAndDeletedAtIsNull()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    // =========================
+    // ADMIN WISE
+    // =========================
+
+    @Override
+    public List<FieldOfStudyResponseDTO> getByAdmin(Long adminId) {
+
+        return fieldOfStudyRepository.findByAdmin_IdAndDeletedAtIsNull(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Override
+    public List<FieldOfStudyResponseDTO> getActiveByAdmin(Long adminId) {
+
+        return fieldOfStudyRepository
+                .findByAdmin_IdAndIsActiveTrueAndDeletedAtIsNull(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Override
+    public List<FieldOfStudyResponseDTO> getInactiveByAdmin(Long adminId) {
+
+        return fieldOfStudyRepository
+                .findByAdmin_IdAndIsActiveFalseAndDeletedAtIsNull(adminId)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    // =========================
+    // SEARCH
+    // =========================
+
+    @Override
+    public List<FieldOfStudyResponseDTO> search(String keyword) {
+
+        return fieldOfStudyRepository
+                .findByNameContainingIgnoreCaseAndDeletedAtIsNull(keyword)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Override
+    public List<FieldOfStudyResponseDTO> searchByAdmin(Long adminId,
+                                                       String keyword) {
+
+        return fieldOfStudyRepository
+                .findByAdmin_IdAndNameContainingIgnoreCaseAndDeletedAtIsNull(
+                        adminId,
+                        keyword)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    // =========================
+    // DTO MAPPING
+    // =========================
+
+    private FieldOfStudyResponseDTO mapToResponse(FieldOfStudy entity) {
+
+        return FieldOfStudyResponseDTO.builder()
+                .id(entity.getId())
+                .adminId(entity.getAdmin().getId())
+                .name(entity.getName())
+                .isActive(entity.getIsActive())
+                .createdAt(entity.getCreatedAt())
+                .updatedAt(entity.getUpdatedAt())
+                .deletedAt(entity.getDeletedAt())
+                .deletedBy(entity.getDeletedBy())
+                .build();
     }
 }

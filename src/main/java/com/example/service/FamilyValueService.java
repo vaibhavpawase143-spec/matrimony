@@ -1,45 +1,59 @@
 package com.example.service;
 
-import com.example.model.FamilyValue;
+import com.example.dto.request.FamilyValueRequestDto;
+import com.example.dto.response.FamilyValueResponseDto;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface FamilyValueService {
 
-    // 🔍 Basic CRUD
-    FamilyValue create(FamilyValue familyValue);
+    // =========================
+    // CRUD
+    // =========================
 
-    FamilyValue update(Long id, FamilyValue familyValue);
+    FamilyValueResponseDto create(FamilyValueRequestDto requestDto);
 
-    void delete(Long id);
+    FamilyValueResponseDto update(Long id, FamilyValueRequestDto requestDto);
 
-    Optional<FamilyValue> getById(Long id);
+    void softDelete(Long id);
 
-    List<FamilyValue> getAll();
+    void restore(Long id);
 
-    // 🔍 Find by name
-    Optional<FamilyValue> getByName(String name);
+    void hardDelete(Long id);
 
-    Optional<FamilyValue> getByNameIgnoreCase(String name);
+    // =========================
+    // GET
+    // =========================
 
-    // ✅ Duplicate check
-    boolean existsByName(String name);
+    FamilyValueResponseDto getById(Long id);
 
-    boolean existsByNameIgnoreCase(String name);
+    List<FamilyValueResponseDto> getAll();
 
-    // 🔍 Active / Inactive
-    List<FamilyValue> getActive();
+    List<FamilyValueResponseDto> getDeleted();
 
-    List<FamilyValue> getInactive();
+    // =========================
+    // ACTIVE / INACTIVE
+    // =========================
 
-    // 🔍 Admin-based
-    List<FamilyValue> getByAdmin(Long adminId);
+    List<FamilyValueResponseDto> getActive();
 
-    List<FamilyValue> getActiveByAdmin(Long adminId);
+    List<FamilyValueResponseDto> getInactive();
 
-    // 🔍 Search
-    List<FamilyValue> search(String keyword);
+    // =========================
+    // ADMIN WISE
+    // =========================
 
-    List<FamilyValue> searchByAdmin(Long adminId, String keyword);
+    List<FamilyValueResponseDto> getByAdmin(Long adminId);
+
+    List<FamilyValueResponseDto> getActiveByAdmin(Long adminId);
+
+    List<FamilyValueResponseDto> getInactiveByAdmin(Long adminId);
+
+    // =========================
+    // SEARCH
+    // =========================
+
+    List<FamilyValueResponseDto> search(String keyword);
+
+    List<FamilyValueResponseDto> searchByAdmin(Long adminId, String keyword);
 }

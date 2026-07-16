@@ -1,45 +1,59 @@
 package com.example.service;
 
-import com.example.model.FieldOfStudy;
+import com.example.dto.request.FieldOfStudyRequestDTO;
+import com.example.dto.response.FieldOfStudyResponseDTO;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface FieldOfStudyService {
 
-    // 🔍 Basic CRUD
-    FieldOfStudy create(FieldOfStudy fieldOfStudy);
+    // =========================
+    // CRUD
+    // =========================
 
-    FieldOfStudy update(Long id, FieldOfStudy fieldOfStudy);
+    FieldOfStudyResponseDTO create(FieldOfStudyRequestDTO requestDto);
 
-    void delete(Long id);
+    FieldOfStudyResponseDTO update(Long id, FieldOfStudyRequestDTO requestDto);
 
-    Optional<FieldOfStudy> getById(Long id);
+    void softDelete(Long id);
 
-    List<FieldOfStudy> getAll();
+    void restore(Long id);
 
-    // 🔍 Find by name
-    Optional<FieldOfStudy> getByName(String name);
+    void hardDelete(Long id);
 
-    Optional<FieldOfStudy> getByNameIgnoreCase(String name);
+    // =========================
+    // GET
+    // =========================
 
-    // ✅ Duplicate check
-    boolean existsByName(String name);
+    FieldOfStudyResponseDTO getById(Long id);
 
-    boolean existsByNameIgnoreCase(String name);
+    List<FieldOfStudyResponseDTO> getAll();
 
-    // 🔍 Active / Inactive
-    List<FieldOfStudy> getActive();
+    List<FieldOfStudyResponseDTO> getDeleted();
 
-    List<FieldOfStudy> getInactive();
+    // =========================
+    // ACTIVE / INACTIVE
+    // =========================
 
-    // 🔍 Admin-based
-    List<FieldOfStudy> getByAdmin(Long adminId);
+    List<FieldOfStudyResponseDTO> getActive();
 
-    List<FieldOfStudy> getActiveByAdmin(Long adminId);
+    List<FieldOfStudyResponseDTO> getInactive();
 
-    // 🔍 Search
-    List<FieldOfStudy> search(String keyword);
+    // =========================
+    // ADMIN WISE
+    // =========================
 
-    List<FieldOfStudy> searchByAdmin(Long adminId, String keyword);
+    List<FieldOfStudyResponseDTO> getByAdmin(Long adminId);
+
+    List<FieldOfStudyResponseDTO> getActiveByAdmin(Long adminId);
+
+    List<FieldOfStudyResponseDTO> getInactiveByAdmin(Long adminId);
+
+    // =========================
+    // SEARCH
+    // =========================
+
+    List<FieldOfStudyResponseDTO> search(String keyword);
+
+    List<FieldOfStudyResponseDTO> searchByAdmin(Long adminId, String keyword);
 }

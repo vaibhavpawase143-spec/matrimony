@@ -1,5 +1,6 @@
 package com.example.model;
 
+import com.example.model.base.Auditable;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -21,7 +22,7 @@ import java.time.LocalDateTime;
                 @Index(name = "idx_profile_active", columnList = "is_active")
         }
 )
-public class Profile {
+public class Profile extends Auditable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -237,16 +238,6 @@ public class Profile {
     private Integer boostScore = 0;
 
     // =====================================================
-    // AUDIT
-    // =====================================================
-
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
-    // =====================================================
     // CONSTRUCTOR
     // =====================================================
 
@@ -259,10 +250,7 @@ public class Profile {
 
     @PrePersist
     protected void onCreate() {
-
-        this.createdAt = LocalDateTime.now();
-
-        this.updatedAt = LocalDateTime.now();
+        super.onCreate();
 
         if (this.isActive == null) {
             this.isActive = true;
@@ -287,7 +275,7 @@ public class Profile {
 
     @PreUpdate
     protected void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
+        super.onUpdate();
     }
 
     // =====================================================
@@ -594,13 +582,8 @@ public class Profile {
         this.boostScore = boostScore;
     }
 
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
 
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
+
     public PremiumPlan getPremiumPlan() {
         return premiumPlan;
     }

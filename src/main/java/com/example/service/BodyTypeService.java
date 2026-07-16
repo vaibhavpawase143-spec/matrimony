@@ -1,6 +1,7 @@
 package com.example.service;
 
 import com.example.model.BodyType;
+
 import java.util.List;
 
 public interface BodyTypeService {
@@ -13,9 +14,13 @@ public interface BodyTypeService {
 
     List<BodyType> getActive(Long adminId);
 
-    List<BodyType> getInactive(Long adminId);
-
     BodyType update(Long id, BodyType bodyType, Long adminId);
 
-    void delete(Long id, Long adminId);
+    void delete(Long id, Long deletedBy);
+
+    void hardDelete(Long id);
+
+    BodyType restore(Long id);
+
+    List<BodyType> getDeleted(Long adminId);
 }
