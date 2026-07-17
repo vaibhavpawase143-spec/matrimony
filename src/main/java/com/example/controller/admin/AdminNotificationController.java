@@ -8,6 +8,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -17,10 +18,12 @@ public class AdminNotificationController {
 
     private final AdminNotificationService adminNotificationService;
 
-    /**
-     * Send notification to selected users
-     */
+    // =====================================================
+    // SEND NOTIFICATION TO SELECTED USERS
+    // =====================================================
+
     @PostMapping("/send")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     public ApiResponse<String> sendNotification(
             @Valid @RequestBody AdminNotificationRequestDTO request) {
 
@@ -32,10 +35,12 @@ public class AdminNotificationController {
                 .build();
     }
 
-    /**
-     * Broadcast notification to all active users
-     */
+    // =====================================================
+    // BROADCAST NOTIFICATION TO ALL ACTIVE USERS
+    // =====================================================
+
     @PostMapping("/broadcast")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     public ApiResponse<String> broadcastNotification(
             @Valid @RequestBody AdminNotificationRequestDTO request) {
 
@@ -47,10 +52,12 @@ public class AdminNotificationController {
                 .build();
     }
 
-    /**
-     * Notification History
-     */
+    // =====================================================
+    // GET NOTIFICATION HISTORY
+    // =====================================================
+
     @GetMapping("/history")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     public ApiResponse<Page<NotificationResponse>> getNotificationHistory(
 
             @RequestParam(defaultValue = "") String keyword,

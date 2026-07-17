@@ -1,70 +1,56 @@
 package com.example.model;
 
+import com.example.model.base.Auditable;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
 @Getter
 @Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
 @Table(
         name = "conversations",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"user1_id", "user2_id"})
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        columnNames = {"user1_id", "user2_id"}
+                )
+        },
+        indexes = {
+                @Index(
+                        name = "idx_conversation_user1",
+                        columnList = "user1_id"
+                ),
+                @Index(
+                        name = "idx_conversation_user2",
+                        columnList = "user2_id"
+                )
+        }
 )
-public class Conversation {
+public class Conversation extends Auditable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Always store smaller ID first
-    @ManyToOne(fetch = FetchType.LAZY)
+    // =====================================================
+    // PARTICIPANT 1
+    // =====================================================
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user1_id", nullable = false)
     private User user1;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    // =====================================================
+    // PARTICIPANT 2
+    // =====================================================
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user2_id", nullable = false)
     private User user2;
-
-    private LocalDateTime createdAt;
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-    @PrePersist
-    protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public User getUser1() {
-        return user1;
-    }
-
-    public void setUser1(User user1) {
-        this.user1 = user1;
-    }
-
-    public User getUser2() {
-        return user2;
-    }
-
-    public void setUser2(User user2) {
-        this.user2 = user2;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-// getters setters
 }

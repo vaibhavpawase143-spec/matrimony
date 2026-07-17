@@ -16,8 +16,34 @@ public interface AdminAuditLogService {
             Long entityId,
             String description,
             String oldValue,
-            String newValue
+            String newValue,
+            String ipAddress,
+            String userAgent
     );
+    default void log(
+            Long adminId,
+            String module,
+            String action,
+            String entityType,
+            Long entityId,
+            String description,
+            String oldValue,
+            String newValue
+    ) {
+
+        log(
+                adminId,
+                module,
+                action,
+                entityType,
+                entityId,
+                description,
+                oldValue,
+                newValue,
+                null,
+                null
+        );
+    }
     /**
      * Get Audit Logs
      */
