@@ -1,8 +1,10 @@
+-- ==========================================
+-- ROLES
+-- ==========================================
+
 CREATE TABLE roles
 (
     id BIGSERIAL PRIMARY KEY,
-
-    admin_id BIGINT NOT NULL,
 
     name VARCHAR(50) NOT NULL,
 
@@ -16,12 +18,8 @@ CREATE TABLE roles
 
     deleted_by BIGINT,
 
-    CONSTRAINT uk_role_name_admin
-        UNIQUE (name, admin_id),
-
-    CONSTRAINT fk_role_admin
-        FOREIGN KEY (admin_id)
-        REFERENCES admins(id)
+    CONSTRAINT uk_role_name
+        UNIQUE (name)
 );
 
 -- ==========================================

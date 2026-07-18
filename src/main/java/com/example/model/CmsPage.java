@@ -28,11 +28,10 @@ public class CmsPage {
     @Column(nullable = false, length = 255)
     private String title;
 
-    @Lob
-    @Column(nullable = false)
+    @Column(columnDefinition = "TEXT", nullable = false)
     private String content;
-
     @Column(nullable = false)
+
     private Boolean published = false;
 
     @Column(name = "is_active", nullable = false)

@@ -67,54 +67,53 @@ CREATE TABLE audit_logs (
 
 -- =====================================================
 -- ENTITY INDEXES
--- (Matches @Table(indexes = ...))
 -- =====================================================
 
-CREATE INDEX idx_admin_id
+CREATE INDEX idx_audit_logs_admin_id
     ON audit_logs(admin_id);
 
-CREATE INDEX idx_entity_type
+CREATE INDEX idx_audit_logs_entity_type
     ON audit_logs(entity_type);
 
-CREATE INDEX idx_entity_id
+CREATE INDEX idx_audit_logs_entity_id
     ON audit_logs(entity_id);
 
-CREATE INDEX idx_action
+CREATE INDEX idx_audit_logs_action
     ON audit_logs(action);
 
-CREATE INDEX idx_created_at
+CREATE INDEX idx_audit_logs_created_at
     ON audit_logs(created_at);
 
-CREATE INDEX idx_ip_address
+CREATE INDEX idx_audit_logs_ip_address
     ON audit_logs(ip_address);
 
 -- =====================================================
 -- PRODUCTION INDEXES
 -- =====================================================
 
-CREATE INDEX idx_audit_status
+CREATE INDEX idx_audit_logs_status
     ON audit_logs(status);
 
-CREATE INDEX idx_audit_suspicious
+CREATE INDEX idx_audit_logs_suspicious
     ON audit_logs(suspicious_activity);
 
-CREATE INDEX idx_audit_admin_created
+CREATE INDEX idx_audit_logs_admin_created
     ON audit_logs(admin_id, created_at);
 
-CREATE INDEX idx_audit_entity
+CREATE INDEX idx_audit_logs_entity
     ON audit_logs(entity_type, entity_id);
 
-CREATE INDEX idx_audit_action_created
+CREATE INDEX idx_audit_logs_action_created
     ON audit_logs(action, created_at);
 
-CREATE INDEX idx_audit_status_created
+CREATE INDEX idx_audit_logs_status_created
     ON audit_logs(status, created_at);
 
-CREATE INDEX idx_audit_suspicious_created
+CREATE INDEX idx_audit_logs_suspicious_created
     ON audit_logs(suspicious_activity, created_at);
 
-CREATE INDEX idx_audit_admin_action
+CREATE INDEX idx_audit_logs_admin_action
     ON audit_logs(admin_id, action);
 
-CREATE INDEX idx_audit_entity_action
+CREATE INDEX idx_audit_logs_entity_action
     ON audit_logs(entity_type, entity_id, action);

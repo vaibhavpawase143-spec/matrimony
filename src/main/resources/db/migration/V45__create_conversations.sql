@@ -22,7 +22,21 @@ CREATE TABLE conversations (
     -- =====================================================
     created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
 
+    created_by BIGINT,
+
     updated_at TIMESTAMP WITHOUT TIME ZONE,
+
+    updated_by BIGINT,
+
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+
+    deleted_at TIMESTAMP WITHOUT TIME ZONE,
+
+    deleted_by BIGINT,
+
+    deletion_reason VARCHAR(500),
+
+    version BIGINT NOT NULL DEFAULT 0,
 
     -- =====================================================
     -- CONSTRAINTS
@@ -73,3 +87,18 @@ CREATE INDEX idx_conversation_user2_created
 
 CREATE INDEX idx_conversation_users
     ON conversations(user1_id, user2_id);
+
+CREATE INDEX idx_conversation_is_deleted
+    ON conversations(is_deleted);
+
+CREATE INDEX idx_conversation_created_by
+    ON conversations(created_by);
+
+CREATE INDEX idx_conversation_updated_by
+    ON conversations(updated_by);
+
+CREATE INDEX idx_conversation_deleted_by
+    ON conversations(deleted_by);
+
+CREATE INDEX idx_conversation_active_users
+    ON conversations(user1_id, user2_id, is_deleted);

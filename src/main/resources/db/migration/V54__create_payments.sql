@@ -39,8 +39,6 @@ CREATE TABLE payments (
     -- CONSTRAINTS
     -- =====================================================
 
-    CONSTRAINT pk_payments
-        PRIMARY KEY (id),
 
     CONSTRAINT uk_payment_transaction
         UNIQUE (transaction_id),

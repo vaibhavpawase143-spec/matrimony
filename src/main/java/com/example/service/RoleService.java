@@ -41,22 +41,10 @@ public interface RoleService {
     List<RoleResponseDTO> getInactive();
 
     // =====================================================
-    // ADMIN
-    // =====================================================
-
-    List<RoleResponseDTO> getByAdmin(Long adminId);
-
-    List<RoleResponseDTO> getActiveByAdmin(Long adminId);
-
-    List<RoleResponseDTO> getInactiveByAdmin(Long adminId);
-
-    // =====================================================
     // SEARCH
     // =====================================================
 
     List<RoleResponseDTO> search(String keyword);
-
-    List<RoleResponseDTO> searchByAdmin(Long adminId, String keyword);
 
     // =====================================================
     // JWT / SPRING SECURITY

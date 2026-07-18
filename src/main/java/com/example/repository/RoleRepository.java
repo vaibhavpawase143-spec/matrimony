@@ -34,15 +34,9 @@ public interface RoleRepository extends JpaRepository<Role, Long> {
     // DUPLICATE CHECK
     // =====================================================
 
-    boolean existsByNameIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
-            String name,
-            Long adminId
-    );
+    boolean existsByNameIgnoreCaseAndDeletedAtIsNull(String name);
 
-    Optional<Role> findByNameIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
-            String name,
-            Long adminId
-    );
+    Optional<Role> findByNameIgnoreCaseAndDeletedAtIsNull(String name);
 
     // =====================================================
     // ACTIVE / INACTIVE
@@ -53,25 +47,10 @@ public interface RoleRepository extends JpaRepository<Role, Long> {
     List<Role> findByIsActiveFalseAndDeletedAtIsNull();
 
     // =====================================================
-    // ADMIN
-    // =====================================================
-
-    List<Role> findByAdmin_IdAndDeletedAtIsNull(Long adminId);
-
-    List<Role> findByAdmin_IdAndIsActiveTrueAndDeletedAtIsNull(Long adminId);
-
-    List<Role> findByAdmin_IdAndIsActiveFalseAndDeletedAtIsNull(Long adminId);
-
-    // =====================================================
     // SEARCH
     // =====================================================
 
     List<Role> findByNameContainingIgnoreCaseAndDeletedAtIsNull(
-            String keyword
-    );
-
-    List<Role> findByAdmin_IdAndNameContainingIgnoreCaseAndDeletedAtIsNull(
-            Long adminId,
             String keyword
     );
 }

@@ -159,40 +159,6 @@ public class RoleController {
     }
 
     // =====================================================
-    // ADMIN
-    // =====================================================
-
-    @GetMapping("/admin/{adminId}")
-    public ApiResponse<List<RoleResponseDTO>> getByAdmin(
-            @PathVariable Long adminId) {
-
-        return ApiResponse.success(
-                "Role list fetched successfully.",
-                roleService.getByAdmin(adminId)
-        );
-    }
-
-    @GetMapping("/admin/{adminId}/active")
-    public ApiResponse<List<RoleResponseDTO>> getActiveByAdmin(
-            @PathVariable Long adminId) {
-
-        return ApiResponse.success(
-                "Active role list fetched successfully.",
-                roleService.getActiveByAdmin(adminId)
-        );
-    }
-
-    @GetMapping("/admin/{adminId}/inactive")
-    public ApiResponse<List<RoleResponseDTO>> getInactiveByAdmin(
-            @PathVariable Long adminId) {
-
-        return ApiResponse.success(
-                "Inactive role list fetched successfully.",
-                roleService.getInactiveByAdmin(adminId)
-        );
-    }
-
-    // =====================================================
     // SEARCH
     // =====================================================
 
@@ -203,17 +169,6 @@ public class RoleController {
         return ApiResponse.success(
                 "Search completed successfully.",
                 roleService.search(keyword)
-        );
-    }
-
-    @GetMapping("/admin/{adminId}/search")
-    public ApiResponse<List<RoleResponseDTO>> searchByAdmin(
-            @PathVariable Long adminId,
-            @RequestParam String keyword) {
-
-        return ApiResponse.success(
-                "Search completed successfully.",
-                roleService.searchByAdmin(adminId, keyword)
         );
     }
 }
