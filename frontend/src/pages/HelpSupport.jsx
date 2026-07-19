@@ -1,14 +1,15 @@
 import { Headphones, Mail, Phone, MessageCircle, Clock, MapPin, Users, CheckCircle, AlertCircle } from "lucide-react";
 import { motion } from "framer-motion";
-import { useState } from "react";
+import {useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { supportAPI } from "@/services/api";
+import { supportAPI,profileAPI  } from "@/services/api";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useNavigate } from "react-router-dom";
 const HelpSupport = () => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
+    const [profile, setProfile] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -82,6 +83,29 @@ navigate("/support/tickets");
     }
 
   };
+useEffect(() => {
+    loadProfile();
+}, []);
+
+const loadProfile = async () => {
+
+    try {
+
+        const data = await profileAPI.getProfile();
+
+        console.log("PROFILE =", data);
+
+        setProfile(data);
+
+    } catch (error) {
+
+        console.error(error);
+
+        toast.error("Failed to load profile");
+
+    }
+
+};
   const supportOptions = [
     {
       icon: <Phone className="h-6 w-6" />,

@@ -3,9 +3,7 @@ package com.example.serviceimpl;
 import com.example.model.RefreshToken;
 import com.example.repository.RefreshTokenRepository;
 import com.example.service.RefreshTokenService;
-
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,26 +16,31 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
 
     private final RefreshTokenRepository repository;
 
-    private final long REFRESH_DURATION = 7 * 24 * 60 * 60 * 1000; // 7 days
+    private static final long REFRESH_DURATION = 7 * 24 * 60 * 60 * 1000L; // 7 days
 
-    // ================= CREATE TOKEN =================
+    // =====================================================
+    // CREATE / UPDATE REFRESH TOKEN
+    // =====================================================
     @Override
-    @Transactional   // 🔥 FIX (IMPORTANT)
+    @Transactional
     public RefreshToken createToken(String email) {
 
-        // 🔥 delete old token
         repository.deleteByEmail(email);
+        repository.flush();
 
-        RefreshToken token = RefreshToken.builder()
+        RefreshToken refreshToken = RefreshToken.builder()
                 .email(email)
                 .token(UUID.randomUUID().toString())
-                .expiryDate(Instant.now().plusMillis(REFRESH_DURATION))
+                .expiryDate(
+                        Instant.now().plusMillis(REFRESH_DURATION)
+                )
                 .build();
 
-        return repository.save(token);
+        return repository.save(refreshToken);
     }
-
-    // ================= VERIFY TOKEN =================
+    // =====================================================
+    // VERIFY REFRESH TOKEN
+    // =====================================================
     @Override
     public RefreshToken verifyToken(String token) {
 
@@ -52,10 +55,14 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
         return refreshToken;
     }
 
-    // ================= DELETE =================
+    // =====================================================
+    // DELETE REFRESH TOKEN
+    // =====================================================
     @Override
-    @Transactional   // 🔥 FIX (IMPORTANT)
+    @Transactional
     public void deleteByEmail(String email) {
-        repository.deleteByEmail(email);
+
+        repository.findByEmail(email)
+                .ifPresent(repository::delete);
     }
 }

@@ -14,7 +14,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -90,7 +89,7 @@ public class AuthController {
     // ================= LOGIN =================
     @PostMapping("/login")
     public ApiResponse<LoginResponse> login(@Valid @RequestBody UserLoginRequestDTO request) {
-
+        System.out.println("========== LOGIN CONTROLLER ==========");
         LoginResponse loginResponse = userService.loginWithProfile(
                 request.getEmail(),
                 request.getPassword()
