@@ -50,9 +50,8 @@ public class CmsPageServiceImpl implements CmsPageService {
                 savedPage.getId(),
                 "Created CMS page: " + savedPage.getTitle(),
                 null,
-                "PageKey=" + savedPage.getPageKey(),
-                "SYSTEM",
-                "SYSTEM"
+                "PageKey=" + savedPage.getPageKey()
+
         );
 
         return CmsPageMapper.toDTO(savedPage);
@@ -94,9 +93,8 @@ public class CmsPageServiceImpl implements CmsPageService {
                 updatedPage.getId(),
                 "Updated CMS page: " + updatedPage.getTitle(),
                 oldValue,
-                newValue,
-                "SYSTEM",
-                "SYSTEM"
+                newValue
+
         );
 
         return CmsPageMapper.toDTO(updatedPage);
@@ -156,9 +154,8 @@ public class CmsPageServiceImpl implements CmsPageService {
                 page.getId(),
                 "Published CMS page: " + page.getTitle(),
                 "Published=false",
-                "Published=true",
-                "SYSTEM",
-                "SYSTEM"
+                "Published=true"
+
         );
     }
 
@@ -184,9 +181,7 @@ public class CmsPageServiceImpl implements CmsPageService {
                 page.getId(),
                 "Unpublished CMS page: " + page.getTitle(),
                 "Published=true",
-                "Published=false",
-                "SYSTEM",
-                "SYSTEM"
+                "Published=false"
         );
     }
 
@@ -212,9 +207,7 @@ public class CmsPageServiceImpl implements CmsPageService {
                 page.getId(),
                 "Soft deleted CMS page: " + page.getTitle(),
                 "Active=true",
-                "Active=false",
-                "SYSTEM",
-                "SYSTEM"
+                "Active=false"
         );
     }
 }

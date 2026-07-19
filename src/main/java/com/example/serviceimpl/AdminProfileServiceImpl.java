@@ -71,9 +71,7 @@ public class AdminProfileServiceImpl
                 admin.getId(),
                 "Admin profile updated",
                 oldValue,
-                newValue,
-                "SYSTEM",
-                "SYSTEM"
+                newValue
         );
 
         return mapToResponse(updatedAdmin);
@@ -136,9 +134,7 @@ public class AdminProfileServiceImpl
                 admin.getId(),
                 "Admin changed password",
                 null,
-                "Password Updated Successfully",
-                "SYSTEM",
-                "SYSTEM"
+                "Password Updated Successfully"
         );
     }
 

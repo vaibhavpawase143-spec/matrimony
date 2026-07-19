@@ -5,12 +5,10 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.LocalDateTime;
-@Getter
-@Setter
+
 @Entity
 @Table(
         name = "admins",
@@ -19,6 +17,11 @@ import java.time.LocalDateTime;
                 @Index(name = "idx_admin_username", columnList = "username")
         }
 )
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Admin {
 
@@ -38,14 +41,17 @@ public class Admin {
     @JsonIgnore
     @Column(nullable = false)
     private String password;
+
     @Column(name = "profile_photo")
     private String profilePhoto;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "role_id")
     private Role role;
 
     private String phone;
 
+    @Builder.Default
     @Column(nullable = false)
     private Boolean isActive = true;
 
@@ -56,124 +62,37 @@ public class Admin {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
-// ================= AUDIT =================
+
+    // ================= Soft Delete =================
 
     @Column(name = "deleted_by")
     private Long deletedBy;
 
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
-    // ✅ Default constructor
-    public Admin() {}
 
-    // ✅ For JSON (only id)
+    // ================= JSON Constructor =================
+
     @JsonCreator
     public Admin(@JsonProperty("id") Long id) {
         this.id = id;
     }
 
-    // ================= LIFECYCLE =================
+    // ================= Entity Lifecycle =================
 
     @PrePersist
     protected void onCreate() {
         LocalDateTime now = LocalDateTime.now();
         createdAt = now;
         updatedAt = now;
+
+        if (isActive == null) {
+            isActive = true;
+        }
     }
+
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
-
-    // ================= GETTERS & SETTERS =================
-
-    public Long getId() {
-        return id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public Role getRole() {
-        return role;
-    }
-
-    public void setRole(Role role) {
-        this.role = role;
-    }
-
-    public String getPhone() {
-        return phone;
-    }
-
-    public void setPhone(String phone) {
-        this.phone = phone;
-    }
-
-    public Boolean getIsActive() {
-        return isActive;
-    }
-
-    public void setIsActive(Boolean isActive) {
-        this.isActive = isActive;
-    }
-
-    public LocalDateTime getLastLogin() {
-        return lastLogin;
-    }
-
-    public void setLastLogin(LocalDateTime lastLogin) {
-        this.lastLogin = lastLogin;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public Long getDeletedBy() { return deletedBy; }
-    public void setDeletedBy(Long deletedBy) { this.deletedBy = deletedBy; }
-
-    public LocalDateTime getDeletedAt() { return deletedAt; }
-    public void setDeletedAt(LocalDateTime deletedAt) { this.deletedAt = deletedAt; }
 }

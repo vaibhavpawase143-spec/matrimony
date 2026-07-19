@@ -1,17 +1,25 @@
 package com.example.model;
 
+import com.example.model.base.Auditable;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
 @Getter
 @Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
 @Table(
         name = "partner_preferences",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"user_id"}),
+        uniqueConstraints = {
+                @UniqueConstraint(columnNames = {"user_id"})
+        },
         indexes = {
                 @Index(name = "idx_pref_user", columnList = "user_id"),
                 @Index(name = "idx_pref_religion", columnList = "religion_id"),
@@ -19,49 +27,90 @@ import java.time.LocalDateTime;
                 @Index(name = "idx_pref_city", columnList = "city_id")
         }
 )
-public class PartnerPreference {
+public class PartnerPreference extends Auditable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // 🔥 FIX HERE (IMPORTANT)
+    // =====================================================
+    // USER
+    // =====================================================
+
     @OneToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private User user;
 
+    // =====================================================
+    // AGE
+    // =====================================================
+
     private Integer minAge;
+
     private Integer maxAge;
-    @ManyToOne
-    @JoinColumn(name="education_level_id")
+
+    // =====================================================
+    // EDUCATION
+    // =====================================================
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "education_level_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private EducationLevel educationLevel;
-    @Column(length=1000)
+
+    @Column(length = 1000)
     private String otherExpectations;
-    @ManyToOne
-    @JoinColumn(name="occupation_id")
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "occupation_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Occupation occupation;
 
-    @ManyToOne
-    @JoinColumn(name="marital_status_id")
+    // =====================================================
+    // MARITAL
+    // =====================================================
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "marital_status_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private MaritalStatus maritalStatus;
 
-    @ManyToOne
-    @JoinColumn(name="smoking_id")
+    // =====================================================
+    // LIFESTYLE
+    // =====================================================
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "smoking_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Smoking smoking;
 
-    @ManyToOne
-    @JoinColumn(name="drinking_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "drinking_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Drinking drinking;
 
-    @ManyToOne
-    @JoinColumn(name="diet_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "diet_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Diet diet;
+
+    // =====================================================
+    // HEIGHT & WEIGHT
+    // =====================================================
+
     private Long minHeight;
+
     private Long maxHeight;
+
     private Long minWeight;
 
     private Long maxWeight;
+
+    // =====================================================
+    // RELIGION
+    // =====================================================
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "religion_id")
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
@@ -72,173 +121,20 @@ public class PartnerPreference {
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Caste caste;
 
+    // =====================================================
+    // LOCATION
+    // =====================================================
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "city_id")
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private City city;
-    public EducationLevel getEducationLevel() {
-        return educationLevel;
-    }
 
-    public void setEducationLevel(
-            EducationLevel educationLevel
-    ){
-        this.educationLevel =
-                educationLevel;
-    }
+    // =====================================================
+    // STATUS
+    // =====================================================
 
-    public Occupation getOccupation() {
-        return occupation;
-    }
-
-    public void setOccupation(
-            Occupation occupation
-    ){
-        this.occupation =
-                occupation;
-    }
-
-    public MaritalStatus getMaritalStatus() {
-        return maritalStatus;
-    }
-
-    public void setMaritalStatus(
-            MaritalStatus maritalStatus
-    ){
-        this.maritalStatus =
-                maritalStatus;
-    }
-
-    public Smoking getSmoking() {
-        return smoking;
-    }
-
-    public void setSmoking(
-            Smoking smoking
-    ){
-        this.smoking =
-                smoking;
-    }
-
-    public Drinking getDrinking() {
-        return drinking;
-    }
-
-    public void setDrinking(
-            Drinking drinking
-    ){
-        this.drinking =
-                drinking;
-    }
-
-    public Diet getDiet() {
-        return diet;
-    }
-
-    public void setDiet(
-            Diet diet
-    ){
-        this.diet =
-                diet;
-    }
-    // 🔥 Audit fields
+    @Builder.Default
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
-
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
-    public PartnerPreference() {}
-
-    // 🔥 Lifecycle hooks
-    @PrePersist
-    protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
-
-        if (this.isActive == null) {
-            this.isActive = true;
-        }
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
-    }
-
-    // ===== Getters =====
-
-    public Long getId() { return id; }
-
-    public User getUser() { return user; }
-
-    public Integer getMinAge() { return minAge; }
-
-    public Integer getMaxAge() { return maxAge; }
-
-    public Long getMinHeight() { return minHeight; }
-
-    public Long getMaxHeight() { return maxHeight; }
-
-    public Religion getReligion() { return religion; }
-
-    public Caste getCaste() { return caste; }
-
-    public City getCity() { return city; }
-
-    public Boolean getIsActive() { return isActive; }
-
-    public LocalDateTime getCreatedAt() { return createdAt; }
-
-    public LocalDateTime getUpdatedAt() { return updatedAt; }
-
-    // ===== Setters =====
-
-    public void setUser(User user) { this.user = user; }
-
-    public void setMinAge(Integer minAge) { this.minAge = minAge; }
-
-    public void setMaxAge(Integer maxAge) { this.maxAge = maxAge; }
-
-    public void setMinHeight(Long minHeight) { this.minHeight = minHeight; }
-
-    public void setMaxHeight(Long maxHeight) { this.maxHeight = maxHeight; }
-
-    public void setReligion(Religion religion) { this.religion = religion; }
-
-    public void setCaste(Caste caste) { this.caste = caste; }
-
-    public void setCity(City city) { this.city = city; }
-
-    public void setIsActive(Boolean isActive) { this.isActive = isActive; }
-    public Long getMinWeight() {
-
-        return minWeight;
-
-    }
-
-    public Long getMaxWeight() {
-
-        return maxWeight;
-
-    }
-    public void setMinWeight(
-            Long minWeight
-    ) {
-
-        this.minWeight = minWeight;
-
-    }
-
-    public void setMaxWeight(
-            Long maxWeight
-    ) {
-
-        this.maxWeight = maxWeight;
-
-    }
-
 }

@@ -2,11 +2,12 @@ package com.example.controller.admin;
 
 import com.example.dto.request.SupportReplyRequestDTO;
 import com.example.dto.request.SupportStatusUpdateRequestDTO;
+import com.example.dto.response.ApiResponse;
 import com.example.dto.response.SupportResponseDTO;
 import com.example.service.SupportService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -14,63 +15,77 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/admin/support")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:3000")
 public class AdminSupportController {
 
     private final SupportService service;
 
-    // ================= ALL SUPPORT TICKETS =================
+    // =====================================================
+    // GET ALL SUPPORT TICKETS
+    // =====================================================
 
     @GetMapping
-    public ResponseEntity<List<SupportResponseDTO>> getAllTickets() {
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    public ApiResponse<List<SupportResponseDTO>> getAllTickets() {
 
-        return ResponseEntity.ok(
-                service.getAllTickets()
-        );
+        return ApiResponse.<List<SupportResponseDTO>>builder()
+                .success(true)
+                .message("Support tickets retrieved successfully")
+                .data(service.getAllTickets())
+                .build();
     }
 
-    // ================= ONE TICKET DETAILS =================
+    // =====================================================
+    // GET SUPPORT TICKET BY TICKET NUMBER
+    // =====================================================
 
     @GetMapping("/{ticketNumber}")
-    public ResponseEntity<SupportResponseDTO> getTicket(
-            @PathVariable String ticketNumber
-    ) {
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    public ApiResponse<SupportResponseDTO> getTicket(
+            @PathVariable String ticketNumber) {
 
-        return ResponseEntity.ok(
-                service.getTicketForAdmin(ticketNumber)
-        );
+        return ApiResponse.<SupportResponseDTO>builder()
+                .success(true)
+                .message("Support ticket retrieved successfully")
+                .data(service.getTicketForAdmin(ticketNumber))
+                .build();
     }
 
-    // ================= UPDATE STATUS =================
+    // =====================================================
+    // UPDATE SUPPORT TICKET STATUS
+    // =====================================================
 
     @PutMapping("/{ticketNumber}/status")
-    public ResponseEntity<SupportResponseDTO> updateStatus(
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    public ApiResponse<SupportResponseDTO> updateStatus(
             @PathVariable String ticketNumber,
-            @Valid @RequestBody SupportStatusUpdateRequestDTO request
-    ) {
+            @Valid @RequestBody SupportStatusUpdateRequestDTO request) {
 
-        return ResponseEntity.ok(
-                service.updateStatus(
+        return ApiResponse.<SupportResponseDTO>builder()
+                .success(true)
+                .message("Support ticket status updated successfully")
+                .data(service.updateStatus(
                         ticketNumber,
-                        request.getStatus()
-                )
-        );
+                        request.getStatus()))
+                .build();
     }
 
-    // ================= ADMIN REPLY =================
+    // =====================================================
+    // REPLY TO SUPPORT TICKET
+    // =====================================================
 
     @PutMapping("/{ticketNumber}/reply")
-    public ResponseEntity<SupportResponseDTO> replyTicket(
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    public ApiResponse<SupportResponseDTO> replyTicket(
             @PathVariable String ticketNumber,
-            @Valid @RequestBody SupportReplyRequestDTO request
-    ) {
+            @Valid @RequestBody SupportReplyRequestDTO request) {
 
-        return ResponseEntity.ok(
-                service.replyTicket(
+        return ApiResponse.<SupportResponseDTO>builder()
+                .success(true)
+                .message("Reply sent successfully")
+                .data(service.replyTicket(
                         ticketNumber,
-                        request.getReply()
-                )
-        );
+                        request.getReply()))
+                .build();
     }
 
 }

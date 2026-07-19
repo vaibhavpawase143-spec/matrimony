@@ -13,34 +13,76 @@ public class CorsConfig {
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
+
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // Allow specific origins (add your React app URLs)
+        // =====================================================
+        // ALLOWED ORIGINS
+        // =====================================================
+
         configuration.setAllowedOriginPatterns(Arrays.asList(
-            "http://localhost:3000",    // React dev server
-            "http://localhost:3001",    // Alternative React port
-            "http://127.0.0.1:3000",   // Alternative localhost
-            "http://localhost:5173",    // Vite dev server
-            "http://localhost:8080",    // Alternative port
-            "https://yourdomain.com",   // Production domain (replace with your actual domain)
-            "https://www.yourdomain.com" // Production www domain
+                "http://localhost:3000",
+                "http://127.0.0.1:3000",
+                "http://localhost:5173",
+
+                // LAN Access (Current)
+                "http://192.168.75.1:3000",
+
+                // Any local LAN IP (Development)
+                "http://192.168.*:*",
+
+                // Production
+                "https://yourdomain.com",
+                "https://www.yourdomain.com"
         ));
 
-        // Allow all HTTP methods
+        // =====================================================
+        // ALLOWED METHODS
+        // =====================================================
+
         configuration.setAllowedMethods(Arrays.asList(
-            "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"
+                "GET",
+                "POST",
+                "PUT",
+                "PATCH",
+                "DELETE",
+                "OPTIONS"
         ));
 
-        // Allow all headers
+        // =====================================================
+        // ALLOWED HEADERS
+        // =====================================================
+
         configuration.setAllowedHeaders(Arrays.asList("*"));
 
-        // Allow credentials (important for JWT authentication)
+        // =====================================================
+        // EXPOSED HEADERS
+        // =====================================================
+
+        configuration.setExposedHeaders(Arrays.asList(
+                "Authorization",
+                "Content-Disposition"
+        ));
+
+        // =====================================================
+        // CREDENTIALS
+        // =====================================================
+
         configuration.setAllowCredentials(true);
 
-        // How long the browser can cache preflight response
+        // =====================================================
+        // PREFLIGHT CACHE
+        // =====================================================
+
         configuration.setMaxAge(3600L);
 
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        // =====================================================
+        // REGISTER CONFIGURATION
+        // =====================================================
+
+        UrlBasedCorsConfigurationSource source =
+                new UrlBasedCorsConfigurationSource();
+
         source.registerCorsConfiguration("/**", configuration);
 
         return source;

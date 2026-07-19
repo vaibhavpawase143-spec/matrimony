@@ -1,6 +1,5 @@
 package com.example.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -13,8 +12,8 @@ import java.util.Set;
         name = "roles",
         uniqueConstraints = {
                 @UniqueConstraint(
-                        name = "uk_role_name_admin",
-                        columnNames = {"name", "admin_id"}
+                        name = "uk_role_name",
+                        columnNames = "name"
                 )
         },
         indexes = {
@@ -34,10 +33,6 @@ public class Role {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @JsonIgnore
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "admin_id", nullable = false)
-    private Admin admin;
 
     @Column(nullable = false, length = 50)
     private String name;

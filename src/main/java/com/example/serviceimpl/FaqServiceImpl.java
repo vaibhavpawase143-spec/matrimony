@@ -50,9 +50,7 @@ public class FaqServiceImpl implements FaqService {
                 savedFaq.getId(),
                 "Created FAQ: " + savedFaq.getQuestion(),
                 null,
-                "Question=" + savedFaq.getQuestion(),
-                "SYSTEM",
-                "SYSTEM"
+                "Question=" + savedFaq.getQuestion()
         );
 
         return FaqMapper.toDTO(savedFaq);
@@ -95,9 +93,7 @@ public class FaqServiceImpl implements FaqService {
                 updatedFaq.getId(),
                 "Updated FAQ: " + updatedFaq.getQuestion(),
                 oldValue,
-                newValue,
-                "SYSTEM",
-                "SYSTEM"
+                newValue
         );
 
         return FaqMapper.toDTO(updatedFaq);
@@ -157,9 +153,7 @@ public class FaqServiceImpl implements FaqService {
                 faq.getId(),
                 "Published FAQ: " + faq.getQuestion(),
                 "Published=false",
-                "Published=true",
-                "SYSTEM",
-                "SYSTEM"
+                "Published=true"
         );
     }
 
@@ -185,9 +179,7 @@ public class FaqServiceImpl implements FaqService {
                 faq.getId(),
                 "Unpublished FAQ: " + faq.getQuestion(),
                 "Published=true",
-                "Published=false",
-                "SYSTEM",
-                "SYSTEM"
+                "Published=false"
         );
     }
 
@@ -213,9 +205,7 @@ public class FaqServiceImpl implements FaqService {
                 faq.getId(),
                 "Soft deleted FAQ: " + faq.getQuestion(),
                 "Active=true",
-                "Active=false",
-                "SYSTEM",
-                "SYSTEM"
+                "Active=false"
         );
     }
 }

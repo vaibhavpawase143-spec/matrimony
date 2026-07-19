@@ -15,7 +15,10 @@ import com.example.service.SubscriptionPlanService;
 import com.example.specification.SubscriptionPlanSpecification;
 import com.example.util.AuditHelper;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -79,7 +82,6 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
 
         return mapToResponse(entity);
     }
-
     // =====================================================
     // UPDATE
     // =====================================================
@@ -100,36 +102,50 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
                         new ResourceNotFoundException("Admin not found."));
 
         if (!entity.getName().equalsIgnoreCase(requestDto.getName())
-                &&
-                subscriptionPlanRepository
-                        .existsByNameIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
-                                requestDto.getName(),
-                                admin.getId())) {
+                && subscriptionPlanRepository
+                .existsByNameIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+                        requestDto.getName(),
+                        admin.getId())) {
 
             throw new BadRequestException(
                     "Subscription Plan already exists.");
         }
 
-        String oldName = entity.getName();
-        Boolean oldActive = entity.getIsActive();
+        String oldValue =
+                "Name=" + entity.getName()
+                        + ", Price=" + entity.getPrice()
+                        + ", Duration=" + entity.getDuration()
+                        + ", Description=" + entity.getDescription();
+
+        boolean wasActive = Boolean.TRUE.equals(entity.getIsActive());
 
         entity.setAdmin(admin);
         entity.setName(requestDto.getName().trim());
         entity.setPrice(requestDto.getPrice());
         entity.setDuration(requestDto.getDuration());
         entity.setDescription(requestDto.getDescription());
-        entity.setIsActive(requestDto.getIsActive());
+        entity.setIsActive(
+                requestDto.getIsActive() != null
+                        ? requestDto.getIsActive()
+                        : entity.getIsActive()
+        );
 
         entity = subscriptionPlanRepository.save(entity);
+
+        String newValue =
+                "Name=" + entity.getName()
+                        + ", Price=" + entity.getPrice()
+                        + ", Duration=" + entity.getDuration()
+                        + ", Description=" + entity.getDescription();
 
         auditHelper.logUpdate(
                 MODULE,
                 ENTITY,
                 entity.getId(),
                 entity.getName(),
-                oldName,
-                entity.getName(),
-                oldActive,
+                oldValue,
+                newValue,
+                wasActive,
                 entity.getIsActive()
         );
 
@@ -198,7 +214,8 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
     @Override
     public void hardDelete(Long id) {
 
-        SubscriptionPlan entity = subscriptionPlanRepository.findById(id)
+        SubscriptionPlan entity = subscriptionPlanRepository
+                .findById(id)
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
                                 "Subscription Plan not found."));
@@ -308,7 +325,6 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
                 .map(this::mapToResponse)
                 .toList();
     }
-
     // =====================================================
     // SEARCH
     // =====================================================
@@ -346,9 +362,17 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
     public SubscriptionPlanStatsDTO getStatistics() {
 
         return SubscriptionPlanStatsDTO.builder()
-                .totalPlans(subscriptionPlanRepository.countByDeletedAtIsNull())
-                .activePlans(subscriptionPlanRepository.countByIsActiveTrueAndDeletedAtIsNull())
-                .inactivePlans(subscriptionPlanRepository.countByIsActiveFalseAndDeletedAtIsNull())
+                .totalPlans(
+                        subscriptionPlanRepository.countByDeletedAtIsNull()
+                )
+                .activePlans(
+                        subscriptionPlanRepository
+                                .countByIsActiveTrueAndDeletedAtIsNull()
+                )
+                .inactivePlans(
+                        subscriptionPlanRepository
+                                .countByIsActiveFalseAndDeletedAtIsNull()
+                )
                 .build();
     }
 

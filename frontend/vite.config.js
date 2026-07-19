@@ -1,79 +1,47 @@
 import { defineConfig } from "vite";
-
 import react from "@vitejs/plugin-react";
-
 import path from "path";
-
 import { componentTagger } from "lovable-tagger";
 
 export default defineConfig(({ mode }) => ({
+  server: {
+    // Allow access from other devices on the network
+    host: true,
+    port: 3000,
+    strictPort: true,
 
-server:{
+    hmr: {
+      overlay: false,
+    },
 
-host:"::",
+    proxy: {
+      "/api": {
+        target: "http://localhost:9090",
+        changeOrigin: true,
+        secure: false,
+        ws: true,
+      },
 
-port:3000,
+      "/ws": {
+        target: "ws://localhost:9090",
+        ws: true,
+        changeOrigin: true,
+      },
+    },
+  },
 
-hmr:{
+  plugins: [
+    react(),
+    mode === "development" && componentTagger(),
+  ].filter(Boolean),
 
-overlay:false,
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
+    },
+  },
 
-},
-
-cors:true,
-
-headers:{
-
-"Access-Control-Allow-Origin":"*",
-
-},
-
-proxy:{
-
-"/api":{
-
-target:"http://localhost:9090",
-
-changeOrigin:true,
-
-secure:false,
-
-},
-
-},
-
-},
-
-plugins:[
-
-react(),
-
-mode==="development"
-
-&& componentTagger()
-
-].filter(Boolean),
-
-resolve:{
-
-alias:{
-
-"@":path.resolve(
-
-__dirname,
-
-"./src"
-
-),
-
-},
-
-},
-
-define:{
-
-global:"window"
-
-}
-
+  define: {
+    global: "window",
+  },
 }));

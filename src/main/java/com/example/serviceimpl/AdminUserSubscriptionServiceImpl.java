@@ -141,9 +141,7 @@ public class AdminUserSubscriptionServiceImpl
                 saved.getId(),
                 "Cancelled subscription for user: " + saved.getUser().getFullName(),
                 "Status=" + oldStatus + ", Active=" + oldActive,
-                "Status=CANCELLED, Active=false, Reason=" + reason,
-                "SYSTEM",
-                "SYSTEM"
+                "Status=CANCELLED, Active=false, Reason=" + reason
         );
         return mapToResponse(saved);
     }
@@ -182,9 +180,7 @@ public class AdminUserSubscriptionServiceImpl
                                 "Previous active subscription deactivated for user: "
                                         + oldSubscription.getUser().getFullName(),
                                 "Status=" + previousStatus + ", Active=" + previousActive,
-                                "Status=CANCELLED, Active=false",
-                                "SYSTEM",
-                                "SYSTEM"
+                                "Status=CANCELLED, Active=false"
                         );
                     }
                 });
@@ -208,9 +204,7 @@ public class AdminUserSubscriptionServiceImpl
                 saved.getId(),
                 "Activated subscription for user: " + saved.getUser().getFullName(),
                 "Status=" + oldStatus + ", Active=" + oldActive,
-                "Status=ACTIVE, Active=true",
-                "SYSTEM",
-                "SYSTEM"
+                "Status=ACTIVE, Active=true"
         );
 
         return mapToResponse(saved);
@@ -245,9 +239,7 @@ public class AdminUserSubscriptionServiceImpl
                 saved.getId(),
                 "Expired subscription for user: " + saved.getUser().getFullName(),
                 "Status=" + oldStatus + ", Active=" + oldActive,
-                "Status=EXPIRED, Active=false",
-                "SYSTEM",
-                "SYSTEM"
+                "Status=EXPIRED, Active=false"
         );
 
         return mapToResponse(saved);
@@ -289,9 +281,7 @@ public class AdminUserSubscriptionServiceImpl
                 saved.getId(),
                 "Refunded subscription for user: " + saved.getUser().getFullName(),
                 "Status=" + oldStatus + ", Active=" + oldActive,
-                "Status=REFUNDED, Active=false, Refund Amount=" + refundAmount + ", Reason=" + refundReason,
-                "SYSTEM",
-                "SYSTEM"
+                "Status=REFUNDED, Active=false, Refund Amount=" + refundAmount + ", Reason=" + refundReason
         );
 
         return mapToResponse(saved);

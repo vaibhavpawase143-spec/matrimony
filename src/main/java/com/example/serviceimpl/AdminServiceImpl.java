@@ -75,9 +75,7 @@ public class AdminServiceImpl implements AdminService {
                 savedAdmin.getId(),
                 "Created admin: " + savedAdmin.getName(),
                 null,
-                "Role=" + savedAdmin.getRole().getName(),
-                "SYSTEM",
-                "SYSTEM"
+                "Role=" + savedAdmin.getRole().getName()
         );
 
         return savedAdmin;
@@ -128,7 +126,10 @@ public class AdminServiceImpl implements AdminService {
             existing.setPassword(passwordEncoder.encode(updatedAdmin.getPassword()));
         }
 
-        return adminRepository.save(existing);
+        Admin saved = adminRepository.save(existing);
+
+        return adminRepository.findByIdWithRole(saved.getId())
+                .orElseThrow(() -> new RuntimeException("Admin not found"));
     }
 
     // ================= DELETE =================
@@ -167,9 +168,7 @@ public class AdminServiceImpl implements AdminService {
                 targetAdmin.getId(),
                 "Deactivated admin account: " + targetAdmin.getName(),
                 "Active=true",
-                "Active=false",
-                "SYSTEM",
-                "SYSTEM"
+                "Active=false"
         );
     }
 
@@ -282,9 +281,7 @@ public class AdminServiceImpl implements AdminService {
                 null,
                 "Name=" + updatedAdmin.getName()
                         + ", Phone=" + updatedAdmin.getPhone()
-                        + ", Role=" + updatedAdmin.getRole().getName(),
-                "SYSTEM",
-                "SYSTEM"
+                        + ", Role=" + updatedAdmin.getRole().getName()
         );
         return AdminMapper.toDTO(updatedAdmin);
     }
@@ -313,9 +310,7 @@ public class AdminServiceImpl implements AdminService {
                 admin.getId(),
                 "Activated admin: " + admin.getName(),
                 "Active=false",
-                "Active=true",
-                "SYSTEM",
-                "SYSTEM"
+                "Active=true"
         );
     }
 
@@ -358,9 +353,7 @@ public class AdminServiceImpl implements AdminService {
                 admin.getId(),
                 "Deactivated admin: " + admin.getName(),
                 "Active=true",
-                "Active=false",
-                "SYSTEM",
-                "SYSTEM"
+                "Active=false"
         );
     }
     @Override
@@ -387,9 +380,7 @@ public class AdminServiceImpl implements AdminService {
                 admin.getId(),
                 "Reset password for admin: " + admin.getName(),
                 null,
-                null,
-                "SYSTEM",
-                "SYSTEM"
+                null
         );
     }
 

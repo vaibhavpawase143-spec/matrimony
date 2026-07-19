@@ -1,31 +1,52 @@
 package com.example.model;
 
+import com.example.model.base.Auditable;
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
-import java.math.BigDecimal;
+import lombok.*;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+@Getter
+@Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
 @Table(
         name = "user_subscriptions",
         indexes = {
-                @Index(name = "idx_user_subscription_user", columnList = "user_id")
+                @Index(
+                        name = "idx_user_subscription_user",
+                        columnList = "user_id"
+                )
         }
 )
-public class UserSubscription {
+public class UserSubscription extends Auditable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // ✅ User relation
-    @ManyToOne(fetch = FetchType.LAZY)
+    // =====================================================
+    // USER
+    // =====================================================
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    // ✅ FIXED: renamed from "plan" → "subscriptionPlan"
-    @ManyToOne(fetch = FetchType.LAZY)
+    // =====================================================
+    // SUBSCRIPTION PLAN
+    // =====================================================
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "plan_id", nullable = false)
     private SubscriptionPlan subscriptionPlan;
+
+    // =====================================================
+    // SUBSCRIPTION PERIOD
+    // =====================================================
 
     @Column(name = "start_date", nullable = false)
     private LocalDateTime startDate;
@@ -33,14 +54,22 @@ public class UserSubscription {
     @Column(name = "end_date", nullable = false)
     private LocalDateTime endDate;
 
+    // =====================================================
+    // STATUS
+    // =====================================================
+
+    @Builder.Default
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 
-    // ✅ Status field
+    @Builder.Default
     @Column(nullable = false, length = 20)
-    private String status; // ACTIVE, EXPIRED, CANCELLED, REFUNDED
+    private String status = "ACTIVE";
 
-    // ✅ Refund fields
+    // =====================================================
+    // REFUND
+    // =====================================================
+
     @Column(name = "refund_amount", precision = 10, scale = 2)
     private BigDecimal refundAmount;
 
@@ -50,150 +79,13 @@ public class UserSubscription {
     @Column(name = "refund_reason", columnDefinition = "TEXT")
     private String refundReason;
 
-    // ✅ Cancellation fields
+    // =====================================================
+    // CANCELLATION
+    // =====================================================
+
     @Column(name = "cancellation_reason", columnDefinition = "TEXT")
     private String cancellationReason;
 
     @Column(name = "cancelled_at")
     private LocalDateTime cancelledAt;
-
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
-    public UserSubscription() {}
-
-    // 🔥 Lifecycle hooks
-    @PrePersist
-    protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
-
-        if (this.isActive == null) {
-            this.isActive = true;
-        }
-
-        if (this.status == null) {
-            this.status = "ACTIVE";
-        }
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
-    }
-
-    // ===== Getters =====
-
-    public Long getId() {
-        return id;
-    }
-
-    public User getUser() {
-        return user;
-    }
-
-    public SubscriptionPlan getSubscriptionPlan() {
-        return subscriptionPlan;
-    }
-
-    public LocalDateTime getStartDate() {
-        return startDate;
-    }
-
-    public LocalDateTime getEndDate() {
-        return endDate;
-    }
-
-    public Boolean getIsActive() {
-        return isActive;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-
-    // ===== Setters =====
-
-    public void setUser(User user) {
-        this.user = user;
-    }
-
-    public void setSubscriptionPlan(SubscriptionPlan subscriptionPlan) {
-        this.subscriptionPlan = subscriptionPlan;
-    }
-
-    public void setStartDate(LocalDateTime startDate) {
-        this.startDate = startDate;
-    }
-
-    public void setEndDate(LocalDateTime endDate) {
-        this.endDate = endDate;
-    }
-
-    public void setIsActive(Boolean isActive) {
-        this.isActive = isActive;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public BigDecimal getRefundAmount() {
-        return refundAmount;
-    }
-
-    public void setRefundAmount(BigDecimal refundAmount) {
-        this.refundAmount = refundAmount;
-    }
-
-    public LocalDateTime getRefundDate() {
-        return refundDate;
-    }
-
-    public void setRefundDate(LocalDateTime refundDate) {
-        this.refundDate = refundDate;
-    }
-
-    public String getRefundReason() {
-        return refundReason;
-    }
-
-    public void setRefundReason(String refundReason) {
-        this.refundReason = refundReason;
-    }
-
-    public String getCancellationReason() {
-        return cancellationReason;
-    }
-
-    public void setCancellationReason(String cancellationReason) {
-        this.cancellationReason = cancellationReason;
-    }
-
-    public LocalDateTime getCancelledAt() {
-        return cancelledAt;
-    }
-
-    public void setCancelledAt(LocalDateTime cancelledAt) {
-        this.cancelledAt = cancelledAt;
-    }
-
-    public SubscriptionPlan getPlan() {
-        return subscriptionPlan;
-    }
 }

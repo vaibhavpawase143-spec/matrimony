@@ -2,6 +2,7 @@ package com.example.serviceimpl;
 
 import com.example.dto.request.SupportRequestDTO;
 import com.example.dto.response.SupportResponseDTO;
+import com.example.exception.ResourceNotFoundException;
 import com.example.model.*;
 import com.example.repository.SupportTicketRepository;
 import com.example.repository.UserRepository;
@@ -164,7 +165,7 @@ public class SupportServiceImpl implements SupportService {
                     )
             );
         } catch (IllegalArgumentException exception) {
-            throw new RuntimeException("Invalid support ticket status");
+            throw new ResourceNotFoundException("Invalid support ticket status");
         }
 
         if (

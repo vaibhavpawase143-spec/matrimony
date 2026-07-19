@@ -7,11 +7,9 @@ import com.example.model.AdminAuditLog;
 import com.example.repository.AdminAuditLogRepository;
 import com.example.repository.AdminRepository;
 import com.example.service.AdminAuditLogService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +20,7 @@ public class AdminAuditLogServiceImpl implements AdminAuditLogService {
 
     private final AdminAuditLogRepository auditLogRepository;
     private final AdminRepository adminRepository;
+    private final HttpServletRequest request;
 
     @Override
     public void log(
@@ -51,10 +50,32 @@ public class AdminAuditLogServiceImpl implements AdminAuditLogService {
         auditLog.setDescription(description);
         auditLog.setOldValue(oldValue);
         auditLog.setNewValue(newValue);
-        auditLog.setIpAddress(ipAddress);
-        auditLog.setUserAgent(userAgent);
+
+        // Ignore passed values and capture actual request details
+        auditLog.setIpAddress(getClientIp());
+        auditLog.setUserAgent(getUserAgent());
 
         auditLogRepository.save(auditLog);
+    }
+
+    private String getClientIp() {
+
+        String forwarded = request.getHeader("X-Forwarded-For");
+
+        if (forwarded != null && !forwarded.isBlank()) {
+            return forwarded.split(",")[0].trim();
+        }
+
+        return request.getRemoteAddr();
+    }
+
+    private String getUserAgent() {
+
+        String userAgent = request.getHeader("User-Agent");
+
+        return (userAgent == null || userAgent.isBlank())
+                ? "UNKNOWN"
+                : userAgent;
     }
 
     @Override
@@ -81,23 +102,17 @@ public class AdminAuditLogServiceImpl implements AdminAuditLogService {
         AdminAuditLogResponseDTO dto = new AdminAuditLogResponseDTO();
 
         dto.setId(log.getId());
-
         dto.setAdminId(log.getAdmin().getId());
         dto.setAdminName(log.getAdmin().getName());
-
         dto.setModule(log.getModule());
         dto.setAction(log.getAction());
-
         dto.setEntityType(log.getEntityType());
         dto.setEntityId(log.getEntityId());
-
         dto.setDescription(log.getDescription());
         dto.setOldValue(log.getOldValue());
         dto.setNewValue(log.getNewValue());
-
         dto.setIpAddress(log.getIpAddress());
         dto.setUserAgent(log.getUserAgent());
-
         dto.setCreatedAt(log.getCreatedAt());
 
         return dto;

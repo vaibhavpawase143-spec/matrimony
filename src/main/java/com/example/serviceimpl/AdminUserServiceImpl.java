@@ -114,9 +114,7 @@ public class AdminUserServiceImpl implements AdminUserService {
                 savedUser.getId(),
                 "Activated user: " + savedUser.getEmail(),
                 "Active = false",
-                "Active = true",
-                "SYSTEM",
-                "SYSTEM"
+                "Active = true"
         );
 
         return AdminUserMapper.toDTO(savedUser);
@@ -140,9 +138,7 @@ public class AdminUserServiceImpl implements AdminUserService {
                 savedUser.getId(),
                 "Deactivated user: " + savedUser.getEmail(),
                 "Active = true",
-                "Active = false",
-                "SYSTEM",
-                "SYSTEM"
+                "Active = false"
         );
 
         return AdminUserMapper.toDTO(savedUser);
@@ -220,9 +216,7 @@ public class AdminUserServiceImpl implements AdminUserService {
                 savedUser.getId(),
                 "Blocked user: " + savedUser.getEmail(),
                 "Blocked = false",
-                "Blocked = true",
-                "SYSTEM",
-                "SYSTEM"
+                "Blocked = true"
         );
 
         return AdminUserMapper.toDTO(savedUser);
@@ -247,9 +241,7 @@ public class AdminUserServiceImpl implements AdminUserService {
                 savedUser.getId(),
                 "Unblocked user: " + savedUser.getEmail(),
                 "Blocked = true",
-                "Blocked = false",
-                "SYSTEM",
-                "SYSTEM"
+                "Blocked = false"
         );
 
         return AdminUserMapper.toDTO(savedUser);
@@ -275,9 +267,7 @@ public class AdminUserServiceImpl implements AdminUserService {
                 savedUser.getId(),
                 "Soft deleted user: " + savedUser.getEmail(),
                 "Deleted = false",
-                "Deleted = true",
-                "SYSTEM",
-                "SYSTEM"
+                "Deleted = true"
         );
     }
 
@@ -358,9 +348,7 @@ public class AdminUserServiceImpl implements AdminUserService {
                 null,
                 "Bulk activated " + users.size() + " users",
                 null,
-                null,
-                "SYSTEM",
-                "SYSTEM"
+                null
         );
     }
     @Override
@@ -383,9 +371,7 @@ public class AdminUserServiceImpl implements AdminUserService {
                 null,
                 "Bulk blocked " + users.size() + " users",
                 null,
-                null,
-                "SYSTEM",
-                "SYSTEM"
+                null
         );
     }
 
@@ -408,9 +394,7 @@ public class AdminUserServiceImpl implements AdminUserService {
                 null,
                 "Bulk unblocked " + users.size() + " users",
                 null,
-                null,
-                "SYSTEM",
-                "SYSTEM"
+                null
         );
     }
     @Override
@@ -435,9 +419,7 @@ public class AdminUserServiceImpl implements AdminUserService {
                 null,
                 "Bulk soft deleted " + users.size() + " users",
                 null,
-                null,
-                "SYSTEM",
-                "SYSTEM"
+                null
         );
     }
     @Override
@@ -462,9 +444,7 @@ public class AdminUserServiceImpl implements AdminUserService {
                 savedUser.getId(),
                 "Restored user: " + savedUser.getEmail(),
                 "Deleted = true",
-                "Deleted = false",
-                "SYSTEM",
-                "SYSTEM"
+                "Deleted = false"
         );
 
         return AdminUserMapper.toDTO(savedUser);
@@ -524,9 +504,7 @@ public class AdminUserServiceImpl implements AdminUserService {
                 null,
                 "Exported " + users.size() + " users to CSV",
                 null,
-                null,
-                "SYSTEM",
-                "SYSTEM"
+                null
         );
         return csv.toString().getBytes();
     }
@@ -659,9 +637,7 @@ public class AdminUserServiceImpl implements AdminUserService {
                     null,
                     "Exported " + users.size() + " users to Excel",
                     null,
-                    null,
-                    "SYSTEM",
-                    "SYSTEM"
+                    null
             );
             return outputStream.toByteArray();
 

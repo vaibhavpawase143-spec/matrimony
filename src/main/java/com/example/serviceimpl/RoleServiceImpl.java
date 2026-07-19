@@ -4,9 +4,7 @@ import com.example.dto.request.RoleRequestDTO;
 import com.example.dto.response.RoleResponseDTO;
 import com.example.exception.BadRequestException;
 import com.example.exception.ResourceNotFoundException;
-import com.example.model.Admin;
 import com.example.model.Role;
-import com.example.repository.AdminRepository;
 import com.example.repository.RoleRepository;
 import com.example.service.CurrentAdminService;
 import com.example.service.RoleService;
@@ -22,7 +20,6 @@ import java.util.List;
 public class RoleServiceImpl implements RoleService {
 
     private final RoleRepository roleRepository;
-    private final AdminRepository adminRepository;
     private final CurrentAdminService currentAdminService;
     private final AuditHelper auditHelper;
 
@@ -36,21 +33,15 @@ public class RoleServiceImpl implements RoleService {
     @Override
     public RoleResponseDTO create(RoleRequestDTO requestDto) {
 
-        Admin admin = adminRepository.findById(requestDto.getAdminId())
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Admin not found."));
-
-        if (roleRepository.existsByNameIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
-                requestDto.getName(),
-                admin.getId())) {
+        if (roleRepository.existsByNameIgnoreCaseAndDeletedAtIsNull(
+                requestDto.getName())) {
 
             throw new BadRequestException("Role already exists.");
         }
 
         Role entity = Role.builder()
-                .admin(admin)
                 .name(requestDto.getName())
-                .isActive(requestDto.getIsActive())
+                .isActive(requestDto.getIsActive() == null ? true : requestDto.getIsActive())
                 .build();
 
         entity = roleRepository.save(entity);
@@ -80,9 +71,8 @@ public class RoleServiceImpl implements RoleService {
                         new ResourceNotFoundException("Role not found."));
 
         if (!entity.getName().equalsIgnoreCase(requestDto.getName())
-                && roleRepository.existsByNameIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
-                requestDto.getName(),
-                entity.getAdmin().getId())) {
+                && roleRepository.existsByNameIgnoreCaseAndDeletedAtIsNull(
+                requestDto.getName())) {
 
             throw new BadRequestException("Role already exists.");
         }
@@ -91,7 +81,11 @@ public class RoleServiceImpl implements RoleService {
         Boolean oldActive = entity.getIsActive();
 
         entity.setName(requestDto.getName());
-        entity.setIsActive(requestDto.getIsActive());
+        entity.setIsActive(
+                requestDto.getIsActive() == null
+                        ? entity.getIsActive()
+                        : requestDto.getIsActive()
+        );
 
         entity = roleRepository.save(entity);
 
@@ -134,6 +128,7 @@ public class RoleServiceImpl implements RoleService {
                 entity.getName()
         );
     }
+
     // =====================================================
     // RESTORE
     // =====================================================
@@ -242,39 +237,6 @@ public class RoleServiceImpl implements RoleService {
     }
 
     // =====================================================
-    // ADMIN
-    // =====================================================
-
-    @Override
-    public List<RoleResponseDTO> getByAdmin(Long adminId) {
-
-        return roleRepository.findByAdmin_IdAndDeletedAtIsNull(adminId)
-                .stream()
-                .map(this::mapToResponse)
-                .toList();
-    }
-
-    @Override
-    public List<RoleResponseDTO> getActiveByAdmin(Long adminId) {
-
-        return roleRepository
-                .findByAdmin_IdAndIsActiveTrueAndDeletedAtIsNull(adminId)
-                .stream()
-                .map(this::mapToResponse)
-                .toList();
-    }
-
-    @Override
-    public List<RoleResponseDTO> getInactiveByAdmin(Long adminId) {
-
-        return roleRepository
-                .findByAdmin_IdAndIsActiveFalseAndDeletedAtIsNull(adminId)
-                .stream()
-                .map(this::mapToResponse)
-                .toList();
-    }
-
-    // =====================================================
     // SEARCH
     // =====================================================
 
@@ -283,20 +245,6 @@ public class RoleServiceImpl implements RoleService {
 
         return roleRepository
                 .findByNameContainingIgnoreCaseAndDeletedAtIsNull(keyword)
-                .stream()
-                .map(this::mapToResponse)
-                .toList();
-    }
-
-    @Override
-    public List<RoleResponseDTO> searchByAdmin(Long adminId,
-                                               String keyword) {
-
-        return roleRepository
-                .findByAdmin_IdAndNameContainingIgnoreCaseAndDeletedAtIsNull(
-                        adminId,
-                        keyword
-                )
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
@@ -322,8 +270,6 @@ public class RoleServiceImpl implements RoleService {
 
         return RoleResponseDTO.builder()
                 .id(entity.getId())
-                .adminId(entity.getAdmin() != null ? entity.getAdmin().getId() : null)
-                .adminName(null) // Avoid LazyInitializationException
                 .name(entity.getName())
                 .isActive(entity.getIsActive())
                 .createdAt(entity.getCreatedAt())

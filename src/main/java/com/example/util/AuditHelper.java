@@ -68,9 +68,7 @@ public class AuditHelper {
                 entityId,
                 description,
                 oldValue,
-                newValue,
-                requestInfoUtil.getIpAddress(),
-                requestInfoUtil.getUserAgent()
+                newValue
         );
     }
 
