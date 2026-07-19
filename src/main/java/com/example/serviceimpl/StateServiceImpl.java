@@ -225,7 +225,7 @@ public class StateServiceImpl implements StateService {
     @Override
     public List<StateResponseDTO> getAll() {
 
-        return stateRepository.findAllByDeletedAtIsNull()
+        return stateRepository.findAllWithRelations()
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
@@ -247,7 +247,7 @@ public class StateServiceImpl implements StateService {
     @Override
     public List<StateResponseDTO> getActive() {
 
-        return stateRepository.findByIsActiveTrueAndDeletedAtIsNull()
+        return stateRepository.findActiveWithRelations()
                 .stream()
                 .map(this::mapToResponse)
                 .toList();

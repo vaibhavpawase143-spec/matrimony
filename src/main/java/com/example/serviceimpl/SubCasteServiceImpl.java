@@ -87,7 +87,7 @@ public class SubCasteServiceImpl implements SubCasteService {
                                       SubCasteRequestDTO requestDto) {
 
         SubCaste entity = subCasteRepository
-                .findByIdAndDeletedAtIsNull(id)
+                .findByIdWithRelations(id)
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Sub Caste not found."));
 
@@ -139,7 +139,7 @@ public class SubCasteServiceImpl implements SubCasteService {
     public void softDelete(Long id) {
 
         SubCaste entity = subCasteRepository
-                .findByIdAndDeletedAtIsNull(id)
+                .findByIdWithRelations(id)
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Sub Caste not found."));
 
@@ -212,7 +212,7 @@ public class SubCasteServiceImpl implements SubCasteService {
     public SubCasteResponseDTO getById(Long id) {
 
         SubCaste entity = subCasteRepository
-                .findByIdAndDeletedAtIsNull(id)
+                .findByIdWithRelations(id)
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Sub Caste not found."));
 
@@ -226,7 +226,7 @@ public class SubCasteServiceImpl implements SubCasteService {
     @Override
     public List<SubCasteResponseDTO> getAll() {
 
-        return subCasteRepository.findAllByDeletedAtIsNull()
+        return subCasteRepository.findAllWithRelations()
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
@@ -248,7 +248,7 @@ public class SubCasteServiceImpl implements SubCasteService {
     @Override
     public List<SubCasteResponseDTO> getActive() {
 
-        return subCasteRepository.findByIsActiveTrueAndDeletedAtIsNull()
+        return subCasteRepository.findActiveWithRelations()
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
@@ -280,7 +280,7 @@ public class SubCasteServiceImpl implements SubCasteService {
     public List<SubCasteResponseDTO> getActiveByAdmin(Long adminId) {
 
         return subCasteRepository
-                .findByAdmin_IdAndIsActiveTrueAndDeletedAtIsNull(adminId)
+                .findActiveByAdminWithRelations(adminId)
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
@@ -290,7 +290,7 @@ public class SubCasteServiceImpl implements SubCasteService {
     public List<SubCasteResponseDTO> getInactiveByAdmin(Long adminId) {
 
         return subCasteRepository
-                .findByAdmin_IdAndIsActiveFalseAndDeletedAtIsNull(adminId)
+                .findInactiveByAdminWithRelations(adminId)
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
@@ -305,10 +305,7 @@ public class SubCasteServiceImpl implements SubCasteService {
                                                         Long adminId) {
 
         return subCasteRepository
-                .findByCaste_IdAndAdmin_IdAndDeletedAtIsNull(
-                        casteId,
-                        adminId
-                )
+                .findByCasteAndAdminWithRelations(casteId, adminId)
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
@@ -319,10 +316,7 @@ public class SubCasteServiceImpl implements SubCasteService {
                                                               Long adminId) {
 
         return subCasteRepository
-                .findByCaste_IdAndAdmin_IdAndIsActiveTrueAndDeletedAtIsNull(
-                        casteId,
-                        adminId
-                )
+                .findActiveByCasteAndAdminWithRelations(casteId, adminId)
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
@@ -333,10 +327,7 @@ public class SubCasteServiceImpl implements SubCasteService {
                                                                 Long adminId) {
 
         return subCasteRepository
-                .findByCaste_IdAndAdmin_IdAndIsActiveFalseAndDeletedAtIsNull(
-                        casteId,
-                        adminId
-                )
+                .findInactiveByCasteAndAdminWithRelations(casteId, adminId)
                 .stream()
                 .map(this::mapToResponse)
                 .toList();

@@ -890,7 +890,7 @@ getReligions: async () => {
 
     const result =
       await apiClient(
-        '/religions'
+        '/master/religions'
       );
 
     console.log(
@@ -942,9 +942,11 @@ getGenders: async () => {
       result
     );
 
-    return Array.isArray(result)
-      ? result
-      : [];
+   const data = result?.data ?? result;
+
+   return Array.isArray(data)
+       ? data
+       : [];
 
   } catch(error){
 
@@ -975,9 +977,11 @@ getGenders: async () => {
         result
       );
 
-      return Array.isArray(result)
-        ? result
-        : [];
+     const data = result?.data ?? result;
+
+     return Array.isArray(data)
+         ? data
+         : [];
 
     } catch (error) {
 
@@ -1001,16 +1005,18 @@ getGenders: async () => {
       console.log('🔍 Fetching occupations...');
 
       const result =
-        await apiClient('/occupations');
+        await apiClient('/master/occupations');
 
       console.log(
         '✅ MASTER API RESPONSE - Occupations:',
         result
       );
 
-      return Array.isArray(result)
-        ? result
-        : [];
+      const data = result?.data ?? result;
+
+      return Array.isArray(data)
+          ? data
+          : [];
 
     } catch (error) {
 
@@ -1031,15 +1037,15 @@ getGenders: async () => {
 
   await apiClient(
 
-  '/profile-types'
+  '/master/profile-types'
 
   );
 
-  return Array.isArray(result)
+  const data = result?.data ?? result;
 
-  ? result
-
-  : [];
+  return Array.isArray(data)
+      ? data
+      : [];
 
   }catch(error){
 
@@ -1067,16 +1073,18 @@ getGenders: async () => {
       console.log('🔍 Fetching marital statuses...');
 
       const result =
-        await apiClient('/marital-status');
+        await apiClient('/master/marital-status');
 
       console.log(
         '✅ MASTER API RESPONSE - Marital Statuses:',
         result
       );
 
-      return Array.isArray(result)
-        ? result
-        : [];
+      const data = result?.data ?? result;
+
+      return Array.isArray(data)
+          ? data
+          : [];
 
     } catch (error) {
 
@@ -1100,16 +1108,18 @@ getGenders: async () => {
       console.log('🔍 Fetching heights...');
 
       const result =
-        await apiClient('/heights');
+        await apiClient('/master/heights');
 
       console.log(
         '✅ MASTER API RESPONSE - Heights:',
         result
       );
 
-      return Array.isArray(result)
-        ? result
-        : [];
+      const data = result?.data ?? result;
+
+      return Array.isArray(data)
+          ? data
+          : [];
 
     } catch (error) {
 
@@ -1140,9 +1150,11 @@ getGenders: async () => {
         result
       );
 
-      return Array.isArray(result)
-        ? result
-        : [];
+      const data = result?.data ?? result;
+
+      return Array.isArray(data)
+          ? data
+          : [];
 
     } catch (error) {
 
@@ -1166,9 +1178,11 @@ getGenders: async () => {
       const result =
         await apiClient('/complexions');
 
-      return Array.isArray(result)
-        ? result
-        : [];
+      const data = result?.data ?? result;
+
+      return Array.isArray(data)
+          ? data
+          : [];
 
     } catch (error) {
 
@@ -1192,9 +1206,11 @@ getGenders: async () => {
       const result =
         await apiClient('/body-types');
 
-      return Array.isArray(result)
-        ? result
-        : [];
+      const data = result?.data ?? result;
+
+      return Array.isArray(data)
+          ? data
+          : [];
 
     } catch (error) {
 
@@ -1222,9 +1238,11 @@ getGenders: async () => {
 
       console.log('✅ Countries:', result);
 
-      return Array.isArray(result)
-        ? result
-        : [];
+     const data = result?.data ?? result;
+
+     return Array.isArray(data)
+         ? data
+         : [];
 
     } catch (error) {
 
@@ -1252,9 +1270,11 @@ getGenders: async () => {
 
       console.log('✅ States:', result);
 
-      return Array.isArray(result)
-        ? result
-        : [];
+     const data = result?.data ?? result;
+
+     return Array.isArray(data)
+         ? data
+         : [];
 
     } catch (error) {
 
@@ -1285,9 +1305,11 @@ getGenders: async () => {
         result
       );
 
-      return Array.isArray(result)
-        ? result
-        : [];
+      const data = result?.data ?? result;
+
+      return Array.isArray(data)
+          ? data
+          : [];
 
     } catch (error) {
 
@@ -1323,9 +1345,11 @@ getGenders: async () => {
         result
       );
 
-      return Array.isArray(result)
-        ? result
-        : [];
+     const data = result?.data ?? result;
+
+     return Array.isArray(data)
+         ? data
+         : [];
 
     } catch (error) {
 
@@ -1368,9 +1392,11 @@ getGenders: async () => {
         result
       );
 
-      return Array.isArray(result)
-        ? result
-        : [];
+      const data = result?.data ?? result;
+
+      return Array.isArray(data)
+          ? data
+          : [];
 
     } catch (error) {
 
@@ -1413,9 +1439,11 @@ getGenders: async () => {
         result
       );
 
-      return Array.isArray(result)
-        ? result
-        : [];
+     const data = result?.data ?? result;
+
+     return Array.isArray(data)
+         ? data
+         : [];
 
     } catch (error) {
 
@@ -1439,16 +1467,18 @@ getGenders: async () => {
       console.log('🔍 Fetching mother tongues...');
 
       const result =
-        await apiClient('/mother-tongues');
+        await apiClient('/master/mother-tongues');
 
       console.log(
         '✅ MASTER API RESPONSE - Mother Tongues:',
         result
       );
 
-      return Array.isArray(result)
-        ? result
-        : [];
+     const data = result?.data ?? result;
+
+     return Array.isArray(data)
+         ? data
+         : [];
 
     } catch (error) {
 
@@ -1472,16 +1502,18 @@ getGenders: async () => {
       console.log('🔍 Fetching incomes...');
 
       const result =
-        await apiClient('/incomes');
+        await apiClient('/master/incomes');
 
       console.log(
         '✅ MASTER API RESPONSE - Incomes:',
         result
       );
 
-      return Array.isArray(result)
-        ? result
-        : [];
+     const data = result?.data ?? result;
+
+     return Array.isArray(data)
+         ? data
+         : [];
 
     } catch (error) {
 
@@ -1512,9 +1544,11 @@ getGenders: async () => {
         result
       );
 
-      return Array.isArray(result)
-        ? result
-        : [];
+      const data = result?.data ?? result;
+
+      return Array.isArray(data)
+          ? data
+          : [];
 
     } catch (error) {
 
@@ -1545,9 +1579,11 @@ getGenders: async () => {
         result
       );
 
-      return Array.isArray(result)
-        ? result
-        : [];
+      const data = result?.data ?? result;
+
+      return Array.isArray(data)
+          ? data
+          : [];
 
     } catch (error) {
 
@@ -1572,11 +1608,13 @@ getManglikStatuses: async () => {
 
   const result =
    await apiClient(
-     '/manglik-statuses'
+     '/master/manglik-status'
    );
 
-   return Array.isArray(result)
-      ? result
+  const data = result?.data ?? result;
+
+  return Array.isArray(data)
+      ? data
       : [];
 
  }catch(error){
@@ -1597,8 +1635,10 @@ getFamilyTypes: async()=>{
         '/master/family-types'
       );
 
-   return Array.isArray(result)
-      ? result
+  const data = result?.data ?? result;
+
+  return Array.isArray(data)
+      ? data
       : [];
 
  }catch(error){
@@ -1617,8 +1657,10 @@ getFamilyStatuses: async()=>{
        '/master/family-status'
       );
 
-   return Array.isArray(result)
-      ? result
+  const data = result?.data ?? result;
+
+  return Array.isArray(data)
+      ? data
       : [];
 
  }catch(error){
@@ -1637,9 +1679,11 @@ getFamilyValues: async()=>{
         '/master/family-values'
       );
 
-   return Array.isArray(result)
-      ? result
-      : [];
+   const data = result?.data ?? result;
+
+   return Array.isArray(data)
+       ? data
+       : [];
 
  }catch(error){
 
@@ -1659,12 +1703,14 @@ getQualifications: async () => {
 
    const result =
      await apiClient(
-       '/qualifications'
+       '/master/qualifications'
      );
 
-   return Array.isArray(result)
-     ? result
-     : [];
+   const data = result?.data ?? result;
+
+   return Array.isArray(data)
+       ? data
+       : [];
 
  } catch(error){
 
@@ -1686,12 +1732,14 @@ getFieldsOfStudy: async () => {
 
    const result =
      await apiClient(
-       '/fields-of-study'
+       '/master/fields-of-study'
      );
 
-   return Array.isArray(result)
-     ? result
-     : [];
+   const data = result?.data ?? result;
+
+   return Array.isArray(data)
+       ? data
+       : [];
 
  } catch(error){
 
@@ -1712,9 +1760,11 @@ getEmploymentStatuses: async () => {
        '/master/employed'
      );
 
-   return Array.isArray(result)
-   ? result
-   : [];
+   const data = result?.data ?? result;
+
+   return Array.isArray(data)
+       ? data
+       : [];
 
  } catch(error){
 
@@ -1735,11 +1785,13 @@ getDisabilityStatuses: async () => {
 
   const result =
    await apiClient(
-     '/master/disability-statuses'
+     '/disability-statuses'
    );
-   return Array.isArray(result)
-     ? result
-     : [];
+  const data = result?.data ?? result;
+
+  return Array.isArray(data)
+      ? data
+      : [];
 
  } catch(error){
 
@@ -1762,9 +1814,11 @@ getBloodGroups: async () => {
        '/blood-groups'
      );
 
-   return Array.isArray(result)
-     ? result
-     : [];
+  const data = result?.data ?? result;
+
+  return Array.isArray(data)
+      ? data
+      : [];
 
  } catch(error){
 
@@ -1786,9 +1840,11 @@ getBloodGroups: async () => {
         const result =
           await apiClient('/master/drinking');
 
-        return Array.isArray(result)
-          ? result
-          : [];
+        const data = result?.data ?? result;
+
+        return Array.isArray(data)
+            ? data
+            : [];
 
       } catch (error) {
 

@@ -74,7 +74,7 @@ public class CityServiceImpl implements CityService {
     @Transactional(readOnly = true)
     public City getById(Long id) {
 
-        return cityRepository.findById(id)
+        return cityRepository.findByIdWithRelations(id)
                 .filter(city -> city.getDeletedAt() == null)
                 .orElseThrow(() ->
                         new ResourceNotFoundException("City not found"));
@@ -84,7 +84,7 @@ public class CityServiceImpl implements CityService {
     @Transactional(readOnly = true)
     public List<City> getAll() {
 
-        return cityRepository.findByDeletedAtIsNull();
+        return cityRepository.findAllWithRelations();
     }
     @Override
     @Transactional
@@ -121,7 +121,7 @@ public class CityServiceImpl implements CityService {
     @Transactional(readOnly = true)
     public List<City> getActive() {
 
-        return cityRepository.findByIsActiveTrueAndDeletedAtIsNull();
+        return cityRepository.findActiveWithRelations();
     }
 
     @Override
@@ -245,7 +245,7 @@ public class CityServiceImpl implements CityService {
     @Transactional(readOnly = true)
     public List<City> getByState(Long stateId) {
 
-        return cityRepository.findByState_IdAndDeletedAtIsNull(stateId);
+        return cityRepository.findByStateWithRelations(stateId);
     }
 
     @Override

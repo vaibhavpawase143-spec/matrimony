@@ -6,6 +6,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.jpa.repository.Query;
 
 @Repository
 public interface StateRepository extends JpaRepository<State, Long> {
@@ -85,4 +86,30 @@ public interface StateRepository extends JpaRepository<State, Long> {
             Long adminId,
             String keyword
     );
+    @Query("""
+SELECT s
+FROM State s
+LEFT JOIN FETCH s.admin
+LEFT JOIN FETCH s.country
+WHERE s.deletedAt IS NULL
+""")
+    List<State> findAllWithRelations();
+    @Query("""
+SELECT s
+FROM State s
+LEFT JOIN FETCH s.admin
+LEFT JOIN FETCH s.country
+WHERE s.deletedAt IS NULL
+AND s.isActive = true
+""")
+    List<State> findActiveWithRelations();
+    @Query("""
+SELECT s
+FROM State s
+LEFT JOIN FETCH s.admin
+LEFT JOIN FETCH s.country
+WHERE s.id = :id
+AND s.deletedAt IS NULL
+""")
+    Optional<State> findByIdWithRelations(Long id);
 }
