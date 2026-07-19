@@ -22,7 +22,7 @@ SELECT
     'Vaibhav Pawase',
     'superadmin',
     'vaibhavpawase143@gmail.com',
-    '$2a$10$REPLACE_WITH_YOUR_REAL_BCRYPT_HASH',
+    '$2a$10$l.b5mCe689JQBwxFWih4ZOfL/AKWaPf5P3WBN072NH9DsVaUiKpMm',
     NULL,
     r.id,
     '7666084107',
@@ -33,7 +33,7 @@ SELECT
     NULL,
     NULL
 FROM roles r
-WHERE r.name = 'SUPER_ADMIN'
+WHERE r.name = 'ROLE_SUPER_ADMIN'
 AND NOT EXISTS (
     SELECT 1
     FROM admins a

@@ -15,6 +15,11 @@
 //import java.time.LocalDateTime;
 //
 //@Component
+//@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(
+//        name = "app.seed.default-users",
+//        havingValue = "true",
+//        matchIfMissing = false
+//)
 //@RequiredArgsConstructor
 //@Slf4j
 //public class DataInitializer implements CommandLineRunner {

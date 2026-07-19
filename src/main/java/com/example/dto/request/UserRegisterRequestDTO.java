@@ -3,10 +3,7 @@ package com.example.dto.request;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-
 import lombok.Data;
-
-import java.time.LocalDate;
 
 @Data
 public class UserRegisterRequestDTO {
@@ -42,11 +39,6 @@ public class UserRegisterRequestDTO {
     // BASIC PROFILE
     // =====================================================
 
-    // Gender Master Table ID
-    private Long genderId;
-
-    // DOB
-    private LocalDate dateOfBirth;
 
 
 }

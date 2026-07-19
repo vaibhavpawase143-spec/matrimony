@@ -13,13 +13,13 @@ INSERT INTO roles (
     created_at
 )
 SELECT
-    'SUPER_ADMIN',
+    'ROLE_SUPER_ADMIN',
     TRUE,
     CURRENT_TIMESTAMP
 WHERE NOT EXISTS (
     SELECT 1
     FROM roles
-    WHERE name = 'SUPER_ADMIN'
+    WHERE name = 'ROLE_SUPER_ADMIN'
 );
 
 INSERT INTO roles (
@@ -28,13 +28,13 @@ INSERT INTO roles (
     created_at
 )
 SELECT
-    'ADMIN',
+    'ROLE_ADMIN',
     TRUE,
     CURRENT_TIMESTAMP
 WHERE NOT EXISTS (
     SELECT 1
     FROM roles
-    WHERE name = 'ADMIN'
+    WHERE name = 'ROLE_ADMIN'
 );
 
 INSERT INTO roles (
@@ -43,11 +43,11 @@ INSERT INTO roles (
     created_at
 )
 SELECT
-    'USER',
+    'ROLE_USER',
     TRUE,
     CURRENT_TIMESTAMP
 WHERE NOT EXISTS (
     SELECT 1
     FROM roles
-    WHERE name = 'USER'
+    WHERE name = 'ROLE_USER'
 );

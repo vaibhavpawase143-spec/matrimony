@@ -19,8 +19,7 @@ const Register = () => {
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [gender, setGender] = useState("");
-  const [dob, setDob] = useState("");
+
   
   const [errors, setErrors] = useState({});
 
@@ -58,22 +57,7 @@ const Register = () => {
       errs.confirmPassword = t.register.errors.passwordsMismatch;
     }
     
-    if (!gender) {
-      errs.gender = t.register.errors.genderRequired;
-    }
-    
-    if (!dob) {
-      errs.dob = t.register.errors.dobRequired;
-    } else {
-      const birthDate = new Date(dob);
-      const today = new Date();
-      const age = today.getFullYear() - birthDate.getFullYear();
-      const monthDiff = today.getMonth() - birthDate.getMonth();
-      
-      if (age < 18 || (age === 18 && monthDiff < 0)) {
-        errs.dob = t.register.errors.dobAge;
-      }
-    }
+
     
     
     return errs;
@@ -88,16 +72,13 @@ const Register = () => {
       
       try {
         // Send only basic user registration data to backend
-        const registrationData = {
-          firstName: firstName.trim(),
-          lastName: lastName.trim(),
-          email: email.trim().toLowerCase(),
-          phone: phone.replace(/\D/g, ''),
-          password: password,
-          gender: gender,
-          dateOfBirth: dob,
-        };
-
+       const registrationData = {
+           firstName: firstName.trim(),
+           lastName: lastName.trim(),
+           email: email.trim().toLowerCase(),
+           phone: phone.replace(/\D/g, ''),
+           password: password,
+       };
         console.log('🚀 Registration payload:', registrationData);
 
         const response = await authAPI.register(registrationData);
@@ -135,12 +116,7 @@ const Register = () => {
         } else if (errorMessage.includes("Last name is required") || errorMessage.includes("lastName")) {
           error("Last name is required");
           setErrors({ lastName: "Last name is required" });
-        } else if (errorMessage.includes("Gender is required") || errorMessage.includes("gender")) {
-          error("Please select your gender");
-          setErrors({ gender: "Gender is required" });
-        } else if (errorMessage.includes("Date of birth is required") || errorMessage.includes("dob")) {
-          error("Please enter your date of birth");
-          setErrors({ dob: "Date of birth is required" });
+
         } else {
           error(errorMessage);
         }
@@ -206,22 +182,7 @@ const Register = () => {
             {errors.confirmPassword && <p className="text-xs text-destructive mt-1">{errors.confirmPassword}</p>}
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs font-medium text-foreground mb-1 block">{t.register.gender}</label>
-              <select value={gender} onChange={(e) => setGender(e.target.value)} className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-sm text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
-                <option value="">{t.register.selectGender}</option>
-                <option value="Male">{t.register.genderOptions.male}</option>
-                <option value="Female">{t.register.genderOptions.female}</option>
-              </select>
-              {errors.gender && <p className="text-xs text-destructive mt-1">{errors.gender}</p>}
-            </div>
-            <div>
-              <label className="text-xs font-medium text-foreground mb-1 block">{t.register.dob}</label>
-              <input type="date" value={dob} onChange={(e) => setDob(e.target.value)} className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-sm text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
-              {errors.dob && <p className="text-xs text-destructive mt-1">{errors.dob}</p>}
-            </div>
-          </div>
+
 
 
           <button onClick={handleRegister} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-2.5 rounded-lg text-sm transition-colors">
