@@ -1,0 +1,78 @@
+import { apiClient } from "./api";
+
+export const getSubscriptions = async (
+  page = 0,
+  size = 10,
+  search = "",
+  status = ""
+) => {
+  const params = new URLSearchParams({
+    page,
+    size,
+  });
+
+  if (search) {
+    params.append("search", search);
+  }
+
+  if (status) {
+    params.append("status", status);
+  }
+
+  const response = await apiClient(
+    `/admin/subscriptions?${params.toString()}`
+  );
+
+  return response.data;
+};
+export const getSubscriptionById = async (id) => {
+  const response = await apiClient(
+    `/admin/subscriptions/${id}`
+  );
+
+  return response.data;
+};
+
+export const activateSubscription = async (id) => {
+  const response = await apiClient(
+    `/admin/subscriptions/${id}/activate`,
+    {
+      method: "PUT",
+    }
+  );
+
+  return response.data;
+};
+
+export const expireSubscription = async (id) => {
+  const response = await apiClient(
+    `/admin/subscriptions/${id}/expire`,
+    {
+      method: "PUT",
+    }
+  );
+
+  return response.data;
+};
+
+export const cancelSubscription = async (
+  id,
+  reason = "Cancelled by Admin"
+) => {
+  const response = await apiClient(
+    `/admin/subscriptions/${id}/cancel?reason=${encodeURIComponent(reason)}`,
+    {
+      method: "PUT",
+    }
+  );
+
+  return response.data;
+};
+
+export const getSubscriptionStats = async () => {
+  const response = await apiClient(
+    "/admin/subscriptions/stats"
+  );
+
+  return response.data;
+};

@@ -721,42 +721,36 @@ useEffect(() => {
 
   const loadSubCastes = async () => {
 
-    if (formData.casteId) {
+    const casteId = Number(formData.casteId);
 
-      try {
+    if (!casteId) {
 
-        console.log(
-          "🔍 Loading sub castes for caste:",
-          formData.casteId
-        );
+      setMasterOptions(prev => ({
+        ...prev,
+        subCastes: []
+      }));
 
-        const subCastes =
-          await masterDataAPI.getSubCastes(
-            formData.casteId
-          );
+      return;
+    }
 
-        setMasterOptions(prev => ({
-          ...prev,
-          subCastes: Array.isArray(subCastes)
-            ? subCastes
-            : []
-        }));
+    try {
 
-      } catch (error) {
+      console.log("🔍 Loading sub castes for caste:", casteId);
 
-        console.error(
-          "❌ Failed to load sub castes:",
-          error
-        );
+      const subCastes = await masterDataAPI.getSubCastes(casteId);
 
-        setMasterOptions(prev => ({
-          ...prev,
-          subCastes: []
-        }));
+      console.log("✅ Loaded Sub Castes:", subCastes);
 
-      }
+      setMasterOptions(prev => ({
+        ...prev,
+        subCastes: Array.isArray(subCastes)
+          ? subCastes
+          : []
+      }));
 
-    } else {
+    } catch (error) {
+
+      console.error("❌ Failed to load sub castes:", error);
 
       setMasterOptions(prev => ({
         ...prev,
@@ -3151,8 +3145,7 @@ value={city.id || city.cityId}
           sm.smokingStatus ||
 
           sm.smokingPreference ||
-
-          sm.type ||
+sm.type ||
 
           sm.name ||
 

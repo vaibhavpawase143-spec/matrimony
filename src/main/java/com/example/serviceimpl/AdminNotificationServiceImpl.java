@@ -53,7 +53,7 @@ public class AdminNotificationServiceImpl implements AdminNotificationService {
             Notification notification = new Notification();
 
             // 0 = System/Admin
-            notification.setSenderId(0L);
+            notification.setSenderId(null);
 
             notification.setReceiverId(user.getId());
 
@@ -121,7 +121,7 @@ public class AdminNotificationServiceImpl implements AdminNotificationService {
 
             Notification notification = new Notification();
 
-            notification.setSenderId(0L);
+            notification.setSenderId(null);
 
             notification.setReceiverId(user.getId());
 

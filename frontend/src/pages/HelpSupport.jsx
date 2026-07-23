@@ -16,7 +16,7 @@ const HelpSupport = () => {
     phone: "",
     subject: "",
     message: "",
-    category: "general"
+    category: "OTHER"
   });
 
   const handleInputChange = (e) => {
@@ -33,7 +33,7 @@ const HelpSupport = () => {
     try {
 
       setLoading(true);
-
+console.log("Submitting category:", formData.category);
       await supportAPI.createTicket({
 
         category: formData.category.toUpperCase(),

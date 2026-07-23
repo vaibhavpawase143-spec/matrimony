@@ -99,21 +99,49 @@ public class AdminUserSubscriptionServiceImpl
         UserSubscription subscription = repository.findWithDetailsById(id)
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Subscription not found"));
+
         return UserSubscriptionResponseDTO.builder()
                 .id(subscription.getId())
+
                 .userId(subscription.getUser().getId())
                 .userName(subscription.getUser().getFullName())
+
+                .email(subscription.getUser().getEmail())
+                .phone(subscription.getUser().getPhone())
+
+                .imageUrl(
+                        subscription.getUser().getProfile() != null
+                                ? subscription.getUser().getProfile().getImageUrl()
+                                : null
+                )
+
+                .gender(
+                        subscription.getUser().getProfile() != null
+                                && subscription.getUser().getProfile().getGender() != null
+                                ? subscription.getUser().getProfile().getGender().getName()
+                                : null
+                )
+
+                .dateOfBirth(
+                        subscription.getUser().getProfile() != null
+                                ? subscription.getUser().getProfile().getDateOfBirth()
+                                : null
+                )
+
                 .planId(subscription.getSubscriptionPlan().getId())
                 .planName(subscription.getSubscriptionPlan().getName())
+
                 .startDate(subscription.getStartDate())
                 .endDate(subscription.getEndDate())
+
                 .status(subscription.getStatus())
                 .isActive(subscription.getIsActive())
+
                 .createdAt(subscription.getCreatedAt())
                 .updatedAt(subscription.getUpdatedAt())
+
                 .build();
     }
-
     @Override
     @Transactional
     public UserSubscriptionResponseDTO cancelSubscription(Long id, String reason) {

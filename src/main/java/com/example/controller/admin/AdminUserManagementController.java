@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -48,6 +49,21 @@ public class AdminUserManagementController {
             @RequestParam(required = false) Boolean emailVerified,
 
             @RequestParam(required = false) Boolean phoneVerified,
+            @RequestParam(required = false) Long genderId,
+            @RequestParam(required = false) Long religionId,
+            @RequestParam(required = false) Long casteId,
+            @RequestParam(required = false) Long subCasteId,
+            @RequestParam(required = false) Long countryId,
+            @RequestParam(required = false) Long stateId,
+            @RequestParam(required = false) Long cityId,
+            @RequestParam(required = false) Long maritalStatusId,
+            @RequestParam(required = false) Long educationLevelId,
+            @RequestParam(required = false) Long occupationId,
+            @RequestParam(required = false) Boolean isPremium,
+            @RequestParam(required = false) Integer minAge,
+            @RequestParam(required = false) Integer maxAge,
+            @RequestParam(required = false) LocalDate registeredFrom,
+            @RequestParam(required = false) LocalDate registeredTo,
 
             @RequestParam(required = false) String role
     ) {
@@ -61,7 +77,21 @@ public class AdminUserManagementController {
         filter.setEmailVerified(emailVerified);
         filter.setPhoneVerified(phoneVerified);
         filter.setRole(role);
-
+        filter.setGenderId(genderId);
+        filter.setReligionId(religionId);
+        filter.setCasteId(casteId);
+        filter.setSubCasteId(subCasteId);
+        filter.setCountryId(countryId);
+        filter.setStateId(stateId);
+        filter.setCityId(cityId);
+        filter.setMaritalStatusId(maritalStatusId);
+        filter.setEducationLevelId(educationLevelId);
+        filter.setOccupationId(occupationId);
+        filter.setIsPremium(isPremium);
+        filter.setMinAge(minAge);
+        filter.setMaxAge(maxAge);
+        filter.setRegisteredFrom(registeredFrom);
+        filter.setRegisteredTo(registeredTo);
         return new ApiResponse<>(
                 true,
                 "All users retrieved",

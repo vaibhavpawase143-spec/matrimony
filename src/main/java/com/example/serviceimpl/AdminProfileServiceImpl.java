@@ -3,6 +3,7 @@ package com.example.serviceimpl;
 import com.example.dto.request.AdminProfileUpdateDTO;
 import com.example.dto.request.ChangePasswordDTO;
 import com.example.dto.response.AdminProfileResponseDTO;
+import com.example.exception.BadRequestException;
 import com.example.exception.ResourceNotFoundException;
 import com.example.model.Admin;
 import com.example.repository.AdminRepository;
@@ -46,7 +47,14 @@ public class AdminProfileServiceImpl
     ) {
 
         Admin admin = currentAdminService.getCurrentAdmin();
+        if (dto.getPhone() != null &&
+                adminRepository.existsByPhoneAndIdNot(
+                        dto.getPhone(),
+                        admin.getId())) {
 
+            throw new BadRequestException(
+                    "Phone number already exists");
+        }
         String oldValue =
                 "Name=" + admin.getName() +
                         ", Phone=" + admin.getPhone() +
@@ -90,7 +98,7 @@ public class AdminProfileServiceImpl
                 dto.getCurrentPassword(),
                 admin.getPassword())) {
 
-            throw new RuntimeException("Current password is incorrect");
+            throw new BadRequestException("Current password is incorrect");
         }
 
         // ===============================
@@ -100,7 +108,7 @@ public class AdminProfileServiceImpl
                 dto.getNewPassword(),
                 admin.getPassword())) {
 
-            throw new RuntimeException(
+            throw new BadRequestException(
                     "New password must be different from current password");
         }
 
@@ -110,7 +118,7 @@ public class AdminProfileServiceImpl
         if (!dto.getNewPassword()
                 .equals(dto.getConfirmPassword())) {
 
-            throw new RuntimeException(
+            throw new BadRequestException(
                     "New password and confirm password do not match");
         }
 

@@ -259,8 +259,13 @@ public class SupportServiceImpl implements SupportService {
         dto.setId(ticket.getId());
         dto.setTicketNumber(ticket.getTicketNumber());
 
-        dto.setUserId(ticket.getUser().getId());
-        dto.setUserName(ticket.getUser().getFullName());
+        if (ticket.getUser() != null) {
+            dto.setUserId(ticket.getUser().getId());
+            dto.setUserName(ticket.getUser().getFullName());
+        } else {
+            dto.setUserId(null);
+            dto.setUserName("Unknown User");
+        }
 
         dto.setCategory(ticket.getCategory());
         dto.setSubject(ticket.getSubject());

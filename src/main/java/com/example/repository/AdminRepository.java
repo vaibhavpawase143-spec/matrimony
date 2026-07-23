@@ -100,4 +100,9 @@ WHERE a.role.name='ROLE_SUPER_ADMIN'
 AND a.isActive=true
 """)
     long countActiveSuperAdmins();
+
+    boolean existsByPhoneAndIdNot(
+            String phone,
+            Long id
+    );
 }

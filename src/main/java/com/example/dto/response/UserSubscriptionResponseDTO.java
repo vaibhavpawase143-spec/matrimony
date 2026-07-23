@@ -1,7 +1,11 @@
 package com.example.dto.response;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
@@ -23,7 +27,11 @@ public class UserSubscriptionResponseDTO {
 
     private Boolean isActive;
     private String status;
-
+    private String email;
+    private String phone;
+    private String imageUrl;
+    private String gender;
+    private LocalDate dateOfBirth;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

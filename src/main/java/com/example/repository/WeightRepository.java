@@ -1,6 +1,7 @@
 package com.example.repository;
 
 import com.example.model.Weight;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -14,10 +15,12 @@ public interface WeightRepository extends JpaRepository<Weight, Long> {
     // BASIC
     // =====================================================
 
+    @EntityGraph(attributePaths = "admin")
     Optional<Weight> findByIdAndDeletedAtIsNull(Long id);
 
     Optional<Weight> findByIdAndDeletedAtIsNotNull(Long id);
 
+    @EntityGraph(attributePaths = "admin")
     List<Weight> findAllByDeletedAtIsNull();
 
     List<Weight> findByDeletedAtIsNotNull();
@@ -40,6 +43,7 @@ public interface WeightRepository extends JpaRepository<Weight, Long> {
     // ACTIVE / INACTIVE
     // =====================================================
 
+    @EntityGraph(attributePaths = "admin")
     List<Weight> findByIsActiveTrueAndDeletedAtIsNull();
 
     List<Weight> findByIsActiveFalseAndDeletedAtIsNull();
@@ -48,20 +52,25 @@ public interface WeightRepository extends JpaRepository<Weight, Long> {
     // ADMIN
     // =====================================================
 
+    @EntityGraph(attributePaths = "admin")
     List<Weight> findByAdmin_IdAndDeletedAtIsNull(Long adminId);
 
+    @EntityGraph(attributePaths = "admin")
     List<Weight> findByAdmin_IdAndIsActiveTrueAndDeletedAtIsNull(Long adminId);
 
+    @EntityGraph(attributePaths = "admin")
     List<Weight> findByAdmin_IdAndIsActiveFalseAndDeletedAtIsNull(Long adminId);
 
     // =====================================================
     // SEARCH
     // =====================================================
 
+    @EntityGraph(attributePaths = "admin")
     List<Weight> findByValueContainingIgnoreCaseAndDeletedAtIsNull(
             String keyword
     );
 
+    @EntityGraph(attributePaths = "admin")
     List<Weight> findByAdmin_IdAndValueContainingIgnoreCaseAndDeletedAtIsNull(
             Long adminId,
             String keyword

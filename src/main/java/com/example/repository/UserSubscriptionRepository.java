@@ -81,6 +81,8 @@ public interface UserSubscriptionRepository extends
     );
     @EntityGraph(attributePaths = {
             "user",
+            "user.profile",
+            "user.profile.gender",
             "subscriptionPlan"
     })
     Page<UserSubscription> findAll(
@@ -89,6 +91,8 @@ public interface UserSubscriptionRepository extends
     );
     @EntityGraph(attributePaths = {
             "user",
+            "user.profile",
+            "user.profile.gender",
             "subscriptionPlan"
     })
     Optional<UserSubscription> findWithDetailsById(Long id);

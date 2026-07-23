@@ -7,11 +7,18 @@ import com.example.model.AdminAuditLog;
 import com.example.repository.AdminAuditLogRepository;
 import com.example.repository.AdminRepository;
 import com.example.service.AdminAuditLogService;
+import com.example.specification.AdminAuditLogSpecification;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDate;
 
 @Service
 @RequiredArgsConstructor
@@ -51,11 +58,45 @@ public class AdminAuditLogServiceImpl implements AdminAuditLogService {
         auditLog.setOldValue(oldValue);
         auditLog.setNewValue(newValue);
 
-        // Ignore passed values and capture actual request details
+        // Capture actual request details
         auditLog.setIpAddress(getClientIp());
         auditLog.setUserAgent(getUserAgent());
 
         auditLogRepository.save(auditLog);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<AdminAuditLogResponseDTO> getAuditLogs(
+            int page,
+            int size,
+            String sortBy,
+            String direction,
+            String search,
+            String module,
+            String action,
+            Long adminId,
+            LocalDate fromDate,
+            LocalDate toDate
+    ) {
+
+        Sort sort = direction.equalsIgnoreCase("DESC")
+                ? Sort.by(sortBy).descending()
+                : Sort.by(sortBy).ascending();
+
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        Specification<AdminAuditLog> specification = Specification.<AdminAuditLog>where(null);
+
+        specification = specification.and(AdminAuditLogSpecification.hasSearch(search));
+        specification = specification.and(AdminAuditLogSpecification.hasModule(module));
+        specification = specification.and(AdminAuditLogSpecification.hasAction(action));
+        specification = specification.and(AdminAuditLogSpecification.hasAdmin(adminId));
+        specification = specification.and(AdminAuditLogSpecification.createdBetween(fromDate, toDate));
+
+        return auditLogRepository
+                .findAll(specification, pageable)
+                .map(this::convertToDTO);
     }
 
     private String getClientIp() {
@@ -76,25 +117,6 @@ public class AdminAuditLogServiceImpl implements AdminAuditLogService {
         return (userAgent == null || userAgent.isBlank())
                 ? "UNKNOWN"
                 : userAgent;
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public Page<AdminAuditLogResponseDTO> getAuditLogs(
-            int page,
-            int size,
-            String sortBy,
-            String direction
-    ) {
-
-        Sort sort = direction.equalsIgnoreCase("DESC")
-                ? Sort.by(sortBy).descending()
-                : Sort.by(sortBy).ascending();
-
-        Pageable pageable = PageRequest.of(page, size, sort);
-
-        return auditLogRepository.findAll(pageable)
-                .map(this::convertToDTO);
     }
 
     private AdminAuditLogResponseDTO convertToDTO(AdminAuditLog log) {

@@ -1,12 +1,15 @@
 package com.example.controller.admin;
 
 import com.example.dto.response.AdminAuditLogResponseDTO;
-import com.example.dto.response.ApiResponse;
 import com.example.service.AdminAuditLogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDate;
 
 @RestController
 @RequestMapping("/api/admin/audit-logs")
@@ -17,27 +20,42 @@ public class AdminAuditLogController {
     private final AdminAuditLogService adminAuditLogService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
-    public ApiResponse<Page<AdminAuditLogResponseDTO>> getAuditLogs(
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
+    public ResponseEntity<Page<AdminAuditLogResponseDTO>> getAuditLogs(
 
             @RequestParam(defaultValue = "0") int page,
-
-            @RequestParam(defaultValue = "10") int size,
-
+            @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "DESC") String direction,
 
-            @RequestParam(defaultValue = "DESC") String direction
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String module,
+            @RequestParam(required = false) String action,
+            @RequestParam(required = false) Long adminId,
+
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate fromDate,
+
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate toDate
     ) {
 
-        return new ApiResponse<>(
-                true,
-                "Audit logs retrieved successfully",
+        Page<AdminAuditLogResponseDTO> auditLogs =
                 adminAuditLogService.getAuditLogs(
                         page,
                         size,
                         sortBy,
-                        direction
-                )
-        );
+                        direction,
+                        search,
+                        module,
+                        action,
+                        adminId,
+                        fromDate,
+                        toDate
+                );
+
+        return ResponseEntity.ok(auditLogs);
     }
 }
