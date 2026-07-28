@@ -17,7 +17,7 @@ var vite_config_default = defineConfig(({ mode }) => ({
     },
     proxy: {
       "/api": {
-        target: "http://localhost:9090",
+        target: "https://localhost:9090",
         changeOrigin: true,
         secure: false
       }

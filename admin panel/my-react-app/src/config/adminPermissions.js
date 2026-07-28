@@ -11,6 +11,7 @@ export const ADMIN_PERMISSIONS = {
     faqs: true,
     masterData: true,
     auditLogs: true,
+     adminManagement: true,
     profile: true,
   },
 
@@ -26,6 +27,7 @@ export const ADMIN_PERMISSIONS = {
     faqs: true,
     masterData: false,
     auditLogs: false,
+     adminManagement: false,
     profile: true,
   },
 };

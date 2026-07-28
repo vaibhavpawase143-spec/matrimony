@@ -32,9 +32,10 @@ public class UserReport {
 
     private LocalDateTime createdAt;
 
-    // ✅ NEW (for admin handling)
+    // Status
     @Enumerated(EnumType.STRING)
     private ReportStatus status;
+
     private String description;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -44,4 +45,21 @@ public class UserReport {
     private LocalDateTime reviewedAt;
 
     private LocalDateTime updatedAt;
+
+    @PrePersist
+    public void prePersist() {
+        LocalDateTime now = LocalDateTime.now();
+
+        this.createdAt = now;
+        this.updatedAt = now;
+
+        if (this.status == null) {
+            this.status = ReportStatus.PENDING;
+        }
+    }
+
+    @PreUpdate
+    public void preUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
 }

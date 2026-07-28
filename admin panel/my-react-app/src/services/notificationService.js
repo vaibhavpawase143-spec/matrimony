@@ -41,3 +41,40 @@ export const getNotificationHistory = async (
     `/admin/notifications/history?${params.toString()}`
   );
 };
+// =======================================================
+// GET UNREAD COUNT
+// =======================================================
+
+export const getUnreadCount = async () => {
+  return await apiClient("/admin/notifications/unread-count");
+};
+
+// =======================================================
+// MARK NOTIFICATION AS READ
+// =======================================================
+
+export const markAsRead = async (id) => {
+  return await apiClient(`/admin/notifications/${id}/read`, {
+    method: "PUT",
+  });
+};
+
+// =======================================================
+// MARK ALL NOTIFICATIONS AS READ
+// =======================================================
+
+export const markAllAsRead = async () => {
+  return await apiClient("/admin/notifications/read-all", {
+    method: "PUT",
+  });
+};
+
+// =======================================================
+// DELETE NOTIFICATION
+// =======================================================
+
+export const deleteNotification = async (id) => {
+  return await apiClient(`/admin/notifications/${id}`, {
+    method: "DELETE",
+  });
+};

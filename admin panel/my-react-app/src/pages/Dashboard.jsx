@@ -227,62 +227,11 @@ export default function Dashboard() {
           type="revenue"
         />
 
-        <StatsCard
-          title="Transactions"
-          value={dashboard.totalTransactions ?? 0}
-          icon={<FaExchangeAlt />}
-          type="transaction"
-        />
 
-        <StatsCard
-          title="Total Reports"
-          value={dashboard.totalReports ?? 0}
-          icon={<FaClipboardList />}
-          type="reports"
-        />
 
-        <StatsCard
-          title="Pending Reports"
-          value={dashboard.pendingReports ?? 0}
-          icon={<FaExclamationTriangle />}
-          type="pending"
-        />
 
       </div>
 
-      {/* ========================================= */}
-      {/* GROWTH CARDS */}
-      {/* ========================================= */}
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        <StatsCard
-          title="User Growth"
-          value={`${(dashboard.userGrowthPercentage ?? 0).toFixed(1)}%`}
-          icon={<FaArrowUp />}
-          type="growth"
-        />
-
-        <StatsCard
-          title="Revenue Growth"
-          value={`${(dashboard.revenueGrowthPercentage ?? 0).toFixed(1)}%`}
-          icon={<FaChartLine />}
-          type="growth"
-        />
-
-        <StatsCard
-          title="Subscription Growth"
-          value={`${(dashboard.subscriptionGrowthPercentage ?? 0).toFixed(1)}%`}
-          icon={<FaCrown />}
-          type="growth"
-        />
-
-      </div>
-
-      {/* ========================================= */}
-      {/* USER & REVENUE CHARTS */}
-      {/* ========================================= */}
-
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
 
         {/* User Registration Trend */}
 
@@ -356,164 +305,13 @@ export default function Dashboard() {
 
         </div>
 
-      </div>
+
 
       {/* ========================================= */}
       {/* REPORTS & PAYMENT DISTRIBUTION */}
       {/* ========================================= */}
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                  {/* ========================================= */}
-                  {/* REPORTS TREND */}
-                  {/* ========================================= */}
 
-                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-
-                    <div className="flex items-center justify-between mb-6">
-
-                      <div>
-
-                        <h2 className="text-xl font-semibold text-gray-800">
-                          Reports Trend
-                        </h2>
-
-                        <p className="text-sm text-gray-500 mt-1">
-                          Monthly reported profiles.
-                        </p>
-
-                      </div>
-
-                      <div className="w-11 h-11 rounded-xl bg-red-100 flex items-center justify-center">
-
-                        <FaShieldAlt className="text-red-600 text-lg" />
-
-                      </div>
-
-                    </div>
-
-                    <MiniChart
-                      data={reportTrend}
-                      labels={months}
-                      color="#EF4444"
-                      width={700}
-                      height={260}
-                    />
-
-                  </div>
-
-                  {/* ========================================= */}
-                  {/* PAYMENT METHOD DISTRIBUTION */}
-                  {/* ========================================= */}
-
-                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-
-                    <div className="flex items-center justify-between mb-6">
-
-                      <div>
-
-                        <h2 className="text-xl font-semibold text-gray-800">
-                          Payment Method Distribution
-                        </h2>
-
-                        <p className="text-sm text-gray-500 mt-1">
-                          Successful transactions by payment method.
-                        </p>
-
-                      </div>
-
-                      <div className="w-11 h-11 rounded-xl bg-blue-100 flex items-center justify-center">
-
-                        <FaCreditCard className="text-blue-600 text-lg" />
-
-                      </div>
-
-                    </div>
-
-                    {paymentDistribution.length === 0 ? (
-
-                      <div className="flex items-center justify-center h-56 text-gray-400">
-                        No payment data available.
-                      </div>
-
-                    ) : (
-
-                      <div className="space-y-4">
-
-                        {paymentDistribution.map((item) => (
-
-                          <div
-                            key={item.name}
-                            className="flex items-center justify-between border rounded-xl px-4 py-3"
-                          >
-
-                            <div className="font-medium text-gray-700">
-                              {item.name}
-                            </div>
-
-                            <span className="font-bold text-violet-700">
-                              {item.value}
-                            </span>
-
-                          </div>
-
-                        ))}
-
-                      </div>
-
-                    )}
-
-                  </div>
-
-                </div>
-
-                {/* ========================================= */}
-                {/* REPORT STATUS + TOP PAYMENT PLANS */}
-                {/* ========================================= */}
-
-                <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-
-                  {/* Report Status Distribution */}
-
-                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-
-                    <h2 className="text-xl font-semibold text-gray-800 mb-6">
-                      Report Status Distribution
-                    </h2>
-
-                    {reportDistribution.length === 0 ? (
-
-                      <div className="flex items-center justify-center h-56 text-gray-400">
-                        No report data available.
-                      </div>
-
-                    ) : (
-
-                      <div className="space-y-4">
-
-                        {reportDistribution.map((item) => (
-
-                          <div
-                            key={item.name}
-                            className="flex items-center justify-between border rounded-xl px-4 py-3"
-                          >
-
-                            <span className="font-medium text-gray-700">
-                              {item.name}
-                            </span>
-
-                            <span className="font-bold text-red-600">
-                              {item.value}
-                            </span>
-
-                          </div>
-
-                        ))}
-
-                      </div>
-
-                    )}
-
-                  </div>
 
                   {/* Top Subscription Plans */}
 
@@ -543,7 +341,7 @@ export default function Dashboard() {
 
                   </div>
 
-                </div>
+
 
                 {/* ========================================= */}
                 {/* TOP CITIES & TOP RELIGIONS */}

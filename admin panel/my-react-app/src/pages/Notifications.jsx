@@ -242,7 +242,7 @@ export default function Notifications() {
                <option value="SYSTEM">System</option>
                <option value="ANNOUNCEMENT">Announcement</option>
                <option value="MAINTENANCE">Maintenance</option>
-               <option value="MESSAGE">Message</option>
+
                <option value="WARNING">Warning</option>
                <option value="SUBSCRIPTION">Subscription</option>
            </select>

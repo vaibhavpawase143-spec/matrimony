@@ -39,6 +39,7 @@ public class UserRegisterRequestDTO {
     // BASIC PROFILE
     // =====================================================
 
-
+    @NotBlank(message = "reCAPTCHA token is required")
+    private String recaptchaToken;
 
 }

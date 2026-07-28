@@ -1,6 +1,7 @@
 package com.example.model;
 
 public enum NotificationType {
+
     REQUEST,
     VIEW,
     MESSAGE,
@@ -9,9 +10,15 @@ public enum NotificationType {
     REJECT,
     LIKE,
     MATCH,
+
     ANNOUNCEMENT,
     SYSTEM,
     MAINTENANCE,
     SUBSCRIPTION,
-    WARNING
+    WARNING,
+
+    REPORT,
+    SUPPORT,
+    NEW_USER,
+    ADMIN
 }

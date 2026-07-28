@@ -26,7 +26,7 @@
     let stompClient = null;
 
     function connect() {
-        const socket = new SockJS("http://localhost:9090/ws");
+        const socket = new SockJS("https://localhost:9090/ws");
         stompClient = Stomp.over(socket);
 
         stompClient.connect({}, function (frame) {

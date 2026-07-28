@@ -67,40 +67,44 @@ export default function SupportTickets() {
   // FILTERS
   // ==========================================
 
-  const filteredTickets = useMemo(() => {
-    return tickets.filter((ticket) => {
-      const matchesSearch =
-        ticket.ticketNumber
-          ?.toLowerCase()
-          .includes(search.toLowerCase()) ||
-        ticket.userName
-          ?.toLowerCase()
-          .includes(search.toLowerCase()) ||
-        ticket.subject
-          ?.toLowerCase()
-          .includes(search.toLowerCase());
+ const filteredTickets = useMemo(() => {
+   return [...tickets]
+     .sort(
+       (a, b) =>
+         new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
+     )
+     .filter((ticket) => {
+       const matchesSearch =
+         ticket.ticketNumber
+           ?.toLowerCase()
+           .includes(search.toLowerCase()) ||
+         ticket.userName
+           ?.toLowerCase()
+           .includes(search.toLowerCase()) ||
+         ticket.subject
+           ?.toLowerCase()
+           .includes(search.toLowerCase());
 
-      const matchesStatus =
-        statusFilter === "ALL" ||
-        ticket.status === statusFilter;
+       const matchesStatus =
+         statusFilter === "ALL" ||
+         ticket.status === statusFilter;
 
-      const matchesPriority =
-        priorityFilter === "ALL" ||
-        ticket.priority === priorityFilter;
+       const matchesPriority =
+         priorityFilter === "ALL" ||
+         ticket.priority === priorityFilter;
 
-      return (
-        matchesSearch &&
-        matchesStatus &&
-        matchesPriority
-      );
-    });
-  }, [
-    tickets,
-    search,
-    statusFilter,
-    priorityFilter,
-  ]);
-
+       return (
+         matchesSearch &&
+         matchesStatus &&
+         matchesPriority
+       );
+     });
+ }, [
+   tickets,
+   search,
+   statusFilter,
+   priorityFilter,
+ ]);
   // ==========================================
   // PAGINATION
   // ==========================================

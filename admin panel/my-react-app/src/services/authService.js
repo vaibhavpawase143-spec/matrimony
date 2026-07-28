@@ -1,32 +1,35 @@
 import { apiClient } from "./api";
-
-export async function loginAdmin({ email, password }) {
+export async function loginAdmin({
+  email,
+  password,
+  recaptchaToken,
+}) {
   const response = await apiClient("/admins/login", {
     method: "POST",
     body: JSON.stringify({
       email,
       password,
+      recaptchaToken,
     }),
   });
 
   const result = response.data || response;
 
-  if (!result.accessToken) {
-    throw new Error("Access token not received.");
+  if (!result.success) {
+    throw new Error(result.message || "Login failed.");
   }
 
-  // Store authentication
-  localStorage.setItem("adminToken", result.accessToken);
-  localStorage.setItem("adminRefreshToken", result.refreshToken);
+  const data = result.data;
 
-  if (result.admin) {
-    localStorage.setItem(
-      "admin",
-      JSON.stringify(result.admin)
-    );
-  }
+  localStorage.setItem("adminToken", data.accessToken);
+  localStorage.setItem("adminRefreshToken", data.refreshToken);
+  localStorage.setItem("admin", JSON.stringify(data.admin));
 
-  return result;
+  return {
+    token: data.accessToken,
+    refreshToken: data.refreshToken,
+    user: data.admin,
+  };
 }
 
 export function logoutAdmin() {

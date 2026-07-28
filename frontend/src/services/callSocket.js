@@ -18,7 +18,7 @@ export const connectCallSocket = (
     );
 
     const socket = new SockJS(
-        `http://localhost:9090/ws?token=${token}`
+        `https://localhost:9090/ws?token=${token}`
     );
 
     client = new Client({

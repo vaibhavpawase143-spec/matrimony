@@ -24,7 +24,7 @@ public class AdminReportController {
 
     // ================= GET REPORTS =================
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('REPORT_VIEW')")
     public ApiResponse<Page<AdminReportResponseDTO>> getAllReports(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,

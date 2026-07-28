@@ -6,6 +6,7 @@ import com.example.dto.response.UserSubscriptionStatsDTO;
 import org.springframework.data.domain.Page;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 public interface AdminUserSubscriptionService {
 
@@ -38,5 +39,5 @@ public interface AdminUserSubscriptionService {
     );
 
     UserSubscriptionStatsDTO getStatistics();
-
+    List<UserSubscriptionResponseDTO> getUserSubscriptionHistory(Long userId);
 }

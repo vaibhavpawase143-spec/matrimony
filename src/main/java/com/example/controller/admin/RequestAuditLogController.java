@@ -21,7 +21,7 @@ public class RequestAuditLogController {
     private final RequestAuditLogService requestAuditLogService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('AUDIT_VIEW')")
     public ApiResponse<Page<RequestAuditLog>> findAll(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "50") int size) {

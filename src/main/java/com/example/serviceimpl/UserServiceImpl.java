@@ -49,7 +49,7 @@ public class UserServiceImpl implements UserService {
     private final OccupationRepository occupationRepository;
     private final HeightRepository heightRepository;
     private final WeightRepository weightRepository;
-
+    private final NotificationService notificationService;
     // ================= REGISTER =================
     @Override
     public User register(UserRegisterRequestDTO request) {
@@ -81,7 +81,11 @@ public class UserServiceImpl implements UserService {
 
         User savedUser = userRepository.save(user);
         System.out.println("✅ User saved with ID: " + savedUser.getId());
-
+        notificationService.createAdminNotification(
+                "New User Registration",
+                savedUser.getFullName() + " registered on Gathbandhan.",
+                NotificationType.NEW_USER
+        );
         // ✅ CREATE EMPTY PROFILE FOR USER
         try {
             if (savedUser != null && savedUser.getId() != null) {
@@ -213,22 +217,22 @@ public class UserServiceImpl implements UserService {
         user.setLastSeen(null);
         user.setLastLogin(LocalDateTime.now());
 
+        String sessionId = UUID.randomUUID().toString();
+        user.setSessionId(sessionId);
+
         userRepository.save(user);
-
-        System.out.println(
-                "✅ USER LOGIN -> "
-                        + user.getEmail()
-                        + " ONLINE = "
-                        + user.getIsOnline()
-        );
-
         List<String> roles = Optional.ofNullable(user.getRoles())
                 .orElse(Set.of())
                 .stream()
                 .map(Role::getName)
                 .toList();
 
-        return jwtUtil.generateToken(user.getEmail(), roles);
+        return jwtUtil.generateToken(
+                user.getEmail(),
+                roles,
+                sessionId,
+                "USER"
+        );
     }
 
     // ================= LOGIN WITH PROFILE =================
@@ -271,7 +275,7 @@ public class UserServiceImpl implements UserService {
         user.setIsOnline(true);
         user.setLastSeen(null);
 
-        userRepository.save(user);
+
 
         System.out.println(
                 "USER LOGIN -> "
@@ -281,12 +285,27 @@ public class UserServiceImpl implements UserService {
         );
 
         // Generate tokens
+        // Generate unique session ID
+        String sessionId = UUID.randomUUID().toString();
+
+        user.setSessionId(sessionId);
+
+        userRepository.save(user);
+
+// Generate tokens
         List<String> roles = Optional.ofNullable(user.getRoles())
                 .orElse(Set.of())
                 .stream()
                 .map(Role::getName)
                 .toList();
-        String accessToken = jwtUtil.generateToken(user.getEmail(), roles);
+
+        String accessToken = jwtUtil.generateToken(
+                user.getEmail(),
+                roles,
+                sessionId,
+                "USER"
+        );
+
         RefreshToken refreshToken = refreshTokenService.createToken(user.getEmail());
 
         // Get profile data
@@ -305,7 +324,14 @@ public class UserServiceImpl implements UserService {
                 })
                 .orElse(null);
 
-        return new LoginResponse(accessToken, refreshToken.getToken(), profileData);
+        String role = roles.isEmpty() ? null : roles.get(0);
+
+        return new LoginResponse(
+                accessToken,
+                refreshToken.getToken(),
+                role,
+                profileData
+        );
     }
 
     // ================= EMAIL =================
@@ -343,9 +369,10 @@ public class UserServiceImpl implements UserService {
 
         verificationRepository.save(ev);
 
-        String link =
-                "http://localhost:3000/reset-password?token=" + token;
-        emailService.sendEmail(email, "Reset Password", "Click: " + link);
+        emailService.sendForgotPasswordEmail(
+                email,
+                token
+        );
     }
 
     @Override
@@ -367,6 +394,10 @@ public class UserServiceImpl implements UserService {
 
         ev.setVerified(true);
         verificationRepository.save(ev);
+        emailService.sendPasswordChangedEmail(
+                user.getEmail(),
+                user.getFirstName()
+        );
     }
 
     // ================= VERIFY EMAIL =================
@@ -441,7 +472,7 @@ public class UserServiceImpl implements UserService {
         user.setIsOnline(false);
         user.setLastSeen(LocalDateTime.now());
         user.setLastHeartbeat(null);
-
+        user.setSessionId(null);
         userRepository.saveAndFlush(user);
 
         System.out.println(

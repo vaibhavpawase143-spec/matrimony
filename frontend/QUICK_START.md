@@ -27,7 +27,7 @@ cd "C:\Users\Vaibhav\Downloads\demo\demo"
 
 ### **Register User**
 ```
-POST http://localhost:9090/api/users/register
+POST https://localhost:9090/api/users/register
 Content-Type: application/json
 
 {
@@ -47,17 +47,17 @@ Content-Type: application/json
 
 ### **Verify OTP**
 ```
-POST http://localhost:9090/api/users/verify-otp?phone=+919876543210&otp=123456
+POST https://localhost:9090/api/users/verify-otp?phone=+919876543210&otp=123456
 ```
 
 ### **Verify Email** (Get token from email)
 ```
-GET http://localhost:9090/api/users/verify?token=YOUR_TOKEN_HERE
+GET https://localhost:9090/api/users/verify?token=YOUR_TOKEN_HERE
 ```
 
 ### **Login**
 ```
-POST http://localhost:9090/api/users/login
+POST https://localhost:9090/api/users/login
 Content-Type: application/json
 
 {

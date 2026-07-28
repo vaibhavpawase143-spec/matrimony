@@ -76,3 +76,8 @@ export const getSubscriptionStats = async () => {
 
   return response.data;
 };
+export const getUserSubscriptionHistory = async (userId) => {
+  return await apiClient(
+    `/admin/subscriptions/user/${userId}`
+  );
+};

@@ -4,7 +4,7 @@ from "@/components/RecentActivity";
 import { Link, useNavigate } from "react-router-dom";
 import HeartAnimation
 from "@/components/HeartAnimation";
-
+ import { trackEvent } from "@/utils/analytics";
 import useLikes
 from "@/hooks/useLikes";
 import { swipeAPI } from "@/services/swipeAPI";
@@ -464,10 +464,15 @@ const profileCompletion = {
    : "Click here to complete your profile"
 };
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
+
+
+ const handleLogout = () => {
+     trackEvent("user_logout");
+
+     logout();
+
+     navigate("/login");
+ };
 const handleSendInterest =
 async(profile)=>{
 

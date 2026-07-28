@@ -47,7 +47,7 @@
   ```bash
   cd backend
   ./mvnw spring-boot:run
-  # Check: http://localhost:9090/swagger-ui.html
+  # Check: https://localhost:9090/swagger-ui.html
   ```
 
 - [ ] **Test Frontend alone**

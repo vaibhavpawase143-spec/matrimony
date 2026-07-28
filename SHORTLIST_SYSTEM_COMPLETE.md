@@ -415,7 +415,7 @@ The Shortlist System is **fully implemented, tested, and production-ready**.
 All files are in place and integrated seamlessly with your existing matrimony platform.
 
 **Start using it now:**
-1. Backend: `mvnw spring-boot:run` (http://localhost:9090)
+1. Backend: `mvnw spring-boot:run` (https://localhost:9090)
 2. Frontend: `npm run dev` (http://localhost:3000)
 3. Navigate to http://localhost:3000
 4. Login and start shortlisting!

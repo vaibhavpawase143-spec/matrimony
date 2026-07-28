@@ -1,8 +1,7 @@
 package com.example.controller.admin;
-
+import com.example.dto.response.AdminNotificationResponse;
 import com.example.dto.request.AdminNotificationRequestDTO;
 import com.example.dto.response.ApiResponse;
-import com.example.dto.response.NotificationResponse;
 import com.example.service.AdminNotificationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -58,7 +57,7 @@ public class AdminNotificationController {
 
     @GetMapping("/history")
     @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
-    public ApiResponse<Page<NotificationResponse>> getNotificationHistory(
+    public ApiResponse<Page<AdminNotificationResponse>> getNotificationHistory(
 
             @RequestParam(defaultValue = "") String keyword,
 
@@ -66,16 +65,61 @@ public class AdminNotificationController {
 
             @RequestParam(defaultValue = "10") int size) {
 
-        Page<NotificationResponse> notifications =
+        Page<AdminNotificationResponse> notifications =
                 adminNotificationService.getNotificationHistory(
                         PageRequest.of(page, size),
                         keyword
                 );
 
-        return ApiResponse.<Page<NotificationResponse>>builder()
+        return ApiResponse.<Page<AdminNotificationResponse>>builder()
                 .success(true)
                 .message("Notification history fetched successfully.")
                 .data(notifications)
+                .build();
+    }
+    @GetMapping("/unread-count")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    public ApiResponse<Long> getUnreadCount() {
+
+        return ApiResponse.<Long>builder()
+                .success(true)
+                .message("Unread notification count fetched successfully.")
+                .data(adminNotificationService.getUnreadCount())
+                .build();
+    }
+    @PutMapping("/{id}/read")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    public ApiResponse<String> markAsRead(
+            @PathVariable Long id) {
+
+        adminNotificationService.markAsRead(id);
+
+        return ApiResponse.<String>builder()
+                .success(true)
+                .message("Notification marked as read successfully.")
+                .build();
+    }
+    @PutMapping("/read-all")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    public ApiResponse<String> markAllAsRead() {
+
+        adminNotificationService.markAllAsRead();
+
+        return ApiResponse.<String>builder()
+                .success(true)
+                .message("All notifications marked as read successfully.")
+                .build();
+    }
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    public ApiResponse<String> deleteNotification(
+            @PathVariable Long id) {
+
+        adminNotificationService.deleteNotification(id);
+
+        return ApiResponse.<String>builder()
+                .success(true)
+                .message("Notification deleted successfully.")
                 .build();
     }
 }

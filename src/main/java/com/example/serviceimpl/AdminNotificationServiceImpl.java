@@ -1,11 +1,12 @@
 package com.example.serviceimpl;
 
 import com.example.dto.request.AdminNotificationRequestDTO;
+import com.example.dto.response.AdminNotificationResponse;
 import com.example.dto.response.NotificationResponse;
 import com.example.exception.ResourceNotFoundException;
-import com.example.model.Admin;
-import com.example.model.Notification;
-import com.example.model.User;
+import com.example.model.*;
+import com.example.repository.AdminNotificationRepository;
+import com.example.repository.AdminRepository;
 import com.example.repository.NotificationRepository;
 import com.example.repository.UserRepository;
 import com.example.service.AdminAuditLogService;
@@ -13,15 +14,13 @@ import com.example.service.AdminNotificationService;
 import com.example.service.CurrentAdminService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.*;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -32,14 +31,31 @@ public class AdminNotificationServiceImpl implements AdminNotificationService {
     private final SimpMessagingTemplate messagingTemplate;
     private final CurrentAdminService currentAdminService;
     private final AdminAuditLogService adminAuditLogService;
+    private final AdminRepository adminRepository;
+    private final AdminNotificationRepository adminNotificationRepository;
+
+    private static final List<NotificationType> ADMIN_NOTIFICATION_TYPES = List.of(
+            NotificationType.ANNOUNCEMENT,
+            NotificationType.SYSTEM,
+            NotificationType.MAINTENANCE,
+            NotificationType.SUBSCRIPTION,
+            NotificationType.WARNING,
+            NotificationType.REPORT,
+            NotificationType.SUPPORT,
+            NotificationType.NEW_USER,
+            NotificationType.ADMIN
+    );
+
     @Override
     public void sendNotification(AdminNotificationRequestDTO request) {
 
         if (request.getReceiverIds() == null || request.getReceiverIds().isEmpty()) {
             throw new IllegalArgumentException("Receiver list cannot be empty.");
         }
+
         Admin currentAdmin = currentAdminService.getCurrentAdmin();
         int recipientCount = request.getReceiverIds().size();
+
         for (Long userId : request.getReceiverIds()) {
 
             User user = userRepository
@@ -47,46 +63,30 @@ public class AdminNotificationServiceImpl implements AdminNotificationService {
                     .orElseThrow(() ->
                             new ResourceNotFoundException(
                                     "User not found with id : " + userId
-                            )
-                    );
+                            ));
 
             Notification notification = new Notification();
 
-            // 0 = System/Admin
             notification.setSenderId(null);
-
             notification.setReceiverId(user.getId());
-
             notification.setTitle(request.getTitle());
-
             notification.setMessage(request.getMessage());
-
             notification.setType(request.getType());
-
             notification.setRead(false);
-
             notification.setDeleted(false);
-
             notification.setCreatedAt(LocalDateTime.now());
 
             Notification saved = notificationRepository.save(notification);
 
             NotificationResponse response = new NotificationResponse();
-
             response.setId(saved.getId());
-
             response.setSenderId(saved.getSenderId());
             response.setSenderName("System");
             response.setReceiverId(saved.getReceiverId());
-
             response.setTitle(saved.getTitle());
-
             response.setMessage(saved.getMessage());
-
             response.setType(saved.getType().name());
-
             response.setRead(saved.isRead());
-
             response.setCreatedAt(saved.getCreatedAt());
 
             messagingTemplate.convertAndSend(
@@ -94,6 +94,7 @@ public class AdminNotificationServiceImpl implements AdminNotificationService {
                     response
             );
         }
+
         adminAuditLogService.log(
                 currentAdmin.getId(),
                 "NOTIFICATION_MANAGEMENT",
@@ -117,30 +118,24 @@ public class AdminNotificationServiceImpl implements AdminNotificationService {
         Admin currentAdmin = currentAdminService.getCurrentAdmin();
 
         int recipientCount = users.size();
+
+        // ---------- Broadcast to Users ----------
         for (User user : users) {
 
             Notification notification = new Notification();
 
             notification.setSenderId(null);
-
             notification.setReceiverId(user.getId());
-
             notification.setTitle(request.getTitle());
-
             notification.setMessage(request.getMessage());
-
             notification.setType(request.getType());
-
             notification.setRead(false);
-
             notification.setDeleted(false);
-
             notification.setCreatedAt(LocalDateTime.now());
 
             Notification saved = notificationRepository.save(notification);
 
             NotificationResponse response = new NotificationResponse();
-
             response.setId(saved.getId());
             response.setSenderId(saved.getSenderId());
             response.setReceiverId(saved.getReceiverId());
@@ -155,13 +150,49 @@ public class AdminNotificationServiceImpl implements AdminNotificationService {
                     response
             );
         }
+
+        // ---------- Broadcast to Admins ----------
+        List<Admin> admins = adminRepository.findAllActiveAdmins();
+
+        for (Admin admin : admins) {
+
+            AdminNotification notification = AdminNotification.builder()
+                    .admin(admin)
+                    .title(request.getTitle())
+                    .message(request.getMessage())
+                    .type(request.getType())
+                    .read(false)
+                    .deleted(false)
+                    .build();
+
+            AdminNotification saved =
+                    adminNotificationRepository.save(notification);
+
+            AdminNotificationResponse response =
+                    AdminNotificationResponse.builder()
+                            .id(saved.getId())
+                            .adminId(admin.getId())
+                            .title(saved.getTitle())
+                            .message(saved.getMessage())
+                            .type(saved.getType())
+                            .read(saved.getRead())
+                            .deleted(saved.getDeleted())
+                            .createdAt(saved.getCreatedAt())
+                            .build();
+
+            messagingTemplate.convertAndSend(
+                    "/topic/admin-notifications/" + admin.getId(),
+                    response
+            );
+        }
+
         adminAuditLogService.log(
                 currentAdmin.getId(),
                 "NOTIFICATION_MANAGEMENT",
                 "NOTIFICATION_BROADCAST",
                 "NOTIFICATION",
                 null,
-                " Admin  Broadcast notification sent to all active users",
+                "Admin broadcast notification sent to all active users and admins",
                 null,
                 "Title=" + request.getTitle()
                         + ", Type=" + request.getType()
@@ -170,58 +201,105 @@ public class AdminNotificationServiceImpl implements AdminNotificationService {
                 "SYSTEM"
         );
     }
-
     @Override
-    public Page<NotificationResponse> getNotificationHistory(
+    public Page<AdminNotificationResponse> getNotificationHistory(
             Pageable pageable,
             String keyword
     ) {
 
-        Page<Notification> notificationPage;
+        Admin currentAdmin = currentAdminService.getCurrentAdmin();
 
-        if (keyword == null || keyword.trim().isEmpty()) {
-            notificationPage = notificationRepository
-                    .findByDeletedFalseOrderByCreatedAtDesc(pageable);
-        } else {
-            notificationPage = notificationRepository
-                    .findByTitleContainingIgnoreCaseAndDeletedFalse(
-                            keyword,
-                            pageable
-                    );
-        }
+        Pageable sortedPageable = PageRequest.of(
+                pageable.getPageNumber(),
+                pageable.getPageSize(),
+                Sort.by(Sort.Direction.DESC, "createdAt")
+        );
 
-        List<NotificationResponse> responses = notificationPage
-                .getContent()
-                .stream()
-                .map(notification -> {
+        Page<AdminNotification> notificationPage =
+                adminNotificationRepository.findByAdminAndDeletedFalse(
+                        currentAdmin,
+                        sortedPageable
+                );
 
-                    NotificationResponse response = new NotificationResponse();
-
-                    response.setId(notification.getId());
-
-                    response.setSenderId(notification.getSenderId());
-
-                    response.setReceiverId(notification.getReceiverId());
-
-                    response.setTitle(notification.getTitle());
-
-                    response.setMessage(notification.getMessage());
-
-                    response.setType(notification.getType().name());
-
-                    response.setRead(notification.isRead());
-
-                    response.setCreatedAt(notification.getCreatedAt());
-
-                    return response;
-
-                })
-                .collect(Collectors.toList());
+        List<AdminNotificationResponse> responses =
+                notificationPage.getContent()
+                        .stream()
+                        .map(notification ->
+                                AdminNotificationResponse.builder()
+                                        .id(notification.getId())
+                                        .adminId(notification.getAdmin().getId())
+                                        .title(notification.getTitle())
+                                        .message(notification.getMessage())
+                                        .type(notification.getType())
+                                        .read(notification.getRead())
+                                        .deleted(notification.getDeleted())
+                                        .createdAt(notification.getCreatedAt())
+                                        .build()
+                        )
+                        .toList();
 
         return new PageImpl<>(
                 responses,
                 pageable,
                 notificationPage.getTotalElements()
         );
+    }
+
+    @Override
+    public long getUnreadCount() {
+
+        Admin admin = currentAdminService.getCurrentAdmin();
+
+        return adminNotificationRepository
+                .countByAdminAndReadFalseAndDeletedFalse(admin);
+    }
+
+    @Override
+    public void markAsRead(Long notificationId) {
+
+        AdminNotification notification =
+                adminNotificationRepository.findById(notificationId)
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Notification not found with id: " + notificationId
+                                ));
+
+        if (!notification.getDeleted() && !notification.getRead()) {
+            notification.setRead(true);
+            adminNotificationRepository.save(notification);
+        }
+    }
+
+    @Override
+    public void markAllAsRead() {
+
+        Admin admin = currentAdminService.getCurrentAdmin();
+
+        List<AdminNotification> notifications =
+                adminNotificationRepository
+                        .findByAdminAndDeletedFalse(
+                                admin,
+                                Pageable.unpaged()
+                        )
+                        .getContent();
+
+        notifications.forEach(notification -> notification.setRead(true));
+
+        adminNotificationRepository.saveAll(notifications);
+    }
+
+    @Override
+    public void deleteNotification(Long notificationId) {
+
+        AdminNotification notification =
+                adminNotificationRepository.findById(notificationId)
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Notification not found with id: " + notificationId
+                                ));
+
+        notification.setDeleted(true);
+
+        adminNotificationRepository.save(notification);
     }
 }

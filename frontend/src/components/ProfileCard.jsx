@@ -36,10 +36,10 @@ const ProfileCard = ({ profile, onSendInterest, onSave, isSaved = false, isInter
   const getImageUrl = () => {
     if (imageError) return defaultProfile;
     if (profile.imageUrl) {
-      return profile.imageUrl.startsWith('http') ? profile.imageUrl : `http://localhost:9090${profile.imageUrl}`;
+      return profile.imageUrl.startsWith('http') ? profile.imageUrl : `https://localhost:9090${profile.imageUrl}`;
     }
     if (profile.profilePhotoUrl) {
-      return profile.profilePhotoUrl.startsWith('http') ? profile.profilePhotoUrl : `http://localhost:9090${profile.profilePhotoUrl}`;
+      return profile.profilePhotoUrl.startsWith('http') ? profile.profilePhotoUrl : `https://localhost:9090${profile.profilePhotoUrl}`;
     }
     return defaultProfile;
   };

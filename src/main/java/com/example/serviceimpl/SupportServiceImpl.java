@@ -8,6 +8,7 @@ import com.example.repository.SupportTicketRepository;
 import com.example.repository.UserRepository;
 import com.example.service.AdminAuditLogService;
 import com.example.service.CurrentAdminService;
+import com.example.service.NotificationService;
 import com.example.service.SupportService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -27,6 +28,7 @@ public class SupportServiceImpl implements SupportService {
     private final UserRepository userRepository;
     private final CurrentAdminService currentAdminService;
     private final AdminAuditLogService adminAuditLogService;
+    private final NotificationService notificationService;
     // ================= USER: CREATE TICKET =================
 
     @Override
@@ -59,7 +61,11 @@ public class SupportServiceImpl implements SupportService {
         ticket.setStatus(SupportStatus.OPEN);
 
         repository.save(ticket);
-
+        notificationService.createAdminNotification(
+                "New Support Ticket",
+                user.getFullName() + " submitted support ticket " + ticket.getTicketNumber(),
+                NotificationType.SUPPORT
+        );
         return mapToDTO(ticket);
     }
 

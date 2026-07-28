@@ -160,7 +160,7 @@ public class UserServiceImpl implements UserService {
 
         verificationRepository.save(ev);
 
-        String link = "http://localhost:9090/api/users/reset-password?token=" + token;
+        String link = "https://localhost:9090/api/users/reset-password?token=" + token;
 
         emailService.sendEmail(email, "Reset Password", "Click: " + link);
     }

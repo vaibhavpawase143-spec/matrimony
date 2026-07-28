@@ -23,6 +23,10 @@ import MyShortlists from "@/pages/MyShortlists";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import ProfileVisitors from "./pages/ProfileVisitors";
+import SubscriptionHistory from "@/pages/SubscriptionHistory";
+import NotificationDetails from "./pages/NotificationDetails";
+import { GoogleReCaptchaProvider } from "react-google-recaptcha-v3";
+import AnalyticsTracker from "@/components/AnalyticsTracker";
 // import PremiumDashboard from "./pages/PremiumDashboard";
 // NORMAL PAGES
 import Index from "./pages/Index";
@@ -50,7 +54,7 @@ import HelpSupport from "./pages/HelpSupport";
 import RefundPolicy from "./pages/RefundPolicy";
 import ChatPage from "./pages/ChatPage";
 import MatchDetails from "./pages/MatchDetails";
-
+import { ArrowLeft } from "lucide-react";
 // ADMIN PAGES
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import UsersPage from "./pages/admin/UsersPage";
@@ -75,7 +79,7 @@ const App = () => {
 //       }
 //
 //       fetch(
-//         "http://localhost:9090/api/chat/offline",
+//         "https://localhost:9090/api/chat/offline",
 //         {
 //           method: "PUT",
 //           keepalive: true,
@@ -114,15 +118,12 @@ useEffect(() => {
 
     try {
 
-      await fetch(
-        "http://localhost:9090/api/chat/ping",
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      );
+     await fetch("/api/chat/ping", {
+       method: "PUT",
+       headers: {
+         Authorization: `Bearer ${token}`,
+       },
+     });
 
     } catch (err) {
 
@@ -158,6 +159,7 @@ useEffect(() => {
               <Sonner />
               <AuthProvider>
                 <BrowserRouter>
+                     <AnalyticsTracker />
                   <MobileBottomNav />
 {/* <Route */}
 {/*   path="/premium" */}
@@ -183,7 +185,14 @@ useEffect(() => {
                     <Route path="/help" element={<HelpSupport />} />
                     <Route path="/refund-policy" element={<RefundPolicy />} />
                     <Route path="/chat/:conversationId/:receiverId" element={<ChatPage/>} />
-
+<Route
+    path="/notifications/:id"
+    element={
+        <AuthenticatedLayout>
+            <NotificationDetails />
+        </AuthenticatedLayout>
+    }
+/>
                     {/* PROTECTED USER ROUTES */}
                     <Route
                       path="/home"
@@ -193,6 +202,7 @@ useEffect(() => {
                         </AuthenticatedLayout>
                       }
                     />
+
 <Route
   path="/support/tickets"
   element={
@@ -306,7 +316,10 @@ element={
 path="/email-verified"
 element={<EmailVerified />}
 />
-
+<Route
+  path="/subscription-history"
+  element={<SubscriptionHistory />}
+/>
                     <Route
                       path="/messages"
                       element={

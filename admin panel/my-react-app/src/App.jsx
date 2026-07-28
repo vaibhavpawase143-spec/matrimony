@@ -1,5 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
+import AnalyticsTracker from "./components/AnalyticsTracker";
+
+import AdminDetails from "./pages/AdminDetails";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Users from "./pages/Users";
@@ -16,6 +19,8 @@ import CMSPages from "./pages/CMSPages";
 import FAQ from "./pages/FAQ";
 import MasterData from "./pages/MasterData";
 import AuditLogs from "./pages/AuditLogs";
+import UserSubscriptionHistory from "./pages/UserSubscriptionHistory";
+import AdminManagement from "./pages/AdminManagement";
 
 import AdminLayout from "./components/AdminLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -23,19 +28,43 @@ import ProtectedRoute from "./components/ProtectedRoute";
 function App() {
   return (
     <BrowserRouter>
+      <AnalyticsTracker />
+
       <Routes>
         {/* Login */}
         <Route path="/" element={<Login />} />
 
+        <Route
+          path="/admin/users/:userId/subscriptions"
+          element={<UserSubscriptionHistory />}
+        />
+
+        <Route
+          path="/admin-management/:id"
+          element={
+            <ProtectedRoute module="adminManagement">
+              <AdminDetails />
+            </ProtectedRoute>
+          }
+        />
+
         {/* Admin Panel */}
         <Route element={<AdminLayout />}>
-
           {/* Profile */}
           <Route
             path="/profile"
             element={
               <ProtectedRoute module="profile">
                 <AdminProfile />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/admin-management"
+            element={
+              <ProtectedRoute module="adminManagement">
+                <AdminManagement />
               </ProtectedRoute>
             }
           />

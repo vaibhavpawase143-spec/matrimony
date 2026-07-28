@@ -1,19 +1,22 @@
 const API_BASE_URL = "/api";
-
+export const IMAGE_BASE_URL = "https://localhost:9090";
 export const apiClient = async (endpoint, options = {}) => {
   const adminToken = localStorage.getItem("adminToken");
 
+  const isFormData = options.body instanceof FormData;
+
   const defaultOptions = {
+    ...options,
     headers: {
-      "Content-Type": "application/json",
+      ...(isFormData ? {} : { "Content-Type": "application/json" }),
+
       ...(adminToken && {
         Authorization: `Bearer ${adminToken}`,
       }),
+
       ...options.headers,
     },
-    ...options,
   };
-
   const response = await fetch(`${API_BASE_URL}${endpoint}`, defaultOptions);
 
   if (!response.ok) {

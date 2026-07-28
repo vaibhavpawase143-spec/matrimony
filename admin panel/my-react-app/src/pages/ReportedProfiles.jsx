@@ -66,7 +66,13 @@ export default function ReportedProfiles() {
         searchText
       );
 
-      setReports(data?.content || []);
+      setReports(
+        [...(data?.content || [])].sort(
+          (a, b) =>
+            new Date(b.createdAt || 0) -
+            new Date(a.createdAt || 0)
+        )
+      );
       setCurrentPage(data?.number ?? 0);
       setTotalPages(data?.totalPages ?? 0);
       setTotalElements(data?.totalElements ?? 0);
@@ -76,6 +82,7 @@ export default function ReportedProfiles() {
       setReports([]);
       setTotalPages(0);
       setTotalElements(0);
+
 
       toast.error(
         error?.message || "Failed to load reports."

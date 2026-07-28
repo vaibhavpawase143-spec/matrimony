@@ -114,7 +114,45 @@ const currentUserId =
         route: "/messages",
         accent: "border-cyan-500",
         iconBg: "bg-cyan-100 dark:bg-cyan-500/15"
-      }
+      },
+  SUBSCRIPTION: {
+      icon: "👑",
+      label: "Premium Membership",
+      route: "/upgrade",
+      accent: "border-yellow-500",
+      iconBg: "bg-yellow-100 dark:bg-yellow-500/15",
+  },
+ANNOUNCEMENT: {
+    icon: "📢",
+    label: "Announcement",
+    route: "/home",
+    accent: "border-blue-500",
+    iconBg: "bg-blue-100 dark:bg-blue-500/15"
+},
+
+SYSTEM: {
+    icon: "⚙️",
+    label: "System Notification",
+    route: "/home",
+    accent: "border-gray-500",
+    iconBg: "bg-gray-100 dark:bg-gray-500/15"
+},
+
+MAINTENANCE: {
+    icon: "🛠️",
+    label: "Maintenance",
+    route: "/home",
+    accent: "border-orange-500",
+    iconBg: "bg-orange-100 dark:bg-orange-500/15"
+},
+
+WARNING: {
+    icon: "⚠️",
+    label: "Warning",
+    route: "/home",
+    accent: "border-red-500",
+    iconBg: "bg-red-100 dark:bg-red-500/15"
+},
     };
 
     return map[type] || {
@@ -216,7 +254,7 @@ useEffect(() => {
     try {
 
       await fetch(
-        "http://localhost:9090/api/chat/offline",
+        "https://localhost:9090/api/chat/offline",
         {
           method: "PUT",
           headers: {
@@ -812,6 +850,20 @@ if (item.type === "MATCH") {
 }
 
 // Remaining notifications
+// Admin notifications
+if (
+    item.type === "ANNOUNCEMENT" ||
+    item.type === "SYSTEM" ||
+    item.type === "MAINTENANCE" ||
+    item.type === "WARNING" ||
+    item.type === "SUBSCRIPTION"
+) {
+    setShowNotifications(false);
+    navigate(`/notifications/${item.id}`);
+    return;
+}
+
+// Other notifications
 navigate(meta.route);
 } catch(err) {
 

@@ -173,7 +173,7 @@ export const uploadVideo = async (file) => {
     );
 
     const response =await fetch(
-                        "http://localhost:9090/api/chat/upload-video",
+                        "https://localhost:9090/api/chat/upload-video",
         {
 
             method: "POST",

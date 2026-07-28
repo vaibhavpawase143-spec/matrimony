@@ -43,7 +43,7 @@ export STRIPE_API_KEY=sk_test_your_key  # If using Stripe
 # Run the application
 ./mvnw spring-boot:run
 
-# Application runs on: http://localhost:9090
+# Application runs on: https://localhost:9090
 ```
 
 ### Frontend Setup (React)
@@ -59,7 +59,7 @@ npm install
 cp .env.example .env.local
 
 # Update .env.local with your backend URL
-# REACT_APP_API_URL=http://localhost:9090
+# REACT_APP_API_URL=https://localhost:9090
 
 # Start development server
 npm start
@@ -184,7 +184,7 @@ app.base-url=https://yourdomain.com
 
 ### Frontend (.env.local)
 ```
-REACT_APP_API_URL=http://localhost:9090
+REACT_APP_API_URL=https://localhost:9090
 REACT_APP_RAZORPAY_KEY_ID=your_razorpay_public_key
 REACT_APP_WS_URL=ws://localhost:9090/ws
 ```

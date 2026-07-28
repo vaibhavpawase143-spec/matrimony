@@ -338,7 +338,7 @@ const data = await shortlistAPI.getMyShortlists(1, 20);
 
 **Add Shortlist**
 ```bash
-curl -X POST http://localhost:9090/api/shortlists \
+curl -X POST https://localhost:9090/api/shortlists \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
   -d '{"profileId": 123}'
@@ -346,19 +346,19 @@ curl -X POST http://localhost:9090/api/shortlists \
 
 **Remove Shortlist**
 ```bash
-curl -X DELETE http://localhost:9090/api/shortlists/456 \
+curl -X DELETE https://localhost:9090/api/shortlists/456 \
   -H "Authorization: Bearer {token}"
 ```
 
 **Get My Shortlists**
 ```bash
-curl -X GET "http://localhost:9090/api/shortlists/me?page=0&size=20" \
+curl -X GET "https://localhost:9090/api/shortlists/me?page=0&size=20" \
   -H "Authorization: Bearer {token}"
 ```
 
 **Check Shortlist**
 ```bash
-curl -X GET http://localhost:9090/api/shortlists/check/456 \
+curl -X GET https://localhost:9090/api/shortlists/check/456 \
   -H "Authorization: Bearer {token}"
 ```
 

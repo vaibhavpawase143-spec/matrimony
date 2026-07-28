@@ -23,6 +23,7 @@ import {
   FaSignOutAlt,
   FaChevronDown,
   FaChevronRight,
+  FaUserShield,
 } from "react-icons/fa";
 
 export default function Sidebar() {
@@ -138,6 +139,12 @@ export default function Sidebar() {
       path: "/master-data",
       permission: "masterData",
     },
+{
+  name: "Admin Management",
+  icon: <FaUserShield />,
+  path: "/admin-management",
+  permission: "adminManagement",
+},
     {
       name: "Audit Logs",
       icon: <FaClipboardList />,

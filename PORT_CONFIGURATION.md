@@ -11,12 +11,12 @@ Your application is configured to run on the following ports:
 
 ### Backend
 - **Port:** 9090
-- **URL:** http://localhost:9090
+- **URL:** https://localhost:9090
 - **Configuration:** Already set in `application.properties` or `application.yml`
 
 ### API Communication
 - Frontend calls `/api/*` endpoints
-- Vite proxy in `vite.config.js` automatically forwards requests to `http://localhost:9090`
+- Vite proxy in `vite.config.js` automatically forwards requests to `https://localhost:9090`
 - **No changes needed** - it's already configured!
 
 ---
@@ -28,7 +28,7 @@ Your application is configured to run on the following ports:
 cd C:\Users\Vaibhav\Downloads\demo\demo
 .\mvnw.cmd spring-boot:run
 
-# Backend will be available at: http://localhost:9090
+# Backend will be available at: https://localhost:9090
 ```
 
 ### Step 2: Start Frontend (Port 3000)
@@ -52,7 +52,7 @@ The frontend automatically proxies API requests through `vite.config.js`:
 ```javascript
 proxy: {
   "/api": {
-    target: "http://localhost:9090",  // Backend URL
+    target: "https://localhost:9090",  // Backend URL
     changeOrigin: true,
     secure: false
   }
@@ -61,7 +61,7 @@ proxy: {
 
 This means:
 - Frontend request: `http://localhost:3000/api/shortlists`
-- Proxied to: `http://localhost:9090/api/shortlists`
+- Proxied to: `https://localhost:9090/api/shortlists`
 - **Completely transparent to your code!**
 
 ---
@@ -78,13 +78,13 @@ Shortlists: http://localhost:3000/shortlists
 ### Using cURL (Direct Backend)
 ```bash
 # Make sure to get token first
-curl -X GET "http://localhost:9090/api/shortlists/me?page=0&size=20" \
+curl -X GET "https://localhost:9090/api/shortlists/me?page=0&size=20" \
   -H "Authorization: Bearer {your-token-here}"
 ```
 
 ### Using Postman/Insomnia
 ```
-Base URL: http://localhost:9090
+Base URL: https://localhost:9090
 Add header: Authorization: Bearer {token}
 Endpoints will work as documented
 ```
@@ -95,7 +95,7 @@ Endpoints will work as documented
 
 ### 1. Check Backend is Running
 ```bash
-curl http://localhost:9090/api/auth/login
+curl https://localhost:9090/api/auth/login
 # Should return an error about missing credentials (that's OK)
 # Not a 404 or "connection refused"
 ```
@@ -109,12 +109,12 @@ curl http://localhost:3000
 ### 3. Test Shortlist API
 ```bash
 # 1. Login to get token
-curl -X POST http://localhost:9090/api/auth/login \
+curl -X POST https://localhost:9090/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"test@example.com","password":"password"}'
 
 # 2. Use token to test shortlist endpoint
-curl -X GET "http://localhost:9090/api/shortlists/me" \
+curl -X GET "https://localhost:9090/api/shortlists/me" \
   -H "Authorization: Bearer {token-from-above}"
 ```
 
@@ -148,7 +148,7 @@ netstat -ano | findstr :3000
 
 ✅ **Can Backend Access?**
 ```bash
-curl http://localhost:9090
+curl https://localhost:9090
 # Should get response
 ```
 
@@ -172,7 +172,7 @@ All documentation files have been updated to reflect your port configuration:
 - ✅ SHORTLIST_IMPLEMENTATION.md
 - ✅ SHORTLIST_SYSTEM_COMPLETE.md
 
-All cURL examples now use `http://localhost:9090`
+All cURL examples now use `https://localhost:9090`
 All browser URLs now use `http://localhost:3000`
 
 ---

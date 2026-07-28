@@ -6,7 +6,8 @@ import { useToast } from "@/components/Toast";
 import { useLoading } from "@/hooks/useLoading";
 import { authAPI } from "@/services/api";
 import { useLanguage } from "@/context/LanguageContext.jsx";
-
+import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
+import { trackEvent } from "@/utils/analytics";
 const Register = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -19,7 +20,7 @@ const Register = () => {
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-
+const { executeRecaptcha } = useGoogleReCaptcha();
   
   const [errors, setErrors] = useState({});
 
@@ -72,19 +73,29 @@ const Register = () => {
       
       try {
         // Send only basic user registration data to backend
-       const registrationData = {
-           firstName: firstName.trim(),
-           lastName: lastName.trim(),
-           email: email.trim().toLowerCase(),
-           phone: phone.replace(/\D/g, ''),
-           password: password,
-       };
+        if (!executeRecaptcha) {
+            error("reCAPTCHA is not ready.");
+            stopLoading();
+            return;
+        }
+
+        const recaptchaToken = await executeRecaptcha("register");
+
+    const registrationData = {
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        email: email.trim().toLowerCase(),
+        phone: phone.replace(/\D/g, ''),
+        password,
+        recaptchaToken
+    };
         console.log('🚀 Registration payload:', registrationData);
 
         const response = await authAPI.register(registrationData);
 
         // Registration successful - redirect to login for authentication
         success("Registration successful! Please login to continue.");
+        trackEvent("user_register");
         stopLoading();
 
         // Redirect to login page as per business flow

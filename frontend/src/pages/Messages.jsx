@@ -1016,7 +1016,7 @@ const handleBulkCopy = async () => {
             if (msg.mediaType === "IMAGE") {
 
                 return `🖼 Image
-http://localhost:9090${msg.mediaUrl}`;
+https://localhost:9090${msg.mediaUrl}`;
 
             }
 
@@ -1024,7 +1024,7 @@ http://localhost:9090${msg.mediaUrl}`;
             if (msg.mediaType === "DOCUMENT") {
 
                 return `📄 Document
-http://localhost:9090${msg.mediaUrl}`;
+https://localhost:9090${msg.mediaUrl}`;
 
             }
 
@@ -1032,7 +1032,7 @@ http://localhost:9090${msg.mediaUrl}`;
             if (msg.mediaType === "AUDIO") {
 
                 return `🎵 Audio
-http://localhost:9090${msg.mediaUrl}`;
+https://localhost:9090${msg.mediaUrl}`;
 
             }
 
@@ -1040,7 +1040,7 @@ http://localhost:9090${msg.mediaUrl}`;
             if (msg.mediaType === "VOICE") {
 
                 return `🎤 Voice
-http://localhost:9090${msg.mediaUrl}`;
+https://localhost:9090${msg.mediaUrl}`;
 
             }
 
@@ -1939,11 +1939,11 @@ message.deletedForEveryone ? (
         message.mediaType === "IMAGE" ? (
 
             <img
-                src={`http://localhost:9090${message.mediaUrl}`}
+                src={`https://localhost:9090${message.mediaUrl}`}
                 alt="chat"
                 onClick={() =>
                     setViewImage(
-                        `http://localhost:9090${message.mediaUrl}`
+                        `https://localhost:9090${message.mediaUrl}`
                     )
                 }
                 className="
@@ -1963,7 +1963,7 @@ message.deletedForEveryone ? (
                 controls
                 onClick={() =>
                     setViewVideo(
-                        `http://localhost:9090${message.mediaUrl}`
+                        `https://localhost:9090${message.mediaUrl}`
                     )
                 }
                 className="
@@ -1974,7 +1974,7 @@ message.deletedForEveryone ? (
                 hover:scale-105
                 transition
                 "
-                src={`http://localhost:9090${message.mediaUrl}`}
+                src={`https://localhost:9090${message.mediaUrl}`}
             />
 
         ) : message.mediaType === "VOICE" ? (
@@ -1982,13 +1982,13 @@ message.deletedForEveryone ? (
             <audio
                 controls
                 className="w-[250px]"
-                src={`http://localhost:9090${message.mediaUrl}`}
+                src={`https://localhost:9090${message.mediaUrl}`}
             />
 
         ) : message.mediaType === "AUDIO" ? (
 
             <a
-                href={`http://localhost:9090${message.mediaUrl}`}
+                href={`https://localhost:9090${message.mediaUrl}`}
                 target="_blank"
                 rel="noreferrer"
                 className="
@@ -2024,7 +2024,7 @@ message.deletedForEveryone ? (
         ) : message.mediaType === "DOCUMENT" ? (
 
             <a
-                href={`http://localhost:9090${message.mediaUrl}`}
+                href={`https://localhost:9090${message.mediaUrl}`}
                 target="_blank"
                 rel="noreferrer"
                 className="

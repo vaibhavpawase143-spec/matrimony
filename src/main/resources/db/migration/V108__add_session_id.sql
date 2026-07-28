@@ -1,0 +1,5 @@
+ALTER TABLE admins
+ADD COLUMN session_id VARCHAR(255);
+
+ALTER TABLE users
+ADD COLUMN session_id VARCHAR(255);

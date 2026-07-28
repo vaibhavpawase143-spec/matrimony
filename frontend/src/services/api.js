@@ -231,6 +231,13 @@ markAllRead: async(userId)=>{
   );
 
 },
+getById: async (id) => {
+
+    return await apiClient(
+        `/notifications/${id}`
+    );
+
+},
   delete: async (id) => {
 
     return await apiClient(
@@ -253,10 +260,14 @@ export const authAPI = {
       });
 console.log(result);
       // Handle different response formats
-      const token = result.accessToken || result.token || result.data?.accessToken || result.data?.token;
-      const userData = isAdmin
-          ? result.data.admin
-          : (result.user || result.data || result);
+ const token =
+     result.data?.accessToken ||
+     result.accessToken ||
+     result.token;
+
+ const userData = isAdmin
+     ? (result.data?.admin || result.admin)
+     : (result.data?.profile || result.profile || result.user || result.data || result);
 
       if (token) {
         localStorage.setItem('token', token);
@@ -268,11 +279,12 @@ console.log(result);
         }
       }
 
-      return {
+    return {
         success: true,
         data: userData,
-        token: token
-      };
+        token,
+        role: result.data?.role
+    };
     } catch (error) {
       console.error('Login API Error:', error);
 

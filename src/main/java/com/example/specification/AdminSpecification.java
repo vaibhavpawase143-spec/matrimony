@@ -21,7 +21,10 @@ public class AdminSpecification {
 
             // Prevent duplicate results
             query.distinct(true);
-
+// Hide deleted admins
+            predicates.add(
+                    cb.isNull(root.get("deletedAt"))
+            );
             // ================= KEYWORD =================
 
             if (filter.getKeyword() != null && !filter.getKeyword().trim().isEmpty()) {

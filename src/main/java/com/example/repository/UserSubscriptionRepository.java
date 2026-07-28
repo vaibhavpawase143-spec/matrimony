@@ -115,4 +115,19 @@ WHERE created_at >= DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')
 AND created_at < DATE_TRUNC('month', CURRENT_DATE)
 """, nativeQuery = true)
     Long countPreviousMonthSubscriptions();
+    // ==========================================
+// EXPIRED ACTIVE SUBSCRIPTIONS
+// ==========================================
+
+    List<UserSubscription> findByIsActiveTrueAndEndDateBefore(
+            java.time.LocalDateTime dateTime
+    );
+    @Query("""
+SELECT us
+FROM UserSubscription us
+JOIN FETCH us.user
+WHERE us.isActive = true
+AND us.status = 'ACTIVE'
+""")
+    List<UserSubscription> findAllActiveSubscriptions();
 }

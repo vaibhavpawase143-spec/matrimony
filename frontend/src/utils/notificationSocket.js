@@ -37,13 +37,13 @@ import SockJS from "sockjs-client";
       client = null;
     }
 
-    const socket = new SockJS(
-      `http://localhost:9090/ws?token=${encodeURIComponent(token)}`,
-      null,
-      {
-        transports: ["websocket"]
-      }
-    );
+   const socket = new SockJS(
+     `https://localhost:9090/ws?token=${encodeURIComponent(token)}`,
+     null,
+     {
+       transports: ["websocket"]
+     }
+   );
 
     // Local variable वापरतो: callback मध्ये global client null झाला तरी safe राहील
     const newClient = new Client({

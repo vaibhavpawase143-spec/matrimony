@@ -1,5 +1,6 @@
 package com.example.service;
 
+import com.example.dto.request.AdminChangePasswordDTO;
 import com.example.dto.request.AdminFilterDTO;
 import com.example.dto.request.AdminResetPasswordDTO;
 import com.example.dto.request.AdminUpdateDTO;
@@ -7,6 +8,7 @@ import com.example.dto.response.AdminResponseDTO;
 import com.example.dto.response.AdminStatsDTO;
 import com.example.model.Admin;
 import org.springframework.data.domain.Page;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -57,4 +59,10 @@ public interface AdminService {
     );
 
     AdminStatsDTO getStatistics();
+    String uploadAdminPhoto(
+            Long id,
+            MultipartFile file
+    );
+    Admin save(Admin admin);
+    void changeOwnPassword(AdminChangePasswordDTO dto);
 }

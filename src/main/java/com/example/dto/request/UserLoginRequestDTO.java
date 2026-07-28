@@ -11,4 +11,7 @@ public class UserLoginRequestDTO {
 
     @NotBlank
     private String password;
+
+    @NotBlank(message = "reCAPTCHA token is required")
+    private String recaptchaToken;
 }

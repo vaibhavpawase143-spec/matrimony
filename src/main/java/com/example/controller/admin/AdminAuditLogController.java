@@ -20,7 +20,7 @@ public class AdminAuditLogController {
     private final AdminAuditLogService adminAuditLogService;
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('AUDIT_VIEW')")
     public ResponseEntity<Page<AdminAuditLogResponseDTO>> getAuditLogs(
 
             @RequestParam(defaultValue = "0") int page,

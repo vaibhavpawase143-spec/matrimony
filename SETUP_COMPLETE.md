@@ -51,7 +51,7 @@ All source files have been compiled and are ready to run. The mobile OTP verific
    ```
    Started DemoApplication in X seconds
    ```
-5. **Access** application at: `http://localhost:9090`
+5. **Access** application at: `https://localhost:9090`
 
 ### **Option 2: Run from Terminal**
 
@@ -87,7 +87,7 @@ java -jar target/demo-0.0.1-SNAPSHOT.jar
 **Using Postman/Thunder Client/Insomnia:**
 
 ```http
-POST http://localhost:9090/api/users/register
+POST https://localhost:9090/api/users/register
 Content-Type: application/json
 
 {
@@ -124,7 +124,7 @@ Content-Type: application/json
 ### **Step 2: Verify OTP**
 
 ```http
-POST http://localhost:9090/api/users/verify-otp?phone=+919876543210&otp=123456
+POST https://localhost:9090/api/users/verify-otp?phone=+919876543210&otp=123456
 ```
 
 **Response:**
@@ -141,13 +141,13 @@ POST http://localhost:9090/api/users/verify-otp?phone=+919876543210&otp=123456
 Check your email for verification link and click it, or use:
 
 ```http
-GET http://localhost:9090/api/users/verify?token=YOUR_TOKEN_HERE
+GET https://localhost:9090/api/users/verify?token=YOUR_TOKEN_HERE
 ```
 
 ### **Step 4: Login**
 
 ```http
-POST http://localhost:9090/api/users/login
+POST https://localhost:9090/api/users/login
 Content-Type: application/json
 
 {
@@ -352,7 +352,7 @@ app.jwt.secret=your_jwt_secret_key
 app.jwt.expiration=86400000
 
 # Base URL (for email links)
-app.base-url=http://localhost:9090
+app.base-url=https://localhost:9090
 ```
 
 ---
@@ -365,8 +365,8 @@ app.base-url=http://localhost:9090
 - `Postman_Collection.json` - Pre-configured requests
 
 🔌 **Access Endpoints:**
-- Swagger UI: `http://localhost:9090/swagger-ui.html`
-- API Docs: `http://localhost:9090/v3/api-docs`
+- Swagger UI: `https://localhost:9090/swagger-ui.html`
+- API Docs: `https://localhost:9090/v3/api-docs`
 
 ---
 

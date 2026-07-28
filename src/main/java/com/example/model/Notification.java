@@ -39,6 +39,7 @@ public class Notification {
     private boolean read = false;
 
     private boolean deleted = false;
-
+    @Column(name = "subscription_id")
+    private Long subscriptionId;
     private LocalDateTime createdAt = LocalDateTime.now();
 }

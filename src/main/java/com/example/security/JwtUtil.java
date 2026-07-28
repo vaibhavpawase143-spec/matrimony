@@ -26,10 +26,18 @@ public class JwtUtil {
     }
 
     // 🔥 GENERATE TOKEN
-    public String generateToken(String username, List<String> roles) {
+    public String generateToken(
+            String username,
+            List<String> roles,
+            String sessionId,
+            String accountType
+    ) {
+
         return Jwts.builder()
                 .setSubject(username)
                 .claim("roles", roles)
+                .claim("sessionId", sessionId)
+                .claim("accountType", accountType)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(getKey(), SignatureAlgorithm.HS256)
@@ -57,8 +65,13 @@ public class JwtUtil {
                 .parseClaimsJws(token)
                 .getBody();
     }
-
+    public String extractSessionId(String token) {
+        return getClaims(token).get("sessionId", String.class);
+    }
     private boolean isExpired(String token) {
         return getClaims(token).getExpiration().before(new Date());
+    }
+    public String extractAccountType(String token) {
+        return getClaims(token).get("accountType", String.class);
     }
 }

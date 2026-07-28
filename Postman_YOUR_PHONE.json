@@ -21,7 +21,7 @@
           "raw": "{\n  \"firstName\": \"Vaibhav\",\n  \"lastName\": \"Pawase\",\n  \"email\": \"vaibhav@example.com\",\n  \"phone\": \"+917666084107\",\n  \"password\": \"password123\"\n}"
         },
         "url": {
-          "raw": "http://localhost:9090/api/users/register",
+          "raw": "https://localhost:9090/api/users/register",
           "protocol": "http",
           "host": [
             "localhost"
@@ -41,7 +41,7 @@
       "request": {
         "method": "GET",
         "url": {
-          "raw": "http://localhost:9090/api/users",
+          "raw": "https://localhost:9090/api/users",
           "protocol": "http",
           "host": [
             "localhost"
@@ -60,7 +60,7 @@
       "request": {
         "method": "POST",
         "url": {
-          "raw": "http://localhost:9090/api/users/verify-otp?phone=%2B917666084107&otp=123456",
+          "raw": "https://localhost:9090/api/users/verify-otp?phone=%2B917666084107&otp=123456",
           "protocol": "http",
           "host": [
             "localhost"
@@ -91,7 +91,7 @@
       "request": {
         "method": "GET",
         "url": {
-          "raw": "http://localhost:9090/api/users/verify?token=YOUR_EMAIL_TOKEN_HERE",
+          "raw": "https://localhost:9090/api/users/verify?token=YOUR_EMAIL_TOKEN_HERE",
           "protocol": "http",
           "host": [
             "localhost"
@@ -128,7 +128,7 @@
           "raw": "{\n  \"email\": \"vaibhav@example.com\",\n  \"password\": \"password123\"\n}"
         },
         "url": {
-          "raw": "http://localhost:9090/api/users/login",
+          "raw": "https://localhost:9090/api/users/login",
           "protocol": "http",
           "host": [
             "localhost"
@@ -148,7 +148,7 @@
       "request": {
         "method": "POST",
         "url": {
-          "raw": "http://localhost:9090/api/users/send-otp?phone=%2B917666084107",
+          "raw": "https://localhost:9090/api/users/send-otp?phone=%2B917666084107",
           "protocol": "http",
           "host": [
             "localhost"
@@ -174,7 +174,7 @@
       "request": {
         "method": "POST",
         "url": {
-          "raw": "http://localhost:9090/api/users/resend-otp?phone=%2B917666084107",
+          "raw": "https://localhost:9090/api/users/resend-otp?phone=%2B917666084107",
           "protocol": "http",
           "host": [
             "localhost"

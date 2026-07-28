@@ -67,7 +67,18 @@ export default function SubscriptionDetails() {
             View subscription information.
           </p>
         </div>
-
+<button
+    onClick={() =>
+        navigate(`/admin/users/${subscription.userId}/subscriptions`)
+    }
+    className="px-4 py-2 rounded-lg border border-violet-600
+               text-violet-600
+               hover:bg-violet-600
+               hover:text-white
+               transition"
+>
+    Subscription History
+</button>
         <span
           className={`px-4 py-2 rounded-full text-sm font-semibold ${
             subscription.status === "ACTIVE"

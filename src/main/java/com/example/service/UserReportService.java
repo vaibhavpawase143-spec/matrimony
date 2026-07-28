@@ -19,7 +19,7 @@ public class UserReportService {
     private final UserReportRepository userReportRepository;
     private final UserRepository userRepository;
     private final UserBlockRepository userBlockRepository;
-
+    private final NotificationService notificationService;
 
     private static final int BLOCK_THRESHOLD = 5;
 
@@ -63,7 +63,11 @@ public class UserReportService {
                 .build();
 
         userReportRepository.save(report);
-
+        notificationService.createAdminNotification(
+                "New Report Submitted",
+                reporter.getFullName() + " submitted a report against " + reportedUser.getFullName(),
+                NotificationType.REPORT
+        );
         long reportCount = userReportRepository.countByReportedUser(reportedUser);
 
         // 🔥 AUTO BLOCK

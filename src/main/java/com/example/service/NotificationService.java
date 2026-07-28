@@ -55,4 +55,22 @@ public interface NotificationService {
      * Get notification history with pagination.
      */
     Page<NotificationResponse> getNotificationHistory(Pageable pageable);
+    void createAdminNotification(
+            String title,
+            String message,
+            NotificationType type
+    );
+    void createSubscriptionReminder(
+            Long receiverId,
+            Long subscriptionId,
+            String title,
+            String message
+    );
+
+    Notification getById(Long id);
+
+    void createSubscriptionExpiredNotification(
+            Long receiverId,
+            Long subscriptionId
+    );
 }

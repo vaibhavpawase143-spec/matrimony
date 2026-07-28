@@ -2,11 +2,13 @@ package com.example.service.impl;
 
 import com.example.dto.response.ReportResponseDTO;
 import com.example.exception.ResourceNotFoundException;
+import com.example.model.NotificationType;
 import com.example.model.Report;
 import com.example.model.User;
 import com.example.repository.ReportRepository;
 import com.example.repository.UserRepository;
 import com.example.security.JwtUtil;
+import com.example.service.NotificationService;
 import com.example.service.ReportService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -27,7 +29,7 @@ public class ReportServiceImpl implements ReportService {
     private final ReportRepository reportRepository;
     private final UserRepository userRepository;
     private final JwtUtil jwtUtil;
-
+    private final NotificationService notificationService;
     @Override
     public ReportResponseDTO createReport(Long reportedUserId, String reason, String description, String reportType) {
         // Get current user
@@ -53,6 +55,11 @@ public class ReportServiceImpl implements ReportService {
         report.setStatus(Report.ReportStatus.PENDING);
 
         Report saved = reportRepository.save(report);
+        notificationService.createAdminNotification(
+                "New Report Submitted",
+                reportedBy.getFullName() + " submitted a report against " + reportedUser.getFullName(),
+                NotificationType.REPORT
+        );
         return mapToDTO(saved);
     }
 

@@ -1,6 +1,12 @@
 package com.example.config;
 
-import com.example.security.*;
+import com.example.repository.AdminRepository;
+import com.example.repository.UserRepository;
+import com.example.security.CustomAccessDeniedHandler;
+import com.example.security.CustomAuthenticationEntryPoint;
+import com.example.security.JwtFilter;
+import com.example.security.JwtUtil;
+import com.example.security.SecurityUserDetailsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -25,15 +31,24 @@ public class SecurityConfig {
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
     private final CorsConfigurationSource corsConfigurationSource;
+    private final UserRepository userRepository;
+    private final AdminRepository adminRepository;
 
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+    public AuthenticationManager authenticationManager(
+            AuthenticationConfiguration config
+    ) throws Exception {
         return config.getAuthenticationManager();
     }
 
     @Bean
     public JwtFilter jwtFilter() {
-        return new JwtFilter(jwtUtil);
+        return new JwtFilter(
+                jwtUtil,
+                userRepository,
+                adminRepository,
+                securityUserDetailsService
+        );
     }
 
     @Bean
@@ -75,7 +90,6 @@ public class SecurityConfig {
                                 "/api/users/init-photo-directory",
                                 "/api/user-photos/**",
                                 "/api/reports/**",
-
                                 "/api/support-categories/**",
                                 "/api/blocks/**",
                                 "/api/fields-of-study/**",
@@ -86,14 +100,13 @@ public class SecurityConfig {
                                 "/api/body-types/**",
                                 "/api/genders/**",
                                 "/api/countries/**",
-                                "/api/image/**",
-                                "/ws/**",
                                 "/uploads/**",
                                 "/api/cms/**",
                                 "/api/faqs/**"
+                        )
+                        .permitAll()
 
-                        ).permitAll()
-// ADMIN login
+                        // ADMIN LOGIN
                         .requestMatchers(
                                 "/api/admins/login",
                                 "/api/admins/refresh",
@@ -101,6 +114,7 @@ public class SecurityConfig {
                                 "/api/admins/*/castes/**"
                         )
                         .permitAll()
+
                         // ADMIN
                         .requestMatchers("/api/admin/**", "/api/admins/**")
                         .hasAnyRole("ADMIN", "SUPER_ADMIN")
@@ -109,8 +123,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/users/**")
                         .hasAnyRole("USER", "ADMIN")
 
-                        // EVERYTHING ELSE
-                        .anyRequest().authenticated()
+                        .anyRequest()
+                        .authenticated()
                 )
 
                 .exceptionHandling(ex -> ex
@@ -122,7 +136,10 @@ public class SecurityConfig {
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
 
-                .addFilterBefore(jwtFilter(), UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(
+                        jwtFilter(),
+                        UsernamePasswordAuthenticationFilter.class
+                );
 
         return http.build();
     }
@@ -132,4 +149,3 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 }
-

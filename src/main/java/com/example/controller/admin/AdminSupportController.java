@@ -24,7 +24,7 @@ public class AdminSupportController {
     // =====================================================
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('SUPPORT_VIEW')")
     public ApiResponse<List<SupportResponseDTO>> getAllTickets() {
 
         return ApiResponse.<List<SupportResponseDTO>>builder()
@@ -39,7 +39,7 @@ public class AdminSupportController {
     // =====================================================
 
     @GetMapping("/{ticketNumber}")
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('SUPPORT_VIEW')")
     public ApiResponse<SupportResponseDTO> getTicket(
             @PathVariable String ticketNumber) {
 
@@ -55,7 +55,7 @@ public class AdminSupportController {
     // =====================================================
 
     @PutMapping("/{ticketNumber}/status")
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('SUPPORT_CLOSE')")
     public ApiResponse<SupportResponseDTO> updateStatus(
             @PathVariable String ticketNumber,
             @Valid @RequestBody SupportStatusUpdateRequestDTO request) {
@@ -74,7 +74,7 @@ public class AdminSupportController {
     // =====================================================
 
     @PutMapping("/{ticketNumber}/reply")
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('SUPPORT_REPLY')")
     public ApiResponse<SupportResponseDTO> replyTicket(
             @PathVariable String ticketNumber,
             @Valid @RequestBody SupportReplyRequestDTO request) {
