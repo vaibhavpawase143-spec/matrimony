@@ -60,7 +60,7 @@ cd C:\Users\Vaibhav\Downloads\demo\demo
 # Using Maven wrapper
 .\mvnw.cmd spring-boot:run
 
-# Application runs on http://localhost:9090
+# Application runs on https://localhost:9090
 ```
 
 ### 2. Start Frontend
@@ -131,7 +131,7 @@ Option B - From Profile View:
 
 ### Get JWT Token
 ```bash
-curl -X POST http://localhost:9090/api/auth/login \
+curl -X POST https://localhost:9090/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"test@example.com","password":"password"}'
 
@@ -141,7 +141,7 @@ export TOKEN="your-token-here"
 
 ### Test Add to Shortlist
 ```bash
-curl -X POST http://localhost:9090/api/shortlists \
+curl -X POST https://localhost:9090/api/shortlists \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"profileId": 1}'
@@ -151,7 +151,7 @@ curl -X POST http://localhost:9090/api/shortlists \
 
 ### Test Get My Shortlists
 ```bash
-curl -X GET "http://localhost:9090/api/shortlists/me?page=0&size=20" \
+curl -X GET "https://localhost:9090/api/shortlists/me?page=0&size=20" \
   -H "Authorization: Bearer $TOKEN"
 
 # Response: Paginated list of shortlisted profiles
@@ -159,7 +159,7 @@ curl -X GET "http://localhost:9090/api/shortlists/me?page=0&size=20" \
 
 ### Test Check Status
 ```bash
-curl -X GET http://localhost:9090/api/shortlists/check/1 \
+curl -X GET https://localhost:9090/api/shortlists/check/1 \
   -H "Authorization: Bearer $TOKEN"
 
 # Response: true or false
@@ -167,7 +167,7 @@ curl -X GET http://localhost:9090/api/shortlists/check/1 \
 
 ### Test Remove from Shortlist
 ```bash
-curl -X DELETE http://localhost:9090/api/shortlists/1 \
+curl -X DELETE https://localhost:9090/api/shortlists/1 \
   -H "Authorization: Bearer $TOKEN"
 
 # Response: 204 No Content
@@ -353,7 +353,7 @@ For issues or questions:
 - ✅ Security best practices
 
 **To get started:**
-1. Start backend: `mvnw spring-boot:run` (runs on http://localhost:9090)
+1. Start backend: `mvnw spring-boot:run` (runs on https://localhost:9090)
 2. Start frontend: `npm run dev` (runs on http://localhost:3000)
 3. Open http://localhost:3000 in browser
 4. Login and navigate to Home

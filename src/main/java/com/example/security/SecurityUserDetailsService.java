@@ -1,15 +1,17 @@
 package com.example.security;
 
 import com.example.model.Admin;
+import com.example.model.Role;
 import com.example.model.User;
 import com.example.repository.AdminRepository;
+import com.example.repository.RoleRepository;
 import com.example.repository.UserRepository;
-
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.*;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,7 +24,7 @@ public class SecurityUserDetailsService implements UserDetailsService {
 
     private final AdminRepository adminRepository;
     private final UserRepository userRepository;
-
+    private final RoleRepository roleRepository;
     @Override
     @Transactional(readOnly = true)
     public UserDetails loadUserByUsername(String email)
@@ -37,10 +39,25 @@ public class SecurityUserDetailsService implements UserDetailsService {
                 throw new UsernameNotFoundException("Admin role not assigned");
             }
 
-            String roleName = admin.getRole().getName();
+            Role role = roleRepository.findByNameWithPermissions(
+                    admin.getRole().getName()
+            ).orElseThrow(() ->
+                    new UsernameNotFoundException("Role not found")
+            );
 
-            List<GrantedAuthority> authorities =
-                    List.of(new SimpleGrantedAuthority(roleName));
+            List<GrantedAuthority> authorities = new java.util.ArrayList<>();
+            System.out.println("Authorities : " + authorities);
+// Add Role
+            authorities.add(new SimpleGrantedAuthority(role.getName()));
+
+// Add Permissions
+            role.getPermissions().stream()
+                    .filter(permission -> Boolean.TRUE.equals(permission.getIsActive()))
+                    .forEach(permission ->
+                            authorities.add(
+                                    new SimpleGrantedAuthority(permission.getCode())
+                            )
+                    );
 
             return new org.springframework.security.core.userdetails.User(
                     admin.getEmail(),
@@ -54,6 +71,7 @@ public class SecurityUserDetailsService implements UserDetailsService {
                     true,
                     authorities
             );
+
         }
 
         // ================= 🔥 USER LOGIN =================

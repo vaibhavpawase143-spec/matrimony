@@ -10,6 +10,7 @@ import com.example.repository.UserSubscriptionRepository;
 import com.example.service.AdminAuditLogService;
 import com.example.service.AdminUserSubscriptionService;
 import com.example.service.CurrentAdminService;
+import com.example.service.ProfilePremiumSyncService;
 import com.example.specification.UserSubscriptionSpecification;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -20,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -28,8 +30,9 @@ public class AdminUserSubscriptionServiceImpl
 
     private final UserSubscriptionRepository repository;
     private final CurrentAdminService currentAdminService;
-
+    private final ProfilePremiumSyncService profilePremiumSyncService;
     private final AdminAuditLogService auditLogService;
+
     @Override
     public Page<UserSubscriptionResponseDTO> getAllSubscriptions(
             UserSubscriptionFilterDTO filter,
@@ -93,24 +96,54 @@ public class AdminUserSubscriptionServiceImpl
 
                 .build();
     }
+
     @Override
     public UserSubscriptionResponseDTO getSubscriptionById(Long id) {
 
         UserSubscription subscription = repository.findWithDetailsById(id)
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Subscription not found"));
+
         return UserSubscriptionResponseDTO.builder()
                 .id(subscription.getId())
+
                 .userId(subscription.getUser().getId())
                 .userName(subscription.getUser().getFullName())
+
+                .email(subscription.getUser().getEmail())
+                .phone(subscription.getUser().getPhone())
+
+                .imageUrl(
+                        subscription.getUser().getProfile() != null
+                                ? subscription.getUser().getProfile().getImageUrl()
+                                : null
+                )
+
+                .gender(
+                        subscription.getUser().getProfile() != null
+                                && subscription.getUser().getProfile().getGender() != null
+                                ? subscription.getUser().getProfile().getGender().getName()
+                                : null
+                )
+
+                .dateOfBirth(
+                        subscription.getUser().getProfile() != null
+                                ? subscription.getUser().getProfile().getDateOfBirth()
+                                : null
+                )
+
                 .planId(subscription.getSubscriptionPlan().getId())
                 .planName(subscription.getSubscriptionPlan().getName())
+
                 .startDate(subscription.getStartDate())
                 .endDate(subscription.getEndDate())
+
                 .status(subscription.getStatus())
                 .isActive(subscription.getIsActive())
+
                 .createdAt(subscription.getCreatedAt())
                 .updatedAt(subscription.getUpdatedAt())
+
                 .build();
     }
 
@@ -121,8 +154,10 @@ public class AdminUserSubscriptionServiceImpl
         UserSubscription subscription = repository.findWithDetailsById(id)
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Subscription not found"));
+
         String oldStatus = subscription.getStatus();
         Boolean oldActive = subscription.getIsActive();
+
         if (!Boolean.TRUE.equals(subscription.getIsActive())) {
             throw new BadRequestException("Subscription is already inactive.");
         }
@@ -133,6 +168,9 @@ public class AdminUserSubscriptionServiceImpl
         subscription.setCancelledAt(java.time.LocalDateTime.now());
 
         UserSubscription saved = repository.save(subscription);
+
+        profilePremiumSyncService.sync(saved.getUser(), saved);
+
         auditLogService.log(
                 currentAdminService.getCurrentAdmin().getId(),
                 "SUBSCRIPTION_MANAGEMENT",
@@ -143,9 +181,9 @@ public class AdminUserSubscriptionServiceImpl
                 "Status=" + oldStatus + ", Active=" + oldActive,
                 "Status=CANCELLED, Active=false, Reason=" + reason
         );
+
         return mapToResponse(saved);
     }
-
     @Override
     @Transactional
     public UserSubscriptionResponseDTO activateSubscription(Long id) {
@@ -153,6 +191,7 @@ public class AdminUserSubscriptionServiceImpl
         UserSubscription subscription = repository.findWithDetailsById(id)
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Subscription not found"));
+
         String oldStatus = subscription.getStatus();
         Boolean oldActive = subscription.getIsActive();
 
@@ -170,7 +209,11 @@ public class AdminUserSubscriptionServiceImpl
 
                         UserSubscription oldSubscription = repository.save(existing);
 
-                        // Audit previous subscription deactivation
+                        profilePremiumSyncService.sync(
+                                oldSubscription.getUser(),
+                                oldSubscription
+                        );
+
                         auditLogService.log(
                                 currentAdminService.getCurrentAdmin().getId(),
                                 "SUBSCRIPTION_MANAGEMENT",
@@ -189,13 +232,13 @@ public class AdminUserSubscriptionServiceImpl
         subscription.setIsActive(true);
         subscription.setStatus("ACTIVE");
 
-        // Clear cancellation details
         subscription.setCancellationReason(null);
         subscription.setCancelledAt(null);
 
         UserSubscription saved = repository.save(subscription);
 
-        // Audit activation
+        profilePremiumSyncService.sync(saved.getUser(), saved);
+
         auditLogService.log(
                 currentAdminService.getCurrentAdmin().getId(),
                 "SUBSCRIPTION_MANAGEMENT",
@@ -209,6 +252,7 @@ public class AdminUserSubscriptionServiceImpl
 
         return mapToResponse(saved);
     }
+
     @Override
     @Transactional
     public UserSubscriptionResponseDTO expireSubscription(Long id) {
@@ -216,21 +260,21 @@ public class AdminUserSubscriptionServiceImpl
         UserSubscription subscription = repository.findWithDetailsById(id)
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Subscription not found"));
+
         if ("EXPIRED".equalsIgnoreCase(subscription.getStatus())) {
             throw new BadRequestException("Subscription is already expired.");
         }
 
-        // Save old values for audit log
         String oldStatus = subscription.getStatus();
         Boolean oldActive = subscription.getIsActive();
 
-        // Expire subscription
         subscription.setIsActive(false);
         subscription.setStatus("EXPIRED");
 
         UserSubscription saved = repository.save(subscription);
 
-        // Audit Log
+        profilePremiumSyncService.sync(saved.getUser(), saved);
+
         auditLogService.log(
                 currentAdminService.getCurrentAdmin().getId(),
                 "SUBSCRIPTION_MANAGEMENT",
@@ -244,6 +288,7 @@ public class AdminUserSubscriptionServiceImpl
 
         return mapToResponse(saved);
     }
+
     @Override
     @Transactional
     public UserSubscriptionResponseDTO refundSubscription(
@@ -255,15 +300,14 @@ public class AdminUserSubscriptionServiceImpl
         UserSubscription subscription = repository.findWithDetailsById(id)
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Subscription not found"));
+
         if ("REFUNDED".equalsIgnoreCase(subscription.getStatus())) {
             throw new BadRequestException("Subscription is already refunded.");
         }
 
-        // Save old values for audit log
         String oldStatus = subscription.getStatus();
         Boolean oldActive = subscription.getIsActive();
 
-        // Refund subscription
         subscription.setIsActive(false);
         subscription.setStatus("REFUNDED");
         subscription.setRefundAmount(refundAmount);
@@ -272,7 +316,8 @@ public class AdminUserSubscriptionServiceImpl
 
         UserSubscription saved = repository.save(subscription);
 
-        // Audit Log
+        profilePremiumSyncService.sync(saved.getUser(), saved);
+
         auditLogService.log(
                 currentAdminService.getCurrentAdmin().getId(),
                 "SUBSCRIPTION_MANAGEMENT",
@@ -281,7 +326,8 @@ public class AdminUserSubscriptionServiceImpl
                 saved.getId(),
                 "Refunded subscription for user: " + saved.getUser().getFullName(),
                 "Status=" + oldStatus + ", Active=" + oldActive,
-                "Status=REFUNDED, Active=false, Refund Amount=" + refundAmount + ", Reason=" + refundReason
+                "Status=REFUNDED, Active=false, Refund Amount="
+                        + refundAmount + ", Reason=" + refundReason
         );
 
         return mapToResponse(saved);
@@ -299,5 +345,32 @@ public class AdminUserSubscriptionServiceImpl
                 .refundedStatus(repository.countByStatus("REFUNDED"))
                 .build();
     }
+    @Override
+    public List<UserSubscriptionResponseDTO> getUserSubscriptionHistory(Long userId) {
 
+        return repository
+                .findByUserId(userId)
+                .stream()
+                .map(subscription -> UserSubscriptionResponseDTO.builder()
+                        .id(subscription.getId())
+                        .userId(subscription.getUser().getId())
+                        .userName(subscription.getUser().getFullName())
+                        .planId(subscription.getSubscriptionPlan().getId())
+                        .planName(subscription.getSubscriptionPlan().getName())
+                        .startDate(subscription.getStartDate())
+                        .endDate(subscription.getEndDate())
+                        .status(subscription.getStatus())
+                        .isActive(subscription.getIsActive())
+                        .createdAt(subscription.getCreatedAt())
+                        .updatedAt(subscription.getUpdatedAt())
+                        .email(subscription.getUser().getEmail())
+                        .phone(subscription.getUser().getPhone())
+                        .imageUrl(
+                                subscription.getUser().getProfile() != null
+                                        ? subscription.getUser().getProfile().getImageUrl()
+                                        : null
+                        )
+                        .build())
+                .toList();
+    }
 }

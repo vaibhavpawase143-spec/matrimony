@@ -14,7 +14,7 @@ AdminController
 
 Base URL
 
-http://localhost:9090/api/admins
+https://localhost:9090/api/admins
 
 ============================================================
 API-01 ADMIN LOGIN

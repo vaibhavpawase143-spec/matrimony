@@ -12,7 +12,7 @@
 
 **Request:**
 ```http
-POST http://localhost:9090/api/users/register
+POST https://localhost:9090/api/users/register
 Content-Type: application/json
 ```
 
@@ -73,12 +73,12 @@ When you register, check the **IDE Console** output:
 
 **Request:**
 ```http
-POST http://localhost:9090/api/users/verify-otp?phone=%2B917666084107&otp=456789
+POST https://localhost:9090/api/users/verify-otp?phone=%2B917666084107&otp=456789
 ```
 
 Or without URL encoding:
 ```http
-POST http://localhost:9090/api/users/verify-otp?phone=+917666084107&otp=456789
+POST https://localhost:9090/api/users/verify-otp?phone=+917666084107&otp=456789
 ```
 
 **Where:**
@@ -111,7 +111,7 @@ Two options:
 
 Get the token from console output and use:
 ```http
-GET http://localhost:9090/api/users/verify?token=YOUR_EMAIL_TOKEN_HERE
+GET https://localhost:9090/api/users/verify?token=YOUR_EMAIL_TOKEN_HERE
 ```
 
 **Expected Response:**
@@ -131,7 +131,7 @@ GET http://localhost:9090/api/users/verify?token=YOUR_EMAIL_TOKEN_HERE
 
 **Request:**
 ```http
-POST http://localhost:9090/api/users/login
+POST https://localhost:9090/api/users/login
 Content-Type: application/json
 ```
 
@@ -158,7 +158,7 @@ Content-Type: application/json
 
 ### **Request 1: Register**
 ```
-POST http://localhost:9090/api/users/register
+POST https://localhost:9090/api/users/register
 Content-Type: application/json
 
 {
@@ -172,26 +172,26 @@ Content-Type: application/json
 
 ### **Request 2: Send OTP (Optional - Auto-sent in Register)**
 ```
-POST http://localhost:9090/api/users/send-otp?phone=%2B917666084107
+POST https://localhost:9090/api/users/send-otp?phone=%2B917666084107
 ```
 
 ### **Request 3: Verify OTP**
 ```
-POST http://localhost:9090/api/users/verify-otp?phone=%2B917666084107&otp=456789
+POST https://localhost:9090/api/users/verify-otp?phone=%2B917666084107&otp=456789
 ```
 
 Replace `456789` with the OTP from console!
 
 ### **Request 4: Verify Email**
 ```
-GET http://localhost:9090/api/users/verify?token=YOUR_EMAIL_TOKEN
+GET https://localhost:9090/api/users/verify?token=YOUR_EMAIL_TOKEN
 ```
 
 Get token from email link or console!
 
 ### **Request 5: Login**
 ```
-POST http://localhost:9090/api/users/login
+POST https://localhost:9090/api/users/login
 Content-Type: application/json
 
 {
@@ -207,7 +207,7 @@ Content-Type: application/json
 ### **1. Create New Request - Register**
 - Click **+ New Tab**
 - Select **POST**
-- URL: `http://localhost:9090/api/users/register`
+- URL: `https://localhost:9090/api/users/register`
 - Tab: **Body** → **raw** → **JSON**
 - Paste the register JSON
 - Click **Send**
@@ -222,7 +222,7 @@ Content-Type: application/json
 ### **3. Create New Request - Verify OTP**
 - Click **+ New Tab**
 - Select **POST**
-- URL: `http://localhost:9090/api/users/verify-otp?phone=%2B917666084107&otp=456789`
+- URL: `https://localhost:9090/api/users/verify-otp?phone=%2B917666084107&otp=456789`
 - Replace `456789` with your actual OTP from console
 - Click **Send**
 - ✅ Should get success response
@@ -235,7 +235,7 @@ Content-Type: application/json
 ### **5. Create New Request - Login**
 - Click **+ New Tab**
 - Select **POST**
-- URL: `http://localhost:9090/api/users/login`
+- URL: `https://localhost:9090/api/users/login`
 - Tab: **Body** → **raw** → **JSON**
 - Paste login JSON
 - Click **Send**
@@ -313,7 +313,7 @@ When you register with phone `+917666084107`, you'll see:
 
 ## **Quick Test Checklist**
 
-- [ ] Application running on `http://localhost:9090`
+- [ ] Application running on `https://localhost:9090`
 - [ ] IDE Console visible
 - [ ] Postman open
 - [ ] Phone ready to copy OTP from console
@@ -357,7 +357,7 @@ When you register with phone `+917666084107`, you'll see:
 Create variables for easier testing:
 
 ```
-BASE_URL: http://localhost:9090
+BASE_URL: https://localhost:9090
 PHONE: +917666084107
 EMAIL: vaibhav@example.com
 PASSWORD: password123

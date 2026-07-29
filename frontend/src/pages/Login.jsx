@@ -1,18 +1,24 @@
 import { Heart } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/components/Toast";
 import { useLoading } from "@/hooks/useLoading";
 import { useLanguage } from "@/context/LanguageContext.jsx";
 import { authAPI } from "@/services/api";
-
+import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
+import { trackEvent } from "@/utils/analytics";
 const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const redirectTo =
+      new URLSearchParams(location.search).get("redirect");
   const { login } = useAuth();
   const { success, error } = useToast();
   const { startLoading, stopLoading } = useLoading();
   const { t } = useLanguage();
+  const { executeRecaptcha } = useGoogleReCaptcha();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -53,25 +59,42 @@ const Login = () => {
     startLoading(t?.login?.messages?.loggingIn || "Logging in...");
 
     try {
+        if (!executeRecaptcha) {
+            error("reCAPTCHA is not ready.");
+            stopLoading();
+            return;
+        }
+
+        const recaptchaToken = await executeRecaptcha("login");
       // Call backend API (admin or user login)
-      const response = await authAPI.login({ email: email.trim(), password }, isAdmin);
-      
-      if (!response.success) {
-        throw new Error(response.message || 'Login failed');
-      }
+const response = await authAPI.login(
+    {
+        email: email.trim(),
+        password,
+        recaptchaToken
+    },
+    isAdmin
+);
+
+if (!response.success) {
+    throw new Error(response.message || "Login failed");
+}
 console.log("LOGIN RESPONSE", response);
 console.log("LOGIN DATA", response.data);
       // Try to get user profile after login
-  const userData = response.data;
-  const token = response.token;
-  const userRole = userData.role;
+const userData = response.data;
+const token = response.token;
+const userRole = response.role;
       login(userData, token, userRole);
+      trackEvent("user_login", {
+        login_type: isAdmin ? "admin" : "user",
+      });
       console.log("TOKEN =", localStorage.getItem("token"));
       console.log("ROLE =", localStorage.getItem("role"));
       console.log("USER =", localStorage.getItem("user"));
-     if (isAdmin) {
-         localStorage.setItem("adminRole", userData.role);
-     }
+  if (isAdmin) {
+      localStorage.setItem("adminRole", userRole);
+  }
       if (rememberMe) {
         localStorage.setItem("rememberedEmail", email.trim());
       } else {
@@ -85,14 +108,15 @@ console.log("LOGIN DATA", response.data);
       console.log("Before Navigation");
       console.log("isAdmin =", isAdmin);
 
-      if (isAdmin) {
-          console.log("Navigating to /admin");
-          navigate("/admin");
-      } else if (userData?.needsProfile) {
-          navigate("/profile/create");
-      } else {
-          navigate("/home");
-      }
+    if (isAdmin) {
+        navigate("/admin");
+    } else if (redirectTo) {
+        navigate(redirectTo);
+    } else if (userData?.needsProfile) {
+        navigate("/profile/create");
+    } else {
+        navigate("/home");
+    }
 
     } catch (err) {
       stopLoading();
@@ -141,7 +165,7 @@ console.log("LOGIN DATA", response.data);
                 : "bg-secondary text-secondary-foreground"
             }`}
           >
-            {isAdmin ? "User Login" : "User Login"}
+           {isAdmin ? "Admin Login" : "User Login"}
           </button>
         </div>
         <div className="text-center mb-6">

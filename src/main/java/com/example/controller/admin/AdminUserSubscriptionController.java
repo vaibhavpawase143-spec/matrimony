@@ -8,11 +8,13 @@ import com.example.service.AdminUserSubscriptionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/admin/subscriptions")
@@ -147,5 +149,14 @@ public class AdminUserSubscriptionController {
                 .build();
     }
 
+    @GetMapping("/user/{userId}")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    public ResponseEntity<List<UserSubscriptionResponseDTO>> getUserSubscriptionHistory(
+            @PathVariable Long userId) {
 
+        List<UserSubscriptionResponseDTO> history =
+                service.getUserSubscriptionHistory(userId);
+
+        return ResponseEntity.ok(history);
+    }
 }

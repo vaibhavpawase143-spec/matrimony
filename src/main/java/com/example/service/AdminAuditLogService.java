@@ -51,7 +51,12 @@ public interface AdminAuditLogService {
             int page,
             int size,
             String sortBy,
-            String direction
+            String direction,
+            String search,
+            String module,
+            String action,
+            Long adminId,
+            java.time.LocalDate fromDate,
+            java.time.LocalDate toDate
     );
-
 }

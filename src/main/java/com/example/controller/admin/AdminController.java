@@ -13,6 +13,7 @@ import com.example.model.RefreshToken;
 import com.example.security.JwtUtil;
 import com.example.service.AdminAuditLogService;
 import com.example.service.AdminService;
+import com.example.service.RecaptchaService;
 import com.example.service.RefreshTokenService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
@@ -35,9 +37,10 @@ public class AdminController {
     private final JwtUtil jwtUtil;
     private final RefreshTokenService refreshTokenService;
     private final AdminAuditLogService adminAuditLogService;
+    private final RecaptchaService recaptchaService;
     // ================= CREATE ADMIN =================
     @PostMapping
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('ADMIN_CREATE')")
     public ApiResponse<AdminResponseDTO> create(@Valid @RequestBody AdminRequestDTO dto) {
 
         Admin admin = new Admin();
@@ -73,12 +76,19 @@ public class AdminController {
     // ================= LOGIN =================
     @PostMapping("/login")
     public ApiResponse<Object> login(@Valid @RequestBody AdminLoginDTO dto) {
-
+        recaptchaService.verify(
+                dto.getRecaptchaToken(),
+                "login"
+        );
         Admin admin = adminService.login(dto.getEmail(), dto.getPassword());
+
+   // or adminRepository.save(admin)
 
         String accessToken = jwtUtil.generateToken(
                 admin.getEmail(),
-                List.of(admin.getRole().getName())
+                List.of(admin.getRole().getName()),
+                admin.getSessionId(),
+                "ADMIN"
         );
 
         RefreshToken refreshToken = refreshTokenService.createToken(admin.getEmail());
@@ -107,7 +117,7 @@ public class AdminController {
 
     // ================= GET ALL ADMINS =================
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('ADMIN_VIEW')")
     public ApiResponse<List<AdminResponseDTO>> getAllAdmins() {
 
         return ApiResponse.<List<AdminResponseDTO>>builder()
@@ -119,15 +129,24 @@ public class AdminController {
 
     // ================= GET ADMIN BY ID =================
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('ADMIN_VIEW')")
     public ApiResponse<AdminResponseDTO> getById(@PathVariable Long id) {
 
         AdminResponseDTO admin = adminService.getById(id); // ✅ FIX
 
         String loggedInEmail = getLoggedInEmail();
 
-        if (!admin.getEmail().equalsIgnoreCase(loggedInEmail)) {
-            throw new AccessDeniedException("You can only access your own data");
+        Admin loggedInAdmin = adminService.findByEmail(loggedInEmail);
+
+        boolean isSuperAdmin =
+                "ROLE_SUPER_ADMIN".equals(loggedInAdmin.getRole().getName());
+
+        if (!isSuperAdmin &&
+                !admin.getEmail().equalsIgnoreCase(loggedInEmail)) {
+
+            throw new AccessDeniedException(
+                    "You are not authorized"
+            );
         }
 
         return new ApiResponse<>(
@@ -139,7 +158,7 @@ public class AdminController {
 
     // ================= UPDATE ADMIN =================
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('ADMIN_EDIT')")
     public ApiResponse<AdminResponseDTO> update(@PathVariable Long id,@Valid
                                                 @RequestBody AdminRequestDTO dto) {
 
@@ -147,8 +166,18 @@ public class AdminController {
 
         String loggedInEmail = getLoggedInEmail();
 
-        if (!existing.getEmail().equalsIgnoreCase(loggedInEmail)) {
-            throw new AccessDeniedException("You can only update your own data");
+
+        Admin loggedInAdmin = adminService.findByEmail(loggedInEmail);
+
+        boolean isSuperAdmin =
+                "ROLE_SUPER_ADMIN".equals(loggedInAdmin.getRole().getName());
+
+        if (!isSuperAdmin &&
+                !existing.getEmail().equalsIgnoreCase(loggedInEmail)) {
+
+            throw new AccessDeniedException(
+                    "You are not authorized"
+            );
         }
 
         Admin updated = new Admin();
@@ -159,7 +188,7 @@ public class AdminController {
         updated.setPassword(dto.getPassword());
 
         Admin saved = adminService.update(id, updated);
-        Admin loggedInAdmin = adminService.findByEmail(getLoggedInEmail());
+
 
         adminAuditLogService.log(
                 loggedInAdmin.getId(),
@@ -182,7 +211,7 @@ public class AdminController {
 
     // ================= DELETE ADMIN =================
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('ADMIN_DELETE')")
     public ApiResponse<String> delete(@PathVariable Long id) {
 
         AdminResponseDTO adminToDelete = adminService.getById(id);
@@ -214,7 +243,8 @@ public class AdminController {
         String email = request.get("email");
 
         Admin admin = adminService.findByEmail(email);
-
+        admin.setSessionId(null);
+        adminService.save(admin);   // or adminRepository.save(admin)
         refreshTokenService.deleteByEmail(email);
 
         adminAuditLogService.log(
@@ -248,9 +278,10 @@ public class AdminController {
 
         String newAccessToken = jwtUtil.generateToken(
                 admin.getEmail(),
-                List.of(admin.getRole().getName())
+                List.of(admin.getRole().getName()),
+                admin.getSessionId(),
+                "ADMIN"
         );
-
         return new ApiResponse<>(true, "Token refreshed", newAccessToken);
     }
 
@@ -274,7 +305,7 @@ public class AdminController {
 //    }
 
     @GetMapping("/statistics")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('ADMIN_VIEW')")
     public ApiResponse<AdminStatsDTO> getStatistics() {
 
         return ApiResponse.<AdminStatsDTO>builder()
@@ -284,7 +315,7 @@ public class AdminController {
                 .build();
     }
     @GetMapping("/manage")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('ADMIN_VIEW')")
     public ApiResponse<Page<AdminResponseDTO>> getAllAdmins(
             @ModelAttribute AdminFilterDTO filter
     ) {
@@ -296,7 +327,7 @@ public class AdminController {
                 .build();
     }
     @PutMapping("/{id}/manage")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('ADMIN_EDIT')")
     public ApiResponse<AdminResponseDTO> updateAdmin(
             @PathVariable Long id,
             @Valid @RequestBody AdminUpdateDTO dto
@@ -309,7 +340,7 @@ public class AdminController {
                 .build();
     }
     @PutMapping("/{id}/activate")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('ADMIN_EDIT')")
     public ApiResponse<String> activateAdmin(
             @PathVariable Long id
     ) {
@@ -335,8 +366,21 @@ public class AdminController {
                 .data("Admin activated successfully")
                 .build();
     }
+    @PostMapping("/{id}/upload-photo")
+    @PreAuthorize("hasAuthority('ADMIN_EDIT')")
+    public ApiResponse<String> uploadAdminPhoto(
+            @PathVariable Long id,
+            @RequestParam("file") MultipartFile file
+    ) {
+
+        return ApiResponse.<String>builder()
+                .success(true)
+                .message("Admin photo uploaded successfully")
+                .data(adminService.uploadAdminPhoto(id, file))
+                .build();
+    }
     @PutMapping("/{id}/deactivate")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('ADMIN_EDIT')")
     public ApiResponse<String> deactivateAdmin(
             @PathVariable Long id
     ) {
@@ -363,7 +407,7 @@ public class AdminController {
                 .build();
     }
     @PutMapping("/{id}/reset-password")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('ADMIN_EDIT')")
     public ApiResponse<String> resetPassword(
             @PathVariable Long id,
             @Valid @RequestBody AdminResetPasswordDTO dto
@@ -391,5 +435,16 @@ public class AdminController {
                 .build();
     }
 
+    @GetMapping("/{id}/manage")
+    @PreAuthorize("hasAuthority('ADMIN_VIEW')")
+    public ApiResponse<AdminResponseDTO> getAdminForManagement(
+            @PathVariable Long id
+    ) {
 
+        return ApiResponse.<AdminResponseDTO>builder()
+                .success(true)
+                .message("Admin retrieved successfully")
+                .data(adminService.getById(id))
+                .build();
+    }
 }

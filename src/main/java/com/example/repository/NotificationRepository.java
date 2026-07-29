@@ -2,9 +2,11 @@ package com.example.repository;
 
 import com.example.model.Notification;
 import com.example.model.NotificationType;
+import io.lettuce.core.dynamic.annotation.Param;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -51,4 +53,30 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
             com.example.model.NotificationType type,
             Pageable pageable
     );
+    @Query("""
+    SELECT n
+    FROM Notification n
+    WHERE n.deleted = false
+      AND n.type IN :types
+    ORDER BY n.createdAt DESC
+""")
+    Page<Notification> findAdminNotifications(
+            @Param("types") List<NotificationType> types,
+            Pageable pageable
+    );
+
+    long countByTypeInAndDeletedFalseAndReadFalse(
+            List<NotificationType> types
+    );
+
+    List<Notification> findByTypeInAndDeletedFalseAndReadFalse(
+            List<NotificationType> types
+    );
+    long countByDeletedFalseAndReadFalse();
+    List<Notification> findByDeletedFalseAndReadFalse();
+    boolean existsBySubscriptionIdAndTitleAndDeletedFalse(
+            Long subscriptionId,
+            String title
+    );
+
 }

@@ -127,7 +127,7 @@ app.email.provider=sendgrid  # or mailgun, aws-ses, postmark
 ### 2. Test Email Sending
 ```bash
 # Use Postman to test
-POST http://localhost:9090/api/users/register
+POST https://localhost:9090/api/users/register
 
 {
   "firstName": "Test",

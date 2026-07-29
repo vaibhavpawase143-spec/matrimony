@@ -57,4 +57,8 @@ public class NotificationController {
         service.create(1L, 2L, NotificationType.REQUEST);
         return "Test notification created";
     }
+    @GetMapping("/{id}")
+    public Notification getById(@PathVariable Long id) {
+        return service.getById(id);
+    }
 }

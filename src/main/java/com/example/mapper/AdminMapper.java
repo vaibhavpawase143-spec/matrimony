@@ -19,7 +19,7 @@ public class AdminMapper {
         dto.setEmail(admin.getEmail());
         dto.setPhone(admin.getPhone());
         dto.setIsActive(admin.getIsActive());
-
+        dto.setProfilePhoto(admin.getProfilePhoto());
         // 🔥 ROLE FIX
         if (admin.getRole() != null) {
             dto.setRole(admin.getRole().getName());

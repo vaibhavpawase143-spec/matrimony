@@ -6,4 +6,5 @@ public interface CurrentAdminService {
 
     Admin getCurrentAdmin();
 
+    void save(Admin admin);
 }

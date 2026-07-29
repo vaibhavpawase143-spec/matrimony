@@ -3,9 +3,11 @@ package com.example.model;
 import jakarta.persistence.*;
 import lombok.*;
 
+
 import java.time.Instant;
 
 @Entity
+@Table(name = "refresh_token")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -20,7 +22,9 @@ public class RefreshToken {
     @Column(unique = true, nullable = false)
     private String token;
 
-    private Instant expiryDate;
+    @Column(unique = true, nullable = false)
+    private String email;
 
-    private String email; // keep simple (no need to change User now)
+    @Column(nullable = false)
+    private Instant expiryDate;
 }

@@ -1,0 +1,33 @@
+export const ADMIN_PERMISSIONS = {
+  ROLE_SUPER_ADMIN: {
+    dashboard: true,
+    users: true,
+    payments: true,
+    subscriptions: true,
+    notifications: true,
+    supportTickets: true,
+    reportedProfiles: true,
+    cmsPages: true,
+    faqs: true,
+    masterData: true,
+    auditLogs: true,
+     adminManagement: true,
+    profile: true,
+  },
+
+  ROLE_ADMIN: {
+    dashboard: true,
+    users: true,
+    payments: false,
+    subscriptions: true,
+    notifications: true,
+    supportTickets: true,
+    reportedProfiles: true,
+    cmsPages: true,
+    faqs: true,
+    masterData: false,
+    auditLogs: false,
+     adminManagement: false,
+    profile: true,
+  },
+};

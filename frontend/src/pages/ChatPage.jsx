@@ -48,7 +48,7 @@ function ChatPage() {
 
     await fetch(
 
-    `http://localhost:9090/api/chat/seen/${conversationId}`,
+    `https://localhost:9090/api/chat/seen/${conversationId}`,
 
     {
 

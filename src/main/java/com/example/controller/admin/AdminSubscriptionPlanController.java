@@ -23,7 +23,7 @@ public class AdminSubscriptionPlanController {
     // ================= STATISTICS =================
 
     @GetMapping("/statistics")
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('SUBSCRIPTION_VIEW')")
     public ApiResponse<SubscriptionPlanStatsDTO> getStatistics() {
 
         return new ApiResponse<>(
@@ -33,7 +33,7 @@ public class AdminSubscriptionPlanController {
         );
     }
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('SUBSCRIPTION_VIEW')")
     public ApiResponse<Page<SubscriptionPlanResponseDTO>> getAllPlans(
 
             @RequestParam(defaultValue = "0") int page,

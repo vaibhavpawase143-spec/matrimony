@@ -1,5 +1,6 @@
 package com.example.serviceimpl;
 
+import com.example.dto.request.AdminChangePasswordDTO;
 import com.example.dto.request.AdminFilterDTO;
 import com.example.dto.request.AdminResetPasswordDTO;
 import com.example.dto.request.AdminUpdateDTO;
@@ -14,6 +15,7 @@ import com.example.repository.RoleRepository;
 import com.example.repository.UserRepository;
 import com.example.service.AdminAuditLogService;
 import com.example.service.AdminService;
+import com.example.service.FileStorageService;
 import com.example.specification.AdminSpecification;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -25,9 +27,11 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -38,6 +42,7 @@ public class AdminServiceImpl implements AdminService {
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
     private final AdminAuditLogService auditLogService;
+    private final FileStorageService fileStorageService;
     // ================= CURRENT ADMIN =================
     private Admin getCurrentAdmin() {
 
@@ -95,7 +100,34 @@ public class AdminServiceImpl implements AdminService {
 
         return AdminMapper.toDTO(admin);
     }
+    @Override
+    @Transactional
+    public String uploadAdminPhoto(Long id, MultipartFile file) {
 
+        Admin admin = adminRepository.findByIdWithRole(id)
+                .orElseThrow(() -> new RuntimeException("Admin not found"));
+
+        String oldPhoto = admin.getProfilePhoto();
+
+        String fileName = fileStorageService.storeFile(file);
+
+        admin.setProfilePhoto("/uploads/" + fileName);
+
+        adminRepository.save(admin);
+
+        auditLogService.log(
+                getCurrentAdmin().getId(),
+                "ADMIN_MANAGEMENT",
+                "ADMIN_PHOTO_UPDATED",
+                "ADMIN",
+                admin.getId(),
+                "Updated profile photo of admin: " + admin.getName(),
+                oldPhoto,
+                admin.getProfilePhoto()
+        );
+
+        return admin.getProfilePhoto();
+    }
     // ================= GET ALL (DTO) =================
     @Override
     public List<AdminResponseDTO> getAll() {
@@ -105,7 +137,46 @@ public class AdminServiceImpl implements AdminService {
                 .map(AdminMapper::toDTO)
                 .toList();
     }
+    @Override
+    @Transactional
+    public void changeOwnPassword(AdminChangePasswordDTO dto) {
 
+        Admin currentAdmin = getCurrentAdmin();
+
+        // Verify current password
+        if (!passwordEncoder.matches(dto.getCurrentPassword(), currentAdmin.getPassword())) {
+            throw new RuntimeException("Current password is incorrect.");
+        }
+
+        // Validate new password confirmation
+        if (!dto.getNewPassword().equals(dto.getConfirmPassword())) {
+            throw new RuntimeException("New password and confirm password do not match.");
+        }
+
+        // Prevent using the same password
+        if (passwordEncoder.matches(dto.getNewPassword(), currentAdmin.getPassword())) {
+            throw new RuntimeException("New password must be different from the current password.");
+        }
+
+        // Update password
+        currentAdmin.setPassword(
+                passwordEncoder.encode(dto.getNewPassword())
+        );
+
+        adminRepository.save(currentAdmin);
+
+        // Audit Log
+        auditLogService.log(
+                currentAdmin.getId(),
+                "ADMIN_MANAGEMENT",
+                "PASSWORD_CHANGED",
+                "ADMIN",
+                currentAdmin.getId(),
+                "Admin changed own password.",
+                null,
+                null
+        );
+    }
     // ================= UPDATE =================
     @Override
     public Admin update(Long id, Admin updatedAdmin) {
@@ -166,9 +237,9 @@ public class AdminServiceImpl implements AdminService {
                 "ADMIN_DELETED",
                 "ADMIN",
                 targetAdmin.getId(),
-                "Deactivated admin account: " + targetAdmin.getName(),
-                "Active=true",
-                "Active=false"
+                "Soft deleted admin account: " + targetAdmin.getName(),
+                "Active",
+                "Deleted"
         );
     }
 
@@ -193,6 +264,9 @@ public class AdminServiceImpl implements AdminService {
 
         admin.setLastLogin(LocalDateTime.now());
 
+        String sessionId = UUID.randomUUID().toString();
+        admin.setSessionId(sessionId);
+
         return adminRepository.save(admin);
     }
 
@@ -201,7 +275,10 @@ public class AdminServiceImpl implements AdminService {
         return adminRepository.findByEmailWithRole(email)
                 .orElseThrow(() -> new RuntimeException("Admin not found"));
     }
-
+    @Override
+    public Admin save(Admin admin) {
+        return adminRepository.save(admin);
+    }
     @Override
     @Transactional(readOnly = true)
     public Page<AdminResponseDTO> getAllAdmins(AdminFilterDTO filter) {
@@ -341,8 +418,6 @@ public class AdminServiceImpl implements AdminService {
         // Prevent deleting the last active Super Admin
 
         admin.setIsActive(false);
-        admin.setDeletedBy(currentAdmin.getId());
-        admin.setDeletedAt(LocalDateTime.now());
 
         adminRepository.save(admin);
         auditLogService.log(
@@ -360,25 +435,52 @@ public class AdminServiceImpl implements AdminService {
     @Transactional
     public void resetPassword(Long id, AdminResetPasswordDTO dto) {
 
+        // Logged-in admin
+        Admin currentAdmin = getCurrentAdmin();
+
+        // Only Super Admin can reset passwords
+        if (!"ROLE_SUPER_ADMIN".equals(currentAdmin.getRole().getName())) {
+            throw new RuntimeException(
+                    "Only Super Admin can reset another admin's password."
+            );
+        }
+
+        // Target admin
         Admin admin = adminRepository.findByIdWithRole(id)
                 .orElseThrow(() -> new RuntimeException("Admin not found"));
 
-        if (!dto.getNewPassword().equals(dto.getConfirmPassword())) {
-            throw new RuntimeException("Passwords do not match");
+        // Super Admin cannot reset their own password
+        if (currentAdmin.getId().equals(admin.getId())) {
+            throw new RuntimeException(
+                    "Use Change Password to change your own password."
+            );
         }
 
-        admin.setPassword(
-                passwordEncoder.encode(dto.getNewPassword())
-        );
+        // Validate password confirmation
+        if (!dto.getNewPassword().equals(dto.getConfirmPassword())) {
+            throw new RuntimeException("Passwords do not match.");
+        }
+
+        // Prevent setting the same password
+        if (passwordEncoder.matches(dto.getNewPassword(), admin.getPassword())) {
+            throw new RuntimeException(
+                    "New password must be different from the current password."
+            );
+        }
+
+        // Encode and save password
+        admin.setPassword(passwordEncoder.encode(dto.getNewPassword()));
 
         adminRepository.save(admin);
+
+        // Audit log
         auditLogService.log(
-                getCurrentAdmin().getId(),
+                currentAdmin.getId(),
                 "ADMIN_MANAGEMENT",
                 "PASSWORD_RESET",
                 "ADMIN",
                 admin.getId(),
-                "Reset password for admin: " + admin.getName(),
+                "Super Admin reset password for admin: " + admin.getName(),
                 null,
                 null
         );

@@ -41,7 +41,9 @@ localStorage.getItem("user")
 
 const senderId =
 Number(
-currentUser.profile.userId
+currentUser?.userId ||
+currentUser?.id ||
+currentUser?.profile?.userId
 );
 
 console.log(

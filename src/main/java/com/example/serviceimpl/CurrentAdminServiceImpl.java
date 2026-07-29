@@ -25,4 +25,9 @@ public class CurrentAdminServiceImpl implements CurrentAdminService {
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Logged-in admin not found"));
     }
+
+    @Override
+    public void save(Admin admin) {
+        adminRepository.save(admin);
+    }
 }

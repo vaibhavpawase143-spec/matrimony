@@ -95,4 +95,6 @@ public class Admin {
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
+    @Column(name = "session_id")
+    private String sessionId;
 }

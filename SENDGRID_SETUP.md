@@ -53,7 +53,7 @@ app.email.from-name=Gathbandhan Matrimony
 ```bash
 # Restart your application
 # Test with Postman:
-POST http://localhost:9090/api/users/register
+POST https://localhost:9090/api/users/register
 
 {
   "firstName": "Test",

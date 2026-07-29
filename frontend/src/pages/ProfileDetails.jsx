@@ -136,6 +136,11 @@ const currentUser =
 JSON.parse(
   localStorage.getItem("user")
 );
+const currentUserId = Number(
+    currentUser?.userId ||
+    currentUser?.id ||
+    currentUser?.profile?.userId
+);
 const myProfile =
     await profileAPI.getProfile();
 
@@ -149,7 +154,7 @@ setIsPremiumUser(
     Boolean(myProfile.isPremium)
 );const blockedUsers =
 await blockAPI.getMyBlockedUsers(
-  currentUser.profile.userId
+currentUserId
 );
 
 const blockedIds =
@@ -231,7 +236,7 @@ const sentInterests =
 await interestAPI
 .getSentInterests(
 
-currentUser.profile.userId
+currentUserId
 
 );console.log(
   "SENT INTERESTS =",
@@ -323,94 +328,60 @@ const handleMessageClick = async () => {
 };
 
 const handleSendInterest = async () => {
-
   try {
+    const currentUser = JSON.parse(
+      localStorage.getItem("user") || "{}"
+    );
 
-    const currentUser =
-      JSON.parse(
-        localStorage.getItem("user")
-      );
-
-    if (!currentUser || !profile) {
-
+    if (!profile) {
       toast.error("User not found");
       return;
-
     }
 
-    const senderId =
-      Number(
-        currentUser.profile.userId
-      );
+    const senderId = Number(
+      currentUser?.userId ||
+      currentUser?.id ||
+      currentUser?.profile?.userId
+    );
+
+    console.log("CURRENT USER:", currentUser);
+    console.log("SENDER ID:", senderId);
+    console.log("RECEIVER ID:", profile.userId);
+
+    if (!senderId) {
+      toast.error("Current user ID not found");
+      return;
+    }
 
     if (interestSent) {
-
-      toast(
-        "Interest already sent ❤️"
-      );
-
+      toast("Interest already sent ❤️");
       return;
-
     }
 
-    const receiverId =
-      Number(profile.userId);
+    const receiverId = Number(profile.userId);
 
     if (senderId === receiverId) {
-
-      toast.error(
-        "You cannot send interest to yourself"
-      );
-
+      toast.error("You cannot send interest to yourself");
       return;
-
     }
 
-    await interestAPI.sendInterest(
-      senderId,
-      receiverId
-    );
+    await interestAPI.sendInterest(senderId, receiverId);
 
     setInterestSent(true);
 
-    toast.success(
-      "Interest Sent Successfully ❤️"
-    );
+    toast.success("Interest Sent Successfully ❤️");
+  } catch (err) {
+    console.log(err);
 
-}catch(err){
+    if (err?.message?.includes("Daily limit reached")) {
+      toast.error(
+        "Daily limit reached.\nUpgrade to Premium for unlimited interests."
+      );
+      return;
+    }
 
-console.log(err);
-
-if(
-
-err?.message?.includes(
-
-"Daily limit reached"
-
-)
-
-){
-
-toast.error(
-
-"Daily limit reached.\nUpgrade to Premium for unlimited interests."
-
-);
-
-return;
-
-}
-
-toast.error(
-
-err?.message ||
-
-"Failed"
-
-);
-
-}
-
+    toast.error(err?.message || "Failed");
+  }
 };
 if (blockedProfile) {
 

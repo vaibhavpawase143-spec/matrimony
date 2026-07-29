@@ -21,7 +21,7 @@ public class CmsPageController {
     // ================= CREATE =================
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('CMS_MANAGE')")
     public ApiResponse<CmsPageResponseDTO> create(
             @Valid @RequestBody CmsPageRequestDTO dto
     ) {
@@ -36,7 +36,7 @@ public class CmsPageController {
     // ================= UPDATE =================
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('CMS_MANAGE')")
     public ApiResponse<CmsPageResponseDTO> update(
             @PathVariable Long id,
             @Valid @RequestBody CmsPageRequestDTO dto
@@ -52,7 +52,7 @@ public class CmsPageController {
     // ================= GET BY ID =================
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('CMS_MANAGE')")
     public ApiResponse<CmsPageResponseDTO> getById(
             @PathVariable Long id
     ) {
@@ -67,7 +67,7 @@ public class CmsPageController {
     // ================= GET ALL =================
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('CMS_MANAGE')")
     public ApiResponse<List<CmsPageResponseDTO>> getAll() {
 
         return new ApiResponse<>(
@@ -80,7 +80,7 @@ public class CmsPageController {
     // ================= PUBLISH =================
 
     @PatchMapping("/{id}/publish")
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('CMS_MANAGE')")
     public ApiResponse<String> publish(
             @PathVariable Long id
     ) {
@@ -97,7 +97,7 @@ public class CmsPageController {
     // ================= UNPUBLISH =================
 
     @PatchMapping("/{id}/unpublish")
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('CMS_MANAGE')")
     public ApiResponse<String> unpublish(
             @PathVariable Long id
     ) {
@@ -114,7 +114,7 @@ public class CmsPageController {
     // ================= DELETE =================
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('CMS_MANAGE')")
     public ApiResponse<String> delete(
             @PathVariable Long id
     ) {

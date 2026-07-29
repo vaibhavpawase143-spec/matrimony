@@ -3282,8 +3282,7 @@ value={city.id || city.cityId}
           sm.smokingStatus ||
 
           sm.smokingPreference ||
-
-          sm.type ||
+sm.type ||
 
           sm.name ||
 

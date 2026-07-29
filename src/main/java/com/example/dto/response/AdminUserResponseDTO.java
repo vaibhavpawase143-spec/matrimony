@@ -3,6 +3,7 @@ package com.example.dto.response;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 public class AdminUserResponseDTO {
@@ -44,7 +45,7 @@ public class AdminUserResponseDTO {
     private Boolean deleted;
 
     private Boolean profileCompleted;
-
+    private List<UserPhotoResponseDTO> photos;
     // ================= VERIFICATION =================
 
     private Boolean emailVerified;

@@ -1,7 +1,7 @@
 // API Client for React Frontend
 // Place this in your React project's src/utils/api.js or src/services/api.js
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:9090';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://localhost:9090';
 
 class ApiClient {
   constructor() {

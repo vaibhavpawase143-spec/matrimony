@@ -29,7 +29,9 @@ const Matches = () => {
       );
 
       const userId = Number(
-        currentUser.profile.userId
+        currentUser?.userId ||
+currentUser?.id ||
+currentUser?.profile?.userId
       );
 
       const response = await matchAPI.getTopMatches(userId, 50);

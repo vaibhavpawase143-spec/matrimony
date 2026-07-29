@@ -81,12 +81,23 @@ const Account = () => {
                 {userDetails.accountType}
               </p>
             </div>
-            <button
-              onClick={() => navigate("/upgrade")}
-              className="px-4 py-2 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors"
-            >
-              Upgrade Plan
-            </button>
+            <div className="flex flex-wrap gap-3">
+
+              <button
+                onClick={() => navigate("/subscription-history")}
+                className="px-4 py-2 rounded-lg border border-primary text-primary font-medium hover:bg-primary hover:text-primary-foreground transition-colors"
+              >
+                Subscription History
+              </button>
+
+              <button
+                onClick={() => navigate("/upgrade")}
+                className="px-4 py-2 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors"
+              >
+                Upgrade Plan
+              </button>
+
+            </div>
           </div>
 
           <div className="grid sm:grid-cols-3 gap-3">

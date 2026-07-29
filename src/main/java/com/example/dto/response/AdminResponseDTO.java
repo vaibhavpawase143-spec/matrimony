@@ -1,7 +1,11 @@
 package com.example.dto.response;
 
-import java.time.LocalDateTime;
+import lombok.Getter;
+import lombok.Setter;
 
+import java.time.LocalDateTime;
+@Getter
+@Setter
 public class AdminResponseDTO {
 
     private Long id;
@@ -11,6 +15,7 @@ public class AdminResponseDTO {
     private String phone;
     private Boolean isActive;
 
+    private String profilePhoto;
     // 🔥 NEW FIELD
     private String role;
 

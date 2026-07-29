@@ -71,7 +71,14 @@ public class Role {
             isActive = true;
         }
     }
-
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "role_permissions",
+            joinColumns = @JoinColumn(name = "role_id"),
+            inverseJoinColumns = @JoinColumn(name = "permission_id")
+    )
+    @Builder.Default
+    private Set<Permission> permissions = new HashSet<>();
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();

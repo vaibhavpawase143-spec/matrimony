@@ -36,10 +36,10 @@ const ProfileCard = ({ profile, onSendInterest, onSave, isSaved = false, isInter
   const getImageUrl = () => {
     if (imageError) return defaultProfile;
     if (profile.imageUrl) {
-      return profile.imageUrl.startsWith('http') ? profile.imageUrl : `http://localhost:9090${profile.imageUrl}`;
+      return profile.imageUrl.startsWith('http') ? profile.imageUrl : `https://localhost:9090${profile.imageUrl}`;
     }
     if (profile.profilePhotoUrl) {
-      return profile.profilePhotoUrl.startsWith('http') ? profile.profilePhotoUrl : `http://localhost:9090${profile.profilePhotoUrl}`;
+      return profile.profilePhotoUrl.startsWith('http') ? profile.profilePhotoUrl : `https://localhost:9090${profile.profilePhotoUrl}`;
     }
     return defaultProfile;
   };
@@ -136,7 +136,7 @@ const ProfileCard = ({ profile, onSendInterest, onSave, isSaved = false, isInter
         <div className="flex gap-2 mt-auto">
           {/* View Profile */}
           <Link
-            to={`/profile/${profile.id}`}
+           to={`/profile/${profile.userId}`}
             className="flex-1 flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white text-sm font-semibold py-2.5 rounded-lg transition-colors"
           >
             <User className="h-4 w-4" />

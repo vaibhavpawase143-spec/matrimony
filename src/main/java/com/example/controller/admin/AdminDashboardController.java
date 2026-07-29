@@ -17,7 +17,7 @@ public class AdminDashboardController {
     private final AdminDashboardService service;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('ADMIN_VIEW')")
     public ApiResponse<AdminDashboardDTO> getDashboardOverview() {
 
         return ApiResponse.<AdminDashboardDTO>builder()

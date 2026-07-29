@@ -56,11 +56,11 @@ public class AdminUserMapper {
 
             dto.setProfileCompleted(profile.getProfileCompleted());
 
-            dto.setPremium(profile.getIsPremium());
-
-            if (profile.getPremiumPlan() != null) {
-                dto.setPremiumPlan(profile.getPremiumPlan().name());
-            }
+//            dto.setPremium(profile.getIsPremium());
+//
+//            if (profile.getPremiumPlan() != null) {
+//                dto.setPremiumPlan(profile.getPremiumPlan().name());
+//            }
 
             if (profile.getGender() != null) {
                 dto.setGender(profile.getGender().getName());

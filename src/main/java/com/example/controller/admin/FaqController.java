@@ -21,7 +21,7 @@ public class FaqController {
     // ================= CREATE =================
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('FAQ_MANAGE')")
     public ApiResponse<FaqResponseDTO> create(
             @Valid @RequestBody FaqRequestDTO dto
     ) {
@@ -36,7 +36,7 @@ public class FaqController {
     // ================= UPDATE =================
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('FAQ_MANAGE')")
     public ApiResponse<FaqResponseDTO> update(
             @PathVariable Long id,
             @Valid @RequestBody FaqRequestDTO dto
@@ -52,7 +52,7 @@ public class FaqController {
     // ================= GET BY ID =================
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('FAQ_MANAGE')")
     public ApiResponse<FaqResponseDTO> getById(
             @PathVariable Long id
     ) {
@@ -67,7 +67,7 @@ public class FaqController {
     // ================= GET ALL =================
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('FAQ_MANAGE')")
     public ApiResponse<List<FaqResponseDTO>> getAll() {
 
         return new ApiResponse<>(
@@ -80,7 +80,7 @@ public class FaqController {
     // ================= PUBLISH =================
 
     @PatchMapping("/{id}/publish")
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('FAQ_MANAGE')")
     public ApiResponse<String> publish(
             @PathVariable Long id
     ) {
@@ -97,7 +97,7 @@ public class FaqController {
     // ================= UNPUBLISH =================
 
     @PatchMapping("/{id}/unpublish")
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('FAQ_MANAGE')")
     public ApiResponse<String> unpublish(
             @PathVariable Long id
     ) {
@@ -114,7 +114,7 @@ public class FaqController {
     // ================= DELETE =================
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('FAQ_MANAGE')")
     public ApiResponse<String> delete(
             @PathVariable Long id
     ) {

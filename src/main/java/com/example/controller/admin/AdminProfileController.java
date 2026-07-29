@@ -4,11 +4,15 @@ import com.example.dto.request.AdminProfileUpdateDTO;
 import com.example.dto.request.ChangePasswordDTO;
 import com.example.dto.response.AdminProfileResponseDTO;
 import com.example.dto.response.ApiResponse;
+import com.example.model.Admin;
 import com.example.service.AdminProfileService;
+import com.example.service.CurrentAdminService;
+import com.example.service.FileStorageService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/admin/profile")
@@ -17,7 +21,8 @@ import org.springframework.web.bind.annotation.*;
 public class AdminProfileController {
 
     private final AdminProfileService adminProfileService;
-
+    private final FileStorageService fileStorageService;
+    private final CurrentAdminService currentAdminService;
     // ==========================================
     // GET PROFILE
     // ==========================================
@@ -61,6 +66,25 @@ public class AdminProfileController {
                 .success(true)
                 .message("Password changed successfully")
                 .data("Password updated successfully")
+                .build();
+    }
+    @PostMapping("/upload-photo")
+    public ApiResponse<String> uploadPhoto(
+            @RequestParam("file") MultipartFile file
+    ) {
+
+        Admin admin = currentAdminService.getCurrentAdmin();
+
+        String fileName = fileStorageService.storeFile(file);
+
+        admin.setProfilePhoto("/uploads/" + fileName);
+
+        currentAdminService.save(admin);
+
+        return ApiResponse.<String>builder()
+                .success(true)
+                .message("Photo uploaded successfully")
+                .data(admin.getProfilePhoto())
                 .build();
     }
 }

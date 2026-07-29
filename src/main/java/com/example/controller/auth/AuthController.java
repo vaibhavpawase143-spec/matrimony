@@ -5,6 +5,7 @@ import com.example.dto.request.UserLoginRequestDTO;
 import com.example.dto.request.UserRegisterRequestDTO;
 import com.example.dto.response.ApiResponse;
 import com.example.dto.response.LoginResponse;
+import com.example.service.RecaptchaService;
 import com.example.service.RefreshTokenService;
 import com.example.service.UserService;
 import jakarta.servlet.http.HttpServletResponse;
@@ -14,7 +15,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -24,7 +24,7 @@ public class AuthController {
 
     private final UserService userService;
     private final RefreshTokenService refreshTokenService;
-
+    private final RecaptchaService recaptchaService;
     // ================= STEP 1: SEND VERIFICATION =================
     @PostMapping("/send-verification")
     public ApiResponse<String> sendVerification(@RequestParam String email) {
@@ -78,6 +78,11 @@ public class AuthController {
     @PostMapping("/register")
     public ApiResponse<String> register(@Valid @RequestBody UserRegisterRequestDTO request) {
 
+        recaptchaService.verify(
+                request.getRecaptchaToken(),
+                "register"
+        );
+
         userService.register(request);
 
         return ApiResponse.<String>builder()
@@ -90,7 +95,11 @@ public class AuthController {
     // ================= LOGIN =================
     @PostMapping("/login")
     public ApiResponse<LoginResponse> login(@Valid @RequestBody UserLoginRequestDTO request) {
-
+        recaptchaService.verify(
+                request.getRecaptchaToken(),
+                "login"
+        );
+        System.out.println("========== LOGIN CONTROLLER ==========");
         LoginResponse loginResponse = userService.loginWithProfile(
                 request.getEmail(),
                 request.getPassword()

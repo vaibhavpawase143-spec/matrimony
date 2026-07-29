@@ -3,11 +3,14 @@ package com.example.serviceimpl;
 import com.example.dto.request.UserFilterDTO;
 import com.example.dto.response.AdminUserResponseDTO;
 import com.example.dto.response.AdminUserStatsDTO;
+import com.example.dto.response.UserPhotoResponseDTO;
 import com.example.exception.ResourceNotFoundException;
 import com.example.mapper.AdminUserMapper;
 import com.example.model.Admin;
 import com.example.model.User;
+import com.example.repository.UserPhotoRepository;
 import com.example.repository.UserRepository;
+import com.example.repository.UserSubscriptionRepository;
 import com.example.service.AdminAuditLogService;
 import com.example.service.AdminUserService;
 import com.example.service.CurrentAdminService;
@@ -36,7 +39,8 @@ public class AdminUserServiceImpl implements AdminUserService {
 
     private final UserRepository userRepository;
     private final AdminAuditLogService adminAuditLogService;
-
+    private final UserSubscriptionRepository userSubscriptionRepository;
+    private final UserPhotoRepository userPhotoRepository;
     private final CurrentAdminService currentAdminService;
     @Override
     @Transactional
@@ -57,22 +61,71 @@ public class AdminUserServiceImpl implements AdminUserService {
         return userRepository.findAll(
                 UserSpecification.getUsers(filter),
                 pageable
-        ).map(AdminUserMapper::toDTO);
+        ).map(user -> {
+
+            AdminUserResponseDTO dto = AdminUserMapper.toDTO(user);
+
+            userSubscriptionRepository
+                    .findByUserIdAndIsActiveTrue(user.getId())
+                    .ifPresentOrElse(subscription -> {
+                        dto.setPremium(true);
+                        dto.setPremiumPlan(subscription.getSubscriptionPlan().getName());
+                    }, () -> {
+                        dto.setPremium(false);
+                        dto.setPremiumPlan("Free Plan");
+                    });
+
+            return dto;
+        });
     }
 
 
     @Override
     @Transactional(readOnly = true)
+
     public AdminUserResponseDTO getUserById(Long id) {
 
         User user = userRepository
                 .findByIdWithProfile(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        return AdminUserMapper.toDTO(user);
+        AdminUserResponseDTO dto = AdminUserMapper.toDTO(user);
+        userSubscriptionRepository
+                .findByUserIdAndIsActiveTrue(user.getId())
+                .ifPresentOrElse(subscription -> {
+
+                    dto.setPremium(true);
+
+                    dto.setPremiumPlan(
+                            subscription.getSubscriptionPlan().getName()
+                    );
+
+                }, () -> {
+
+                    dto.setPremium(false);
+
+                    dto.setPremiumPlan("Free Plan");
+
+                });
+
+        List<UserPhotoResponseDTO> photos = userPhotoRepository
+                .findByUserId(user.getId())
+                .stream()
+                .map(photo -> UserPhotoResponseDTO.builder()
+                        .id(photo.getId())
+                        .userId(user.getId())
+                        .userName(user.getFullName())
+                        .photoType(photo.getPhotoType())
+                        .photoUrl(photo.getPhotoUrl())
+                        .createdAt(photo.getCreatedAt())
+                        .updatedAt(photo.getUpdatedAt())
+                        .build())
+                .toList();
+
+        dto.setPhotos(photos);
+
+        return dto;
     }
-
     @Override
     @Transactional(readOnly = true)
     public List<AdminUserResponseDTO> getActiveUsers() {
@@ -92,9 +145,26 @@ public class AdminUserServiceImpl implements AdminUserService {
 
         return userRepository.findAll(UserSpecification.getUsers(filter))
                 .stream()
-                .map(AdminUserMapper::toDTO)
+                .map(user -> {
+
+                    AdminUserResponseDTO dto = AdminUserMapper.toDTO(user);
+
+                    userSubscriptionRepository
+                            .findByUserIdAndIsActiveTrue(user.getId())
+                            .ifPresentOrElse(subscription -> {
+                                dto.setPremium(true);
+                                dto.setPremiumPlan(subscription.getSubscriptionPlan().getName());
+                            }, () -> {
+                                dto.setPremium(false);
+                                dto.setPremiumPlan("Free Plan");
+                            });
+
+                    return dto;
+                })
                 .toList();
     }
+
+
     @Override
     public AdminUserResponseDTO activateUser(Long id) {
 

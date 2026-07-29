@@ -14,7 +14,7 @@ AdminReportController
 
 Base URL
 
-http://localhost:9090/api/admin/reports
+https://localhost:9090/api/admin/reports
 
 ============================================================
 API-01 GET ALL REPORTS

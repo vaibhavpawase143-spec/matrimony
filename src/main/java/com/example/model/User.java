@@ -123,4 +123,6 @@ public class User extends Auditable {
         this.id = userId;
 
     }
+    @Column(name = "session_id")
+    private String sessionId;
 }

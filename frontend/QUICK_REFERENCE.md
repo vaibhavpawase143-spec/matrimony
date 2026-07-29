@@ -10,7 +10,7 @@
 
 ### **1️⃣ Register (Postman)**
 ```
-POST http://localhost:9090/api/users/register
+POST https://localhost:9090/api/users/register
 
 {
   "firstName": "Vaibhav",
@@ -30,7 +30,7 @@ Copy: 456789
 
 ### **3️⃣ Verify OTP (Postman)**
 ```
-POST http://localhost:9090/api/users/verify-otp?phone=%2B917666084107&otp=456789
+POST https://localhost:9090/api/users/verify-otp?phone=%2B917666084107&otp=456789
 ```
 Replace `456789` with your actual OTP
 
@@ -40,7 +40,7 @@ Replace `456789` with your actual OTP
 
 ### **5️⃣ Login (Postman)**
 ```
-POST http://localhost:9090/api/users/login
+POST https://localhost:9090/api/users/login
 
 {
   "email": "vaibhav@example.com",

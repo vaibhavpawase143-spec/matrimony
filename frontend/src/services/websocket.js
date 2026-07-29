@@ -31,7 +31,7 @@ const token = localStorage.getItem(
 
 const socket = new SockJS(
 
-`http://localhost:9090/ws?token=${token}`,
+`https://localhost:9090/ws?token=${token}`,
 
 null,
 
@@ -158,7 +158,7 @@ client.subscribe(
 
        if (client && client.connected) {
 
-           fetch("http://localhost:9090/api/heartbeat", {
+           fetch("https://localhost:9090/api/heartbeat", {
                method: "POST",
                headers: {
                    "Authorization": `Bearer ${token}`

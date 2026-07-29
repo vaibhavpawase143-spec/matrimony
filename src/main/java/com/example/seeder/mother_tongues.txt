@@ -1,0 +1,12 @@
+Marathi
+Hindi
+Gujarati
+Punjabi
+Tamil
+Telugu
+Kannada
+Malayalam
+Bengali
+Odia
+Urdu
+English

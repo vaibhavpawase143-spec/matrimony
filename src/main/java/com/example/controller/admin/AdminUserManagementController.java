@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -26,7 +27,7 @@ public class AdminUserManagementController {
 
     // ================= GET USERS =================
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('USER_VIEW')")
     public ApiResponse<Page<AdminUserResponseDTO>> getAllUsers(
 
             @RequestParam(defaultValue = "0") int page,
@@ -48,6 +49,21 @@ public class AdminUserManagementController {
             @RequestParam(required = false) Boolean emailVerified,
 
             @RequestParam(required = false) Boolean phoneVerified,
+            @RequestParam(required = false) Long genderId,
+            @RequestParam(required = false) Long religionId,
+            @RequestParam(required = false) Long casteId,
+            @RequestParam(required = false) Long subCasteId,
+            @RequestParam(required = false) Long countryId,
+            @RequestParam(required = false) Long stateId,
+            @RequestParam(required = false) Long cityId,
+            @RequestParam(required = false) Long maritalStatusId,
+            @RequestParam(required = false) Long educationLevelId,
+            @RequestParam(required = false) Long occupationId,
+            @RequestParam(required = false) Boolean isPremium,
+            @RequestParam(required = false) Integer minAge,
+            @RequestParam(required = false) Integer maxAge,
+            @RequestParam(required = false) LocalDate registeredFrom,
+            @RequestParam(required = false) LocalDate registeredTo,
 
             @RequestParam(required = false) String role
     ) {
@@ -61,7 +77,21 @@ public class AdminUserManagementController {
         filter.setEmailVerified(emailVerified);
         filter.setPhoneVerified(phoneVerified);
         filter.setRole(role);
-
+        filter.setGenderId(genderId);
+        filter.setReligionId(religionId);
+        filter.setCasteId(casteId);
+        filter.setSubCasteId(subCasteId);
+        filter.setCountryId(countryId);
+        filter.setStateId(stateId);
+        filter.setCityId(cityId);
+        filter.setMaritalStatusId(maritalStatusId);
+        filter.setEducationLevelId(educationLevelId);
+        filter.setOccupationId(occupationId);
+        filter.setIsPremium(isPremium);
+        filter.setMinAge(minAge);
+        filter.setMaxAge(maxAge);
+        filter.setRegisteredFrom(registeredFrom);
+        filter.setRegisteredTo(registeredTo);
         return new ApiResponse<>(
                 true,
                 "All users retrieved",
@@ -76,7 +106,7 @@ public class AdminUserManagementController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('USER_VIEW')")
     public ApiResponse<AdminUserResponseDTO> getUserById(
             @PathVariable Long id
     ) {
@@ -89,7 +119,7 @@ public class AdminUserManagementController {
     }
 
     @GetMapping("/active")
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('USER_VIEW')")
     public ApiResponse<List<AdminUserResponseDTO>> getActiveUsers() {
 
         return new ApiResponse<>(
@@ -100,7 +130,7 @@ public class AdminUserManagementController {
     }
 
     @GetMapping("/search")
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('USER_VIEW')")
     public ApiResponse<List<AdminUserResponseDTO>> searchUsers(
             @RequestParam String keyword
     ) {
@@ -115,7 +145,7 @@ public class AdminUserManagementController {
     // ================= USER MANAGEMENT =================
 
     @PutMapping("/{id}/activate")
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('USER_EDIT')")
     public ApiResponse<AdminUserResponseDTO> activateUser(
             @PathVariable Long id
     ) {
@@ -128,7 +158,7 @@ public class AdminUserManagementController {
     }
 
     @PutMapping("/{id}/deactivate")
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('USER_EDIT')")
     public ApiResponse<AdminUserResponseDTO> deactivateUser(
             @PathVariable Long id
     ) {
@@ -141,7 +171,7 @@ public class AdminUserManagementController {
     }
 
     @PutMapping("/{id}/verify-email")
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('USER_VERIFY')")
     public ApiResponse<AdminUserResponseDTO> verifyUserEmail(
             @PathVariable Long id
     ) {
@@ -154,7 +184,7 @@ public class AdminUserManagementController {
     }
 
     @PutMapping("/{id}/verify-phone")
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('USER_VERIFY')")
     public ApiResponse<AdminUserResponseDTO> verifyUserPhone(
             @PathVariable Long id
     ) {
@@ -167,7 +197,7 @@ public class AdminUserManagementController {
     }
 
     @PutMapping("/{id}/block")
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('USER_BLOCK')")
     public ApiResponse<AdminUserResponseDTO> blockUser(
             @PathVariable Long id
     ) {
@@ -180,7 +210,7 @@ public class AdminUserManagementController {
     }
 
     @PutMapping("/{id}/unblock")
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('USER_BLOCK')")
     public ApiResponse<AdminUserResponseDTO> unblockUser(
             @PathVariable Long id
     ) {
@@ -195,7 +225,7 @@ public class AdminUserManagementController {
     // ================= SUPER ADMIN ONLY =================
 
     @PutMapping("/{id}/soft-delete")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('USER_DELETE')")
     public ApiResponse<String> softDeleteUser(
             @PathVariable Long id
     ) {
@@ -210,7 +240,7 @@ public class AdminUserManagementController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('USER_DELETE')")
     public ApiResponse<String> deleteUser(
             @PathVariable Long id
     ) {
@@ -225,7 +255,7 @@ public class AdminUserManagementController {
     }
 
     @GetMapping("/export")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('REPORT_EXPORT')")
     public ResponseEntity<String> exportUsers() {
 
         return ResponseEntity.ok("Export functionality coming soon");
@@ -234,7 +264,7 @@ public class AdminUserManagementController {
     // ================= STATISTICS =================
 
     @GetMapping("/stats")
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('USER_VIEW')")
     public ApiResponse<AdminUserStatsDTO> getUserStatistics() {
 
         return new ApiResponse<>(
@@ -244,7 +274,7 @@ public class AdminUserManagementController {
         );
     }
     @PutMapping("/bulk/activate")
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('USER_EDIT')")
     public ApiResponse<String> bulkActivateUsers(
             @Valid @RequestBody BulkUserActionRequestDTO request
     ) {
@@ -258,7 +288,7 @@ public class AdminUserManagementController {
         );
     }
     @PutMapping("/bulk/block")
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('USER_BLOCK')")
     public ApiResponse<String> bulkBlockUsers(
             @Valid @RequestBody BulkUserActionRequestDTO request
     ) {
@@ -272,7 +302,7 @@ public class AdminUserManagementController {
         );
     }
     @PutMapping("/bulk/unblock")
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('USER_BLOCK')")
     public ApiResponse<String> bulkUnblockUsers(
             @Valid @RequestBody BulkUserActionRequestDTO request
     ) {
@@ -286,7 +316,7 @@ public class AdminUserManagementController {
         );
     }
     @PutMapping("/bulk/soft-delete")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('USER_DELETE')")
     public ApiResponse<String> bulkSoftDeleteUsers(
             @Valid @RequestBody BulkUserActionRequestDTO request
     ) {
@@ -300,7 +330,7 @@ public class AdminUserManagementController {
         );
     }
     @PutMapping("/{id}/restore")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('USER_EDIT')")
     public ApiResponse<AdminUserResponseDTO> restoreUser(
             @PathVariable Long id
     ) {
@@ -312,7 +342,7 @@ public class AdminUserManagementController {
         );
     }
     @GetMapping("/export/csv")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('REPORT_EXPORT')")
     public ResponseEntity<byte[]> exportUsersToCsv() {
 
         byte[] csvData = adminUserService.exportUsersToCsv();
@@ -329,7 +359,7 @@ public class AdminUserManagementController {
                 .body(csvData);
     }
     @GetMapping("/export/excel")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('REPORT_EXPORT')")
     public ResponseEntity<byte[]> exportUsersToExcel() {
 
         byte[] excelData = adminUserService.exportUsersToExcel();
