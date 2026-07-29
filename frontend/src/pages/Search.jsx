@@ -308,7 +308,9 @@ const currentUser =
 
 const blockedUsers =
   await blockAPI.getMyBlockedUsers(
-    currentUser.profile.userId
+    currentUser?.userId ||
+currentUser?.id ||
+currentUser?.profile?.userId
   );
 
 const blockedIds =
@@ -331,7 +333,9 @@ const filteredResults =
       &&
 
       profile.userId !==
-      currentUser.profile.userId
+      currentUser?.userId ||
+currentUser?.id ||
+currentUser?.profile?.userId
 
   );
 

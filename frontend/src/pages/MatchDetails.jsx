@@ -19,7 +19,9 @@ const MatchDetails = () => {
   const loadDetails = async () => {
     try {
       const currentUser = JSON.parse(localStorage.getItem("user"));
-      const userId = currentUser.profile.userId;
+      const userId = currentUser?.userId ||
+currentUser?.id ||
+currentUser?.profile?.userId;
 
       const response = await matchAPI.getMatchDetails(userId, partnerId);
 
