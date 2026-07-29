@@ -13,11 +13,13 @@ export async function loginAdmin({
     }),
   });
 
- const result = response.data || response;
+const result = response;
 
- console.log("ADMIN LOGIN RESPONSE:", result);
+if (!result.success) {
+  throw new Error(result.message || "Login failed.");
+}
 
- const data = result.data || result;
+const data = result.data;
 
   localStorage.setItem("adminToken", data.accessToken);
   localStorage.setItem("adminRefreshToken", data.refreshToken);

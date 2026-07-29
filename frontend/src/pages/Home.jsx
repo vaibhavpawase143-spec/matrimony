@@ -307,29 +307,33 @@ const calculateAge = (dob) => {
 
 
   // Load real profiles from API
-  useEffect(() => {
+ useEffect(() => {
+     console.log("===== PROFILE DATA =====");
+     console.log(profileData);
 
-  if(profileData?.email){
+     if (profileData?.email) {
+         console.log("Calling loadProfiles()");
+         loadProfiles();
+     } else {
+         console.log("profileData.email is missing");
+     }
 
-  loadProfiles();
-
-  }
-
-  }, [profileData]);
+ }, [profileData]);
 
   const loadProfiles = async () => {
     try {
       setLoadingProfiles(true);
-      const currentUser =
-       JSON.parse(
-       localStorage.getItem("user")
-       );
+    const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
 
+    console.log("CURRENT USER:", currentUser);
 
- const userId =
- Number(
- currentUser.profile.userId
- );
+    const userId = Number(
+        currentUser?.profile?.userId ||
+        currentUser?.userId ||
+        currentUser?.id
+    );
+
+    console.log("USER ID:", userId);
 
  const data =
  await matchAPI.getTopMatches(
@@ -341,12 +345,10 @@ const calculateAge = (dob) => {
     "PROFILES API:",
     data
   );
-  const blockedUsers =
-    await blockAPI.getMyBlockedUsers(
-      currentUser.profile.userId
-    );
+ const blockedUsers =
+     await blockAPI.getMyBlockedUsers(userId);
 
-
+console.log("BLOCKED USERS:", blockedUsers);
   console.log(
     "BLOCKED USERS:",
     blockedUsers
@@ -478,17 +480,20 @@ async(profile)=>{
 
 try{
 
-const currentUser =
-JSON.parse(
-localStorage.getItem(
-"user"
-)
+const currentUser = JSON.parse(
+    localStorage.getItem("user") || "{}"
 );
 
-const senderId =
-Number(
-currentUser.profile.userId
+const senderId = Number(
+    currentUser?.userId ||
+    currentUser?.id ||
+    currentUser?.profile?.userId
 );
+
+if (!senderId) {
+    toast.error("Current user not found");
+    return;
+}
 
 const receiverId =
 Number(
@@ -790,7 +795,7 @@ return (
       <div className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ${isSidebarOpen ? 'md:ml-0' : 'md:ml-0'}`}>
         <header className="sticky top-0 z-40 bg-card/95 backdrop-blur border-b border-border px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <button 
+            <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
               className="text-foreground hover:text-primary transition-colors"
             >
@@ -799,7 +804,7 @@ return (
             <div>
               <p className="text-muted-foreground text-sm">{t?.home?.header?.welcome}</p>
               <h1 className="text-xl font-display font-bold text-foreground capitalize">
-                {profileData?.firstName && profileData?.lastName 
+                {profileData?.firstName && profileData?.lastName
                   ? `${profileData.firstName} ${profileData.lastName}`
                   : profileData?.fullName || userName || "User"}!
               </h1>
