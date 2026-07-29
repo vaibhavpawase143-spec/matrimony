@@ -11,6 +11,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 public class PartnerPreferenceServiceImpl implements PartnerPreferenceService {
@@ -20,6 +22,7 @@ public class PartnerPreferenceServiceImpl implements PartnerPreferenceService {
     private final ReligionRepository religionRepository;
     private final CasteRepository casteRepository;
     private final CityRepository cityRepository;
+    private final HeightRepository heightRepository;
 
     private final MatchAsyncService asyncService;
     private final CacheService cacheService;
@@ -31,6 +34,7 @@ public class PartnerPreferenceServiceImpl implements PartnerPreferenceService {
             ReligionRepository religionRepository,
             CasteRepository casteRepository,
             CityRepository cityRepository,
+            HeightRepository heightRepository,
             MatchAsyncService asyncService,
             CacheService cacheService,
             MatchNotificationService matchNotificationService
@@ -40,9 +44,24 @@ public class PartnerPreferenceServiceImpl implements PartnerPreferenceService {
         this.religionRepository = religionRepository;
         this.casteRepository = casteRepository;
         this.cityRepository = cityRepository;
+        this.heightRepository = heightRepository;
         this.asyncService = asyncService;
         this.cacheService = cacheService;
         this.matchNotificationService = matchNotificationService;
+    }
+    private int extractHeightInCm(String height) {
+
+        if (height == null || height.isBlank()) {
+            throw new RuntimeException("Invalid height value");
+        }
+
+        Matcher matcher = Pattern.compile("\\((\\d+)\\s*cm\\)").matcher(height);
+
+        if (matcher.find()) {
+            return Integer.parseInt(matcher.group(1));
+        }
+
+        throw new RuntimeException("Invalid height format: " + height);
     }
 
     // ✅ CREATE + UPDATE (FINAL FIX)
@@ -73,11 +92,23 @@ public class PartnerPreferenceServiceImpl implements PartnerPreferenceService {
             throw new RuntimeException("Min age cannot be greater than max age");
         }
 
-        if (preference.getMinHeight() != null && preference.getMaxHeight() != null &&
-                preference.getMinHeight() > preference.getMaxHeight()) {
-            throw new RuntimeException("Min height cannot be greater than max height");
-        }
+        if (preference.getMinHeight() != null && preference.getMaxHeight() != null) {
 
+            Height minHeight = heightRepository
+                    .findByIdAndDeletedAtIsNull(preference.getMinHeight())
+                    .orElseThrow(() -> new RuntimeException("Minimum height not found"));
+
+            Height maxHeight = heightRepository
+                    .findByIdAndDeletedAtIsNull(preference.getMaxHeight())
+                    .orElseThrow(() -> new RuntimeException("Maximum height not found"));
+
+            int minHeightCm = extractHeightInCm(minHeight.getHeight());
+            int maxHeightCm = extractHeightInCm(maxHeight.getHeight());
+
+            if (minHeightCm > maxHeightCm) {
+                throw new RuntimeException("Min height cannot be greater than max height");
+            }
+        }
         // 🔥 RELATION HANDLING
         if (preference.getReligion() != null && preference.getReligion().getId() != null) {
             preference.setReligion(

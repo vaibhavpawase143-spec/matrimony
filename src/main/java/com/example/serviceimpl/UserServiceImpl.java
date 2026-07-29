@@ -1,5 +1,6 @@
 package com.example.serviceimpl;
 
+import com.example.dto.request.ChangePasswordRequestDTO;
 import com.example.dto.request.UserFilterDTO;
 import com.example.dto.request.UserRegisterRequestDTO;
 import com.example.dto.response.LoginResponse;
@@ -16,6 +17,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -306,6 +308,47 @@ public class UserServiceImpl implements UserService {
                 .orElse(null);
 
         return new LoginResponse(accessToken, refreshToken.getToken(), profileData);
+    }
+    @Override
+    @Transactional
+    public void changePassword(ChangePasswordRequestDTO request) {
+
+        String email = SecurityContextHolder
+                .getContext()
+                .getAuthentication()
+                .getName();
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Current password check
+        if (!passwordEncoder.matches(
+                request.getCurrentPassword(),
+                user.getPassword())) {
+
+            throw new RuntimeException("Current password is incorrect");
+        }
+
+        // Confirm password check
+        if (!request.getNewPassword()
+                .equals(request.getConfirmPassword())) {
+
+            throw new RuntimeException("Passwords do not match");
+        }
+
+        // Same password check
+        if (passwordEncoder.matches(
+                request.getNewPassword(),
+                user.getPassword())) {
+
+            throw new RuntimeException(
+                    "New password must be different from current password");
+        }
+
+        user.setPassword(
+                passwordEncoder.encode(request.getNewPassword()));
+
+        userRepository.save(user);
     }
 
     // ================= EMAIL =================

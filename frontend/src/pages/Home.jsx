@@ -352,6 +352,13 @@ const calculateAge = (dob) => {
     blockedUsers
   );
 console.log("FIRST PROFILE:", data[0]);
+console.log(
+  "ALL PREMIUM CHECK",
+  data.map(profile => ({
+    name: profile.name,
+    premium: profile.isPremium
+  }))
+);
   console.log(
   "Profiles API Response:",
  JSON.stringify(data,null,2)
@@ -904,7 +911,7 @@ return (
           <p className="text-primary-foreground/70 text-sm max-w-md">{t?.home?.hero?.subtitle || "Connect with like-minded individuals seeking meaningful relationships"}</p>
         </motion.div>
 
-        <div className="px-6 py-6 grid grid-cols-1 lg:grid-cols-3 gap-6 pb-24 md:pb-6">
+        <div className="px-6 py-6 w-full space-y-6 pb-24 md:pb-6">
           {/* Left column */}
           <div className="lg:col-span-2 space-y-6">
             {/* Profile Completion */}
@@ -966,7 +973,7 @@ p-8
                   <p className="text-muted-foreground">Loading profiles...</p>
                 </div>
               ) : profiles.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   {profiles.map((profile, i) => (
 
                     <motion.div
@@ -1056,6 +1063,26 @@ onDoubleClick={async (e) => {
   }
 }}
 >
+    {profile.isPremium && (
+      <div
+        className="
+          absolute
+          top-3
+          left-3
+          z-20
+          bg-yellow-400
+          text-white
+          px-3
+          py-1
+          rounded-full
+          text-xs
+          font-bold
+          shadow-md
+        "
+      >
+        👑 PREMIUM
+      </div>
+    )}
 
 <HeartAnimation
 

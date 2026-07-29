@@ -395,6 +395,12 @@ resetPassword: async (
   );
 
 },
+changePassword: async (data) => {
+  return await apiClient("/users/change-password", {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+},
 
 };
 
@@ -1932,6 +1938,20 @@ return await apiClient(
        );
 
    },
+ };
+ export const notificationPreferenceAPI = {
+
+   getMyPreferences: async () => {
+     return await apiClient("/notification-preferences/me");
+   },
+
+   updatePreferences: async (data) => {
+     return await apiClient("/notification-preferences", {
+       method: "PUT",
+       body: JSON.stringify(data),
+     });
+   },
+
  };
  export const subscriptionAPI = {
 

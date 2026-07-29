@@ -1,5 +1,6 @@
 package com.example.controller.user;
 
+import com.example.dto.request.ChangePasswordRequestDTO;
 import com.example.dto.request.LoginRequest;
 import com.example.dto.request.UserRegisterRequestDTO;
 import com.example.dto.response.ApiResponse;
@@ -8,11 +9,13 @@ import com.example.dto.response.UserResponseDTO;
 import com.example.model.User;
 import com.example.service.EmailService;
 import com.example.service.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -113,6 +116,20 @@ public class UserController {
                     .data(null)
                     .build();
         }
+    }
+
+    @PutMapping("/change-password")
+    public ResponseEntity<?> changePassword(
+            @Valid @RequestBody ChangePasswordRequestDTO request) {
+
+        service.changePassword(request);
+
+        return ResponseEntity.ok(
+                Map.of(
+                        "success", true,
+                        "message", "Password changed successfully"
+                )
+        );
     }
 
     // ================= REDIRECT OLD EMAIL LINKS =================

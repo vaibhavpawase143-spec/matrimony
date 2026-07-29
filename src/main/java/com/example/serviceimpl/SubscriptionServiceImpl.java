@@ -148,7 +148,13 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     @Override
     public boolean hasActiveSubscription(Long userId) {
 
-        return subscriptionRepository.existsByUserIdAndIsActiveTrue(userId);
+        return subscriptionRepository
+                .findByUserIdAndIsActiveTrue(userId)
+                .filter(sub ->
+                        sub.getEndDate() != null &&
+                                sub.getEndDate().isAfter(LocalDateTime.now())
+                )
+                .isPresent();
     }
     @Override
     public List<UserSubscription> getByUser(Long userId) {
@@ -206,9 +212,12 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
         return subscriptionRepository
                 .findByUserIdAndIsActiveTrue(currentUser.getId())
+                .filter(sub ->
+                        sub.getEndDate() != null &&
+                                sub.getEndDate().isAfter(LocalDateTime.now())
+                )
                 .isPresent();
     }
-
 
     @Override
     public List<UserSubscription> getAll() {

@@ -1620,11 +1620,12 @@ public class ProfileServiceImpl implements ProfileService {
         dto.setIsActive(
                 p.getIsActive()
         );
-        dto.setIsPremium(
+        boolean activePremium =
                 subscriptionService.hasActiveSubscription(
                         p.getUser().getId()
-                )
-        );
+                );
+
+        dto.setIsPremium(activePremium);
         return dto;
     }
 

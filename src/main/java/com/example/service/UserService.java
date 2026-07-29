@@ -1,5 +1,6 @@
 package com.example.service;
 
+import com.example.dto.request.ChangePasswordRequestDTO;
 import com.example.dto.request.UserFilterDTO;
 import com.example.dto.request.UserRegisterRequestDTO;
 import com.example.dto.response.LoginResponse;
@@ -92,4 +93,6 @@ public interface UserService {
     Optional<User> findByEmail(String email);
 
     void saveVerificationToken(Long userId, String token);
+
+    void changePassword(ChangePasswordRequestDTO request);
 }

@@ -935,7 +935,16 @@ public class MatchServiceImpl implements MatchService {
 
             imageUrl = profile.getImageUrl();
 
-            isPremium = profile.getIsPremium();
+
+            // Check active subscription
+            isPremium = userSubscriptionRepository
+                    .findFirstByUser_IdAndIsActiveTrueAndStatusAndEndDateAfter(
+                            user.getId(),
+                            "ACTIVE",
+                            LocalDateTime.now()
+                    )
+                    .isPresent();
+
 
             if (profile.getCity() != null)
                 city = profile.getCity().getName();

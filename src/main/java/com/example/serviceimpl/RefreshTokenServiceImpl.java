@@ -22,19 +22,17 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
 
     // ================= CREATE TOKEN =================
     @Override
-    @Transactional   // 🔥 FIX (IMPORTANT)
+    @Transactional
     public RefreshToken createToken(String email) {
 
-        // 🔥 delete old token
-        repository.deleteByEmail(email);
+        RefreshToken refreshToken = repository.findByEmail(email)
+                .orElse(new RefreshToken());
 
-        RefreshToken token = RefreshToken.builder()
-                .email(email)
-                .token(UUID.randomUUID().toString())
-                .expiryDate(Instant.now().plusMillis(REFRESH_DURATION))
-                .build();
+        refreshToken.setEmail(email);
+        refreshToken.setToken(UUID.randomUUID().toString());
+        refreshToken.setExpiryDate(Instant.now().plusMillis(REFRESH_DURATION));
 
-        return repository.save(token);
+        return repository.save(refreshToken);
     }
 
     // ================= VERIFY TOKEN =================

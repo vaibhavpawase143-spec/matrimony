@@ -1,12 +1,30 @@
 import { useState, useEffect } from "react";
-import { User, Lock, Bell, Save, Upload, X ,Ban, } from "lucide-react";
+import {
+  User,
+  Lock,
+  Bell,
+  Save,
+  Upload,
+  X,
+  Ban,
+  Eye,
+  EyeOff,
+} from "lucide-react";
 import { motion } from "framer-motion";
 
 import { useToast } from "@/components/Toast";
 import { useProfileData } from "@/hooks/useProfileData";
 import { partnerPreferenceAPI } from "@/services/api";
 import { masterDataAPI } from "@/services/api";
-import { photoAPI, blockAPI } from "@/services/api";
+import {
+  photoAPI,
+  blockAPI,
+  notificationPreferenceAPI,
+} from "@/services/api";
+
+import { authAPI } from "@/services/api";
+import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 
 const tabs = [
   { id: "profile", label: "Profile", icon: <User className="h-4 w-4" /> },
@@ -18,6 +36,15 @@ const tabs = [
 const SettingsPage = () => {
   const [activeTab, setActiveTab] = useState("profile");
   const { success, error, info } = useToast();
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState({
+    currentPassword: false,
+    newPassword: false,
+    confirmPassword: false,
+  });
   const { profileData: savedProfileData, saveProfileData } = useProfileData();
 
   const [masterOptions, setMasterOptions] = useState({
@@ -145,6 +172,15 @@ bloodGroupId:null,
     newPassword: "",
     confirmPassword: ""
   });
+const [notificationSettings, setNotificationSettings] = useState({
+  matchNotifications: true,
+  interestNotifications: true,
+  messageNotifications: true,
+  profileViewNotifications: false,
+  promotionalEmails: false,
+});
+
+const [notificationLoading, setNotificationLoading] = useState(false);
 const [blockedUsers, setBlockedUsers] = useState([]);
 const [partnerPreferenceId, setPartnerPreferenceId] = useState(null);
 const [partnerPreference,setPartnerPreference]=
@@ -721,42 +757,36 @@ useEffect(() => {
 
   const loadSubCastes = async () => {
 
-    if (formData.casteId) {
+    const casteId = Number(formData.casteId);
 
-      try {
+    if (!casteId) {
 
-        console.log(
-          "🔍 Loading sub castes for caste:",
-          formData.casteId
-        );
+      setMasterOptions(prev => ({
+        ...prev,
+        subCastes: []
+      }));
 
-        const subCastes =
-          await masterDataAPI.getSubCastes(
-            formData.casteId
-          );
+      return;
+    }
 
-        setMasterOptions(prev => ({
-          ...prev,
-          subCastes: Array.isArray(subCastes)
-            ? subCastes
-            : []
-        }));
+    try {
 
-      } catch (error) {
+      console.log("🔍 Loading sub castes for caste:", casteId);
 
-        console.error(
-          "❌ Failed to load sub castes:",
-          error
-        );
+      const subCastes = await masterDataAPI.getSubCastes(casteId);
 
-        setMasterOptions(prev => ({
-          ...prev,
-          subCastes: []
-        }));
+      console.log("✅ Loaded Sub Castes:", subCastes);
 
-      }
+      setMasterOptions(prev => ({
+        ...prev,
+        subCastes: Array.isArray(subCastes)
+          ? subCastes
+          : []
+      }));
 
-    } else {
+    } catch (error) {
+
+      console.error("❌ Failed to load sub castes:", error);
 
       setMasterOptions(prev => ({
         ...prev,
@@ -1470,7 +1500,45 @@ useEffect(() => {
   loadGalleryPhotos();
 
 }, []);
+useEffect(() => {
 
+  const loadNotificationPreferences = async () => {
+
+    try {
+
+      setNotificationLoading(true);
+
+      const response =
+        await notificationPreferenceAPI.getMyPreferences();
+
+      setNotificationSettings({
+        matchNotifications: response.matchNotifications,
+        interestNotifications: response.interestNotifications,
+        messageNotifications: response.messageNotifications,
+        profileViewNotifications: response.profileViewNotifications,
+        promotionalEmails: response.promotionalEmails,
+      });
+
+    } catch (err) {
+
+      console.error(
+        "Notification Preference Error:",
+        err
+      );
+
+      error("Failed to load notification preferences");
+
+    } finally {
+
+      setNotificationLoading(false);
+
+    }
+
+  };
+
+  loadNotificationPreferences();
+
+}, []);
 
   const handleProfileUpdate = async () => {
     if (!validateProfileForm()) return;
@@ -1717,26 +1785,89 @@ console.log(
     }
   };
 
-  const handlePasswordUpdate = () => {
-    if (!passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword) {
-      error("All password fields are required");
+  const handlePasswordUpdate = async () => {
+
+    if (!passwordData.currentPassword) {
+      error("Current password is required");
       return;
     }
-    if (passwordData.newPassword.length < 4) {
-      error("New password must be at least 4 characters");
+
+    if (!passwordData.newPassword) {
+      error("New password is required");
       return;
     }
+
+    if (!passwordData.confirmPassword) {
+      error("Confirm password is required");
+      return;
+    }
+
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      error("New passwords do not match");
+      error("Passwords do not match");
       return;
     }
-    success("Password updated successfully!");
-    setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
+
+   try {
+
+     setPasswordLoading(true);
+
+     await authAPI.changePassword(passwordData);
+
+     success("Password changed successfully");
+
+     setPasswordData({
+       currentPassword: "",
+       newPassword: "",
+       confirmPassword: "",
+     });
+
+   } catch (err) {
+
+     error(err.message || "Failed to change password");
+
+   } finally {
+
+     setPasswordLoading(false);
+
+   }
   };
 
-  const handleNotificationToggle = (label, isChecked) => {
-    info(`${label} ${isChecked ? 'enabled' : 'disabled'}`);
+  const handleNotificationToggle = (field, checked) => {
+
+    setNotificationSettings(prev => ({
+      ...prev,
+      [field]: checked,
+    }));
+
   };
+const handleNotificationSave = async () => {
+
+  try {
+
+    setNotificationLoading(true);
+
+    await notificationPreferenceAPI.updatePreferences(
+      notificationSettings
+    );
+
+    success("Notification preferences updated successfully");
+
+  } catch (err) {
+
+    console.error(err);
+
+    error(
+      err.message ||
+      "Failed to update notification preferences"
+    );
+
+  } finally {
+
+    setNotificationLoading(false);
+
+  }
+
+};
 const loadBlockedUsers = async () => {
 
   try {
@@ -3484,47 +3615,176 @@ text-foreground
               ].map((field) => (
                 <div key={field.key}>
                   <label className="text-xs font-medium text-foreground mb-1 block">{field.label}</label>
-                  <input
-                    type="password"
-                    value={passwordData[field.key]}
-                    onChange={(e) => setPasswordData({...passwordData, [field.key]: e.target.value})}
-                    placeholder="••••••••"
-                    className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                  />
+                  <div className="relative">
+
+                    <input
+                      type={
+                        showPassword[field.key]
+                          ? "text"
+                          : "password"
+                      }
+                      value={passwordData[field.key]}
+                      onChange={(e) =>
+                        setPasswordData({
+                          ...passwordData,
+                          [field.key]: e.target.value,
+                        })
+                      }
+                      placeholder="••••••••"
+                      className="
+                        w-full
+                        bg-background
+                        border
+                        border-border
+                        rounded-lg
+                        px-4
+                        py-2.5
+                        pr-11
+                        text-sm
+                        text-foreground
+                        placeholder:text-muted-foreground
+                        focus:outline-none
+                        focus:ring-2
+                        focus:ring-primary/20
+                        focus:border-primary
+                      "
+                    />
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setShowPassword((prev) => ({
+                          ...prev,
+                          [field.key]: !prev[field.key],
+                        }))
+                      }
+                      className="
+                        absolute
+                        right-3
+                        top-1/2
+                        -translate-y-1/2
+                        text-muted-foreground
+                        hover:text-foreground
+                      "
+                    >
+                      {showPassword[field.key]
+                        ? <EyeOff size={18} />
+                        : <Eye size={18} />}
+                    </button>
+
+                  </div>
                 </div>
               ))}
-              <button onClick={handlePasswordUpdate} className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-6 py-2.5 rounded-lg text-sm transition-colors">
-                <Lock className="h-4 w-4" /> Update Password
+              <button
+                  onClick={handlePasswordUpdate}
+                  disabled={passwordLoading}
+                  className="
+                      flex
+                      items-center
+                      gap-2
+                      bg-primary
+                      hover:bg-primary/90
+                      text-primary-foreground
+                      font-semibold
+                      px-6
+                      py-2.5
+                      rounded-lg
+                      text-sm
+                      transition-colors
+                      disabled:opacity-50
+                      disabled:cursor-not-allowed
+                  "
+              >
+                  <Save className="h-4 w-4" />
+
+                  {passwordLoading
+                      ? "Updating Password..."
+                      : "Update Password"}
               </button>
             </div>
           )}
 
           {activeTab === "notifications" && (
             <div className="space-y-5">
-              <h2 className="text-lg font-display font-bold text-foreground mb-4">Notification Settings</h2>
+
+              <h2 className="text-lg font-display font-bold text-foreground mb-4">
+                Notification Settings
+              </h2>
+
               {[
-                { label: "New match notifications", desc: "Get notified when someone matches your preferences" },
-                { label: "Interest received", desc: "Alerts when someone sends you an interest" },
-                { label: "Message notifications", desc: "Notifications for new messages" },
-                { label: "Profile views", desc: "Know when someone views your profile" },
-                { label: "Promotional emails", desc: "Offers, tips, and Gathbandhan updates" },
-              ].map((n, i) => (
-                <div key={n.label} className="flex items-center justify-between py-2">
+                {
+                  key: "matchNotifications",
+                  label: "New match notifications",
+                  desc: "Get notified when someone matches your preferences",
+                },
+                {
+                  key: "interestNotifications",
+                  label: "Interest received",
+                  desc: "Alerts when someone sends you an interest",
+                },
+                {
+                  key: "messageNotifications",
+                  label: "Notifications for new messages",
+                },
+                {
+                  key: "profileViewNotifications",
+                  label: "Profile views",
+                  desc: "Know when someone views your profile",
+                },
+                {
+                  key: "promotionalEmails",
+                  label: "Promotional emails",
+                  desc: "Offers, tips, and Gathbandhan updates",
+                },
+              ].map((n) => (
+                <div
+                  key={n.key}
+                  className="flex items-center justify-between py-2"
+                >
                   <div>
-                    <p className="text-sm font-medium text-foreground">{n.label}</p>
-                    <p className="text-xs text-muted-foreground">{n.desc}</p>
+                    <p className="text-sm font-medium text-foreground">
+                      {n.label}
+                    </p>
+
+                    <p className="text-xs text-muted-foreground">
+                      {n.desc}
+                    </p>
                   </div>
+
                   <label className="relative inline-flex items-center cursor-pointer">
+
                     <input
                       type="checkbox"
-                      defaultChecked={i < 3}
-                      onChange={(e) => handleNotificationToggle(n.label, e.target.checked)}
+                      checked={notificationSettings[n.key]}
+                      onChange={(e) =>
+                        handleNotificationToggle(
+                          n.key,
+                          e.target.checked
+                        )
+                      }
                       className="sr-only peer"
                     />
+
                     <div className="w-9 h-5 bg-muted rounded-full peer peer-checked:bg-primary transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-background after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4" />
+
                   </label>
                 </div>
               ))}
+
+              <div className="pt-4 border-t border-border">
+
+                <button
+                  onClick={handleNotificationSave}
+                  disabled={notificationLoading}
+                  className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground px-5 py-2 rounded-lg disabled:opacity-50"
+                >
+                  <Save className="h-4 w-4" />
+
+                  {notificationLoading ? "Saving..." : "Save Changes"}
+                </button>
+
+              </div>
+
             </div>
           )}
       {activeTab === "blocked" && (

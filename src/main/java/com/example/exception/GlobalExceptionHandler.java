@@ -98,7 +98,7 @@ public class GlobalExceptionHandler {
                         .status(401)
                         .error("TOKEN_EXPIRED")
                         .errorCode("ERR_401_EXPIRED")
-                        .message("JWT token has expired")
+                        .message("Your session has expired. Please log in again.")
                         .build()
         );
     }
@@ -117,7 +117,7 @@ public class GlobalExceptionHandler {
                         .status(401)
                         .error("INVALID_TOKEN")
                         .errorCode("ERR_401_INVALID")
-                        .message("Invalid JWT token")
+                        .message("Your session is invalid. Please log in again.")
                         .build()
         );
     }
@@ -136,7 +136,7 @@ public class GlobalExceptionHandler {
                         .status(403)
                         .error("FORBIDDEN")
                         .errorCode("ERR_403")
-                        .message("You are not authorized")
+                        .message("You don't have permission to perform this action.")
                         .build()
         );
     }
@@ -193,10 +193,12 @@ public class GlobalExceptionHandler {
         // Handle common runtime exceptions with better messages
         if (message != null) {
             if (message.contains("User not found")) {
-                message = "User not found. Please check your credentials or register for a new account.";
+                message =
+                        "We couldn't find your account. Please check your email or sign up.";
                 errorCode = "ERR_USER_NOT_FOUND";
             } else if (message.contains("Invalid password")) {
-                message = "Invalid password. Please check your credentials and try again.";
+                message =
+                        "The password you entered is incorrect.";
                 errorCode = "ERR_INVALID_PASSWORD";
             } else if (message.contains("Email not verified")) {
                 message = "Email not verified. Please check your inbox and verify your email before logging in.";
@@ -205,13 +207,16 @@ public class GlobalExceptionHandler {
                 message = "Phone not verified. Please verify your phone number before logging in.";
                 errorCode = "ERR_PHONE_NOT_VERIFIED";
             } else if (message.contains("Profile not found")) {
-                message = "Profile not found. Please create your profile to continue.";
+                message =
+                        "Please complete your profile to continue.";
                 errorCode = "ERR_PROFILE_NOT_FOUND";
             } else if (message.contains("Profile already exists")) {
-                message = "Profile already exists. You can update your existing profile instead.";
+                message =
+                        "Your profile already exists. You can edit it anytime.";
                 errorCode = "ERR_PROFILE_EXISTS";
             } else if (message.contains("Email already exists")) {
-                message = "Email already registered. Please use a different email or try logging in.";
+                message =
+                        "This email is already registered. Please log in or use another email address.";
                 errorCode = "ERR_EMAIL_EXISTS";
             }
         }
@@ -234,18 +239,21 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(org.springframework.dao.DataIntegrityViolationException ex) {
         
         log.warn("Database constraint violation: {}", ex.getMessage());
-        
-        String message = "A database constraint was violated";
+
+        String message =
+                "Unable to save your changes. Please try again.";
         String errorCode = "ERR_CONSTRAINT_VIOLATION";
         
         // Check for specific constraint violations
         if (ex.getMessage() != null) {
             if (ex.getMessage().contains("ukdu5v5sr43g5bfnji4vb8hg5s3") || 
                 ex.getMessage().contains("phone") && ex.getMessage().contains("already exists")) {
-                message = "Phone number already registered. Please use a different phone number or try logging in.";
+                message =
+                        "This phone number is already registered. Please log in or use another phone number.";
                 errorCode = "ERR_PHONE_EXISTS";
             } else if (ex.getMessage().contains("email") && ex.getMessage().contains("already exists")) {
-                message = "Email already registered. Please use a different email or try logging in.";
+                message =
+                        "This email is already registered. Please log in or use another email address.";
                 errorCode = "ERR_EMAIL_EXISTS";
             }
         }
@@ -288,7 +296,7 @@ public class GlobalExceptionHandler {
                         .status(400)
                         .error("FILE_TOO_LARGE")
                         .errorCode("ERR_FILE_SIZE")
-                        .message("File size exceeded limit")
+                        .message("File is too large. Maximum allowed size is 10 MB.")
                         .build()
         );
     }
