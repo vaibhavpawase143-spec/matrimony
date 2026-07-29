@@ -1,0 +1,30 @@
+Software Engineer
+Backend Developer
+Frontend Developer
+Full Stack Developer
+Doctor
+Teacher
+Professor
+Government Employee
+Police Officer
+Army Officer
+Business Owner
+Farmer
+Civil Engineer
+Mechanical Engineer
+Electrical Engineer
+Accountant
+Chartered Accountant
+Lawyer
+Advocate
+Architect
+Designer
+Bank Employee
+Sales Executive
+Marketing Executive
+HR Manager
+Nurse
+Pharmacist
+Data Analyst
+Student
+Self Employed

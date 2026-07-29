@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Premium Membership Reminder</title>
+
+    <style>
+        body{
+            margin:0;
+            padding:0;
+            background:#f5f5f5;
+            font-family:Arial,Helvetica,sans-serif;
+        }
+
+        .container{
+            max-width:650px;
+            margin:40px auto;
+            background:#ffffff;
+            border-radius:10px;
+            overflow:hidden;
+            box-shadow:0 3px 10px rgba(0,0,0,.12);
+        }
+
+        .header{
+            background:#d32f2f;
+            color:#fff;
+            padding:30px;
+            text-align:center;
+        }
+
+        .header h1{
+            margin:0;
+        }
+
+        .content{
+            padding:35px;
+            color:#333;
+            line-height:1.7;
+        }
+
+        .warning{
+            background:#fff3cd;
+            border-left:5px solid #ffc107;
+            padding:18px;
+            margin:25px 0;
+        }
+
+        .button{
+            display:inline-block;
+            margin-top:25px;
+            background:#d32f2f;
+            color:white !important;
+            text-decoration:none;
+            padding:14px 28px;
+            border-radius:6px;
+            font-weight:bold;
+        }
+
+        ul{
+            padding-left:22px;
+        }
+
+        .footer{
+            background:#f3f3f3;
+            padding:20px;
+            text-align:center;
+            color:#666;
+            font-size:13px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="header">
+        <h1>Gathbandhan Matrimony</h1>
+        <p>Premium Membership Reminder</p>
+    </div>
+
+    <div class="content">
+
+        <h2>
+            Hello
+            <span th:text="${firstName}">User</span>,
+        </h2>
+
+        <p>
+            We hope you're enjoying your Premium Membership.
+        </p>
+
+        <div class="warning">
+
+            <strong>Your Premium Membership expires in
+                <span th:text="${daysRemaining}">7</span>
+                day(s).</strong>
+
+            <br><br>
+
+            Renew now to continue enjoying all premium benefits without interruption.
+
+        </div>
+
+        <h3>Premium Benefits</h3>
+
+        <ul>
+            <li>Unlimited Interest Requests</li>
+            <li>View Contact Details</li>
+            <li>Priority Profile Visibility</li>
+            <li>Advanced Match Recommendations</li>
+            <li>Premium Customer Support</li>
+        </ul>
+
+        <center>
+
+            <a
+                    th:href="${renewUrl}"
+                    class="button">
+
+                Renew Premium
+
+            </a>
+
+        </center>
+
+        <br>
+
+        <p>
+            Thank you for choosing
+            <strong>Gathbandhan Matrimony</strong>.
+        </p>
+
+    </div>
+
+    <div class="footer">
+
+        © 2026 Gathbandhan Matrimony
+
+        <br>
+
+        Finding your perfect life partner.
+
+    </div>
+
+</div>
+
+</body>
+
+</html>

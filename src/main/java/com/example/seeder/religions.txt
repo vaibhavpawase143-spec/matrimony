@@ -1,0 +1,7 @@
+Hindu
+Muslim
+Christian
+Sikh
+Jain
+Buddhist
+Parsi

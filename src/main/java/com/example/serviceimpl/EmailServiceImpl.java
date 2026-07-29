@@ -124,8 +124,57 @@ public class EmailServiceImpl implements EmailService {
             int daysRemaining
     ) {
 
-        // Use Thymeleaf template:
-        // email/premium-reminder.html
+        String subject = "Your Premium Membership Expires in " + daysRemaining + " Day(s)";
+
+        Context context = new Context();
+
+        context.setVariable("firstName", firstName);
+        context.setVariable("daysRemaining", daysRemaining);
+
+        // Change this to your renewal page if different
+        context.setVariable(
+                "renewUrl",
+                frontendUrl + "/subscription"
+        );
+
+        String body = templateEngine.process(
+                "email/premium-reminder",
+                context
+        );
+
+        try {
+
+            MimeMessage message = mailSender.createMimeMessage();
+
+            MimeMessageHelper helper =
+                    new MimeMessageHelper(
+                            message,
+                            true,
+                            "UTF-8"
+                    );
+
+            helper.setFrom(fromEmail);
+            helper.setTo(to);
+            helper.setSubject(subject);
+            helper.setText(body, true);
+
+            mailSender.send(message);
+
+            log.info(
+                    "Premium reminder email sent to {} ({} day(s) remaining)",
+                    to,
+                    daysRemaining
+            );
+
+        } catch (MessagingException e) {
+
+            log.error(
+                    "Failed to send premium reminder email to {}",
+                    to,
+                    e
+            );
+
+        }
     }
     @Override
     @Async("emailTaskExecutor")

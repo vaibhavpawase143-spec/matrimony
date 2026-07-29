@@ -6,12 +6,16 @@ import com.example.repository.UserSubscriptionRepository;
 import com.example.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -22,11 +26,21 @@ public class PremiumReminderScheduler {
     private final NotificationRepository notificationRepository;
     private final NotificationService notificationService;
 
+    @Value("${subscription.reminder.days}")
+    private String reminderDaysConfig;
+
     /**
-     * Runs every day at 9:00 AM.
+     * Runs every day according to application.properties
      */
-    @Scheduled(cron = "0 0 9 * * *")
+    @Scheduled(cron = "${subscription.reminder.cron}")
     public void sendPremiumExpiryReminders() {
+
+        log.info("========== Premium Reminder Scheduler Started ==========");
+
+        Set<Long> reminderDays = Arrays.stream(reminderDaysConfig.split(","))
+                .map(String::trim)
+                .map(Long::parseLong)
+                .collect(Collectors.toSet());
 
         List<UserSubscription> subscriptions =
                 subscriptionRepository.findAllActiveSubscriptions();
@@ -45,40 +59,20 @@ public class PremiumReminderScheduler {
                     subscription.getEndDate().toLocalDate()
             );
 
-            String title = null;
-            String message = null;
+            if (!reminderDays.contains(daysRemaining)) {
+                continue;
+            }
 
-            switch ((int) daysRemaining) {
+            String title = "PREMIUM_REMINDER_" + daysRemaining;
 
-                case 7:
-                    title = "PREMIUM_REMINDER_7";
-                    message = "Your Premium Membership will expire in 7 days. Renew now to continue enjoying premium benefits.";
-                    break;
+            String message =
+                    "Your Premium Membership will expire in "
+                            + daysRemaining
+                            + " day(s). Renew now to continue enjoying premium benefits.";
 
-                case 5:
-                    title = "PREMIUM_REMINDER_5";
-                    message = "Your Premium Membership will expire in 5 days. Renew now to continue enjoying premium benefits.";
-                    break;
-
-                case 3:
-                    title = "PREMIUM_REMINDER_3";
-                    message = "Your Premium Membership will expire in 3 days. Renew now to continue enjoying premium benefits.";
-                    break;
-
-                case 2:
-                    title = "PREMIUM_REMINDER_2";
-                    message = "Your Premium Membership will expire in 2 days. Renew now to continue enjoying premium benefits.";
-                    break;
-
-                case 1:
-                    title = "PREMIUM_REMINDER_1";
-                    message = "Your Premium Membership will expire tomorrow. Renew now to continue enjoying premium benefits.";
-                    break;
-
-
-
-                default:
-                    continue;
+            if (daysRemaining == 1) {
+                message =
+                        "Your Premium Membership will expire tomorrow. Renew now to continue enjoying premium benefits.";
             }
 
             boolean alreadySent =
@@ -101,6 +95,8 @@ public class PremiumReminderScheduler {
             reminderCount++;
         }
 
-        log.info("PremiumReminderScheduler completed. Sent {} reminder(s).", reminderCount);
+        log.info("Premium Reminder Scheduler completed successfully.");
+        log.info("Total reminders sent: {}", reminderCount);
+        log.info("========================================================");
     }
 }
