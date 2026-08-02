@@ -1,14 +1,15 @@
 package com.example.repository;
 
 import com.example.model.User;
-
 import jakarta.transaction.Transactional;
-
-import org.springframework.data.jpa.repository.*;
-import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -160,18 +161,100 @@ AND u.lastHeartbeat < :time
             @Param("time") LocalDateTime time
     );
     // ================= MATCH =================
-
     @Query("""
-    SELECT u FROM User u
-    WHERE u.id != :userId
-      AND u.isActive = true
-      AND u.isDeleted = false
-    ORDER BY u.createdAt DESC
+SELECT DISTINCT u
+FROM User u
+
+LEFT JOIN FETCH u.profile p
+
+LEFT JOIN FETCH p.city
+LEFT JOIN FETCH p.religion
+LEFT JOIN FETCH p.caste
+LEFT JOIN FETCH p.educationLevel
+LEFT JOIN FETCH p.occupation
+LEFT JOIN FETCH p.height
+LEFT JOIN FETCH p.weight
+LEFT JOIN FETCH p.maritalStatus
+LEFT JOIN FETCH p.smoking
+LEFT JOIN FETCH p.drinking
+LEFT JOIN FETCH p.diet
+
+LEFT JOIN FETCH u.partnerPreference pp
+
+LEFT JOIN FETCH pp.religion
+LEFT JOIN FETCH pp.caste
+LEFT JOIN FETCH pp.city
+LEFT JOIN FETCH pp.educationLevel
+LEFT JOIN FETCH pp.occupation
+LEFT JOIN FETCH pp.maritalStatus
+LEFT JOIN FETCH pp.smoking
+LEFT JOIN FETCH pp.drinking
+LEFT JOIN FETCH pp.diet
+
+WHERE u.id <> :userId
+AND u.isActive = true
+AND u.isDeleted = false
+
+ORDER BY u.createdAt DESC
 """)
     List<User> findTopMatches(
             @Param("userId") Long userId,
             Pageable pageable
     );
+    @Query("""
+SELECT DISTINCT u
+FROM User u
+JOIN FETCH u.profile p
+
+WHERE u.id <> :userId
+
+AND u.isActive = true
+AND u.isDeleted = false
+AND u.isBlocked = false
+
+AND p.profileCompleted = true
+AND p.isActive = true
+
+AND p.gender.id = :oppositeGenderId
+
+ORDER BY
+p.isPremium DESC,
+p.boostScore DESC,
+u.createdAt DESC
+""")
+    List<User> findTopMatchesV2(
+            @Param("userId") Long userId,
+            @Param("oppositeGenderId") Long oppositeGenderId,
+            Pageable pageable
+    );
+
+    @Query("""
+SELECT DISTINCT u
+FROM User u
+JOIN FETCH u.profile p
+
+WHERE u.id <> :userId
+
+AND u.isActive = true
+AND u.isDeleted = false
+AND u.isBlocked = false
+
+AND p.profileCompleted = true
+AND p.isActive = true
+
+AND p.gender.id = :genderId
+
+ORDER BY
+p.isPremium DESC,
+p.boostScore DESC,
+u.createdAt DESC
+""")
+    List<User> findCandidateUsers(
+            @Param("userId") Long userId,
+            @Param("genderId") Long genderId,
+            Pageable pageable
+    );
+
     @Query("""
     SELECT u FROM User u
     LEFT JOIN FETCH u.profile p

@@ -1,6 +1,7 @@
 package com.example.repository;
 
 import com.example.model.Occupation;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -14,10 +15,12 @@ public interface OccupationRepository extends JpaRepository<Occupation, Long> {
     // BASIC
     // =========================
 
+    @EntityGraph(attributePaths = "admin")
     Optional<Occupation> findByIdAndDeletedAtIsNull(Long id);
 
     Optional<Occupation> findByIdAndDeletedAtIsNotNull(Long id);
 
+    @EntityGraph(attributePaths = "admin")
     List<Occupation> findAllByDeletedAtIsNull();
 
     List<Occupation> findByDeletedAtIsNotNull();
@@ -40,6 +43,7 @@ public interface OccupationRepository extends JpaRepository<Occupation, Long> {
     // ACTIVE / INACTIVE
     // =========================
 
+    @EntityGraph(attributePaths = "admin")
     List<Occupation> findByIsActiveTrueAndDeletedAtIsNull();
 
     List<Occupation> findByIsActiveFalseAndDeletedAtIsNull();
@@ -48,20 +52,24 @@ public interface OccupationRepository extends JpaRepository<Occupation, Long> {
     // ADMIN
     // =========================
 
+    @EntityGraph(attributePaths = "admin")
     List<Occupation> findByAdmin_IdAndDeletedAtIsNull(Long adminId);
 
+    @EntityGraph(attributePaths = "admin")
     List<Occupation> findByAdmin_IdAndIsActiveTrueAndDeletedAtIsNull(Long adminId);
 
+    @EntityGraph(attributePaths = "admin")
     List<Occupation> findByAdmin_IdAndIsActiveFalseAndDeletedAtIsNull(Long adminId);
-
     // =========================
     // SEARCH
     // =========================
 
+    @EntityGraph(attributePaths = "admin")
     List<Occupation> findByNameContainingIgnoreCaseAndDeletedAtIsNull(
             String keyword
     );
 
+    @EntityGraph(attributePaths = "admin")
     List<Occupation> findByAdmin_IdAndNameContainingIgnoreCaseAndDeletedAtIsNull(
             Long adminId,
             String keyword

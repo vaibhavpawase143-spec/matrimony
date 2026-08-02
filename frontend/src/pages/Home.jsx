@@ -65,10 +65,14 @@ const {
   toggleLike,
   loading: likesLoading
 } = useLikes();
+const [page, setPage] = useState(0);
 
+const [hasMore, setHasMore] = useState(true);
+
+const [loadingMore, setLoadingMore] = useState(false);
 const [showReportModal, setShowReportModal] = useState(false);
 const [reportedUsers, setReportedUsers] = useState({});
-console.log("showReportModal =", showReportModal);
+
 const [selectedProfile, setSelectedProfile] = useState(null);
 const [selectedReason, setSelectedReason] = useState("");
 const [customReason, setCustomReason] = useState("");
@@ -94,15 +98,7 @@ useState(true);
 
 const [profiles,setProfiles] =
 useState([]);
-const [dashboardStats, setDashboardStats] = useState({
-  totalMatches: 0,
-  interestsSent: 0,
-  interestsReceived: 0,
-  shortlists: 0,
-  profileViews: 0,
-  likesReceived: 0,
-  messages: 0
-});
+const [dashboardStats, setDashboardStats] = useState(null);
 
 const [visitors, setVisitors] = useState([]);
 const [receivedInterests, setReceivedInterests] = useState([]);
@@ -186,14 +182,7 @@ const likesData = safeArray(likesResponse);
       0
     );
 
-    const matches =
-    await matchAPI.getTopMatches(
-    userId,
-    50
-    );
-    const filteredMatches = matches.filter(
-        match => match.matchScore >= 75
-    );
+
 
     const acceptedMatches = receivedData.filter((interest) =>
       String(
@@ -204,9 +193,17 @@ const likesData = safeArray(likesResponse);
     ).length;
 
     setDashboardStats({
-      totalMatches: filteredMatches.length,
+    totalMatches: acceptedMatches,
       interestsSent: sentData.length,
-      interestsReceived: receivedData.length,
+    interestsReceived:
+    receivedData.filter(
+        interest =>
+            String(
+                interest.status ||
+                interest.interestStatus ||
+                ""
+            ).toUpperCase() === "PENDING"
+    ).length,
       shortlists: shortlistsData.length,
       profileViews: visitorsData.length,
     likesReceived: likesData.length,
@@ -219,31 +216,38 @@ const likesData = safeArray(likesResponse);
 }, []);
 
 useEffect(() => {
-  refreshDashboard();
 
-  const handleDashboardUpdated = () => {
     refreshDashboard();
-  };
 
-  window.addEventListener(
-    "dashboardUpdated",
-    handleDashboardUpdated
-  );
+    const handleDashboardUpdated = () => {
+        refreshDashboard();
+    };
 
-  return () => {
-    window.removeEventListener(
-      "dashboardUpdated",
-      handleDashboardUpdated
+    window.addEventListener(
+        "dashboardUpdated",
+        handleDashboardUpdated
     );
-  };
+
+    window.addEventListener(
+        "interestUpdated",
+        handleDashboardUpdated
+    );
+
+    return () => {
+
+        window.removeEventListener(
+            "dashboardUpdated",
+            handleDashboardUpdated
+        );
+
+        window.removeEventListener(
+            "interestUpdated",
+            handleDashboardUpdated
+        );
+
+    };
+
 }, [refreshDashboard]);
-const [
-
-notificationCount,
-
-setNotificationCount
-
-] = useState(0);
 
 
 
@@ -308,14 +312,13 @@ const calculateAge = (dob) => {
 
   // Load real profiles from API
  useEffect(() => {
-     console.log("===== PROFILE DATA =====");
-     console.log(profileData);
+
 
      if (profileData?.email) {
-         console.log("Calling loadProfiles()");
+
          loadProfiles();
      } else {
-         console.log("profileData.email is missing");
+
      }
 
  }, [profileData]);
@@ -325,7 +328,7 @@ const calculateAge = (dob) => {
       setLoadingProfiles(true);
     const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
 
-    console.log("CURRENT USER:", currentUser);
+
 
     const userId = Number(
         currentUser?.profile?.userId ||
@@ -333,122 +336,80 @@ const calculateAge = (dob) => {
         currentUser?.id
     );
 
-    console.log("USER ID:", userId);
 
- const data =
- await matchAPI.getTopMatches(
- userId,
- 50
+
+ const [
+     data,
+     blockedUsers
+ ] = await Promise.all([
+
+     matchAPI.getTopMatches(
+         userId,
+         15
+     ),
+
+     blockAPI.getMyBlockedUsers(
+         userId
+     )
+
+ ]);
+
+ const blockedIds = blockedUsers.map(
+     user => user.blockedId
  );
 
-  console.log(
-    "PROFILES API:",
-    data
-  );
- const blockedUsers =
-     await blockAPI.getMyBlockedUsers(userId);
+ console.log("BLOCKED IDS:", blockedIds);
 
-console.log("BLOCKED USERS:", blockedUsers);
-  console.log(
-    "BLOCKED USERS:",
-    blockedUsers
-  );
-console.log("FIRST PROFILE:", data[0]);
-  console.log(
-  "Profiles API Response:",
- JSON.stringify(data,null,2)
-  );
-const blockedIds =
-  blockedUsers.map(
-    user => user.blockedId
-  );
-    setBlockedUsers(blockedIds);
-
-console.log(
-  "BLOCKED IDS:",
-  blockedIds
-);
+ setBlockedUsers(blockedIds);
 
 const filteredProfiles =
-  Array.isArray(data)
+    Array.isArray(data)
+        ? data.filter(profile =>
 
-    ?
+            String(profile.email).toLowerCase() !==
+            String(currentUser.email).toLowerCase() &&
 
-    data.filter(profile =>
+            !blockedIds.includes(profile.userId)
 
-      profile.profileCompleted === true &&
+        )
+        : [];
+// const results = await Promise.all(
+//
+//     filteredProfiles.map(async (profile) => {
+//
+//         try {
+//
+//             return {
+//                 userId: profile.userId,
+//                 reported: await reportAPI.hasReported(profile.userId)
+//             };
+//
+//         } catch {
+//
+//             return {
+//                 userId: profile.userId,
+//                 reported: false
+//             };
+//
+//         }
+//
+//     })
+//
+// );
+//
+// const reportStatus = {};
+//
+// results.forEach(item => {
+//     reportStatus[item.userId] = item.reported;
+// });
+//
+// setReportedUsers(reportStatus);
+setReportedUsers({});
 
-      String(profile.email)
-        .toLowerCase()
-
-      !==
-      String(currentUser.email)
-        .toLowerCase()
-
-      &&
-
-      !blockedIds.includes(
-        profile.userId
-      )
-
-    )
-
-    : [];
-
-     console.log(
- "CURRENT USER:",
- currentUser.email
- );
-
- console.log(
- "FILTERED PROFILES:",
- filteredProfiles
- );
- console.log(
- "CURRENT USER EMAIL:",
- currentUser.email
- );
-
- console.log(
- "FILTERED:",
- filteredProfiles
- );
-filteredProfiles.forEach(profile => {
-
-  console.log(
-    "USER:",
-    profile.firstName,
-    "PREMIUM:",
-    profile.isPremium
-  );
-
-});
-const reportStatus = {};
-
-for (const profile of filteredProfiles) {
-
-  try {
-
-    reportStatus[profile.userId] =
-      await reportAPI.hasReported(
-        profile.userId
-      );
-
-  } catch {
-
-    reportStatus[profile.userId] = false;
-
-  }
-
-}
-
-setReportedUsers(reportStatus);
-
-
-setProfiles(data);
-
+setProfiles(filteredProfiles);
+console.log("FILTERED PROFILES:", filteredProfiles);
     } catch (error) {
-      console.warn('Failed to load profiles:', error.message);
+
       setProfiles([]);
     } finally {
       setLoadingProfiles(false);
@@ -500,15 +461,7 @@ Number(
 profile.userId
 );
 
-console.log(
-"SENDER:",
-senderId
-);
 
-console.log(
-"RECEIVER:",
-receiverId
-);
 
 if(
 senderId === receiverId
@@ -1068,107 +1021,38 @@ onDoubleClick={async (e) => {
 >
 
 <HeartAnimation
-
-show={
-
-showHeart===profile.userId
-
-}
-
-onComplete={()=>{
-
-setShowHeart(
-null
-);
-
-}}
-
+  show={showHeart===profile.userId}
+  onComplete={()=>{
+    setShowHeart(null);
+  }}
 />
 
 {
-profile.imageUrl ? (
+  profile.imageUrl ? (
+    <>
+     <img
+         src={
+             profile.imageUrl?.startsWith("http")
+                 ? profile.imageUrl
+                 : `https://localhost:9090${profile.imageUrl}`
+         }
+         alt={profile.name || "Profile"}
+         className="w-full h-full object-cover"
+         onError={(e) => {
 
-<>
-<img
-
-src={profile.imageUrl}
-
-alt={`${profile.firstName} ${profile.lastName}`}
-
-className="
-w-full
-h-full
-object-cover
-"
-
-onError={(e)=>{
-
-e.target.parentElement.innerHTML=
-`
-
-<div class="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400">
-
-No Image
-
-</div>
-
-`;
-
-}}
-
- />
-
-<div
-
-className="
-absolute
-bottom-3
-left-3
-bg-white/90
-px-3
-py-1
-rounded-full
-text-sm
-font-medium
-shadow
-"
-
->
-
-❤️ {profile.matchPercentage || 0} Match
-
-</div>
-
-</>
-
-)
-
-:
-
-(
-
-<div
-
-className="
-w-full
-h-full
-flex
-items-center
-justify-center
-bg-gray-100
-text-gray-400
-"
-
->
-
-No Image
-
-</div>
-
-)
-
-}
-                    </div>
+             e.currentTarget.src = "/profile1.jpg";
+         }}
+     />
+      <div className="absolute bottom-3 left-3 bg-white/90 px-3 py-1 rounded-full text-sm font-medium shadow">
+        ❤️ {profile.matchPercentage || 0} Match
+      </div>
+    </>
+  ) : (
+    <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400">
+      No Image
+    </div>
+  )
+}                    </div>
                   <div className="p-4 flex flex-col flex-1">
                   <h3 className="text-lg font-semibold leading-tight">
                     {profile.name || "Unknown User"}
@@ -1218,10 +1102,7 @@ No Image
          return;
        }
 
-       console.log(
-         "PROFILE CLICKED:",
-         profile
-       );
+
 
        handleSendInterest(
          profile

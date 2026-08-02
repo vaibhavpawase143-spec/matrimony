@@ -37,4 +37,7 @@ public interface BrotherTypeRepository extends JpaRepository<BrotherType, Long> 
     List<BrotherType> findByAdminIdAndIsActiveFalseAndDeletedAtIsNull(Long adminId);
 
     List<BrotherType> findByAdminIdAndDeletedAtIsNotNull(Long adminId);
+    List<BrotherType> findByDeletedAtIsNull();
+
+    List<BrotherType> findByIsActiveTrueAndDeletedAtIsNull();
 }

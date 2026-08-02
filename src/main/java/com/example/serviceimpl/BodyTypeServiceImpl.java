@@ -77,10 +77,7 @@ public class BodyTypeServiceImpl implements BodyTypeService {
 
         if (adminId == null) {
 
-            return bodyTypeRepository.findAll()
-                    .stream()
-                    .filter(bt -> bt.getDeletedAt() == null)
-                    .toList();
+            return bodyTypeRepository.findByDeletedAtIsNull();
         }
 
         return bodyTypeRepository.findByAdminIdAndDeletedAtIsNull(adminId);
@@ -91,12 +88,7 @@ public class BodyTypeServiceImpl implements BodyTypeService {
 
         if (adminId == null) {
 
-            return bodyTypeRepository.findAll()
-                    .stream()
-                    .filter(bt ->
-                            bt.getDeletedAt() == null
-                                    && Boolean.TRUE.equals(bt.getIsActive()))
-                    .toList();
+            return bodyTypeRepository.findByIsActiveTrueAndDeletedAtIsNull();
         }
 
         return bodyTypeRepository.findByAdminIdAndIsActiveTrueAndDeletedAtIsNull(adminId);
@@ -225,9 +217,6 @@ public class BodyTypeServiceImpl implements BodyTypeService {
     @Transactional
     public List<BodyType> getDeleted(Long adminId) {
 
-        return bodyTypeRepository.findAll()
-                .stream()
-                .filter(bt -> bt.getDeletedAt() != null)
-                .toList();
+        return bodyTypeRepository.findByAdminIdAndDeletedAtIsNotNull(adminId);
     }
 }

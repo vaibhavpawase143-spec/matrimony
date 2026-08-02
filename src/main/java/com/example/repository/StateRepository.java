@@ -2,11 +2,11 @@ package com.example.repository;
 
 import com.example.model.State;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
-import org.springframework.data.jpa.repository.Query;
 
 @Repository
 public interface StateRepository extends JpaRepository<State, Long> {
@@ -49,9 +49,26 @@ public interface StateRepository extends JpaRepository<State, Long> {
     // ADMIN
     // =====================================================
 
-    List<State> findByAdmin_IdAndDeletedAtIsNull(Long adminId);
+    @Query("""
+SELECT s
+FROM State s
+LEFT JOIN FETCH s.admin
+LEFT JOIN FETCH s.country
+WHERE s.admin.id = :adminId
+AND s.deletedAt IS NULL
+""")
+    List<State> findByAdminWithRelations(Long adminId);
 
-    List<State> findByAdmin_IdAndIsActiveTrueAndDeletedAtIsNull(Long adminId);
+    @Query("""
+SELECT s
+FROM State s
+LEFT JOIN FETCH s.admin
+LEFT JOIN FETCH s.country
+WHERE s.admin.id = :adminId
+AND s.isActive = true
+AND s.deletedAt IS NULL
+""")
+    List<State> findActiveByAdminWithRelations(Long adminId);
 
     List<State> findByAdmin_IdAndIsActiveFalseAndDeletedAtIsNull(Long adminId);
 
@@ -59,7 +76,16 @@ public interface StateRepository extends JpaRepository<State, Long> {
     // COUNTRY
     // =====================================================
 
-    List<State> findByCountry_IdAndAdmin_IdAndDeletedAtIsNull(
+    @Query("""
+SELECT s
+FROM State s
+LEFT JOIN FETCH s.admin
+LEFT JOIN FETCH s.country
+WHERE s.country.id = :countryId
+AND s.admin.id = :adminId
+AND s.deletedAt IS NULL
+""")
+    List<State> findByCountryAndAdminWithRelations(
             Long countryId,
             Long adminId
     );

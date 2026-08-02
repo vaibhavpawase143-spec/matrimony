@@ -54,7 +54,11 @@ const Account = () => {
     email: profileData?.email || "",
     phone: profileData?.phone || "",
     memberId: profileData?.id || "",
-    profilePhoto: profileData?.imageUrl || profileData?.profilePhotoUrl || "",
+profilePhoto:
+  profileData?.imageUrl ||
+  profileData?.photoUrl ||
+  profileData?.profilePhotoUrl ||
+  "",
     accountType: profileData?.isPremium ? "Premium Member" : "Free Member",
     phoneVerified: profileData?.phoneVerified || false,
     emailVerified: profileData?.emailVerified || false,

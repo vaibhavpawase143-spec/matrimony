@@ -41,6 +41,7 @@ public class JwtFilter extends OncePerRequestFilter {
                 || path.startsWith("/api/kundli/")
                 || path.startsWith("/v3/api-docs")
                 || path.startsWith("/swagger-ui")
+                || path.startsWith("/images/")
                 || path.startsWith("/ws");
     }
 

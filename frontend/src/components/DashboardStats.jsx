@@ -15,28 +15,14 @@ const DashboardStats = ({ stats = {} }) => {
 const navigate = useNavigate();
 const [showUpgradePopup, setShowUpgradePopup] = useState(false);
 const [premiumFeature, setPremiumFeature] = useState("Messages");
-const defaultStats = {
-
-totalMatches:
-stats.totalMatches || 0,
-
-interestsSent:
-stats.interestsSent || 0,
-
-interestsReceived:
-stats.interestsReceived || 0,
-
-shortlists:
-stats.shortlists || 0,
-
-profileViews:
-stats.profileViews || 0,
-likesReceived:
-stats.likesReceived || 0,
-
-messages:
-stats.messages || 0,
-
+const defaultStats = stats || {
+    totalMatches: "...",
+    interestsSent: "...",
+    interestsReceived: "...",
+    shortlists: "...",
+    profileViews: "...",
+    likesReceived: "...",
+    messages: "..."
 };
 const statItems = [
 

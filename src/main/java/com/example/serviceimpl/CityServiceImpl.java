@@ -252,7 +252,7 @@ public class CityServiceImpl implements CityService {
     @Transactional(readOnly = true)
     public List<City> getActiveByState(Long stateId) {
 
-        return cityRepository.findByState_IdAndIsActiveTrueAndDeletedAtIsNull(stateId);
+        return cityRepository.findActiveByStateWithRelations(stateId);
     }
 
     @Override

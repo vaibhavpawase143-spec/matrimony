@@ -51,6 +51,7 @@ public class BloodGroupServiceImpl implements BloodGroupService {
 
     // ✅ Get by ID
     @Override
+
     public BloodGroup getById(Long id, Long adminId) {
 
         BloodGroup bloodGroup = bloodGroupRepository.findById(id)
@@ -71,10 +72,7 @@ public class BloodGroupServiceImpl implements BloodGroupService {
     public List<BloodGroup> getAll(Long adminId) {
 
         if (adminId == null) {
-            return bloodGroupRepository.findAll()
-                    .stream()
-                    .filter(bg -> bg.getDeletedAt() == null)
-                    .toList();
+            return bloodGroupRepository.findByDeletedAtIsNull();
         }
 
         return bloodGroupRepository.findByAdminIdAndDeletedAtIsNull(adminId);
@@ -85,12 +83,7 @@ public class BloodGroupServiceImpl implements BloodGroupService {
 
         if (adminId == null) {
 
-            return bloodGroupRepository.findAll()
-                    .stream()
-                    .filter(bg ->
-                            bg.getDeletedAt() == null &&
-                                    Boolean.TRUE.equals(bg.getIsActive()))
-                    .toList();
+            return bloodGroupRepository.findByDeletedAtIsNullAndIsActiveTrue();
         }
 
         return bloodGroupRepository.findByAdminIdAndIsActiveTrueAndDeletedAtIsNull(adminId);
@@ -209,9 +202,6 @@ public class BloodGroupServiceImpl implements BloodGroupService {
     @Transactional
     public List<BloodGroup> getDeleted(Long adminId) {
 
-        return bloodGroupRepository.findAll()
-                .stream()
-                .filter(bg -> bg.getDeletedAt() != null)
-                .toList();
+        return bloodGroupRepository.findByAdminIdAndDeletedAtIsNotNull(adminId);
     }
 }

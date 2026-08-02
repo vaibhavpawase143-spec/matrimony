@@ -36,7 +36,7 @@ public interface ProfileService {
 
     Optional<Profile> getByUserId(Long userId);
 
-    List<Profile> getAll();
+    Page<Profile> getAll(Pageable pageable);
 
     List<Profile> getActiveProfiles();
 
@@ -50,49 +50,45 @@ public interface ProfileService {
     // FILTERS
     // =====================================================
 
-    List<Profile> getByReligion(
-            Long religionId
-    );
+    Page<Profile> getByReligion(Long religionId, Pageable pageable);
 
-    List<Profile> getByCaste(
-            Long casteId
-    );
+    Page<Profile> getByCaste(Long casteId, Pageable pageable);
 
-    List<Profile> getByCity(
-            Long cityId
-    );
+    Page<Profile> getByCity(Long cityId, Pageable pageable);
 
-    List<Profile> getByEducation(
-            Long educationLevelId
-    );
+    Page<Profile> getByEducation(Long educationLevelId, Pageable pageable);
 
-    List<Profile> getByOccupation(
-            Long occupationId
-    );
+    Page<Profile> getByOccupation(Long occupationId, Pageable pageable);
 
     // =====================================================
     // ADVANCED FILTERS
     // =====================================================
 
-    List<Profile> getByReligionAndCaste(
+    Page<Profile> getByReligionAndCaste(
             Long religionId,
-            Long casteId
+            Long casteId,
+            Pageable pageable
     );
 
-    List<Profile> getByCityAndEducation(
+    Page<Profile> getByCityAndEducation(
             Long cityId,
-            Long educationLevelId
+            Long educationLevelId,
+            Pageable pageable
     );
 
-    List<Profile> getByOccupationAndCity(
+    Page<Profile> getByOccupationAndCity(
             Long occupationId,
-            Long cityId
+            Long cityId,
+            Pageable pageable
     );
 
-    List<Profile> getActiveByReligionAndCity(
+    Page<Profile> getActiveByReligionAndCity(
             Long religionId,
-            Long cityId
+            Long cityId,
+            Pageable pageable
     );
+
+
 
     // =====================================================
     // SEARCH

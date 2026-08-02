@@ -1,12 +1,16 @@
 package com.example.serviceimpl;
 
 import com.example.dto.response.MatchResponseDTO;
-import com.example.model.*;
-import com.example.repository.*;
+import com.example.model.PartnerPreference;
+import com.example.model.Profile;
+import com.example.repository.PartnerPreferenceRepository;
+import com.example.repository.ProfileMatchRepository;
+import com.example.repository.UserRepository;
 import com.example.service.PreferenceMatchService;
-
 import lombok.RequiredArgsConstructor;
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,14 +37,17 @@ public class PreferenceMatchServiceImpl implements PreferenceMatchService {
         PartnerPreference pref = preferenceRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("Preference not found"));
 
-        List<Profile> profiles = profileRepository.findMatches(
+        Pageable pageable = PageRequest.of(0, 10);
+
+        Page<Profile> profiles = profileRepository.findMatches(
                 userId,
                 pref.getReligion() != null ? pref.getReligion().getId() : null,
                 pref.getCaste() != null ? pref.getCaste().getId() : null,
-                pref.getCity() != null ? pref.getCity().getId() : null
+                pref.getCity() != null ? pref.getCity().getId() : null,
+                pageable
         );
 
-        return profiles.stream()
+        return profiles.getContent().stream()
                 .filter(p -> matchAge(p, pref))
                 .filter(p -> matchHeight(p, pref))
                 .map(p -> mapToDTO(p, pref))
