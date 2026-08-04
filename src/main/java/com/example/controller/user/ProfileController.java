@@ -167,6 +167,10 @@ public class ProfileController {
 
         return ResponseEntity.ok(list);
     }
+    @GetMapping("/discover")
+    public ResponseEntity<List<ProfileResponseDTO>> discoverProfiles() {
+        return ResponseEntity.ok(service.getDiscoverProfiles());
+    }
     // ================= PREMIUM ACTIVATE =================
     @PostMapping("/premium/activate")
     public ResponseEntity<String> activatePremium(

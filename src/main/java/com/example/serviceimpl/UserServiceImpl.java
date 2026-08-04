@@ -219,9 +219,6 @@ public class UserServiceImpl implements UserService {
         user.setLastSeen(null);
         user.setLastLogin(LocalDateTime.now());
 
-        String sessionId = UUID.randomUUID().toString();
-        user.setSessionId(sessionId);
-
         userRepository.save(user);
         List<String> roles = Optional.ofNullable(user.getRoles())
                 .orElse(Set.of())
@@ -232,7 +229,7 @@ public class UserServiceImpl implements UserService {
         return jwtUtil.generateToken(
                 user.getEmail(),
                 roles,
-                sessionId,
+                null,
                 "USER"
         );
     }
@@ -286,13 +283,7 @@ public class UserServiceImpl implements UserService {
                         + user.getIsOnline()
         );
 
-        // Generate tokens
-        // Generate unique session ID
-        String sessionId = UUID.randomUUID().toString();
-
-        user.setSessionId(sessionId);
-
-        userRepository.save(user);
+// Hibernate will automatically update because method is transactional
 
 // Generate tokens
         List<String> roles = Optional.ofNullable(user.getRoles())
@@ -304,7 +295,7 @@ public class UserServiceImpl implements UserService {
         String accessToken = jwtUtil.generateToken(
                 user.getEmail(),
                 roles,
-                sessionId,
+                null,
                 "USER"
         );
 
@@ -515,7 +506,6 @@ public class UserServiceImpl implements UserService {
         user.setIsOnline(false);
         user.setLastSeen(LocalDateTime.now());
         user.setLastHeartbeat(null);
-        user.setSessionId(null);
         userRepository.saveAndFlush(user);
 
         System.out.println(

@@ -323,13 +323,31 @@ useEffect(() => {
 }, []);
 useEffect(() => {
 
-    const user = JSON.parse(
-        localStorage.getItem("user")
-    );
+    const storedUser = localStorage.getItem("user");
+
+    if (!storedUser) {
+        console.log("No user found in localStorage");
+        return;
+    }
+
+    const user = JSON.parse(storedUser);
+
+
+    const userId =
+        user?.profile?.userId ||
+        user?.userId ||
+        user?.id;
+
+
+    if (!userId) {
+        console.log("User id missing", user);
+        return;
+    }
+
 
     connectNotifications(
 
-    user.profile.userId,
+    userId,
 
 (message)=>{
 
@@ -728,11 +746,14 @@ const loadChat = async (chat) => {
     }
 
 };
-const user =
-JSON.parse(localStorage.getItem("user"));
+const storedUser = localStorage.getItem("user");
+
+const user = storedUser
+    ? JSON.parse(storedUser)
+    : null;
 
 const currentUserId =
-user.profile.userId;
+    user?.profile?.userId || user?.userId || null;
 
 const sortedMessages = messages;
 

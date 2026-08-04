@@ -61,7 +61,6 @@ public class JwtFilter extends OncePerRequestFilter {
 
             String token = authHeader.substring(7);
             String username = jwtUtil.extractUsername(token);
-            String tokenSessionId = jwtUtil.extractSessionId(token);
             String accountType = jwtUtil.extractAccountType(token);
 
             if (username != null &&
@@ -72,45 +71,6 @@ public class JwtFilter extends OncePerRequestFilter {
                     return;
                 }
 
-                String dbSessionId = null;
-
-                if ("ADMIN".equals(accountType)) {
-
-                    Admin admin = adminRepository
-                            .findByEmailIgnoreCase(username)
-                            .orElseThrow(() ->
-                                    new RuntimeException("Admin not found"));
-
-                    dbSessionId = admin.getSessionId();
-
-                } else if ("USER".equals(accountType)) {
-
-                    User user = userRepository
-                            .findByEmail(username)
-                            .orElseThrow(() ->
-                                    new RuntimeException("User not found"));
-
-                    dbSessionId = user.getSessionId();
-
-                } else {
-
-                    response.sendError(
-                            HttpServletResponse.SC_UNAUTHORIZED,
-                            "Invalid account type."
-                    );
-                    return;
-                }                if (dbSessionId == null || !dbSessionId.equals(tokenSessionId)) {
-                    System.out.println("===== SESSION CHECK =====");
-                    System.out.println("Username       : " + username);
-                    System.out.println("Token Session  : " + tokenSessionId);
-                    System.out.println("DB Session     : " + dbSessionId);
-                    System.out.println("=========================");
-                    response.sendError(
-                            HttpServletResponse.SC_UNAUTHORIZED,
-                            "Session expired. Please login again."
-                    );
-                    return;
-                }
 
                 UserDetails userDetails =
                         securityUserDetailsService.loadUserByUsername(username);
@@ -131,10 +91,13 @@ public class JwtFilter extends OncePerRequestFilter {
 
         } catch (Exception e) {
 
-            response.sendError(
-                    HttpServletResponse.SC_UNAUTHORIZED,
+            request.setAttribute(
+                    "AUTH_ERROR",
                     "Invalid or expired token"
             );
+
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+
             return;
         }
 

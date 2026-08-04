@@ -405,6 +405,23 @@ public class MatchServiceImpl implements MatchService {
                                         user.getProfile().getProfileCompleted()
                                 )
                 )
+                // Show only opposite gender
+                .filter(user -> {
+
+                    Profile currentProfile = currentUser.getProfile();
+                    Profile candidateProfile = user.getProfile();
+
+                    if (currentProfile == null || candidateProfile == null) {
+                        return false;
+                    }
+
+                    if (currentProfile.getGender() == null || candidateProfile.getGender() == null) {
+                        return false;
+                    }
+
+                    return !currentProfile.getGender().getId()
+                            .equals(candidateProfile.getGender().getId());
+                })
 
                 // Sort by match percentage
                 .sorted((u1, u2) ->

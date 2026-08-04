@@ -41,6 +41,11 @@ import ProfileDetails from "./pages/ProfileDetails";
 import Kundli from "./pages/Kundli";
 import Contact from "./pages/Contact";
 import About from "./pages/About";
+import CookiePolicy from "./pages/CookiePolicy";
+import SafetyTips from "./pages/SafetyTips";
+import HowItWorks from "./pages/HowItWorks";
+import MembershipPlans from "./pages/MembershipPlans";
+import CommunityGuidelines from "./pages/CommunityGuidelines";
 import Matches from "./pages/Matches";
 import Messages from "./pages/Messages";
 import SettingsPage from "./pages/SettingsPage";
@@ -281,6 +286,28 @@ element={<ResetPassword />}
                         </AuthenticatedLayout>
                       }
                     />
+
+<Route
+    path="/cookie-policy"
+    element={<CookiePolicy />}
+/>
+<Route
+    path="/safety-tips"
+    element={<SafetyTips />}
+/>
+<Route
+    path="/how-it-works"
+    element={<HowItWorks />}
+/>
+<Route
+    path="/membership-plans"
+    element={<MembershipPlans />}
+/>
+<Route
+    path="/community-guidelines"
+    element={<CommunityGuidelines />}
+/>
+
 <Route
 
 path="/sent-interests"

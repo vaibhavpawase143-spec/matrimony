@@ -39,16 +39,31 @@ const Footer = () => {
           <div>
             <h4 className="font-semibold text-foreground mb-4">{t.footer.quickLinks}</h4>
             <div className="space-y-2">
-              <Link to="/home" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
+              <Link
+                to="/"
+                className="block text-sm text-muted-foreground hover:text-primary transition-colors"
+              >
                 {t.navbar.home}
               </Link>
-              <Link to="/search" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
+
+              <Link
+                to="/search"
+                className="block text-sm text-muted-foreground hover:text-primary transition-colors"
+              >
                 {t.footer.searchProfiles}
               </Link>
-              <Link to="/matches" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
+
+              <Link
+                to="/matches"
+                className="block text-sm text-muted-foreground hover:text-primary transition-colors"
+              >
                 {t.navbar.matches}
               </Link>
-              <Link to="/upgrade" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
+
+              <Link
+                to="/membership-plans"
+                className="block text-sm text-muted-foreground hover:text-primary transition-colors"
+              >
                 {t.footer.premiumPlans}
               </Link>
             </div>
@@ -56,55 +71,119 @@ const Footer = () => {
 
           {/* Support */}
           <div>
-            <h4 className="font-semibold text-foreground mb-4">{t.footer.support}</h4>
+            <h4 className="font-semibold text-foreground mb-4">
+              {t.footer.support}
+            </h4>
+
             <div className="space-y-2">
-              <Link to="/about" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
+              <Link
+                to="/about"
+                className="block text-sm text-muted-foreground hover:text-primary transition-colors"
+              >
                 {t.footer.aboutUs}
               </Link>
-              <Link to="/contact" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
+
+              <Link
+                to="/contact"
+                className="block text-sm text-muted-foreground hover:text-primary transition-colors"
+              >
                 {t.footer.contactUs}
               </Link>
-              <Link to="/help" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
+
+              <Link
+                to="/help"
+                className="block text-sm text-muted-foreground hover:text-primary transition-colors"
+              >
                 {t.footer.helpSupport}
               </Link>
-              <Link to="/faq" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
+
+              <Link
+                to="/faq"
+                className="block text-sm text-muted-foreground hover:text-primary transition-colors"
+              >
                 {t.footer.faq}
+              </Link>
+
+              <Link
+                to="/how-it-works"
+                className="block text-sm text-muted-foreground hover:text-primary transition-colors"
+              >
+                How It Works
+              </Link>
+
+              <Link
+                to="/safety-tips"
+                className="block text-sm text-muted-foreground hover:text-primary transition-colors"
+              >
+                Safety Tips
               </Link>
             </div>
           </div>
 
           {/* Legal & Contact */}
           <div>
-            <h4 className="font-semibold text-foreground mb-4">{t.footer.legal}</h4>
+            <h4 className="font-semibold text-foreground mb-4">
+              {t.footer.legal}
+            </h4>
+
             <div className="space-y-2 mb-4">
-              <Link to="/privacy-policy" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
+              <Link
+                to="/privacy-policy"
+                className="block text-sm text-muted-foreground hover:text-primary transition-colors"
+              >
                 {t.footer.privacyPolicy}
               </Link>
-              <Link to="/terms" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
+
+              <Link
+                to="/terms"
+                className="block text-sm text-muted-foreground hover:text-primary transition-colors"
+              >
                 {t.footer.terms}
               </Link>
-              <Link to="/refund-policy" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
+
+              <Link
+                to="/refund-policy"
+                className="block text-sm text-muted-foreground hover:text-primary transition-colors"
+              >
                 {t.footer.refundPolicy}
               </Link>
-            </div>
-            <div className="space-y-2 text-sm text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <Mail className="h-4 w-4" />
-                <span>{t.footer.email}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Phone className="h-4 w-4" />
-                <span>{t.footer.phone}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <MapPin className="h-4 w-4" />
-                <span>{t.footer.address}</span>
-              </div>
-            </div>
-          </div>
-        </div>
 
-        {/* Copyright */}
+              <Link
+                to="/cookie-policy"
+                className="block text-sm text-muted-foreground hover:text-primary transition-colors"
+              >
+                Cookie Policy
+              </Link>
+
+              <Link
+                to="/community-guidelines"
+                className="block text-sm text-muted-foreground hover:text-primary transition-colors"
+              >
+                Community Guidelines
+              </Link>
+            </div>
+
+                        <div className="space-y-2 text-sm text-muted-foreground">
+                          <div className="flex items-center gap-2">
+                            <Mail className="h-4 w-4" />
+                            <span>{t.footer.email}</span>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <Phone className="h-4 w-4" />
+                            <span>{t.footer.phone}</span>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <MapPin className="h-4 w-4" />
+                            <span>{t.footer.address}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                    </div>
+
+                    {/* Copyright */}
         <div className="border-t border-border pt-6">
           <div className="flex flex-col md:flex-row justify-between items-center text-sm text-muted-foreground">
             <p>{t.footer.copyright.replace("{year}", currentYear)}</p>

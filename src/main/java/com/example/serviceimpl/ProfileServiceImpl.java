@@ -252,6 +252,29 @@ public class ProfileServiceImpl implements ProfileService {
 
         return dto;
     }
+
+    public List<ProfileResponseDTO> getDiscoverProfiles() {
+
+        User currentUser = getCurrentUser();
+
+        Profile myProfile = repository.findByUserIdWithRelations(currentUser.getId())
+                .orElseThrow(() -> new RuntimeException("Profile not found"));
+
+        String myGender = myProfile.getGender().getName();
+
+        String oppositeGender =
+                myGender.equalsIgnoreCase("Male")
+                        ? "Female"
+                        : "Male";
+
+        return repository.findDiscoverProfiles(
+                        currentUser.getId(),
+                        oppositeGender
+                )
+                .stream()
+                .map(this::mapToDTO)
+                .toList();
+    }
     // =====================================================
     // DELETE
     // =====================================================

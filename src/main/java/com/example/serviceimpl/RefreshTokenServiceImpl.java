@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -26,7 +27,6 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     public RefreshToken createToken(String email) {
 
         repository.deleteByEmail(email);
-        repository.flush();
 
         RefreshToken refreshToken = RefreshToken.builder()
                 .email(email)
@@ -36,7 +36,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
                 )
                 .build();
 
-        return repository.save(refreshToken);
+        return repository.saveAndFlush(refreshToken);
     }
     // =====================================================
     // VERIFY REFRESH TOKEN
@@ -64,5 +64,6 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
 
         repository.findByEmail(email)
                 .ifPresent(repository::delete);
+
     }
 }

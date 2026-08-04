@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long> {
@@ -17,6 +18,9 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long
 
     @Transactional
     @Modifying
-    @Query("DELETE FROM RefreshToken r WHERE r.email = :email")
+    @Query(
+            value = "DELETE FROM refresh_token WHERE email = :email",
+            nativeQuery = true
+    )
     void deleteByEmail(@Param("email") String email);
 }

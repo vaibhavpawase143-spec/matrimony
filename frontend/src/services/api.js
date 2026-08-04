@@ -49,6 +49,38 @@ export const apiClient = async (endpoint, options = {}) => {
     console.log('🌐 Request options:', defaultOptions);
 
     const response = await fetch(fullUrl, defaultOptions);
+    // Auto logout if backend says session is invalid
+   if (response.status === 401) {
+
+     let message = "Your account has been logged in from another device. Please login again.";
+
+     try {
+       const errorData = await response.json();
+
+       if (
+         errorData.message === "Session expired. Please login again." ||
+         errorData.message?.includes("Session expired")
+       ) {
+         message = "Your account has been logged in from another device. Please login again.";
+       } else if (errorData.message) {
+         message = errorData.message;
+       }
+
+     } catch {
+       // Ignore JSON parsing errors
+     }
+
+     localStorage.clear();
+     sessionStorage.clear();
+
+     localStorage.setItem("sessionExpiredMessage", message);
+
+     if (!window.location.pathname.includes("/login")) {
+       window.location.replace("/login");
+     }
+
+     throw new Error(message);
+   }
 
     console.log('🌐 Response status:', response.status, response.statusText);
     console.log('🌐 Response headers:', Object.fromEntries(response.headers.entries()));
@@ -1867,6 +1899,48 @@ getBloodGroups: async () => {
       } catch (error) {
 
         return [];
+
+      }
+
+    }
+
+  };
+  export const faqAPI = {
+
+    getPublishedFaqs: async () => {
+
+      try {
+
+        const result = await apiClient("/faqs");
+
+        return result?.data ?? [];
+
+      } catch (error) {
+
+        console.error("FAQ API Error:", error);
+
+        return [];
+
+      }
+
+    }
+
+  };
+  export const cmsAPI = {
+
+    getPage: async (pageKey) => {
+
+      try {
+
+        const result = await apiClient(`/cms/${pageKey}`);
+
+        return result?.data ?? result;
+
+      } catch (error) {
+
+        console.error("CMS API Error:", error);
+
+        return null;
 
       }
 

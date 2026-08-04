@@ -18,7 +18,7 @@ public interface ReligionRepository extends JpaRepository<Religion, Long> {
 
     Optional<Religion> findByIdAndDeletedAtIsNotNull(Long id);
 
-    List<Religion> findAllByDeletedAtIsNull();
+    List<Religion> findAllByDeletedAtIsNullOrderByIdAsc();
 
     List<Religion> findByDeletedAtIsNotNull();
 

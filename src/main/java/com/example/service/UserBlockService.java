@@ -1,6 +1,8 @@
 package com.example.service;
 
+import com.example.model.Profile;
 import com.example.model.UserBlock;
+import com.example.repository.ProfileRepository;
 import com.example.repository.UserBlockRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -24,6 +26,7 @@ public class UserBlockService {
     private final UserRepository userRepository;
 
     private final UserPhotoRepository userPhotoRepository;
+    private final ProfileRepository profileRepository;
 
     // ================= BLOCK USER =================
     public void blockUser(Long blockerId, Long blockedId) {
@@ -109,9 +112,9 @@ public class UserBlockService {
                     .orElseThrow(() ->
                             new RuntimeException("Blocked user not found"));
 
-            String photoUrl = userPhotoRepository
-                    .findFirstByUserIdAndPrimaryPhotoTrue(user.getId())
-                    .map(UserPhoto::getPhotoUrl)
+            String photoUrl = profileRepository
+                    .findByUserId(user.getId())
+                    .map(Profile::getImageUrl)
                     .orElse(null);
 
             return BlockedUserResponseDTO.builder()

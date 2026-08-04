@@ -30,7 +30,7 @@ public class UserPhotoServiceImpl implements UserPhotoService {
     private final ProfileRepository profileRepository;
     private final FileStorageService fileStorageService;
     private final SubscriptionService subscriptionService;
-    private static final String BASE_URL = "https://localhost:9090/uploads/";
+    private static final String BASE_URL = "http://localhost:9090/uploads/";
 
     // =========================
     // 📸 UPLOAD / UPDATE

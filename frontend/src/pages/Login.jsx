@@ -16,6 +16,21 @@ const Login = () => {
       new URLSearchParams(location.search).get("redirect");
   const { login } = useAuth();
   const { success, error } = useToast();
+  useEffect(() => {
+
+      const message =
+          localStorage.getItem("sessionExpiredMessage");
+
+      if (message) {
+
+          error(message);
+
+          localStorage.removeItem(
+              "sessionExpiredMessage"
+          );
+      }
+
+  }, [error]);
   const { startLoading, stopLoading } = useLoading();
   const { t } = useLanguage();
   const { executeRecaptcha } = useGoogleReCaptcha();
@@ -26,10 +41,12 @@ const Login = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [errors, setErrors] = useState({});
 
+
   useEffect(() => {
     setEmail("");
     setPassword("");
   }, []);
+
 
   const handleLogin = async (e) => {
     e.preventDefault();

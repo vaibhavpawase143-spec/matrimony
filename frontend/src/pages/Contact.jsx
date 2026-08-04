@@ -1,9 +1,34 @@
 import { Mail, Phone, MapPin, Send } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { useLanguage } from "@/context/LanguageContext";
+import { useEffect, useState } from "react";
+import { cmsAPI } from "@/services/api";
 
 const Contact = () => {
   const { t } = useLanguage();
+
+
+    const [contactInfo, setContactInfo] = useState(null);
+
+    useEffect(() => {
+      loadCMS();
+    }, []);
+
+    const loadCMS = async () => {
+      try {
+        const page = await cmsAPI.getPage("CONTACT_US");
+        setContactInfo(JSON.parse(page.content));
+      } catch (error) {
+        console.error("Failed to load Contact CMS", error);
+      }
+    };
+if (!contactInfo) {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      Contact page is not available.
+    </div>
+  );
+}
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -17,24 +42,51 @@ const Contact = () => {
       <div className="container mx-auto px-4 py-10">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
           {/* Contact Info Cards */}
-          <div className="space-y-4">
-            {[
-              { icon: <Phone className="h-5 w-5" />, title: t.contact.phoneTitle, detail: t.contact.phoneDetail, sub: t.contact.phoneSub },
-              { icon: <Mail className="h-5 w-5" />, title: t.contact.emailTitle, detail: t.contact.emailDetail, sub: t.contact.emailSub },
-              { icon: <MapPin className="h-5 w-5" />, title: t.contact.officeTitle, detail: t.contact.officeDetail, sub: t.contact.officeSub },
-            ].map((c) => (
-              <div key={c.title} className="bg-card rounded-xl border border-border p-5 flex items-start gap-4">
-                <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
-                  {c.icon}
-                </div>
-                <div>
-                  <h3 className="text-sm font-semibold text-foreground">{c.title}</h3>
-                  <p className="text-sm text-foreground mt-0.5">{c.detail}</p>
-                  <p className="text-xs text-muted-foreground">{c.sub}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+         <div className="space-y-4">
+           {[
+             {
+               icon: <Phone className="h-5 w-5" />,
+               title: contactInfo?.phone?.title || t.contact.phoneTitle,
+               detail: contactInfo?.phone?.detail || t.contact.phoneDetail,
+               sub: contactInfo?.phone?.sub || t.contact.phoneSub,
+             },
+             {
+               icon: <Mail className="h-5 w-5" />,
+               title: contactInfo?.email?.title || t.contact.emailTitle,
+               detail: contactInfo?.email?.detail || t.contact.emailDetail,
+               sub: contactInfo?.email?.sub || t.contact.emailSub,
+             },
+             {
+               icon: <MapPin className="h-5 w-5" />,
+               title: contactInfo?.office?.title || t.contact.officeTitle,
+               detail: contactInfo?.office?.detail || t.contact.officeDetail,
+               sub: contactInfo?.office?.sub || t.contact.officeSub,
+             },
+           ].map((c) => (
+             <div
+               key={c.title}
+               className="bg-card rounded-xl border border-border p-5 flex items-start gap-4"
+             >
+               <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
+                 {c.icon}
+               </div>
+
+               <div>
+                 <h3 className="text-sm font-semibold text-foreground">
+                   {c.title}
+                 </h3>
+
+                 <p className="text-sm text-foreground mt-0.5">
+                   {c.detail}
+                 </p>
+
+                 <p className="text-xs text-muted-foreground">
+                   {c.sub}
+                 </p>
+               </div>
+             </div>
+           ))}
+         </div>
 
           {/* Contact Form */}
           <div className="lg:col-span-2 bg-card rounded-xl border border-border p-6">

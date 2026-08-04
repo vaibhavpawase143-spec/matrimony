@@ -18,4 +18,6 @@ public class RecaptchaProperties {
     private Double scoreThreshold;
 
     private String verifyUrl;
+
+    private boolean enabled = true;
 }

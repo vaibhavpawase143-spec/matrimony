@@ -29,12 +29,18 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
                          HttpServletResponse response,
                          AuthenticationException ex) throws IOException {
 
+        String message = (String) request.getAttribute("AUTH_ERROR");
+
+        if (message == null || message.isBlank()) {
+            message = "Invalid or missing token";
+        }
+
         ErrorResponse error = ErrorResponse.builder()
                 .timestamp(LocalDateTime.now())
                 .status(401)
                 .error("UNAUTHORIZED")
-                .message("Invalid or missing token")
-                .errorCode("ERR_401_AUTH") // 🔥 NEW FIELD
+                .message(message)
+                .errorCode("ERR_401_AUTH")
                 .build();
 
         response.setContentType("application/json");

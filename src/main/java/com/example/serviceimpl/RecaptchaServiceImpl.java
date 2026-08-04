@@ -19,6 +19,10 @@ public class RecaptchaServiceImpl implements RecaptchaService {
 
     @Override
     public void verify(String token, String expectedAction) {
+        if (!properties.isEnabled()) {
+            System.out.println("reCAPTCHA disabled for development");
+            return;
+        }
 
         if (token == null || token.isBlank()) {
             throw new RuntimeException("reCAPTCHA token is missing.");

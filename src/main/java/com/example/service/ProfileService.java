@@ -88,6 +88,7 @@ public interface ProfileService {
             Long occupationId,
             Long cityId
     );
+    List<ProfileResponseDTO> getDiscoverProfiles();
 
     List<Profile> getActiveByReligionAndCity(
             Long religionId,

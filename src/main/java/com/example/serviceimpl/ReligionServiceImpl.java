@@ -200,7 +200,7 @@ public class ReligionServiceImpl implements ReligionService {
     @Override
     public List<ReligionResponseDTO> getAll() {
 
-        return religionRepository.findAllByDeletedAtIsNull()
+        return religionRepository.findAllByDeletedAtIsNullOrderByIdAsc()
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
