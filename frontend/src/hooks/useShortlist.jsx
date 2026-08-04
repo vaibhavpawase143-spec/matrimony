@@ -6,13 +6,10 @@ const CACHE_KEY = '__shortlist_cache_v1';
 if (!window[CACHE_KEY]) {
 
 window[CACHE_KEY] = {
-
-items: [],
-
-loaded: false,
-
-profileIds: new Set()
-
+    items: [],
+    loaded: false,
+    loading: false,
+    profileIds: new Set()
 };
 
 }
@@ -36,7 +33,11 @@ useState(0);
 const load = useCallback(
 
 async()=>{
+if (window[CACHE_KEY].loading) {
+    return;
+}
 
+window[CACHE_KEY].loading = true;
 setLoading(true);
 
 setError(null);
@@ -94,7 +95,7 @@ err
 setError(err);
 
 }finally{
-
+window[CACHE_KEY].loading=false;
 setLoading(false);
 
 }
@@ -123,13 +124,11 @@ handler
 
 );
 
-if(
-!window[CACHE_KEY]
-.loaded
-){
-
-load();
-
+if (
+    !window[CACHE_KEY].loaded &&
+    !window[CACHE_KEY].loading
+) {
+    load();
 }
 
 return ()=>{

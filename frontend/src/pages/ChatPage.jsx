@@ -5,7 +5,7 @@ getMessages,
 sendMessage,
 getConversations
 } from "../services/chatApi";
-
+import OnlineHeartbeat from "@/components/chat/OnlineHeartbeat";
 function ChatPage() {
 
     const {
@@ -166,24 +166,10 @@ console.log(err);
 
     },[receiverId]);
 
-    useEffect(() => {
-
-//         const interval = setInterval(() => {
-//
-//             loadMessages();
-//             loadUser();
-//             markSeen();
-//
-//
-//         }, 2000);
-
-        return () => {
-
-            clearInterval(interval);
-
-        };
-
-    }, [receiverId]);
+useEffect(() => {
+    // If you don't need polling, remove it entirely.
+    return () => {};
+}, [receiverId]);
 
 //     useEffect(() => {
 //
@@ -238,9 +224,17 @@ console.log(err);
 
     };
 
-    return (
+  return (
+      <>
+          <OnlineHeartbeat />
 
-        <div
+          <div
+              style={{
+                  padding: "20px",
+                  maxWidth: "1000px",
+                  margin: "0 auto"
+              }}
+          >
             style={{
                 padding: "20px",
                 maxWidth: "1000px",
@@ -662,7 +656,7 @@ console.log(err);
             </div>
 
         </div>
-
+</>
     );
 
 }

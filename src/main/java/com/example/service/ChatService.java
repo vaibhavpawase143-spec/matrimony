@@ -3,8 +3,8 @@ package com.example.service;
 import com.example.dto.response.ConversationListDTO;
 import com.example.model.Message;
 import com.example.model.User;
-
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
@@ -58,9 +58,12 @@ public interface ChatService {
 
     // ================= CONVERSATION =================
 
-    List<ConversationListDTO> getUserConversations(Long userId);
 
-    List<ConversationListDTO> getUserConversationsByEmail(String email);
+
+    Page<ConversationListDTO> getUserConversationsByEmail(
+            String email,
+            Pageable pageable
+    );
 
     // ================= MESSAGE STATUS =================
 

@@ -68,7 +68,11 @@ public interface CasteRepository extends JpaRepository<Caste, Long> {
           )
         ORDER BY c.name ASC
     """)
-    List<Caste> findAllAvailable(Long adminId);
+    List<Caste> findAllAvailable(
+            @org.springframework.data.repository.query.Param("adminId") Long adminId
+    );
+
+    List<Caste> findAllByDeletedAtIsNull();
 
     // =========================================
     // GET ACTIVE

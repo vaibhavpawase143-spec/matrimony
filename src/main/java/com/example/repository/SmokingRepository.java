@@ -72,4 +72,6 @@ public interface SmokingRepository extends JpaRepository<Smoking, Long> {
             String value,
             Long adminId
     );
+
+
 }

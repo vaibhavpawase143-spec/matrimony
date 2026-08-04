@@ -11,6 +11,18 @@ import java.util.concurrent.Executor;
 @EnableAsync
 public class AsyncConfig {
 
+    @Bean(name = "applicationTaskExecutor")
+    @org.springframework.context.annotation.Primary
+    public Executor applicationTaskExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(10);
+        executor.setMaxPoolSize(50);
+        executor.setQueueCapacity(500);
+        executor.setThreadNamePrefix("Async-");
+        executor.initialize();
+        return executor;
+    }
+
     @Bean(name = "emailTaskExecutor")
     public Executor emailTaskExecutor() {
 

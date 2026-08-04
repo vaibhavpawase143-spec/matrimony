@@ -7,6 +7,8 @@ import com.example.repository.*;
 import com.example.service.MatchService;
 import com.example.service.NotificationService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -55,6 +57,10 @@ public class MatchServiceImpl implements MatchService {
         }
     }
     @Override
+    @CacheEvict(
+            value = "topMatches",
+            key = "#fromUserId + '_15'"
+    )
     public void swipe(Long fromUserId, Long toUserId, SwipeType type) {
 
         if (fromUserId.equals(toUserId)) {
@@ -370,6 +376,10 @@ public class MatchServiceImpl implements MatchService {
 
     // ================= TOP MATCHES =================
     @Override
+    @Cacheable(
+            value = "topMatches",
+            key = "#userId + '_' + #limit"
+    )
     public List<MatchResponseDTO> getTopMatches(Long userId, int limit) {
 
         User currentUser = userRepository.findByIdWithProfileAndPreference(userId)
@@ -385,51 +395,18 @@ public class MatchServiceImpl implements MatchService {
 
         PartnerPreference pref = currentUser.getPartnerPreference();
 
-        Long religionId = null;
-        Long cityId = null;
-        Long casteId = null;
-
-        LocalDate minDob = null;
-        LocalDate maxDob = null;
-
-        if (pref != null) {
-
-            religionId = pref.getReligion() != null
-                    ? pref.getReligion().getId()
-                    : null;
-
-            cityId = pref.getCity() != null
-                    ? pref.getCity().getId()
-                    : null;
-
-            casteId = pref.getCaste() != null
-                    ? pref.getCaste().getId()
-                    : null;
-
-            LocalDate today = LocalDate.now();
-
-            if (pref.getMinAge() != null) {
-                maxDob = today.minusYears(pref.getMinAge());
-            }
-
-            if (pref.getMaxAge() != null) {
-                minDob = today.minusYears(pref.getMaxAge());
-            }
-        }
 
         List<User> users =
                 userRepository.findCandidateUsers(
                         userId,
                         oppositeGenderId,
-                        PageRequest.of(0, 200)
+                        PageRequest.of(0, 50)
                 );
         return users.stream()
 
                 .filter(user -> !blockedIds.contains(user.getId()))
-                .filter(user -> !user.getId().equals(userId))
-                .filter(user -> Boolean.TRUE.equals(user.getIsActive()))
-                .filter(user -> !Boolean.TRUE.equals(user.getIsBlocked()))
-                .filter(user -> !Boolean.TRUE.equals(user.getIsDeleted()))
+
+
                 .filter(user ->
                         user.getProfile() != null &&
                                 Boolean.TRUE.equals(user.getProfile().getProfileCompleted())

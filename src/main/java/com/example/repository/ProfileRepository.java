@@ -16,57 +16,89 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+
+
 @Repository
-
 public interface ProfileRepository extends
-
         JpaRepository<Profile, Long>,
-
         JpaSpecificationExecutor<Profile> {
 
-
-
     // =====================================================
-
-    // BASIC METHODS
-
+    // ✅ BASIC METHODS (no EntityGraph - minimal data)
     // =====================================================
-
-
 
     Optional<Profile> findByUserId(Long userId);
-
-
-
     Optional<Profile> findByUser(User user);
-
-
-
     boolean existsByUserId(Long userId);
-
-
-
     boolean existsByUser(User user);
-
-
-
     List<Profile> findByIsActiveTrue();
-
-
-
     List<Profile> findByIsDeletedFalse();
-
-
-
-
-
-
-
     List<Profile> findByCreatedBy(Long createdBy);
-
-
-
     List<Profile> findByUpdatedBy(Long updatedBy);
+
+    // =====================================================
+    // ✅ LIGHTWEIGHT QUERIES (for listing profiles)
+    // Use case: Search results, profile cards
+    // =====================================================
+
+    @EntityGraph(attributePaths = {
+        "user",
+        "religion", "city"
+    })
+    @Query("""
+        SELECT p FROM Profile p
+        WHERE p.isActive = true
+        AND p.isDeleted = false
+    """)
+    Page<Profile> findByIsActiveTrueAndIsDeletedFalse(Pageable pageable);
+
+    // =====================================================
+    // ✅ MEDIUM QUERIES (for profile details view)
+    // Use case: When user views a profile
+    // =====================================================
+
+    @EntityGraph(attributePaths = {
+        "user",
+        "city", "state", "country",
+        "religion", "caste",
+        "educationLevel", "occupation",
+        "height", "gender", "bodyType",
+        "maritalStatus"
+    })
+    @Query("""
+        SELECT p FROM Profile p
+        WHERE p.user.id = :userId
+        AND p.isActive = true
+    """)
+    Optional<Profile> findByUserIdWithDetails(@Param("userId") Long userId);
+
+    // =====================================================
+    // ✅ FULL QUERIES (for profile editing)
+
+    // Use case: When user edits their own profile
+    // Only load when needed (rare operation)
+    // =====================================================
+
+    @EntityGraph(attributePaths = {
+        "user",
+        "city", "state", "country",
+        "religion", "caste", "subCaste",
+        "educationLevel", "occupation",
+        "height", "weight",
+        "gender", "bodyType", "complexion",
+        "motherTongue", "maritalStatus",
+        "income", "diet", "smoking", "drinking",
+        "profileType", "manglikStatus",
+        "familyType", "familyStatus", "familyValue",
+        "qualification", "fieldOfStudy", "employed",
+        "disabilityStatus", "bloodGroup"
+    })
+    @Query("""
+        SELECT p FROM Profile p
+        WHERE p.user.id = :userId
+        AND p.isActive = true
+    """)
+    Optional<Profile> findByUserIdForEditing(@Param("userId") Long userId);
 
 
 

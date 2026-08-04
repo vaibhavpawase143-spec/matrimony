@@ -193,7 +193,7 @@ public class ProfileServiceImpl implements ProfileService {
     public ProfileResponseDTO getMyProfile() {
 
         Profile profile = repository
-                .findByUserIdWithRelations(getCurrentUser().getId())
+                .findByUserIdWithDetails(getCurrentUser().getId())
                 .orElseThrow(() ->
                         new RuntimeException("Profile not found"));
 

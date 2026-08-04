@@ -30,7 +30,9 @@ export const AuthProvider = ({ children }) => {
       try {
         setUser(JSON.parse(savedUser));
       } catch (e) {
-        console.error("Error parsing saved user:", e);
+if (import.meta.env.DEV) {
+    console.error("Error parsing saved user:", e);
+}
         localStorage.removeItem("user");
       }
     }
@@ -64,9 +66,9 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem("user");
   };
 
-  const isAuthenticated = () => {
-    return !!token;
-  };
+const isAuthenticated = () => {
+  return !!token;
+};
 
   return (
     <AuthContext.Provider value={{ token, user, role, login, logout, isAuthenticated }}>

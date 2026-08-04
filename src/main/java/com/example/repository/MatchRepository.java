@@ -22,6 +22,7 @@ public interface MatchRepository extends JpaRepository<Match, Long> {
     // 📄 Pagination
     @Query("""
 SELECT m
+
 FROM Match m
 WHERE m.user1 = :user1
 OR m.user2 = :user2

@@ -1,7 +1,9 @@
 package com.example.dto.response;
 
-import java.time.LocalDateTime;
+import lombok.Builder;
 
+import java.time.LocalDateTime;
+@Builder
 public class CasteResponseDTO {
 
     private Long id;
@@ -11,6 +13,7 @@ public class CasteResponseDTO {
     private Long religionId;
     private String religionName;
     private LocalDateTime createdAt;
+
 
     // ================= GETTERS & SETTERS =================
 

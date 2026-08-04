@@ -190,23 +190,15 @@ public class CasteController {
 
     private CasteResponseDTO mapToResponse(Caste caste) {
 
-        CasteResponseDTO dto = new CasteResponseDTO();
-
-        dto.setId(caste.getId());
-        dto.setName(caste.getName());
-        dto.setIsActive(caste.getIsActive());
-        dto.setCreatedAt(caste.getCreatedAt());
-
-        if (caste.getAdmin() != null) {
-            dto.setAdminId(caste.getAdmin().getId());
-        }
-
-        if (caste.getReligion() != null) {
-            dto.setReligionId(caste.getReligion().getId());
-            dto.setReligionName(caste.getReligion().getName());
-        }
-
-        return dto;
+        return CasteResponseDTO.builder()
+                .id(caste.getId())
+                .name(caste.getName())
+                .isActive(caste.getIsActive())
+                .createdAt(caste.getCreatedAt())
+                .adminId(caste.getAdmin() != null ? caste.getAdmin().getId() : null)
+                .religionId(caste.getReligion() != null ? caste.getReligion().getId() : null)
+                .religionName(caste.getReligion() != null ? caste.getReligion().getName() : null)
+                .build();
     }
     @GetMapping("/deleted")
     public ApiResponse<List<CasteResponseDTO>> getDeleted(
