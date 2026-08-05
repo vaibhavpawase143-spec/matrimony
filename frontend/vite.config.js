@@ -5,7 +5,7 @@ import { componentTagger } from "lovable-tagger";
 
 export default defineConfig(({ mode }) => ({
   server: {
-    // Allow access from other devices on the network
+    // Dev server settings
     host: true,
     port: 3000,
     strictPort: true,
@@ -16,19 +16,26 @@ export default defineConfig(({ mode }) => ({
 
     proxy: {
       "/api": {
-        target: "http://localhost:9090",
+        target: "https://localhost:9090",
         changeOrigin: true,
         secure: false,
         ws: true,
       },
 
       "/ws": {
-        target: "ws://localhost:9090",
+        target: "wss://localhost:9090",
         ws: true,
         changeOrigin: true,
         secure: false,
       },
     },
+  },
+
+  // 👇 Add this for preview mode
+  preview: {
+    host: true,
+    port: 3000,
+    strictPort: true,
   },
 
   plugins: [

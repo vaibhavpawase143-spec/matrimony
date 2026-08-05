@@ -2,6 +2,7 @@ package com.example.repository;
 
 import com.example.model.Height;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -80,4 +81,36 @@ public interface HeightRepository extends JpaRepository<Height, Long> {
     List<Height> findByDeletedAtIsNotNull();
 
     Optional<Height> findByIdAndDeletedAtIsNotNull(Long id);
+    @Query("""
+SELECT h
+FROM Height h
+LEFT JOIN FETCH h.admin
+WHERE h.deletedAt IS NULL
+""")
+    List<Height> findAllWithAdmin();
+    @Query("""
+SELECT h
+FROM Height h
+LEFT JOIN FETCH h.admin
+WHERE h.isActive = true
+AND h.deletedAt IS NULL
+""")
+    List<Height> findActiveWithAdmin();
+    @Query("""
+SELECT h
+FROM Height h
+LEFT JOIN FETCH h.admin
+WHERE h.admin.id = :adminId
+AND h.deletedAt IS NULL
+""")
+    List<Height> findByAdminWithAdmin(Long adminId);
+    @Query("""
+SELECT h
+FROM Height h
+LEFT JOIN FETCH h.admin
+WHERE h.admin.id = :adminId
+AND h.isActive = true
+AND h.deletedAt IS NULL
+""")
+    List<Height> findActiveByAdminWithAdmin(Long adminId);
 }

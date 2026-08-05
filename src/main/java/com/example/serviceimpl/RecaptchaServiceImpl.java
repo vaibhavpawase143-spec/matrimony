@@ -43,10 +43,18 @@ public class RecaptchaServiceImpl implements RecaptchaService {
         if (response == null) {
             throw new RuntimeException("Unable to verify reCAPTCHA.");
         }
+        System.out.println("===== RECAPTCHA RESPONSE =====");
+        System.out.println("Success : " + response.isSuccess());
+        System.out.println("Score   : " + response.getScore());
+        System.out.println("Action  : " + response.getAction());
+        System.out.println("Errors  : " + response.getErrorCodes());
 
         if (!response.isSuccess()) {
-            throw new RuntimeException("reCAPTCHA verification failed.");
+            throw new RuntimeException(
+                    "reCAPTCHA verification failed. Errors: " + response.getErrorCodes()
+            );
         }
+
 
         if (!expectedAction.equals(response.getAction())) {
             throw new RuntimeException("Invalid reCAPTCHA action.");

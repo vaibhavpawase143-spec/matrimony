@@ -1,6 +1,7 @@
 package com.example.repository;
 
 import com.example.model.FamilyValue;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -14,12 +15,16 @@ public interface FamilyValueRepository extends JpaRepository<FamilyValue, Long> 
     // GET BY ID
     // =========================
 
+    @EntityGraph(attributePaths = "admin")
     Optional<FamilyValue> findByIdAndDeletedAtIsNull(Long id);
+
+    Optional<FamilyValue> findByIdAndDeletedAtIsNotNull(Long id);
 
     // =========================
     // GET ALL
     // =========================
 
+    @EntityGraph(attributePaths = "admin")
     List<FamilyValue> findAllByDeletedAtIsNull();
 
     // =========================
@@ -48,6 +53,7 @@ public interface FamilyValueRepository extends JpaRepository<FamilyValue, Long> 
     // ACTIVE / INACTIVE
     // =========================
 
+    @EntityGraph(attributePaths = "admin")
     List<FamilyValue> findByIsActiveTrueAndDeletedAtIsNull();
 
     List<FamilyValue> findByIsActiveFalseAndDeletedAtIsNull();
@@ -56,8 +62,10 @@ public interface FamilyValueRepository extends JpaRepository<FamilyValue, Long> 
     // ADMIN WISE
     // =========================
 
+    @EntityGraph(attributePaths = "admin")
     List<FamilyValue> findByAdmin_IdAndDeletedAtIsNull(Long adminId);
 
+    @EntityGraph(attributePaths = "admin")
     List<FamilyValue> findByAdmin_IdAndIsActiveTrueAndDeletedAtIsNull(Long adminId);
 
     List<FamilyValue> findByAdmin_IdAndIsActiveFalseAndDeletedAtIsNull(Long adminId);
@@ -66,8 +74,10 @@ public interface FamilyValueRepository extends JpaRepository<FamilyValue, Long> 
     // SEARCH
     // =========================
 
+    @EntityGraph(attributePaths = "admin")
     List<FamilyValue> findByNameContainingIgnoreCaseAndDeletedAtIsNull(String keyword);
 
+    @EntityGraph(attributePaths = "admin")
     List<FamilyValue> findByAdmin_IdAndNameContainingIgnoreCaseAndDeletedAtIsNull(
             Long adminId,
             String keyword
@@ -78,6 +88,4 @@ public interface FamilyValueRepository extends JpaRepository<FamilyValue, Long> 
     // =========================
 
     List<FamilyValue> findByDeletedAtIsNotNull();
-
-    Optional<FamilyValue> findByIdAndDeletedAtIsNotNull(Long id);
 }

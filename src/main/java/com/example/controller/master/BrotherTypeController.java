@@ -1,7 +1,6 @@
 package com.example.controller.master;
 
 import com.example.dto.request.BrotherTypeRequestDTO;
-import com.example.dto.responce.BrotherTypeResponseDTO;
 import com.example.dto.response.ApiResponse;
 import com.example.model.BrotherType;
 import com.example.service.BrotherTypeService;
@@ -11,6 +10,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+;
+
 @RestController
 @RequestMapping("/api/admins/{adminId}/brother-types")
 @RequiredArgsConstructor
@@ -19,7 +20,7 @@ public class BrotherTypeController {
     private final BrotherTypeService brotherTypeService;
 
     @PostMapping
-    public ApiResponse<BrotherTypeResponseDTO> create(
+    public ApiResponse<com.example.dto.responce.BrotherTypeResponseDTO> create(
             @PathVariable Long adminId,
             @Valid @RequestBody BrotherTypeRequestDTO dto) {
 
@@ -28,7 +29,7 @@ public class BrotherTypeController {
                 adminId
         );
 
-        return ApiResponse.<BrotherTypeResponseDTO>builder()
+        return ApiResponse.<com.example.dto.responce.BrotherTypeResponseDTO>builder()
                 .success(true)
                 .message("Brother type created successfully.")
                 .data(mapToResponse(saved))
@@ -36,13 +37,13 @@ public class BrotherTypeController {
     }
     // ================= GET BY ID =================
     @GetMapping("/{id}")
-    public ApiResponse<BrotherTypeResponseDTO> getById(
+    public ApiResponse<com.example.dto.responce.BrotherTypeResponseDTO> getById(
             @PathVariable Long adminId,
             @PathVariable Long id) {
 
         BrotherType brotherType = brotherTypeService.getById(id, adminId);
 
-        return ApiResponse.<BrotherTypeResponseDTO>builder()
+        return ApiResponse.<com.example.dto.responce.BrotherTypeResponseDTO>builder()
                 .success(true)
                 .message("Brother type retrieved successfully.")
                 .data(mapToResponse(brotherType))
@@ -50,15 +51,15 @@ public class BrotherTypeController {
     }
     // ================= GET ALL =================
     @GetMapping
-    public ApiResponse<List<BrotherTypeResponseDTO>> getAll(
+    public ApiResponse<List<com.example.dto.responce.BrotherTypeResponseDTO>> getAll(
             @PathVariable Long adminId) {
 
-        List<BrotherTypeResponseDTO> brotherTypes = brotherTypeService.getAll(adminId)
+        List<com.example.dto.responce.BrotherTypeResponseDTO> brotherTypes = brotherTypeService.getAll(adminId)
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
 
-        return ApiResponse.<List<BrotherTypeResponseDTO>>builder()
+        return ApiResponse.<List<com.example.dto.responce.BrotherTypeResponseDTO>>builder()
                 .success(true)
                 .message("Brother types retrieved successfully.")
                 .data(brotherTypes)
@@ -67,15 +68,15 @@ public class BrotherTypeController {
 
     // ================= GET ACTIVE =================
     @GetMapping("/active")
-    public ApiResponse<List<BrotherTypeResponseDTO>> getActive(
+    public ApiResponse<List<com.example.dto.responce.BrotherTypeResponseDTO>> getActive(
             @PathVariable Long adminId) {
 
-        List<BrotherTypeResponseDTO> activeBrotherTypes = brotherTypeService.getActive(adminId)
+        List<com.example.dto.responce.BrotherTypeResponseDTO> activeBrotherTypes = brotherTypeService.getActive(adminId)
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
 
-        return ApiResponse.<List<BrotherTypeResponseDTO>>builder()
+        return ApiResponse.<List<com.example.dto.responce.BrotherTypeResponseDTO>>builder()
                 .success(true)
                 .message("Active brother types retrieved successfully.")
                 .data(activeBrotherTypes)
@@ -86,7 +87,7 @@ public class BrotherTypeController {
 
     // ================= UPDATE =================
     @PutMapping("/{id}")
-    public ApiResponse<BrotherTypeResponseDTO> update(
+    public ApiResponse<com.example.dto.responce.BrotherTypeResponseDTO> update(
             @PathVariable Long adminId,
             @PathVariable Long id,
             @Valid @RequestBody BrotherTypeRequestDTO dto) {
@@ -97,7 +98,7 @@ public class BrotherTypeController {
                 adminId
         );
 
-        return ApiResponse.<BrotherTypeResponseDTO>builder()
+        return ApiResponse.<com.example.dto.responce.BrotherTypeResponseDTO>builder()
                 .success(true)
                 .message("Brother type updated successfully.")
                 .data(mapToResponse(updated))
@@ -130,9 +131,9 @@ public class BrotherTypeController {
         return entity;
     }
 
-    private BrotherTypeResponseDTO mapToResponse(BrotherType entity) {
+    private com.example.dto.responce.BrotherTypeResponseDTO mapToResponse(BrotherType entity) {
 
-        BrotherTypeResponseDTO dto = new BrotherTypeResponseDTO();
+        com.example.dto.responce.BrotherTypeResponseDTO dto = new com.example.dto.responce.BrotherTypeResponseDTO();
 
         dto.setId(entity.getId());
         dto.setValue(entity.getValue());
@@ -146,29 +147,29 @@ public class BrotherTypeController {
         return dto;
     }
     @GetMapping("/deleted")
-    public ApiResponse<List<BrotherTypeResponseDTO>> getDeleted(
+    public ApiResponse<List<com.example.dto.responce.BrotherTypeResponseDTO>> getDeleted(
             @PathVariable Long adminId) {
 
-        List<BrotherTypeResponseDTO> deleted = brotherTypeService
+        List<com.example.dto.responce.BrotherTypeResponseDTO> deleted = brotherTypeService
                 .getDeleted(adminId)
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
 
-        return ApiResponse.<List<BrotherTypeResponseDTO>>builder()
+        return ApiResponse.<List<com.example.dto.responce.BrotherTypeResponseDTO>>builder()
                 .success(true)
                 .message("Deleted brother types retrieved successfully.")
                 .data(deleted)
                 .build();
     }
     @PutMapping("/restore/{id}")
-    public ApiResponse<BrotherTypeResponseDTO> restore(
+    public ApiResponse<com.example.dto.responce.BrotherTypeResponseDTO> restore(
             @PathVariable Long adminId,
             @PathVariable Long id) {
 
         BrotherType restored = brotherTypeService.restore(id);
 
-        return ApiResponse.<BrotherTypeResponseDTO>builder()
+        return ApiResponse.<com.example.dto.responce.BrotherTypeResponseDTO>builder()
                 .success(true)
                 .message("Brother type restored successfully.")
                 .data(mapToResponse(restored))

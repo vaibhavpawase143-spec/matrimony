@@ -29,10 +29,7 @@ public class BrotherTypeServiceImpl implements BrotherTypeService {
 
         if (adminId == null) {
 
-            return brotherTypeRepository.findAll()
-                    .stream()
-                    .filter(bt -> bt.getDeletedAt() == null)
-                    .toList();
+            return brotherTypeRepository.findByDeletedAtIsNull();
         }
 
         return brotherTypeRepository.findByAdminIdAndDeletedAtIsNull(adminId);
@@ -43,13 +40,7 @@ public class BrotherTypeServiceImpl implements BrotherTypeService {
     public List<BrotherType> getActive(Long adminId) {
 
         if (adminId == null) {
-
-            return brotherTypeRepository.findAll()
-                    .stream()
-                    .filter(bt ->
-                            bt.getDeletedAt() == null
-                                    && Boolean.TRUE.equals(bt.getIsActive()))
-                    .toList();
+            return brotherTypeRepository.findByIsActiveTrueAndDeletedAtIsNull();
         }
 
         return brotherTypeRepository.findByAdminIdAndIsActiveTrueAndDeletedAtIsNull(adminId);

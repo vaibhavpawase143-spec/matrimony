@@ -27,7 +27,7 @@ const location = useLocation();
     const timer = setTimeout(() => {
       setIsChecking(false);
 
-      if (!isAuthenticated()) {
+if (!isAuthenticated) {
         console.log(
           "AuthenticatedLayout: Not authenticated, redirecting to login"
         );

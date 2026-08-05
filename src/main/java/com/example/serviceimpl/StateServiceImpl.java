@@ -269,7 +269,7 @@ public class StateServiceImpl implements StateService {
     @Override
     public List<StateResponseDTO> getByAdmin(Long adminId) {
 
-        return stateRepository.findByAdmin_IdAndDeletedAtIsNull(adminId)
+        return stateRepository.findActiveByAdminWithRelations(adminId)
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
@@ -279,7 +279,7 @@ public class StateServiceImpl implements StateService {
     public List<StateResponseDTO> getActiveByAdmin(Long adminId) {
 
         return stateRepository
-                .findByAdmin_IdAndIsActiveTrueAndDeletedAtIsNull(adminId)
+                .findActiveByAdminWithRelations(adminId)
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
@@ -304,7 +304,10 @@ public class StateServiceImpl implements StateService {
                                                        Long adminId) {
 
         return stateRepository
-                .findByCountry_IdAndAdmin_IdAndDeletedAtIsNull(countryId, adminId)
+                .findByCountryAndAdminWithRelations(
+                        countryId,
+                        adminId
+                )
                 .stream()
                 .map(this::mapToResponse)
                 .toList();

@@ -218,7 +218,7 @@ public class HeightServiceImpl implements HeightService {
     @Override
     public List<HeightResponseDTO> getAll() {
 
-        return heightRepository.findAllByDeletedAtIsNull()
+        return heightRepository.findAllWithAdmin()
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
@@ -240,7 +240,7 @@ public class HeightServiceImpl implements HeightService {
     @Override
     public List<HeightResponseDTO> getActive() {
 
-        return heightRepository.findByIsActiveTrueAndDeletedAtIsNull()
+        return heightRepository.findActiveWithAdmin()
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
@@ -262,7 +262,7 @@ public class HeightServiceImpl implements HeightService {
     @Override
     public List<HeightResponseDTO> getByAdmin(Long adminId) {
 
-        return heightRepository.findByAdmin_IdAndDeletedAtIsNull(adminId)
+        return heightRepository.findByAdminWithAdmin(adminId)
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
@@ -272,7 +272,7 @@ public class HeightServiceImpl implements HeightService {
     public List<HeightResponseDTO> getActiveByAdmin(Long adminId) {
 
         return heightRepository
-                .findByAdmin_IdAndIsActiveTrueAndDeletedAtIsNull(adminId)
+                .findActiveByAdminWithAdmin(adminId)
                 .stream()
                 .map(this::mapToResponse)
                 .toList();

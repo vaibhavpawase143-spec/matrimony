@@ -46,4 +46,7 @@ public interface BloodGroupRepository extends JpaRepository<BloodGroup, Long> {
     List<BloodGroup> findByAdminIdAndIsActiveFalseAndDeletedAtIsNull(Long adminId);
 
     List<BloodGroup> findByAdminIdAndDeletedAtIsNotNull(Long adminId);
+    List<BloodGroup> findByDeletedAtIsNull();
+
+    List<BloodGroup> findByDeletedAtIsNullAndIsActiveTrue();
 }

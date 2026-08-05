@@ -2,6 +2,7 @@ package com.example.repository;
 
 import com.example.model.EducationLevel;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -80,4 +81,36 @@ public interface EducationLevelRepository extends JpaRepository<EducationLevel, 
     List<EducationLevel> findByDeletedAtIsNotNull();
 
     Optional<EducationLevel> findByIdAndDeletedAtIsNotNull(Long id);
+    @Query("""
+SELECT e
+FROM EducationLevel e
+LEFT JOIN FETCH e.admin
+WHERE e.deletedAt IS NULL
+""")
+    List<EducationLevel> findAllWithAdmin();
+    @Query("""
+SELECT e
+FROM EducationLevel e
+LEFT JOIN FETCH e.admin
+WHERE e.isActive = true
+AND e.deletedAt IS NULL
+""")
+    List<EducationLevel> findActiveWithAdmin();
+    @Query("""
+SELECT e
+FROM EducationLevel e
+LEFT JOIN FETCH e.admin
+WHERE e.admin.id = :adminId
+AND e.deletedAt IS NULL
+""")
+    List<EducationLevel> findByAdminWithAdmin(Long adminId);
+    @Query("""
+SELECT e
+FROM EducationLevel e
+LEFT JOIN FETCH e.admin
+WHERE e.admin.id = :adminId
+AND e.isActive = true
+AND e.deletedAt IS NULL
+""")
+    List<EducationLevel> findActiveByAdminWithAdmin(Long adminId);
 }

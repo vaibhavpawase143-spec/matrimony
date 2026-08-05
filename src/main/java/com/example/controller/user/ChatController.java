@@ -3,14 +3,19 @@ package com.example.controller.user;
 import com.example.dto.request.ChatMessageDTO;
 import com.example.dto.request.SendMessageRequestDTO;
 import com.example.dto.response.ApiResponse;
+import com.example.dto.response.ConversationListDTO;
 import com.example.model.Message;
 import com.example.model.User;
 import com.example.repository.UserRepository;
 import com.example.service.ChatService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -23,7 +28,6 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-
 @RestController
 @RequestMapping("/api/chat")
 @RequiredArgsConstructor
@@ -491,15 +495,23 @@ public class ChatController {
     }
     // ================= 📋 CONVERSATIONS =================
     @GetMapping("/conversations")
-    public ApiResponse<?> getConversations(Principal principal) {
+    public ResponseEntity<Page<ConversationListDTO>> getConversations(
 
-        String email = principal.getName();
+            @AuthenticationPrincipal UserDetails user,
 
-        return ApiResponse.builder()
-                .success(true)
-                .message("Conversations fetched")
-                .data(chatService.getUserConversationsByEmail(email))
-                .build();
+            @RequestParam(defaultValue = "0") int page,
+
+            @RequestParam(defaultValue = "20") int size
+    ) {
+
+        Pageable pageable = PageRequest.of(page, size);
+
+        return ResponseEntity.ok(
+                chatService.getUserConversationsByEmail(
+                        user.getUsername(),
+                        pageable
+                )
+        );
     }
     @PutMapping("/offline")
     public ResponseEntity<?> offline(Principal principal){

@@ -357,7 +357,7 @@ public class FamilyDetailsServiceImpl implements FamilyDetailsService {
                 .isActive(entity.getIsActive())
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
-                .createdAt(entity.getDeletedAt())
+                .deletedAt(entity.getDeletedAt())
                 .deletedBy(entity.getDeletedBy())
                 .build();
     }

@@ -9,6 +9,7 @@ import com.example.service.UserBlockService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
@@ -403,73 +404,38 @@ public class ChatServiceImpl implements ChatService {
 
     // ================= CONVERSATION =================
 
-    @Override
-    public List<ConversationListDTO> getUserConversations(Long userId) {
 
-        List<ConversationListDTO> list =
-                conversationRepository.getConversationList(userId);
 
-        list.forEach(dto -> {
-
-            if(dto.getLastSeen() != null){
-
-                boolean online =
-                        dto.getLastSeen()
-                                .isAfter(
-                                        LocalDateTime.now()
-                                                .minusSeconds(20)
-                                );
-
-                dto.setIsOnline(online);
-
-            }else{
-
-                dto.setIsOnline(false);
-
-            }
-
-        });
-
-        return list;
-    }
 
     @Override
-    public List<ConversationListDTO> getUserConversationsByEmail(String email) {
+    public Page<ConversationListDTO> getUserConversationsByEmail(
+            String email,
+            Pageable pageable
+    ) {
 
-        List<ConversationListDTO> list =
+        Page<ConversationListDTO> page =
                 conversationRepository.getConversationList(
-                        getUserByEmail(email).getId()
+                        getUserByEmail(email).getId(),
+                        pageable
                 );
 
-        list.forEach(dto -> {
+        page.forEach(dto -> {
 
-            if(dto.getLastSeen() != null){
+            if (dto.getLastSeen() != null) {
 
-                boolean online =
-
-                        dto.getLastSeen()
-
-                                .isAfter(
-
-                                        LocalDateTime.now()
-
-                                                .minusMinutes(2)
-
-                                );
+                boolean online = dto.getLastSeen()
+                        .isAfter(LocalDateTime.now().minusMinutes(2));
 
                 dto.setIsOnline(online);
 
-            }else{
+            } else {
 
                 dto.setIsOnline(false);
-
             }
-
         });
 
-        return list;
+        return page;
     }
-
     // ================= REACTION =================
 
     @Override

@@ -1,6 +1,7 @@
 package com.example.repository;
 
 import com.example.model.ManglikStatus;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -14,12 +15,16 @@ public interface ManglikStatusRepository extends JpaRepository<ManglikStatus, Lo
     // GET BY ID
     // =========================
 
+    @EntityGraph(attributePaths = "admin")
     Optional<ManglikStatus> findByIdAndDeletedAtIsNull(Long id);
+
+    Optional<ManglikStatus> findByIdAndDeletedAtIsNotNull(Long id);
 
     // =========================
     // GET ALL
     // =========================
 
+    @EntityGraph(attributePaths = "admin")
     List<ManglikStatus> findAllByDeletedAtIsNull();
 
     // =========================
@@ -48,6 +53,7 @@ public interface ManglikStatusRepository extends JpaRepository<ManglikStatus, Lo
     // ACTIVE / INACTIVE
     // =========================
 
+    @EntityGraph(attributePaths = "admin")
     List<ManglikStatus> findByIsActiveTrueAndDeletedAtIsNull();
 
     List<ManglikStatus> findByIsActiveFalseAndDeletedAtIsNull();
@@ -56,8 +62,10 @@ public interface ManglikStatusRepository extends JpaRepository<ManglikStatus, Lo
     // ADMIN WISE
     // =========================
 
+    @EntityGraph(attributePaths = "admin")
     List<ManglikStatus> findByAdmin_IdAndDeletedAtIsNull(Long adminId);
 
+    @EntityGraph(attributePaths = "admin")
     List<ManglikStatus> findByAdmin_IdAndIsActiveTrueAndDeletedAtIsNull(Long adminId);
 
     List<ManglikStatus> findByAdmin_IdAndIsActiveFalseAndDeletedAtIsNull(Long adminId);
@@ -66,8 +74,10 @@ public interface ManglikStatusRepository extends JpaRepository<ManglikStatus, Lo
     // SEARCH
     // =========================
 
+    @EntityGraph(attributePaths = "admin")
     List<ManglikStatus> findByNameContainingIgnoreCaseAndDeletedAtIsNull(String keyword);
 
+    @EntityGraph(attributePaths = "admin")
     List<ManglikStatus> findByAdmin_IdAndNameContainingIgnoreCaseAndDeletedAtIsNull(
             Long adminId,
             String keyword
@@ -79,5 +89,5 @@ public interface ManglikStatusRepository extends JpaRepository<ManglikStatus, Lo
 
     List<ManglikStatus> findByDeletedAtIsNotNull();
 
-    Optional<ManglikStatus> findByIdAndDeletedAtIsNotNull(Long id);
+
 }

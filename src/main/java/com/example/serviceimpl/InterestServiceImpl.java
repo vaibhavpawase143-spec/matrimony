@@ -13,6 +13,8 @@ import com.example.service.InterestService;
 import com.example.service.NotificationService;
 import com.example.service.SubscriptionService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -302,6 +304,73 @@ public class InterestServiceImpl implements InterestService {
                 .stream()
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
+    }
+
+    // =====================================================
+// PAGINATION METHODS (1M+ USERS)
+// =====================================================
+
+    @Override
+    public Page<InterestResponseDTO> getBySender(
+            Long senderId,
+            Pageable pageable
+    ) {
+        return interestRepository
+                .findBySender_Id(senderId, pageable)
+                .map(this::mapToDTO);
+    }
+
+    @Override
+    public Page<InterestResponseDTO> getByReceiver(
+            Long receiverId,
+            Pageable pageable
+    ) {
+        return interestRepository
+                .findByReceiver_Id(receiverId, pageable)
+                .map(this::mapToDTO);
+    }
+
+    @Override
+    public Page<InterestResponseDTO> getBySenderAndStatus(
+            Long senderId,
+            String status,
+            Pageable pageable
+    ) {
+        return interestRepository
+                .findBySender_IdAndStatusIgnoreCase(
+                        senderId,
+                        status,
+                        pageable
+                )
+                .map(this::mapToDTO);
+    }
+
+    @Override
+    public Page<InterestResponseDTO> getByReceiverAndStatus(
+            Long receiverId,
+            String status,
+            Pageable pageable
+    ) {
+        return interestRepository
+                .findByReceiver_IdAndStatusIgnoreCase(
+                        receiverId,
+                        status,
+                        pageable
+                )
+                .map(this::mapToDTO);
+    }
+
+    @Override
+    public Page<InterestResponseDTO> getByStatus(
+            String status,
+            Pageable pageable
+    ) {
+        return interestRepository
+                .findByStatusIgnoreCase(
+                        status,
+                        pageable
+                )
+                .map(this::mapToDTO);
     }
 
     // 🔁 SAFE MAPPER

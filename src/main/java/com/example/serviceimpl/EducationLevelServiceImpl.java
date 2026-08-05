@@ -189,7 +189,7 @@ public class EducationLevelServiceImpl implements EducationLevelService {
     @Override
     public List<EducationLevelResponseDto> getAll() {
 
-        return educationLevelRepository.findAllByDeletedAtIsNull()
+        return educationLevelRepository.findAllWithAdmin()
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
@@ -207,7 +207,7 @@ public class EducationLevelServiceImpl implements EducationLevelService {
     @Override
     public List<EducationLevelResponseDto> getActive() {
 
-        return educationLevelRepository.findByIsActiveTrueAndDeletedAtIsNull()
+        return educationLevelRepository.findActiveWithAdmin()
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
@@ -235,7 +235,8 @@ public class EducationLevelServiceImpl implements EducationLevelService {
     public List<EducationLevelResponseDto> getActiveByAdmin(Long adminId) {
 
         return educationLevelRepository
-                .findByAdmin_IdAndIsActiveTrueAndDeletedAtIsNull(adminId)
+
+                .findActiveByAdminWithAdmin(adminId)
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
@@ -280,7 +281,7 @@ public class EducationLevelServiceImpl implements EducationLevelService {
                 .isActive(entity.getIsActive())
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
-                .createdAt(entity.getDeletedAt())
+                .deletedAt(entity.getDeletedAt())
                 .deletedBy(entity.getDeletedBy())
                 .build();
     }

@@ -1,6 +1,7 @@
 package com.example.repository;
 
 import com.example.model.DisabilityStatus;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -19,10 +20,12 @@ public interface DisabilityStatusRepository extends JpaRepository<DisabilityStat
     // GET
     // ==========================
 
+    @EntityGraph(attributePaths = "admin")
     List<DisabilityStatus> findByDeletedAtIsNull();
 
     List<DisabilityStatus> findByDeletedAtIsNotNull();
 
+    @EntityGraph(attributePaths = "admin")
     List<DisabilityStatus> findByIsActiveTrueAndDeletedAtIsNull();
 
     List<DisabilityStatus> findByIsActiveFalseAndDeletedAtIsNull();
@@ -31,20 +34,24 @@ public interface DisabilityStatusRepository extends JpaRepository<DisabilityStat
     // ADMIN
     // ==========================
 
+    @EntityGraph(attributePaths = "admin")
     List<DisabilityStatus> findByAdmin_IdAndDeletedAtIsNull(Long adminId);
 
     List<DisabilityStatus> findByAdmin_IdAndDeletedAtIsNotNull(Long adminId);
 
+    @EntityGraph(attributePaths = "admin")
     List<DisabilityStatus> findByAdmin_IdAndIsActiveTrueAndDeletedAtIsNull(Long adminId);
 
     // ==========================
     // SEARCH
     // ==========================
 
+    @EntityGraph(attributePaths = "admin")
     List<DisabilityStatus> findByValueContainingIgnoreCaseAndDeletedAtIsNull(
             String keyword
     );
 
+    @EntityGraph(attributePaths = "admin")
     List<DisabilityStatus> findByAdmin_IdAndValueContainingIgnoreCaseAndDeletedAtIsNull(
             Long adminId,
             String keyword

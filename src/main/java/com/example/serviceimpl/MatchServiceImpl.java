@@ -7,6 +7,8 @@ import com.example.repository.*;
 import com.example.service.MatchService;
 import com.example.service.NotificationService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -37,8 +39,28 @@ public class MatchServiceImpl implements MatchService {
     private final UserSubscriptionRepository userSubscriptionRepository;
 
     // ================= SWIPE =================
+    private static class ScoredUser {
+        private final User user;
+        private final int score;
 
+        public ScoredUser(User user, int score) {
+            this.user = user;
+            this.score = score;
+        }
+
+        public User getUser() {
+            return user;
+        }
+
+        public int getScore() {
+            return score;
+        }
+    }
     @Override
+    @CacheEvict(
+            value = "topMatches",
+            key = "#fromUserId + '_15'"
+    )
     public void swipe(Long fromUserId, Long toUserId, SwipeType type) {
 
         if (fromUserId.equals(toUserId)) {
@@ -349,8 +371,15 @@ public class MatchServiceImpl implements MatchService {
                 matchPage.isLast()
         );
     }
+
+
+
     // ================= TOP MATCHES =================
     @Override
+    @Cacheable(
+            value = "topMatches",
+            key = "#userId + '_' + #limit"
+    )
     public List<MatchResponseDTO> getTopMatches(Long userId, int limit) {
 
         User currentUser = userRepository.findByIdWithProfileAndPreference(userId)
@@ -359,51 +388,28 @@ public class MatchServiceImpl implements MatchService {
         List<Long> blockedIds =
                 userBlockRepository.findBlockedUserIds(userId);
 
-        List<User> users =
-                userRepository.findTopMatches(
-                        userId,
-                        PageRequest.of(0, limit + blockedIds.size() + 20)
-                );
+        Long oppositeGenderId =
+                currentUser.getProfile().getGender().getId().equals(1L)
+                        ? 2L
+                        : 1L;
 
+        PartnerPreference pref = currentUser.getPartnerPreference();
+
+
+        List<User> users =
+                userRepository.findCandidateUsers(
+                        userId,
+                        oppositeGenderId,
+                        PageRequest.of(0, 50)
+                );
         return users.stream()
 
-                // Don't show blocked users
                 .filter(user -> !blockedIds.contains(user.getId()))
 
-                // Don't show yourself
-                .filter(user -> !user.getId().equals(userId))
 
-                // Load complete profile
-                .map(u ->
-                        userRepository
-                                .findByIdWithProfileAndPreference(u.getId())
-                                .orElse(u)
-                )
-
-                // Only active users
-                .filter(user ->
-                        user.getIsActive() != null &&
-                                user.getIsActive()
-                )
-
-                // Skip blocked users
-                .filter(user ->
-                        user.getIsBlocked() == null ||
-                                !user.getIsBlocked()
-                )
-
-                // Skip deleted users
-                .filter(user ->
-                        user.getIsDeleted() == null ||
-                                !user.getIsDeleted()
-                )
-
-                // Only completed profiles
                 .filter(user ->
                         user.getProfile() != null &&
-                                Boolean.TRUE.equals(
-                                        user.getProfile().getProfileCompleted()
-                                )
+                                Boolean.TRUE.equals(user.getProfile().getProfileCompleted())
                 )
                 // Show only opposite gender
                 .filter(user -> {
@@ -423,16 +429,27 @@ public class MatchServiceImpl implements MatchService {
                             .equals(candidateProfile.getGender().getId());
                 })
 
-                // Sort by match percentage
-                .sorted((u1, u2) ->
-                        calculateMatchScore(currentUser, u2)
-                                - calculateMatchScore(currentUser, u1)
+                // ✅ Calculate score only once
+                .map(user -> new ScoredUser(
+                        user,
+                        calculateMatchScore(currentUser, user)
+                ))
+
+                // ✅ Sort using stored score
+                .sorted((a, b) ->
+                        Integer.compare(
+                                b.getScore(),
+                                a.getScore()
+                        )
                 )
 
-                // Convert to DTO
-                .map(user -> mapUserToDTO(user, currentUser))
-
                 .limit(limit)
+
+                // DTO uses stored score
+                .map(s -> mapUserToDTO(
+                        s.getUser(),
+                        s.getScore()
+                ))
 
                 .collect(Collectors.toList());
     }
@@ -835,17 +852,15 @@ public class MatchServiceImpl implements MatchService {
     }
 
     // ================= MAPPER =================
-
     private MatchResponseDTO mapToDTO(Match match, User currentUser) {
 
         User other = match.getUser1().equals(currentUser)
                 ? match.getUser2()
                 : match.getUser1();
 
-        User fullUser = userRepository.findByIdWithProfile(other.getId())
-                .orElse(other);
+        int score = calculateMatchScore(currentUser, other);
 
-        return mapUserToDTO(fullUser, currentUser);
+        return mapUserToDTO(other, score);
     }
     private void addField(List<FieldMatchDTO> fields,
                           String fieldName,
@@ -930,7 +945,7 @@ public class MatchServiceImpl implements MatchService {
     }
 
 
-    private MatchResponseDTO mapUserToDTO(User user, User currentUser) {
+    private MatchResponseDTO mapUserToDTO(User user, int score) {
 
         Profile profile = user.getProfile();
 
@@ -982,7 +997,7 @@ public class MatchServiceImpl implements MatchService {
             }
         }
 
-        int score = calculateMatchScore(currentUser, user);
+;
 
         return MatchResponseDTO.builder()
                 .userId(user.getId())
@@ -999,4 +1014,5 @@ public class MatchServiceImpl implements MatchService {
                 .matchPercentage(score + "%")
                 .build();
     }
+
 }

@@ -108,15 +108,18 @@ public class ProfileController {
 
     // ================= GET ALL =================
     @GetMapping
-    public ResponseEntity<List<ProfileResponseDTO>> getAllProfiles() {
-        List<ProfileResponseDTO> list = service.getAll()
-                .stream()
-                .map(service::mapToDTO)
-                .toList();
+    public ResponseEntity<Page<ProfileResponseDTO>> getAllProfiles(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
 
-        return ResponseEntity.ok(list);
+        Pageable pageable = PageRequest.of(page, size);
+
+        return ResponseEntity.ok(
+                service.getAll(pageable)
+                        .map(service::mapToDTO)
+        );
     }
-
     // ================= DELETE =================
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
@@ -137,24 +140,34 @@ public class ProfileController {
 
     // ================= FILTER: CITY =================
     @GetMapping("/city/{cityId}")
-    public ResponseEntity<List<ProfileResponseDTO>> getByCity(@PathVariable Long cityId) {
-        List<ProfileResponseDTO> list = service.getByCity(cityId)
-                .stream()
-                .map(service::mapToDTO)
-                .toList();
+    public ResponseEntity<Page<ProfileResponseDTO>> getByCity(
+            @PathVariable Long cityId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
 
-        return ResponseEntity.ok(list);
+        Pageable pageable = PageRequest.of(page, size);
+
+        return ResponseEntity.ok(
+                service.getByCity(cityId, pageable)
+                        .map(service::mapToDTO)
+        );
     }
 
     // ================= FILTER: RELIGION =================
     @GetMapping("/religion/{religionId}")
-    public ResponseEntity<List<ProfileResponseDTO>> getByReligion(@PathVariable Long religionId) {
-        List<ProfileResponseDTO> list = service.getByReligion(religionId)
-                .stream()
-                .map(service::mapToDTO)
-                .toList();
+    public ResponseEntity<Page<ProfileResponseDTO>> getByReligion(
+            @PathVariable Long religionId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
 
-        return ResponseEntity.ok(list);
+        Pageable pageable = PageRequest.of(page, size);
+
+        return ResponseEntity.ok(
+                service.getByReligion(religionId, pageable)
+                        .map(service::mapToDTO)
+        );
     }
 
     // ================= FILTER: ACTIVE =================

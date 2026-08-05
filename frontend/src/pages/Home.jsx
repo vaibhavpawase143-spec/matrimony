@@ -11,7 +11,7 @@ import { swipeAPI } from "@/services/swipeAPI";
 import { getConversations } from "@/services/chatApi";
 import { motion } from "framer-motion";
 import ReportModal from "../components/ReportModal";
-import { useState, useEffect,useCallback  } from "react";
+import { useState, useEffect,useCallback,useMemo   } from "react";
 
 
 import { useAuth } from "@/hooks/useAuth";
@@ -65,10 +65,14 @@ const {
   toggleLike,
   loading: likesLoading
 } = useLikes();
+const [page, setPage] = useState(0);
+const [dashboardRefreshing, setDashboardRefreshing] = useState(false);
+const [hasMore, setHasMore] = useState(true);
 
+const [loadingMore, setLoadingMore] = useState(false);
 const [showReportModal, setShowReportModal] = useState(false);
 const [reportedUsers, setReportedUsers] = useState({});
-console.log("showReportModal =", showReportModal);
+
 const [selectedProfile, setSelectedProfile] = useState(null);
 const [selectedReason, setSelectedReason] = useState("");
 const [customReason, setCustomReason] = useState("");
@@ -94,23 +98,18 @@ useState(true);
 
 const [profiles,setProfiles] =
 useState([]);
-const [dashboardStats, setDashboardStats] = useState({
-  totalMatches: 0,
-  interestsSent: 0,
-  interestsReceived: 0,
-  shortlists: 0,
-  profileViews: 0,
-  likesReceived: 0,
-  messages: 0
-});
+const [dashboardStats, setDashboardStats] = useState(null);
 
 const [visitors, setVisitors] = useState([]);
 const [receivedInterests, setReceivedInterests] = useState([]);
 const [shortlists, setShortlists] = useState([]);
 const [sentInterests, setSentInterests] = useState([]);
 
-
+console.time("Dashboard");
 const refreshDashboard = useCallback(async () => {
+      if (dashboardRefreshing) return;
+
+        setDashboardRefreshing(true);
   try {
     const currentUser = JSON.parse(
       localStorage.getItem("user") || "{}"
@@ -127,21 +126,25 @@ const refreshDashboard = useCallback(async () => {
       return;
     }
 
-   const [
-     visitorsResponse,
-     receivedResponse,
-     sentResponse,
-     shortlistResponse,
-     conversationsResponse,
-     likesResponse
-   ] = await Promise.allSettled([
-     profileVisitorAPI.getMyVisitors(),
-     interestAPI.getReceivedInterests(userId),
-     interestAPI.getSentInterests(userId),
-     shortlistAPI.getMyShortlists(),
-     getConversations(),
-     swipeAPI.getReceivedLikes()
-   ]);
+
+
+
+
+  const [
+      receivedResponse,
+      shortlistResponse,
+      visitorsResponse,
+      sentResponse,
+      conversationsResponse,
+      likesResponse
+  ] = await Promise.allSettled([
+      interestAPI.getReceivedInterests(userId),
+      shortlistAPI.getMyShortlists(),
+      profileVisitorAPI.getMyVisitors(),
+      interestAPI.getSentInterests(userId),
+      getConversations(),
+      swipeAPI.getReceivedLikes()
+  ]);
     const safeArray = (response) => {
       if (response.status !== "fulfilled") {
         console.warn("Dashboard API failed:", response.reason);
@@ -186,14 +189,7 @@ const likesData = safeArray(likesResponse);
       0
     );
 
-    const matches =
-    await matchAPI.getTopMatches(
-    userId,
-    50
-    );
-    const filteredMatches = matches.filter(
-        match => match.matchScore >= 75
-    );
+
 
     const acceptedMatches = receivedData.filter((interest) =>
       String(
@@ -204,9 +200,17 @@ const likesData = safeArray(likesResponse);
     ).length;
 
     setDashboardStats({
-      totalMatches: filteredMatches.length,
+    totalMatches: acceptedMatches,
       interestsSent: sentData.length,
-      interestsReceived: receivedData.length,
+    interestsReceived:
+    receivedData.filter(
+        interest =>
+            String(
+                interest.status ||
+                interest.interestStatus ||
+                ""
+            ).toUpperCase() === "PENDING"
+    ).length,
       shortlists: shortlistsData.length,
       profileViews: visitorsData.length,
     likesReceived: likesData.length,
@@ -216,34 +220,11 @@ const likesData = safeArray(likesResponse);
   } catch (error) {
     console.error("Dashboard refresh failed:", error);
   }
+finally {
+    setDashboardRefreshing(false);
+}
 }, []);
 
-useEffect(() => {
-  refreshDashboard();
-
-  const handleDashboardUpdated = () => {
-    refreshDashboard();
-  };
-
-  window.addEventListener(
-    "dashboardUpdated",
-    handleDashboardUpdated
-  );
-
-  return () => {
-    window.removeEventListener(
-      "dashboardUpdated",
-      handleDashboardUpdated
-    );
-  };
-}, [refreshDashboard]);
-const [
-
-notificationCount,
-
-setNotificationCount
-
-] = useState(0);
 
 
 
@@ -307,160 +288,70 @@ const calculateAge = (dob) => {
 
 
   // Load real profiles from API
- useEffect(() => {
-     console.log("===== PROFILE DATA =====");
-     console.log(profileData);
+// Load real profiles from API
+const [initialized, setInitialized] = useState(false);
 
-     if (profileData?.email) {
-         console.log("Calling loadProfiles()");
-         loadProfiles();
-     } else {
-         console.log("profileData.email is missing");
-     }
+console.time("Profiles");
 
- }, [profileData]);
+const loadProfiles = useCallback(async () => {
 
-  const loadProfiles = async () => {
+    startLoading("Loading dashboard...");
+
     try {
-      setLoadingProfiles(true);
-    const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
 
-    console.log("CURRENT USER:", currentUser);
+        setLoadingProfiles(true);
 
-    const userId = Number(
-        currentUser?.profile?.userId ||
-        currentUser?.userId ||
-        currentUser?.id
-    );
+        const currentUser = JSON.parse(
+            localStorage.getItem("user") || "{}"
+        );
 
-    console.log("USER ID:", userId);
+        const userId = Number(
+            currentUser?.profile?.userId ||
+            currentUser?.userId ||
+            currentUser?.id
+        );
 
- const data =
- await matchAPI.getTopMatches(
- userId,
- 50
- );
+        const data = await matchAPI.getTopMatches(userId, 15);
 
-  console.log(
-    "PROFILES API:",
-    data
-  );
- const blockedUsers =
-     await blockAPI.getMyBlockedUsers(userId);
+        const blockedUsers = await blockAPI.getMyBlockedUsers(userId);
 
-console.log("BLOCKED USERS:", blockedUsers);
-  console.log(
-    "BLOCKED USERS:",
-    blockedUsers
-  );
-console.log("FIRST PROFILE:", data[0]);
-console.log(
-  "ALL PREMIUM CHECK",
-  data.map(profile => ({
-    name: profile.name,
-    premium: profile.isPremium
-  }))
-);
-  console.log(
-  "Profiles API Response:",
- JSON.stringify(data,null,2)
-  );
-const blockedIds =
-  blockedUsers.map(
-    user => user.blockedId
-  );
-    setBlockedUsers(blockedIds);
+        const blockedIds = blockedUsers.map(u => u.blockedId);
 
-console.log(
-  "BLOCKED IDS:",
-  blockedIds
-);
+        const filteredProfiles = data.filter(
+            profile => !blockedIds.includes(profile.userId)
+        );
 
-const filteredProfiles =
-  Array.isArray(data)
+        setProfiles(filteredProfiles);
 
-    ?
-
-    data.filter(profile =>
-
-      profile.profileCompleted === true &&
-
-      String(profile.email)
-        .toLowerCase()
-
-      !==
-      String(currentUser.email)
-        .toLowerCase()
-
-      &&
-
-      !blockedIds.includes(
-        profile.userId
-      )
-
-    )
-
-    : [];
-
-     console.log(
- "CURRENT USER:",
- currentUser.email
- );
-
- console.log(
- "FILTERED PROFILES:",
- filteredProfiles
- );
- console.log(
- "CURRENT USER EMAIL:",
- currentUser.email
- );
-
- console.log(
- "FILTERED:",
- filteredProfiles
- );
-filteredProfiles.forEach(profile => {
-
-  console.log(
-    "USER:",
-    profile.firstName,
-    "PREMIUM:",
-    profile.isPremium
-  );
-
-});
-const reportStatus = {};
-
-for (const profile of filteredProfiles) {
-
-  try {
-
-    reportStatus[profile.userId] =
-      await reportAPI.hasReported(
-        profile.userId
-      );
-
-  } catch {
-
-    reportStatus[profile.userId] = false;
-
-  }
-
-}
-
-setReportedUsers(reportStatus);
-
-
-setProfiles(data);
-
-    } catch (error) {
-      console.warn('Failed to load profiles:', error.message);
-      setProfiles([]);
     } finally {
-      setLoadingProfiles(false);
+
+        setLoadingProfiles(false);
+
+        stopLoading();
+
     }
-  };
+
+}, [startLoading, stopLoading]);
+
+const loadInitialData = useCallback(async () => {
+
+    await loadProfiles();
+
+    requestIdleCallback(() => {
+        refreshDashboard();
+    });
+
+}, [loadProfiles, refreshDashboard]);
+
+useEffect(() => {
+
+    if (!profileData?.email || initialized) return;
+
+    setInitialized(true);
+
+    loadInitialData();
+
+}, [profileData?.email, initialized, loadInitialData]);
 
   // Use real profile data for completion tracking
 const profileCompletion = {
@@ -507,15 +398,7 @@ Number(
 profile.userId
 );
 
-console.log(
-"SENDER:",
-senderId
-);
 
-console.log(
-"RECEIVER:",
-receiverId
-);
 
 if(
 senderId === receiverId
@@ -547,7 +430,7 @@ toast.success(
 );
 }catch(err){
 
-console.log(err);
+
 
 if(
 
@@ -581,24 +464,7 @@ err?.message ||
 
 };
 
-useEffect(() => {
 
-startLoading(
-"Loading dashboard..."
-);
-
-const timer =
-setTimeout(()=>{
-
-stopLoading();
-
-},1000);
-
-return ()=>clearTimeout(
-timer
-);
-
-},[]);
 
 return (
 
@@ -921,7 +787,7 @@ return (
           <p className="text-primary-foreground/70 text-sm max-w-md">{t?.home?.hero?.subtitle || "Connect with like-minded individuals seeking meaningful relationships"}</p>
         </motion.div>
 
-        <div className="px-6 py-6 w-full space-y-6 pb-24 md:pb-6">
+        <div className="px-6 py-6 grid grid-cols-1 lg:grid-cols-3 gap-6 pb-24 md:pb-6">
           {/* Left column */}
           <div className="lg:col-span-2 space-y-6">
             {/* Profile Completion */}
@@ -983,7 +849,7 @@ p-8
                   <p className="text-muted-foreground">Loading profiles...</p>
                 </div>
               ) : profiles.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {profiles.map((profile, i) => (
 
                     <motion.div
@@ -1068,134 +934,45 @@ onDoubleClick={async (e) => {
       toast.success("Liked ❤️");
     }
   } catch (error) {
-    console.error("Double-click like failed:", error);
+
     toast.error("Failed to update like");
   }
 }}
 >
-    {profile.isPremium && (
-      <div
-        className="
-          absolute
-          top-3
-          left-3
-          z-20
-          bg-yellow-400
-          text-white
-          px-3
-          py-1
-          rounded-full
-          text-xs
-          font-bold
-          shadow-md
-        "
-      >
-        👑 PREMIUM
-      </div>
-    )}
 
 <HeartAnimation
-
-show={
-
-showHeart===profile.userId
-
-}
-
-onComplete={()=>{
-
-setShowHeart(
-null
-);
-
-}}
-
+  show={showHeart===profile.userId}
+  onComplete={()=>{
+    setShowHeart(null);
+  }}
 />
 
 {
-profile.imageUrl ? (
+  profile.imageUrl ? (
+    <>
+     <img
+         src={
+             profile.imageUrl?.startsWith("http")
+                 ? profile.imageUrl
+                 : `https://localhost:9090${profile.imageUrl}`
+         }
+         alt={profile.name || "Profile"}
+         className="w-full h-full object-cover"
+         onError={(e) => {
 
-<>
-<img
-
-src={profile.imageUrl}
-
-alt={`${profile.firstName} ${profile.lastName}`}
-
-className="
-w-full
-h-full
-object-cover
-"
-
-onError={(e)=>{
-
-e.target.parentElement.innerHTML=
-`
-
-<div class="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400">
-
-No Image
-
-</div>
-
-`;
-
-}}
-
- />
-
-<div
-
-className="
-absolute
-bottom-3
-left-3
-bg-white/90
-px-3
-py-1
-rounded-full
-text-sm
-font-medium
-shadow
-"
-
->
-
-❤️ {profile.matchPercentage || 0} Match
-
-</div>
-
-</>
-
-)
-
-:
-
-(
-
-<div
-
-className="
-w-full
-h-full
-flex
-items-center
-justify-center
-bg-gray-100
-text-gray-400
-"
-
->
-
-No Image
-
-</div>
-
-)
-
-}
-                    </div>
+             e.currentTarget.src = "/profile1.jpg";
+         }}
+     />
+      <div className="absolute bottom-3 left-3 bg-white/90 px-3 py-1 rounded-full text-sm font-medium shadow">
+        ❤️ {profile.matchPercentage || 0} Match
+      </div>
+    </>
+  ) : (
+    <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400">
+      No Image
+    </div>
+  )
+}                    </div>
                   <div className="p-4 flex flex-col flex-1">
                   <h3 className="text-lg font-semibold leading-tight">
                     {profile.name || "Unknown User"}
@@ -1245,10 +1022,7 @@ No Image
          return;
        }
 
-       console.log(
-         "PROFILE CLICKED:",
-         profile
-       );
+
 
        handleSendInterest(
          profile
@@ -1657,8 +1431,6 @@ setReportedUsers(prev => ({
              setSelectedProfile(null);
 
            } catch (err) {
-
-             console.error(err);
 
              toast.error(
                err.message || "Failed to report user"

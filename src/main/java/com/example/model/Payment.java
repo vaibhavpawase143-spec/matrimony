@@ -18,8 +18,8 @@ public class Payment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // 🔥 Who made payment
-    @ManyToOne(fetch = FetchType.EAGER)
+    // 🔥 Who made payment - Changed to LAZY to prevent N+1 queries
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 

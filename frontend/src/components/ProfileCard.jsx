@@ -35,23 +35,29 @@ const ProfileCard = ({ profile, onSendInterest, onSave, isSaved = false, isInter
   // Get profile image URL
   const getImageUrl = () => {
     if (imageError) return defaultProfile;
-    if (profile.imageUrl) {
-      return profile.imageUrl.startsWith('http') ? profile.imageUrl : `https://localhost:9090${profile.imageUrl}`;
-    }
-    if (profile.profilePhotoUrl) {
-      return profile.profilePhotoUrl.startsWith('http') ? profile.profilePhotoUrl : `https://localhost:9090${profile.profilePhotoUrl}`;
-    }
-    return defaultProfile;
-  };
 
-  // Get display name
-  const getDisplayName = () => {
-    if (profile.userName) return profile.userName;
-    if (profile.fullName) return profile.fullName;
-    if (profile.firstName && profile.lastName) return `${profile.firstName} ${profile.lastName}`;
-    return "Unknown User";
-  };
+    const image = profile.imageUrl || profile.profilePhotoUrl;
 
+    if (!image) return defaultProfile;
+
+    // Already a complete URL
+    if (image.startsWith("http")) {
+      return image;
+    }
+
+    // Starts with /uploads/
+    if (image.startsWith("/")) {
+      return `https://localhost:9090${image}`;
+    }
+
+    // Starts with uploads/
+    if (image.startsWith("uploads/")) {
+      return `https://localhost:9090/${image}`;
+    }
+
+    // Only filename like user2.jpg
+    return `https://localhost:9090/uploads/${image}`;
+  };
   // Get city name with fallback
   const getCityName = () => {
     return profile.cityName || profile.city || "City not available";
@@ -79,7 +85,9 @@ const ProfileCard = ({ profile, onSendInterest, onSave, isSaved = false, isInter
       if (onSendInterest) onSendInterest(profile);
     }
   };
-
+console.log("PROFILE =", profile);
+console.log("imageUrl =", profile.imageUrl);
+console.log("Final URL =", getImageUrl());
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -88,6 +96,7 @@ const ProfileCard = ({ profile, onSendInterest, onSave, isSaved = false, isInter
       className="bg-white rounded-2xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 h-full flex flex-col"
     >
       {/* Profile Image */}
+      <h1 style={{ color: "red" }}>PROFILE CARD TEST</h1>
       <div className="aspect-[4/5] overflow-hidden relative bg-muted">
         <img
           src={getImageUrl()}

@@ -32,16 +32,7 @@ public class CasteServiceImpl implements CasteService {
 
     @Override
     public List<Caste> getAll(Long adminId) {
-
-        List<Caste> list = casteRepository.findAllAvailable(adminId);
-
-        list.forEach(c -> {
-            if (c.getReligion() != null) {
-                c.getReligion().getName();
-            }
-        });
-
-        return list;
+        return casteRepository.findAllAvailable(adminId);
     }
 
     // =========================================
@@ -50,16 +41,7 @@ public class CasteServiceImpl implements CasteService {
 
     @Override
     public List<Caste> getActive(Long adminId) {
-
-        List<Caste> list = casteRepository.findAllActiveAvailable(adminId);
-
-        list.forEach(c -> {
-            if (c.getReligion() != null) {
-                c.getReligion().getName();
-            }
-        });
-
-        return list;
+        return casteRepository.findAllActiveAvailable(adminId);
     }
     // =========================================
     // GET BY ID
@@ -215,19 +197,10 @@ public class CasteServiceImpl implements CasteService {
     @Override
     @Transactional(readOnly = true)
     public List<Caste> getByReligion(Long religionId, Long adminId) {
-
-        List<Caste> list = casteRepository.findAvailableByReligion(
+        return casteRepository.findAvailableByReligion(
                 religionId,
                 adminId
         );
-
-        list.forEach(c -> {
-            if (c.getReligion() != null) {
-                c.getReligion().getName();
-            }
-        });
-
-        return list;
     }
     // =========================================
     // GET ACTIVE BY RELIGION
@@ -239,40 +212,21 @@ public class CasteServiceImpl implements CasteService {
             Long religionId,
             Long adminId
     ) {
-
-        List<Caste> list = casteRepository.findActiveAvailableByReligion(
+        return casteRepository.findActiveAvailableByReligion(
                 religionId,
                 adminId
         );
-
-        list.forEach(c -> {
-            if (c.getReligion() != null) {
-                c.getReligion().getName();
-            }
-        });
-
-        return list;
     }
     // =========================================
     // SEARCH
     // =========================================
-
     @Override
     @Transactional(readOnly = true)
     public List<Caste> search(String keyword, Long adminId) {
-
-        List<Caste> list = casteRepository.searchAvailable(
+        return casteRepository.searchAvailable(
                 keyword.trim(),
                 adminId
         );
-
-        list.forEach(c -> {
-            if (c.getReligion() != null) {
-                c.getReligion().getName();
-            }
-        });
-
-        return list;
     }
     @Override
     @Transactional

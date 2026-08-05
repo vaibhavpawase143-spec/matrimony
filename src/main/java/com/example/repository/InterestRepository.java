@@ -1,6 +1,8 @@
 package com.example.repository;
 
 import com.example.model.Interest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -29,4 +31,35 @@ public interface InterestRepository extends JpaRepository<Interest, Long> {
     );
 
     long countBySender_IdAndIsActiveTrue(Long senderId);
+
+    // =====================================================
+// PAGINATION METHODS (1M+ USERS)
+// =====================================================
+
+    Page<Interest> findBySender_Id(
+            Long senderId,
+            Pageable pageable
+    );
+
+    Page<Interest> findByReceiver_Id(
+            Long receiverId,
+            Pageable pageable
+    );
+
+    Page<Interest> findByReceiver_IdAndStatusIgnoreCase(
+            Long receiverId,
+            String status,
+            Pageable pageable
+    );
+
+    Page<Interest> findBySender_IdAndStatusIgnoreCase(
+            Long senderId,
+            String status,
+            Pageable pageable
+    );
+
+    Page<Interest> findByStatusIgnoreCase(
+            String status,
+            Pageable pageable
+    );
 }

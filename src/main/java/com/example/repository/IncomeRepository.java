@@ -1,6 +1,7 @@
 package com.example.repository;
 
 import com.example.model.Income;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -14,12 +15,14 @@ public interface IncomeRepository extends JpaRepository<Income, Long> {
     // GET BY ID
     // =========================
 
+    @EntityGraph(attributePaths = "admin")
     Optional<Income> findByIdAndDeletedAtIsNull(Long id);
 
     // =========================
     // GET ALL
     // =========================
 
+    @EntityGraph(attributePaths = "admin")
     List<Income> findAllByDeletedAtIsNull();
 
     // =========================
@@ -48,26 +51,31 @@ public interface IncomeRepository extends JpaRepository<Income, Long> {
     // ACTIVE / INACTIVE
     // =========================
 
+    @EntityGraph(attributePaths = "admin")
     List<Income> findByIsActiveTrueAndDeletedAtIsNull();
 
     List<Income> findByIsActiveFalseAndDeletedAtIsNull();
-
     // =========================
     // ADMIN WISE
     // =========================
 
+    @EntityGraph(attributePaths = "admin")
     List<Income> findByAdmin_IdAndDeletedAtIsNull(Long adminId);
 
+    @EntityGraph(attributePaths = "admin")
     List<Income> findByAdmin_IdAndIsActiveTrueAndDeletedAtIsNull(Long adminId);
 
+    @EntityGraph(attributePaths = "admin")
     List<Income> findByAdmin_IdAndIsActiveFalseAndDeletedAtIsNull(Long adminId);
 
     // =========================
     // SEARCH
     // =========================
 
+    @EntityGraph(attributePaths = "admin")
     List<Income> findByRangeContainingIgnoreCaseAndDeletedAtIsNull(String keyword);
 
+    @EntityGraph(attributePaths = "admin")
     List<Income> findByAdmin_IdAndRangeContainingIgnoreCaseAndDeletedAtIsNull(
             Long adminId,
             String keyword

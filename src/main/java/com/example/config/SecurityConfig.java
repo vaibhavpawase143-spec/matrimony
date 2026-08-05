@@ -86,6 +86,7 @@ public class SecurityConfig {
                                 "/api/manglik-statuses/**",
                                 "/api/interests/**",
                                 "/api/image/**",
+                                "/images/**",
                                 "/ws/**",
                                 "/api/users/init-photo-directory",
                                 "/api/user-photos/**",

@@ -1,6 +1,7 @@
 package com.example.repository;
 
 import com.example.model.FieldOfStudy;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -14,12 +15,16 @@ public interface FieldOfStudyRepository extends JpaRepository<FieldOfStudy, Long
     // GET BY ID
     // =========================
 
+    @EntityGraph(attributePaths = "admin")
     Optional<FieldOfStudy> findByIdAndDeletedAtIsNull(Long id);
+
+    Optional<FieldOfStudy> findByIdAndDeletedAtIsNotNull(Long id);
 
     // =========================
     // GET ALL
     // =========================
 
+    @EntityGraph(attributePaths = "admin")
     List<FieldOfStudy> findAllByDeletedAtIsNull();
 
     // =========================
@@ -48,6 +53,7 @@ public interface FieldOfStudyRepository extends JpaRepository<FieldOfStudy, Long
     // ACTIVE / INACTIVE
     // =========================
 
+    @EntityGraph(attributePaths = "admin")
     List<FieldOfStudy> findByIsActiveTrueAndDeletedAtIsNull();
 
     List<FieldOfStudy> findByIsActiveFalseAndDeletedAtIsNull();
@@ -56,8 +62,10 @@ public interface FieldOfStudyRepository extends JpaRepository<FieldOfStudy, Long
     // ADMIN WISE
     // =========================
 
+    @EntityGraph(attributePaths = "admin")
     List<FieldOfStudy> findByAdmin_IdAndDeletedAtIsNull(Long adminId);
 
+    @EntityGraph(attributePaths = "admin")
     List<FieldOfStudy> findByAdmin_IdAndIsActiveTrueAndDeletedAtIsNull(Long adminId);
 
     List<FieldOfStudy> findByAdmin_IdAndIsActiveFalseAndDeletedAtIsNull(Long adminId);
@@ -66,8 +74,10 @@ public interface FieldOfStudyRepository extends JpaRepository<FieldOfStudy, Long
     // SEARCH
     // =========================
 
+    @EntityGraph(attributePaths = "admin")
     List<FieldOfStudy> findByNameContainingIgnoreCaseAndDeletedAtIsNull(String keyword);
 
+    @EntityGraph(attributePaths = "admin")
     List<FieldOfStudy> findByAdmin_IdAndNameContainingIgnoreCaseAndDeletedAtIsNull(
             Long adminId,
             String keyword
@@ -78,6 +88,4 @@ public interface FieldOfStudyRepository extends JpaRepository<FieldOfStudy, Long
     // =========================
 
     List<FieldOfStudy> findByDeletedAtIsNotNull();
-
-    Optional<FieldOfStudy> findByIdAndDeletedAtIsNotNull(Long id);
 }

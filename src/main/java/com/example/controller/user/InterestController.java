@@ -4,6 +4,9 @@ import com.example.dto.request.InterestRequestDTO;
 import com.example.dto.response.InterestResponseDTO;
 import com.example.service.InterestService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -65,5 +68,68 @@ public class InterestController {
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         interestService.delete(id);
         return ResponseEntity.noContent().build();
+    }
+    // =====================================================
+// PAGINATED SENT INTERESTS
+// =====================================================
+
+    @GetMapping("/sent/{senderId}/page")
+    public ResponseEntity<Page<InterestResponseDTO>> getSentPage(
+            @PathVariable Long senderId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+
+        Pageable pageable = PageRequest.of(page, size);
+
+        return ResponseEntity.ok(
+                interestService.getBySender(
+                        senderId,
+                        pageable
+                )
+        );
+    }
+
+// =====================================================
+// PAGINATED RECEIVED INTERESTS
+// =====================================================
+
+    @GetMapping("/received/{receiverId}/page")
+    public ResponseEntity<Page<InterestResponseDTO>> getReceivedPage(
+            @PathVariable Long receiverId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+
+        Pageable pageable = PageRequest.of(page, size);
+
+        return ResponseEntity.ok(
+                interestService.getByReceiver(
+                        receiverId,
+                        pageable
+                )
+        );
+    }
+
+// =====================================================
+// PAGINATED RECEIVED PENDING
+// =====================================================
+
+    @GetMapping("/received/{receiverId}/pending/page")
+    public ResponseEntity<Page<InterestResponseDTO>> getReceivedPendingPage(
+            @PathVariable Long receiverId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+
+        Pageable pageable = PageRequest.of(page, size);
+
+        return ResponseEntity.ok(
+                interestService.getByReceiverAndStatus(
+                        receiverId,
+                        "PENDING",
+                        pageable
+                )
+        );
     }
 }
