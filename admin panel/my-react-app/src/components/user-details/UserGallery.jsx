@@ -12,9 +12,9 @@ export default function UserGallery({ user }) {
       : [
           {
             id: 1,
-            photoUrl:
-              user?.imageUrl ||
-              "https://ui-avatars.com/api/?name=User&size=500",
+          photoUrl: user?.imageUrl
+            ? `https://localhost:9090${user.imageUrl}`
+            : "https://ui-avatars.com/api/?name=User&size=500",
             photoType: "Profile",
           },
         ];

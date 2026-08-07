@@ -17,14 +17,14 @@ export default defineConfig({
 
     proxy: {
       "/api": {
-        target: "http://localhost:9090",
+        target: "https://localhost:9090",
         changeOrigin: true,
         secure: false,
         ws: true,
       },
 
       "/ws": {
-        target: "ws://localhost:9090",
+        target: "wss://localhost:9090",
         changeOrigin: true,
         secure: false,
         ws: true,

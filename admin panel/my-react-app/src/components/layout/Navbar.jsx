@@ -127,7 +127,7 @@ const handleDelete = async (id) => {
      try {
        const response = await getAdminProfile();
        setProfile(response.data || response);
-console.log("Admin Profile:", response.data || response);
+
        await loadUnreadCount();
      } catch (error) {
        console.error("Failed to load admin profile", error);
@@ -220,19 +220,17 @@ const handleNotificationClick = async (notification) => {
 
 
 const handleLogout = () => {
-  // Google Analytics Event
-  trackEvent("admin_logout");
+    trackEvent("admin_logout");
 
-  // Clear admin session
-  logoutAdmin();
+    disconnectAdminNotifications();
 
-  // Remove old keys (only if they're still used elsewhere)
-  localStorage.removeItem("authToken");
-  localStorage.removeItem("user");
+    logoutAdmin();
 
-  navigate("/");
+    localStorage.removeItem("authToken");
+    localStorage.removeItem("user");
+
+    navigate("/", { replace: true });
 };
-
   // ==========================================
   // Navigation
   // ==========================================

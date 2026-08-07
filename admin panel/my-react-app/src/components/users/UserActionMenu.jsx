@@ -4,8 +4,7 @@ import {
   FaEye,
   FaUserCheck,
   FaUserSlash,
-  FaBan,
-  FaUnlock,
+
 
   FaTrash,
   FaUndo,
@@ -17,8 +16,7 @@ export default function UserActionMenu({
   onView,
   onActivate,
   onDeactivate,
-  onBlock,
-  onUnblock,
+
   onVerifyEmail,
   onVerifyPhone,
   onRestore,
@@ -102,27 +100,6 @@ export default function UserActionMenu({
             </button>
           )}
 
-          {!user.blocked ? (
-            <button
-              onClick={() =>
-                closeMenu(() => onBlock(user))
-              }
-              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-50 text-red-700"
-            >
-              <FaBan />
-              Block
-            </button>
-          ) : (
-            <button
-              onClick={() =>
-                closeMenu(() => onUnblock(user))
-              }
-              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-green-50 text-green-700"
-            >
-              <FaUnlock />
-              Unblock
-            </button>
-          )}
 
 
           <hr />

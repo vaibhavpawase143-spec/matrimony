@@ -17,8 +17,7 @@ import {
 
   // Bulk Operations
   bulkActivateUsers,
-  bulkBlockUsers,
-  bulkUnblockUsers,
+
   bulkSoftDeleteUsers,
 } from "../services/adminUserService";
 import {
@@ -341,13 +340,6 @@ export default function Users() {
           await deactivateUser(selectedUser.id);
           break;
 
-        case "block":
-          await blockUser(selectedUser.id);
-          break;
-
-        case "unblock":
-          await unblockUser(selectedUser.id);
-          break;
 
         case "restore":
           await restoreUser(selectedUser.id);
@@ -494,15 +486,7 @@ export default function Users() {
           toast.success("Selected users activated successfully.");
           break;
 
-        case "block":
-          await bulkBlockUsers(selectedUsers);
-          toast.success("Selected users blocked successfully.");
-          break;
 
-        case "unblock":
-          await bulkUnblockUsers(selectedUsers);
-          toast.success("Selected users unblocked successfully.");
-          break;
 
         case "softDelete":
           await bulkSoftDeleteUsers(selectedUsers);
@@ -958,8 +942,7 @@ export default function Users() {
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
               >
                 <option value="">All</option>
-                <option value="true">Blocked</option>
-                <option value="false">Unblocked</option>
+
               </select>
             </div>
 
@@ -1120,21 +1103,7 @@ export default function Users() {
                 Activate
               </button>
 
-              <button
-                type="button"
-                onClick={() => handleBulkAction("block")}
-                className="px-4 py-2 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700 transition"
-              >
-                Block
-              </button>
 
-              <button
-                type="button"
-                onClick={() => handleBulkAction("unblock")}
-                className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition"
-              >
-                Unblock
-              </button>
 
               <button
                 type="button"
@@ -1259,18 +1228,23 @@ export default function Users() {
                   {/* Name */}
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <img
-                        src={
-                          user.imageUrl ||
-                          "https://ui-avatars.com/api/?name=" +
-                            encodeURIComponent(
-                              user.fullName || "User"
-                            )
-                        }
-                        alt={user.fullName}
-                        className="w-10 h-10 rounded-full object-cover border"
-                      />
-
+                <img
+                  src={
+                    user?.imageUrl
+                      ? `https://localhost:9090${user.imageUrl}`
+                      : `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                          user?.fullName || "User"
+                        )}`
+                  }
+                  alt={user?.fullName || "User"}
+                  className="w-10 h-10 rounded-full object-cover border"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                      user?.fullName || "User"
+                    )}`;
+                  }}
+                />
                       <div>
                         <div className="font-medium text-gray-900">
                           {user.fullName}
@@ -1338,8 +1312,7 @@ export default function Users() {
                         onView={(user) => navigate(`/users/${user.id}`)}
                         onActivate={(user) => openConfirmModal(user, "activate")}
                         onDeactivate={(user) => openConfirmModal(user, "deactivate")}
-                        onBlock={(user) => openConfirmModal(user, "block")}
-                        onUnblock={(user) => openConfirmModal(user, "unblock")}
+
                         onRestore={(user) => openConfirmModal(user, "restore")}
                         onSoftDelete={(user) => openConfirmModal(user, "softDelete")}
                       />

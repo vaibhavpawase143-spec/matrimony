@@ -1,5 +1,12 @@
 import { apiClient } from "./api";
-
+const SUPPORTS_DELETED = [
+  "Religion",
+  "Caste",
+  "Sub Caste",
+  "Country",
+  "State",
+  "City",
+];
 // Helper to safely extract list from API responses (handles array, response.data, or response.content)
 const extractData = (res) => {
   if (!res) return [];
@@ -16,7 +23,7 @@ const extractData = (res) => {
 
 const TAB_ENDPOINTS = {
   Religion: ["/master/religions"],
-  Caste: ["/master/castes", "/castes", "/admins/1/castes"],
+Caste: ["/admins/1/castes"],
   "Sub Caste": ["/master/sub-castes", "/sub-castes"],
   Country: ["/countries", "/master/countries"],
   State: ["/master/states", "/states"],
@@ -67,28 +74,43 @@ export const getMasterItems = async (tabName) => {
   }
 
   // Also query deleted/inactive endpoint if available to merge soft-deleted items into admin view
-  for (const endpoint of endpoints) {
-    try {
-      const deletedResponse = await apiClient(`${endpoint}/deleted`);
-      const deletedData = extractData(deletedResponse);
-      if (deletedData && deletedData.length > 0) {
-        const existingIds = new Set(allItems.map((i) => i.id));
-        for (const item of deletedData) {
-          if (!existingIds.has(item.id)) {
-            allItems.push({
-              ...item,
-              isActive: false,
-              active: false,
-              status: "Inactive",
-            });
-          }
-        }
-      }
-    } catch {
-      // ignore
-    }
-  }
+  if (SUPPORTS_DELETED.includes(tabName)) {
 
+    for (const endpoint of endpoints) {
+
+      try {
+
+        const deletedResponse = await apiClient(`${endpoint}/deleted`);
+        const deletedData = extractData(deletedResponse);
+
+        if (deletedData.length > 0) {
+
+          const existingIds = new Set(allItems.map(i => i.id));
+
+          deletedData.forEach(item => {
+
+            if (!existingIds.has(item.id)) {
+
+              allItems.push({
+                ...item,
+                isActive: false,
+                active: false,
+                status: "Inactive",
+              });
+
+            }
+
+          });
+
+        }
+
+      } catch (e) {
+        console.warn(`${endpoint}/deleted not supported`);
+      }
+
+    }
+
+  }
   return allItems;
 };
 
@@ -179,7 +201,9 @@ export const getCastesByReligion = async (religionId) => {
     // ignore
   }
   try {
-    const res2 = await apiClient(`/master/castes?religionId=${religionId}`);
+const res2 = await apiClient(
+  `/admins/1/castes/religion/${religionId}`
+);
     const data2 = extractData(res2);
     if (data2.length > 0) return data2;
   } catch {

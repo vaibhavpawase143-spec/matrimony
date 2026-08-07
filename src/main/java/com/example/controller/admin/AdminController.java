@@ -30,7 +30,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/admins")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = "http://localhost:5173")
 public class AdminController {
 
     private final AdminService adminService;

@@ -18,10 +18,8 @@ public class UserSpecification {
 
             // 🔥 IMPORTANT (avoid duplicate + allow fetch)
             if (query.getResultType() != Long.class) {
-                root.fetch("roles", JoinType.LEFT);
                 query.distinct(true);
             }
-
             Predicate predicate = cb.conjunction();
             Join<User, Profile> profileJoin = root.join("profile", JoinType.LEFT);
             // 🔍 SEARCH

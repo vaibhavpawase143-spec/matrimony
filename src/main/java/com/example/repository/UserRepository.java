@@ -453,17 +453,17 @@ ORDER BY u.createdAt DESC
     // ==========================================
 // DASHBOARD - TOP CITIES
 // ==========================================
-
     @Query(value = """
 SELECT
-    c.id,
+    p.city_id,
     c.name,
-    COUNT(p.id)
+    COUNT(*) AS user_count
 FROM profiles p
-JOIN cities c
-ON p.city_id = c.id
-GROUP BY c.id,c.name
-ORDER BY COUNT(p.id) DESC
+INNER JOIN cities c
+    ON c.id = p.city_id
+WHERE p.city_id IS NOT NULL
+GROUP BY p.city_id, c.name
+ORDER BY user_count DESC
 LIMIT 10
 """, nativeQuery = true)
     List<Object[]> getTopCities();
