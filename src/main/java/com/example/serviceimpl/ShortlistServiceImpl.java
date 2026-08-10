@@ -11,6 +11,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.CacheEvict;
 
 import java.util.List;
 import java.util.Optional;
@@ -35,6 +37,14 @@ public class ShortlistServiceImpl implements ShortlistService {
 
     // ✅ Add to shortlist (handles duplicate + reactivation)
     @Override
+    @CacheEvict(
+            value = {
+                    "user:shortlists",
+                    "user:shortlists:page",
+                    "user:discover"
+            },
+            key = "#shortlist.user.id"
+    )
     public Shortlist addToShortlist(Shortlist shortlist) {
 
         Long userId = shortlist.getUser().getId();
@@ -156,12 +166,17 @@ public class ShortlistServiceImpl implements ShortlistService {
 
     // 🔍 Get all shortlisted profiles by user
     @Override
+    @Cacheable(value = "user:shortlists", key = "#userId")
     public List<Shortlist> getByUser(Long userId) {
         return repository.findByUser_IdAndIsActiveTrue(userId);
     }
 
     // 🔍 Get paginated shortlisted profiles by user
     @Override
+    @Cacheable(
+            value = "user:shortlists:page",
+            key = "#userId + '-' + #pageable.pageNumber + '-' + #pageable.pageSize"
+    )
     public Page<Shortlist> getByUser(Long userId, Pageable pageable) {
         return repository.findByUser_IdAndIsActiveTrue(userId, pageable);
     }
@@ -174,6 +189,14 @@ public class ShortlistServiceImpl implements ShortlistService {
 
     // ❌ Remove from shortlist (SOFT DELETE)
     @Override
+    @CacheEvict(
+            value = {
+                    "user:shortlists",
+                    "user:shortlists:page",
+                    "user:discover"
+            },
+            key = "#userId"
+    )
     public void removeFromShortlist(Long userId, Long profileId) {
 
         Shortlist shortlist = repository

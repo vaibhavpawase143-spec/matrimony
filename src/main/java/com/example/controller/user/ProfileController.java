@@ -61,17 +61,18 @@ public class ProfileController {
     // ================= GET MY PROFILE =================
     @GetMapping("/me")
     public ResponseEntity<ProfileResponseDTO> getMyProfile() {
-        try {
-            return ResponseEntity.ok(service.getMyProfile());
-        } catch (RuntimeException e) {
-            if (e.getMessage().contains("Profile not found")) {
-                // Return a response indicating profile needs to be created
-                ProfileResponseDTO response = new ProfileResponseDTO();
-                response.setMessage("Profile not found. Please create your profile first.");
-                return ResponseEntity.status(404).body(response);
-            }
-            throw e;
-        }
+
+        long start = System.currentTimeMillis();
+
+        ProfileResponseDTO dto = service.getMyProfile();
+
+        System.out.println(
+                "TOTAL PROFILE API = "
+                        + (System.currentTimeMillis() - start)
+                        + " ms"
+        );
+
+        return ResponseEntity.ok(dto);
     }
 
     // ================= UPDATE MY PROFILE =================

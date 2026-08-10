@@ -247,6 +247,7 @@ public class ProfileResponseDTO {
     private Integer currentStep;
 
     private Boolean profileCompleted;
+    private Integer profileCompletionPercentage;
 
     private Boolean isPremium;
 

@@ -2008,22 +2008,29 @@ return await apiClient(
  };
  export const matchAPI = {
 
-   getTopMatches: async (userId, limit = 20) => {
+     getTopMatches: async (
+         userId,
+         page = 0,
+         size = 20
+     ) => {
 
-     return await apiClient(
+         return await apiClient(
+             `/match/recommend/${userId}?page=${page}&size=${size}`
+         );
 
-       `/match/recommend/${userId}?limit=${limit}`
+     },
 
-     );
+     getMatchDetails: async (
+         userId,
+         partnerId
+     ) => {
 
-   },
-   getMatchDetails: async (userId, partnerId) => {
+         return await apiClient(
+             `/match/${userId}/details/${partnerId}`
+         );
 
-       return await apiClient(
-           `/match/${userId}/details/${partnerId}`
-       );
+     },
 
-   },
  };
  export const notificationPreferenceAPI = {
 
@@ -2037,6 +2044,13 @@ return await apiClient(
        body: JSON.stringify(data),
      });
    },
+
+ };
+ export const dashboardAPI = {
+
+     getSummary: async () => {
+         return await apiClient("/dashboard/summary");
+     }
 
  };
  export const subscriptionAPI = {

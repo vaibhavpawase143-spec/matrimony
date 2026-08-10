@@ -19,6 +19,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.CacheEvict;
 
 import java.util.List;
 import java.util.Optional;
@@ -113,6 +115,13 @@ public class ProfileServiceImpl implements ProfileService {
     // =====================================================
 
     @Override
+    @CacheEvict(
+            value = {
+                    "user:profile",
+                    "user:discover"
+            },
+            allEntries = true
+    )
     public ProfileResponseDTO createProfile(ProfileRequestDTO dto) {
 
         User user = getCurrentUser();
@@ -144,13 +153,17 @@ public class ProfileServiceImpl implements ProfileService {
     // UPDATE PROFILE
     // =====================================================
 
+    @CacheEvict(
+            value = "topMatches",
+            allEntries = true
+    )
     @Override
     public ProfileResponseDTO updateMyProfile(UpdateProfileRequestDTO dto) {
 
         User user = getCurrentUser();
 
         Profile profile = repository
-                .findByUserIdWithRelations(user.getId())
+                .findByUserIdWithDetails(user.getId())
                 .orElseThrow(() ->
                         new RuntimeException("Profile not found"));
 
@@ -190,15 +203,69 @@ public class ProfileServiceImpl implements ProfileService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(
+            value = "user:profile",
+            key = "T(org.springframework.security.core.context.SecurityContextHolder).getContext().getAuthentication().getName()"
+    )
     public ProfileResponseDTO getMyProfile() {
 
+        // =========================
+        // TOTAL API TIMER
+        // =========================
+        long totalStart = System.currentTimeMillis();
+
+        // =========================
+        // CURRENT USER TIMER
+        // =========================
+        long currentUserStart = System.currentTimeMillis();
+
+        User currentUser = getCurrentUser();
+
+        System.out.println(
+                "CURRENT USER = "
+                        + (System.currentTimeMillis() - currentUserStart)
+                        + " ms"
+        );
+
+        // =========================
+        // PROFILE QUERY TIMER
+        // =========================
+        long queryStart = System.currentTimeMillis();
+
         Profile profile = repository
-                .findByUserIdWithDetails(getCurrentUser().getId())
+                .findByUserIdWithDetails(currentUser.getId())
                 .orElseThrow(() ->
                         new RuntimeException("Profile not found"));
 
-        // Premium status is determined while mapping DTO
-        return mapToDTO(profile);
+        System.out.println(
+                "PROFILE QUERY = "
+                        + (System.currentTimeMillis() - queryStart)
+                        + " ms"
+        );
+
+        // =========================
+        // DTO TIMER
+        // =========================
+        long dtoStart = System.currentTimeMillis();
+
+        ProfileResponseDTO dto = mapToDTO(profile);
+
+        System.out.println(
+                "DTO = "
+                        + (System.currentTimeMillis() - dtoStart)
+                        + " ms"
+        );
+
+        // =========================
+        // TOTAL API TIMER
+        // =========================
+        System.out.println(
+                "TOTAL PROFILE API = "
+                        + (System.currentTimeMillis() - totalStart)
+                        + " ms"
+        );
+
+        return dto;
     }
 
     // =====================================================
@@ -229,7 +296,7 @@ public class ProfileServiceImpl implements ProfileService {
         User currentUser = getCurrentUser();
 
         Profile currentProfile = repository
-                .findByUserIdWithRelations(currentUser.getId())
+                .findByUserIdWithDetails(currentUser.getId())
                 .orElse(null);
 
         // Hide contact details for non-premium users
@@ -242,13 +309,17 @@ public class ProfileServiceImpl implements ProfileService {
 
         return dto;
     }
-
+    @Cacheable(
+            value = "user:discover",
+            key = "T(org.springframework.security.core.context.SecurityContextHolder).getContext().getAuthentication().getName()"
+    )
     public List<ProfileResponseDTO> getDiscoverProfiles() {
 
         User currentUser = getCurrentUser();
 
-        Profile myProfile = repository.findByUserIdWithRelations(currentUser.getId())
-                .orElseThrow(() -> new RuntimeException("Profile not found"));
+        Profile myProfile =
+                repository.findByUserIdWithDetails(currentUser.getId())
+                        .orElseThrow(() -> new RuntimeException("Profile not found"));
 
         String myGender = myProfile.getGender().getName();
 
@@ -271,6 +342,10 @@ public class ProfileServiceImpl implements ProfileService {
     // =====================================================
 
     @Override
+    @CacheEvict(
+            value = "user:profile",
+            allEntries = true
+    )
     public void delete(Long id) {
 
         Profile profile = repository
@@ -294,6 +369,10 @@ public class ProfileServiceImpl implements ProfileService {
     // =====================================================
 
     @Override
+    @CacheEvict(
+            value = "user:discover",
+            allEntries = true
+    )
     public void activatePremium(
             Long userId,
             PremiumPlan plan
@@ -400,7 +479,7 @@ public class ProfileServiceImpl implements ProfileService {
     public ProfileResponseDTO getProfileByUserId(Long userId) {
 
         Profile profile = repository
-                .findByUserIdWithRelations(userId)
+                .findByUserIdWithDetails(userId)
                 .orElseThrow(() -> new RuntimeException("Profile not found"));
 
         return mapToDTO(profile);
@@ -1546,6 +1625,9 @@ public class ProfileServiceImpl implements ProfileService {
         dto.setIsPremium(profile.getIsPremium());
 
         dto.setProfileCompleted(profile.getProfileCompleted());
+        dto.setProfileCompletionPercentage(
+                calculateProfileCompletion(profile)
+        );
 
         dto.setBoostScore(profile.getBoostScore());
         return dto;
@@ -1709,16 +1791,59 @@ public class ProfileServiceImpl implements ProfileService {
         if (profile.getDrinking() != null) completedFields++;
         if (profile.getQualification() != null) completedFields++;
         if (profile.getFieldOfStudy() != null) completedFields++;
-        if (profile.getCompanyName() != null
-                && !profile.getCompanyName().isBlank()) completedFields++;
-        if (profile.getAbout() != null
-                && !profile.getAbout().isBlank()) completedFields++;
-        if (profile.getImageUrl() != null
-                && !profile.getImageUrl().isBlank()) completedFields++;
+
+        if (profile.getCompanyName() != null && !profile.getCompanyName().isBlank())
+            completedFields++;
+
+        if (profile.getAbout() != null && !profile.getAbout().isBlank())
+            completedFields++;
+
+        if (profile.getImageUrl() != null && !profile.getImageUrl().isBlank())
+            completedFields++;
 
         int percentage = (completedFields * 100) / totalFields;
 
-        profile.setProfileCompleted(percentage>=100);
+        // Only full profile is marked completed
+        profile.setProfileCompleted(percentage == 100);
+    }
+    private Integer calculateProfileCompletion(Profile profile) {
+
+        int completedFields = 0;
+        int totalFields = 25;
+
+        if (profile.getDateOfBirth() != null) completedFields++;
+        if (profile.getGender() != null) completedFields++;
+        if (profile.getReligion() != null) completedFields++;
+        if (profile.getCaste() != null) completedFields++;
+        if (profile.getSubCaste() != null) completedFields++;
+        if (profile.getMotherTongue() != null) completedFields++;
+        if (profile.getMaritalStatus() != null) completedFields++;
+        if (profile.getEducationLevel() != null) completedFields++;
+        if (profile.getOccupation() != null) completedFields++;
+        if (profile.getHeight() != null) completedFields++;
+        if (profile.getWeight() != null) completedFields++;
+        if (profile.getBodyType() != null) completedFields++;
+        if (profile.getComplexion() != null) completedFields++;
+        if (profile.getCountry() != null) completedFields++;
+        if (profile.getState() != null) completedFields++;
+        if (profile.getCity() != null) completedFields++;
+        if (profile.getIncome() != null) completedFields++;
+        if (profile.getDiet() != null) completedFields++;
+        if (profile.getSmoking() != null) completedFields++;
+        if (profile.getDrinking() != null) completedFields++;
+        if (profile.getQualification() != null) completedFields++;
+        if (profile.getFieldOfStudy() != null) completedFields++;
+
+        if (profile.getCompanyName() != null && !profile.getCompanyName().isBlank())
+            completedFields++;
+
+        if (profile.getAbout() != null && !profile.getAbout().isBlank())
+            completedFields++;
+
+        if (profile.getImageUrl() != null && !profile.getImageUrl().isBlank())
+            completedFields++;
+
+        return (completedFields * 100) / totalFields;
     }
 
     // =====================================================

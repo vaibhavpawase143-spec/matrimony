@@ -12,6 +12,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.Period;
 
 @Service
 @RequiredArgsConstructor
@@ -28,25 +29,20 @@ public class DiscoverServiceImpl implements DiscoverService {
     ) {
 
         Profile myProfile = profileRepository
-                .findByUserIdWithRelations(userId)
+                .findByUserIdWithDetails(userId)
                 .orElseThrow(() -> new RuntimeException("Profile not found"));
 
         if (myProfile.getGender() == null) {
             throw new RuntimeException("Gender not found");
         }
 
-        Long oppositeGenderId;
+        Long genderId = myProfile.getGender().getId();
 
-        if (myProfile.getGender().getId().equals(1L)) {
-            // Female -> Show Male
-            oppositeGenderId = 2L;
-        } else if (myProfile.getGender().getId().equals(2L)) {
-            // Male -> Show Female
-            oppositeGenderId = 1L;
-        } else {
-            // Other -> Show Other (temporary)
-            oppositeGenderId = 3L;
-        }
+        Long oppositeGenderId = switch (genderId.intValue()) {
+            case 1 -> 2L;
+            case 2 -> 1L;
+            default -> 3L;
+        };
 
         Page<Profile> profiles =
                 profileRepository.findDiscoverProfilesByGender(
@@ -72,8 +68,10 @@ public class DiscoverServiceImpl implements DiscoverService {
         if (profile.getDateOfBirth() != null) {
 
             dto.setAge(
-                    LocalDate.now().getYear()
-                            - profile.getDateOfBirth().getYear()
+                    Period.between(
+                            profile.getDateOfBirth(),
+                            LocalDate.now()
+                    ).getYears()
             );
         }
 

@@ -1,17 +1,16 @@
 import { useState, useEffect, useCallback } from 'react';
 import { shortlistAPI } from '@/services/shortlistAPI';
 
-const CACHE_KEY = '__shortlist_cache_v1';
+const CACHE_KEY = "__shortlist_cache_v2";
 
 if (!window[CACHE_KEY]) {
-
-window[CACHE_KEY] = {
-    items: [],
-    loaded: false,
-    loading: false,
-    profileIds: new Set()
-};
-
+    window[CACHE_KEY] = {
+        items: [],
+        loaded: false,
+        loading: false,
+        loadPromise: null,
+        profileIds: new Set()
+    };
 }
 
 export const useShortlist = () => {
@@ -30,120 +29,100 @@ useState(null);
 const [page,setPage] =
 useState(0);
 
-const load = useCallback(
+const load = useCallback(async () => {
 
-async()=>{
-if (window[CACHE_KEY].loading) {
-    return;
-}
+    const cache = window[CACHE_KEY];
 
-window[CACHE_KEY].loading = true;
-setLoading(true);
+    // Already loaded → API call नको
+    if (cache.loaded) {
+        setItems([...cache.items]);
+        return;
+    }
 
-setError(null);
+    // दुसरा component आधीच API call करत असेल
+    if (cache.loadPromise) {
+        await cache.loadPromise;
+        setItems([...cache.items]);
+        return;
+    }
 
-try{
+    setLoading(true);
+    setError(null);
+    cache.loading = true;
 
-const data =
-await shortlistAPI
-.getMyShortlists(
-page,
-20
-);
+    cache.loadPromise = (async () => {
 
-const list =
-data?.content ||
-data ||
-[];
+        try {
 
-window[CACHE_KEY].items =
-list;
+            const data = await shortlistAPI.getMyShortlists(0, 20);
 
-window[CACHE_KEY].profileIds =
-new Set(
+            const list =
+                data?.content ||
+                data ||
+                [];
 
-list.map(
+            cache.items = list;
 
-s=>Number(
-s.profileId
-)
+            cache.profileIds = new Set(
+                list
+                    .map(s => Number(s.profileId))
+                    .filter(Boolean)
+            );
 
-)
+            cache.loaded = true;
 
-);
+        } catch (err) {
 
-window[CACHE_KEY].loaded =
-true;
+            console.error(
+                "Failed to load shortlists:",
+                err
+            );
 
-setItems(list);
+            setError(err);
 
-window.dispatchEvent(
+            throw err;
 
-new CustomEvent(
-"shortlist:updated"
-)
+        } finally {
 
-);
+            cache.loading = false;
+            cache.loadPromise = null;
 
-}catch(err){
+        }
 
-console.error(
-"Failed to load shortlists:",
-err
-);
+    })();
 
-setError(err);
+    try {
+        await cache.loadPromise;
+        setItems([...cache.items]);
+    } catch {
+        // error already handled
+    } finally {
+        setLoading(false);
+    }
 
-}finally{
-window[CACHE_KEY].loading=false;
-setLoading(false);
+}, []);
 
-}
+useEffect(() => {
 
-},
+    const handler = () => {
+        setItems([...window[CACHE_KEY].items]);
+    };
 
-[page]
+    window.addEventListener(
+        "shortlist:updated",
+        handler
+    );
 
-);
-
-useEffect(()=>{
-
-const handler=()=>{
-
-setItems(
-[...window[CACHE_KEY].items]
-);
-
-};
-
-window.addEventListener(
-
-"shortlist:updated",
-
-handler
-
-);
-
-if (
-    !window[CACHE_KEY].loaded &&
-    !window[CACHE_KEY].loading
-) {
     load();
-}
 
-return ()=>{
+    return () => {
+        window.removeEventListener(
+            "shortlist:updated",
+            handler
+        );
+    };
 
-window.removeEventListener(
-
-"shortlist:updated",
-
-handler
-
-);
-
-};
-
-},[load]);
+}, [load]);
 
 const isShortlisted=(profileId)=>{
 

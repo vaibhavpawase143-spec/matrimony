@@ -29,7 +29,7 @@ public class SecurityUserDetailsService implements UserDetailsService {
     @Transactional(readOnly = true)
     public UserDetails loadUserByUsername(String email)
             throws UsernameNotFoundException {
-
+        long start = System.currentTimeMillis();
         // ================= 🔥 ADMIN LOGIN =================
         Admin admin = adminRepository.findByEmailWithRole(email).orElse(null);
 
@@ -58,6 +58,11 @@ public class SecurityUserDetailsService implements UserDetailsService {
                                     new SimpleGrantedAuthority(permission.getCode())
                             )
                     );
+            System.out.println(
+                    "LOAD USER (ADMIN) = "
+                            + (System.currentTimeMillis() - start)
+                            + " ms"
+            );
 
             return new org.springframework.security.core.userdetails.User(
                     admin.getEmail(),
@@ -75,7 +80,17 @@ public class SecurityUserDetailsService implements UserDetailsService {
         }
 
         // ================= 🔥 USER LOGIN =================
-        User user = userRepository.findByEmailWithRoles(email).orElse(null);
+        long totalStart = System.currentTimeMillis();
+
+// ================= USER DB =================
+        long dbStart = System.currentTimeMillis();
+
+        User user = userRepository.findByEmailWithRoles(email)
+                .orElse(null);
+
+        long dbEnd = System.currentTimeMillis();
+
+        System.out.println("AUTH DB = " + (dbEnd - dbStart) + " ms");
 
         if (user != null) {
 
@@ -87,22 +102,24 @@ public class SecurityUserDetailsService implements UserDetailsService {
                     .map(role -> new SimpleGrantedAuthority(role.getName()))
                     .collect(Collectors.toList());
 
-            return new org.springframework.security.core.userdetails.User(
-                    user.getEmail(),
-                    user.getPassword(),
+            if (!Boolean.TRUE.equals(user.getIsActive())
+                    || Boolean.TRUE.equals(user.getIsDeleted())
+                    || Boolean.TRUE.equals(user.getIsBlocked())) {
 
-                    // ✅ MULTI SECURITY CHECK (BEST PRACTICE)
-                    Boolean.TRUE.equals(user.getIsActive())
-                            && !Boolean.TRUE.equals(user.getIsDeleted())
-                            && !Boolean.TRUE.equals(user.getIsBlocked()),
+                throw new UsernameNotFoundException("User is disabled");
+            }
 
-                    true,
-                    true,
-                    true,
-                    authorities
-            );
+            long objectStart = System.currentTimeMillis();
+
+            CustomUserDetails details = new CustomUserDetails(user);
+
+            long objectEnd = System.currentTimeMillis();
+
+            System.out.println("AUTH OBJECT = " + (objectEnd - objectStart) + " ms");
+            System.out.println("AUTH TOTAL = " + (System.currentTimeMillis() - totalStart) + " ms");
+
+            return details;
         }
-
         throw new UsernameNotFoundException("User/Admin not found with email: " + email);
     }
 }

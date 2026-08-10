@@ -15,6 +15,8 @@ import com.example.repository.UserRepository;
 
 import java.util.List;
 import java.util.Optional;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.CacheEvict;
 
 @Service
 @RequiredArgsConstructor
@@ -29,6 +31,10 @@ public class UserBlockService {
     private final ProfileRepository profileRepository;
 
     // ================= BLOCK USER =================
+    @CacheEvict(
+            value = "blockedUsers",
+            key = "#blockerId"
+    )
     public void blockUser(Long blockerId, Long blockedId) {
 
         if (blockerId.equals(blockedId)) {
@@ -67,6 +73,10 @@ public class UserBlockService {
     }
 
     // ================= UNBLOCK USER =================
+    @CacheEvict(
+            value = "blockedUsers",
+            key = "#blockerId"
+    )
     public void unblockUser(Long blockerId, Long blockedId) {
 
         UserBlock block = userBlockRepository
@@ -101,6 +111,10 @@ public class UserBlockService {
     }
 
     // ================= MY BLOCKED USERS =================
+    @Cacheable(
+            value = "blockedUsers",
+            key = "#blockerId"
+    )
     public List<BlockedUserResponseDTO> getBlockedUsers(Long blockerId) {
 
         List<UserBlock> blocks =

@@ -3,14 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import Footer from "./Footer";
 import { useLanguage } from "@/context/LanguageContext";
-import { profileAPI } from "@/services/api";
-import { useLocation } from "react-router-dom";
 import Navbar from "./Navbar";
 const AuthenticatedLayout = ({ children }) => {
   const { t } = useLanguage();
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
-const location = useLocation();
 
   const [isChecking, setIsChecking] = useState(true);
   const [profileChecked, setProfileChecked] = useState(false);
@@ -41,76 +38,8 @@ if (!isAuthenticated) {
 console.log("CHECK PROFILE STARTED");
   // Profile Completion Check
   useEffect(() => {
-    const checkProfile = async () => {
-      if (!isAuthenticated()) {
-        setProfileChecked(true);
-        return;
-      }
-
-      try {
-        const profile =
-          await profileAPI.getProfile();
-console.log(
-  "CURRENT PROFILE =",
-  profile
-);
-      console.log(
-        "PROFILE COMPLETED =",
-        profile.profileCompleted
-      );
-  if (
-    profile &&
-    profile.profileCompleted === false
-  ) {
-
-    const allowedRoutes = [
-      "/home",
-      "/settings"
-    ];
-
-    if (
-      !allowedRoutes.includes(
-        location.pathname
-      )
-    ) {
-
-      navigate(
-        "/home",
-        { replace: true }
-      );
-
-      return;
-    }
-
-  }
-//         if (
-//           profile &&
-//           profile.profileCompleted === false
-//         ) {
-//           navigate("/profile/create", {
-//             replace: true,
-//           });
-//
-//           return;
-//         }
-
-        setProfileChecked(true);
-      } catch (err) {
-        console.error(
-          "PROFILE CHECK ERROR",
-          err
-        );
-
-        setProfileChecked(true);
-      }
-    };
-
-    checkProfile();
-}, [
-  isAuthenticated,
-  navigate,
-  location.pathname
-]);
+      setProfileChecked(true);
+  }, []);
 
   // Loading Screen
   if (

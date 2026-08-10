@@ -13,6 +13,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.CacheEvict;
 
 @Service
 public class PartnerPreferenceServiceImpl implements PartnerPreferenceService {
@@ -65,8 +67,13 @@ public class PartnerPreferenceServiceImpl implements PartnerPreferenceService {
     }
 
     // ✅ CREATE + UPDATE (FINAL FIX)
+
+    @CacheEvict(
+            value = "topMatches",
+            allEntries = true
+    )
     @Override
-    public PartnerPreference savePreference(PartnerPreference preference) {
+    public PartnerPreference savePreference(PartnerPreference preference){
 
         // 🔥 NULL CHECK
         if (preference.getUser() == null || preference.getUser().getId() == null) {
@@ -130,7 +137,11 @@ public class PartnerPreferenceServiceImpl implements PartnerPreferenceService {
                             .orElseThrow(() -> new RuntimeException("City not found"))
             );
         }
-
+        System.out.println("==================================");
+        System.out.println("Preference ID      = " + preference.getId());
+        System.out.println("Preference Version = " + preference.getVersion());
+        System.out.println("User ID            = " + preference.getUser().getId());
+        System.out.println("==================================");
         PartnerPreference saved = repository.save(preference);
 
 // Refresh matches
@@ -150,6 +161,10 @@ public class PartnerPreferenceServiceImpl implements PartnerPreferenceService {
     }
 
     @Override
+    @Cacheable(
+            value = "user:partnerPreference",
+            key = "#userId"
+    )
     public Optional<PartnerPreference> getByUserId(Long userId) {
         return repository.findByUserId(userId);
     }
@@ -160,6 +175,14 @@ public class PartnerPreferenceServiceImpl implements PartnerPreferenceService {
     }
 
     @Override
+    @CacheEvict(
+            value = {
+                    "user:partnerPreference",
+                    "user:discover",
+                    "topMatches"
+            },
+            allEntries = true
+    )
     public void delete(Long id) {
         repository.deleteById(id);
     }

@@ -41,7 +41,11 @@ export const useProfileData = () => {
       try {
         setIsLoading(true);
         console.log('🔄 Loading profile data...');
-        const data = await profileAPI.getProfile(); // Gets current user's profile
+        console.time("PROFILE API");
+
+        const data = await profileAPI.getProfile();
+
+        console.timeEnd("PROFILE API"); // Gets current user's profile
         console.log('📥 Profile data received:', data);
         if (data) {
           setProfileData(prev => ({ ...prev, ...data }));

@@ -72,9 +72,15 @@ public class JwtFilter extends OncePerRequestFilter {
                     return;
                 }
 
-
+                long jwtStart = System.currentTimeMillis();
                 UserDetails userDetails =
                         securityUserDetailsService.loadUserByUsername(username);
+                System.out.println(
+                        "JWT FILTER = "
+                                + (System.currentTimeMillis() - jwtStart)
+                                + " ms"
+                );
+
 
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(

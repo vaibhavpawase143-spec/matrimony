@@ -19,7 +19,7 @@ public class MatchAsyncService {
         log.info("🔥 Preloading matches for user {}", userId);
 
         matchService.getMatches(userId, 0, 10);
-        matchService.getTopMatches(userId, 10);
+        matchService.getTopMatches(userId, 0, 20);
 
         log.info("✅ Preloading done for user {}", userId);
     }

@@ -231,7 +231,20 @@ u.createdAt DESC
     @Query("""
 SELECT DISTINCT u
 FROM User u
+
 JOIN FETCH u.profile p
+
+LEFT JOIN FETCH p.educationLevel
+LEFT JOIN FETCH p.maritalStatus
+LEFT JOIN FETCH p.smoking
+LEFT JOIN FETCH p.diet
+LEFT JOIN FETCH p.city
+LEFT JOIN FETCH p.religion
+LEFT JOIN FETCH p.caste
+LEFT JOIN FETCH p.occupation
+LEFT JOIN FETCH p.height
+LEFT JOIN FETCH p.weight
+LEFT JOIN FETCH p.gender
 
 WHERE u.id <> :userId
 
@@ -250,10 +263,11 @@ p.boostScore DESC,
 u.createdAt DESC
 """)
     List<User> findCandidateUsers(
-            @Param("userId") Long userId,
-            @Param("genderId") Long genderId,
+            Long userId,
+            Long genderId,
             Pageable pageable
     );
+
 
     @Query("""
     SELECT u FROM User u
@@ -337,6 +351,93 @@ AND u.isDeleted = false
     Optional<User> findByIdWithProfileAndPreference(
             @Param("id") Long id
     );
+
+    @Query("""
+SELECT u.id
+FROM User u
+JOIN u.profile p
+
+WHERE u.id <> :userId
+AND u.isActive = true
+AND u.isDeleted = false
+AND u.isBlocked = false
+
+AND p.profileCompleted = true
+AND p.isActive = true
+AND p.gender.id = :genderId
+
+ORDER BY
+p.isPremium DESC,
+p.boostScore DESC,
+u.createdAt DESC,
+u.id DESC
+""")
+    List<Long> findCandidateIds(
+            @Param("userId") Long userId,
+            @Param("genderId") Long genderId,
+            Pageable pageable
+    );
+    @Query("""
+SELECT  u
+FROM User u
+
+JOIN FETCH u.profile p
+
+
+
+LEFT JOIN FETCH p.city
+LEFT JOIN FETCH p.religion
+LEFT JOIN FETCH p.caste
+LEFT JOIN FETCH p.educationLevel
+LEFT JOIN FETCH p.occupation
+LEFT JOIN FETCH p.height
+LEFT JOIN FETCH p.weight
+LEFT JOIN FETCH p.gender
+LEFT JOIN FETCH p.maritalStatus
+LEFT JOIN FETCH p.smoking
+LEFT JOIN FETCH p.drinking
+LEFT JOIN FETCH p.diet
+
+WHERE u.id IN :ids
+""")
+    List<User> findCandidatesByIds(
+            @Param("ids") List<Long> ids
+    );
+
+    @Query("""
+SELECT u
+FROM User u
+
+LEFT JOIN FETCH u.profile p
+
+LEFT JOIN FETCH p.gender
+LEFT JOIN FETCH p.city
+LEFT JOIN FETCH p.religion
+LEFT JOIN FETCH p.caste
+LEFT JOIN FETCH p.educationLevel
+LEFT JOIN FETCH p.occupation
+LEFT JOIN FETCH p.height
+LEFT JOIN FETCH p.weight
+LEFT JOIN FETCH p.maritalStatus
+LEFT JOIN FETCH p.smoking
+LEFT JOIN FETCH p.drinking
+LEFT JOIN FETCH p.diet
+
+LEFT JOIN FETCH u.partnerPreference pp
+
+LEFT JOIN FETCH pp.religion
+LEFT JOIN FETCH pp.caste
+LEFT JOIN FETCH pp.city
+LEFT JOIN FETCH pp.educationLevel
+LEFT JOIN FETCH pp.occupation
+LEFT JOIN FETCH pp.maritalStatus
+LEFT JOIN FETCH pp.smoking
+LEFT JOIN FETCH pp.drinking
+LEFT JOIN FETCH pp.diet
+
+WHERE u.id = :id
+""")
+    Optional<User> findByIdForMatching(@Param("id") Long id);
     // ================= ADMIN DASHBOARD QUERIES =================
 
     @Query("SELECT COUNT(u) FROM User u WHERE u.createdAt > :date")

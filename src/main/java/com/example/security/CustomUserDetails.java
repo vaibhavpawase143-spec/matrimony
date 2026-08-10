@@ -15,7 +15,10 @@ public class CustomUserDetails implements UserDetails {
     private final User user; // 🔥 FIXED
 
     public Long getId() {
-        return user.getId(); // 🔥 FIXED
+        return user.getId();// 🔥 FIXED
+    }
+    public User getUser() {
+        return user;
     }
 
     @Override

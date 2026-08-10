@@ -30,7 +30,14 @@ public interface InterestRepository extends JpaRepository<Interest, Long> {
             LocalDateTime end
     );
 
-    long countBySender_IdAndIsActiveTrue(Long senderId);
+
+    long countBySender_IdAndIsActiveTrue(
+            Long senderId
+    );
+
+    long countByReceiver_IdAndIsActiveTrue(
+            Long receiverId
+    );
 
     // =====================================================
 // PAGINATION METHODS (1M+ USERS)
@@ -57,6 +64,7 @@ public interface InterestRepository extends JpaRepository<Interest, Long> {
             String status,
             Pageable pageable
     );
+
 
     Page<Interest> findByStatusIgnoreCase(
             String status,

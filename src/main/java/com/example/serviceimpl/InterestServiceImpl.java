@@ -17,6 +17,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.CacheEvict;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -32,6 +34,13 @@ public class InterestServiceImpl implements InterestService {
     private final SubscriptionService subscriptionService;
     // ✅ Send Interest
     @Override
+    @CacheEvict(
+            value = {
+                    "user:interest:sent",
+                    "user:interest:received"
+            },
+            allEntries = true
+    )
     @Transactional
     public InterestResponseDTO sendInterest(InterestRequestDTO request) {
 
@@ -153,6 +162,14 @@ public class InterestServiceImpl implements InterestService {
 
     // 🔄 Accept / Reject + Match
     @Override
+    @CacheEvict(
+            value = {
+                    "user:interest:sent",
+                    "user:interest:received",
+                    "user:discover"
+            },
+            allEntries = true
+    )
     @Transactional
     public InterestResponseDTO updateStatus(Long id, String status) {
 
@@ -222,6 +239,13 @@ public class InterestServiceImpl implements InterestService {
 
     // ❌ Delete
     @Override
+    @CacheEvict(
+            value = {
+                    "user:interest:sent",
+                    "user:interest:received"
+            },
+            allEntries = true
+    )
     @Transactional
     public void delete(Long id) {
 
@@ -257,6 +281,7 @@ public class InterestServiceImpl implements InterestService {
 
     // 📤 Get By Sender
     @Override
+    @Cacheable(value = "user:interest:sent", key = "#senderId")
     public List<InterestResponseDTO> getBySender(Long senderId) {
         return interestRepository.findBySender_Id(senderId)
                 .stream()
@@ -274,6 +299,7 @@ public class InterestServiceImpl implements InterestService {
 
     // 📥 Get By Receiver
     @Override
+    @Cacheable(value = "user:interest:received", key = "#receiverId")
     public List<InterestResponseDTO> getByReceiver(Long receiverId) {
         return interestRepository.findByReceiver_Id(receiverId)
                 .stream()

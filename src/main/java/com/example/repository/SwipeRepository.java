@@ -30,4 +30,8 @@ public interface SwipeRepository extends JpaRepository<Swipe, Long> {
 
     // 🔥 Count swipes (for daily limits later)
     long countByFromUser(User user);
+    long countByToUser_IdAndType(
+            Long userId,
+            SwipeType type
+    );
 }

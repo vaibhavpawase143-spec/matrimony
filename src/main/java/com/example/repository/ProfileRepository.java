@@ -57,20 +57,8 @@ public interface ProfileRepository extends
     // Use case: When user views a profile
     // =====================================================
 
-    @EntityGraph(attributePaths = {
-        "user",
-        "city", "state", "country",
-        "religion", "caste",
-        "educationLevel", "occupation",
-        "height", "gender", "bodyType",
-        "maritalStatus"
-    })
-    @Query("""
-        SELECT p FROM Profile p
-        WHERE p.user.id = :userId
-        AND p.isActive = true
-    """)
-    Optional<Profile> findByUserIdWithDetails(@Param("userId") Long userId);
+
+
 
     // =====================================================
     // ✅ FULL QUERIES (for profile editing)
@@ -213,25 +201,54 @@ public interface ProfileRepository extends
     })
 
     @Query("""
+SELECT p
+FROM Profile p
 
+LEFT JOIN FETCH p.user
 
+LEFT JOIN FETCH p.gender
+LEFT JOIN FETCH p.religion
+LEFT JOIN FETCH p.caste
+LEFT JOIN FETCH p.subCaste
 
-            SELECT p
+LEFT JOIN FETCH p.motherTongue
 
-            FROM Profile p
+LEFT JOIN FETCH p.educationLevel
+LEFT JOIN FETCH p.qualification
+LEFT JOIN FETCH p.fieldOfStudy
+LEFT JOIN FETCH p.occupation
+LEFT JOIN FETCH p.employed
 
+LEFT JOIN FETCH p.height
+LEFT JOIN FETCH p.weight
+LEFT JOIN FETCH p.bodyType
+LEFT JOIN FETCH p.complexion
 
+LEFT JOIN FETCH p.country
+LEFT JOIN FETCH p.state
+LEFT JOIN FETCH p.city
 
-            WHERE p.user.id = :userId
+LEFT JOIN FETCH p.income
 
-            AND p.isActive = true
+LEFT JOIN FETCH p.diet
+LEFT JOIN FETCH p.smoking
+LEFT JOIN FETCH p.drinking
 
+LEFT JOIN FETCH p.maritalStatus
+LEFT JOIN FETCH p.profileType
+LEFT JOIN FETCH p.manglikStatus
 
+LEFT JOIN FETCH p.familyType
+LEFT JOIN FETCH p.familyStatus
+LEFT JOIN FETCH p.familyValue
 
-            """)
+LEFT JOIN FETCH p.disabilityStatus
+LEFT JOIN FETCH p.bloodGroup
 
-    Optional<Profile> findByUserIdWithRelations(Long userId);
-
+WHERE p.user.id = :userId
+AND p.isActive = true
+""")
+    Optional<Profile> findByUserIdWithDetails(Long userId);
 
 
     // =====================================================
@@ -364,7 +381,15 @@ public interface ProfileRepository extends
 
 
 
-    @EntityGraph(attributePaths = {"user", "city", "religion", "occupation", "height", "gender", "user", "gender", "religion", "caste", "city", "occupation", "height"})
+    @EntityGraph(attributePaths = {
+            "user",
+            "gender",
+            "religion",
+            "caste",
+            "city",
+            "occupation",
+            "height"
+    })
     @Query("""
 SELECT p
 FROM Profile p
@@ -383,12 +408,7 @@ AND p.user.id NOT IN (
     WHERE ub.blockerId = :loggedInUserId
     AND ub.isActive = true
 )
-AND p.user.id NOT IN (
-        SELECT ub.blockedId
-        FROM UserBlock ub
-        WHERE ub.blockerId = :loggedInUserId
-        AND ub.isActive = true
-)
+
 
 ORDER BY
     p.isPremium DESC,
@@ -1077,36 +1097,7 @@ AND p.user.isActive = true
 SELECT DISTINCT p
 FROM Profile p
 
-JOIN FETCH p.user
-LEFT JOIN FETCH p.gender
-LEFT JOIN FETCH p.city
-LEFT JOIN FETCH p.state
-LEFT JOIN FETCH p.country
-LEFT JOIN FETCH p.religion
-LEFT JOIN FETCH p.caste
-LEFT JOIN FETCH p.subCaste
-LEFT JOIN FETCH p.educationLevel
-LEFT JOIN FETCH p.occupation
-LEFT JOIN FETCH p.height
-LEFT JOIN FETCH p.weight
-LEFT JOIN FETCH p.bodyType
-LEFT JOIN FETCH p.complexion
-LEFT JOIN FETCH p.motherTongue
-LEFT JOIN FETCH p.maritalStatus
-LEFT JOIN FETCH p.income
-LEFT JOIN FETCH p.diet
-LEFT JOIN FETCH p.smoking
-LEFT JOIN FETCH p.drinking
-LEFT JOIN FETCH p.profileType
-LEFT JOIN FETCH p.manglikStatus
-LEFT JOIN FETCH p.familyType
-LEFT JOIN FETCH p.familyStatus
-LEFT JOIN FETCH p.familyValue
-LEFT JOIN FETCH p.qualification
-LEFT JOIN FETCH p.fieldOfStudy
-LEFT JOIN FETCH p.employed
-LEFT JOIN FETCH p.disabilityStatus
-LEFT JOIN FETCH p.bloodGroup
+
 
 WHERE p.isActive = true
 AND p.profileCompleted = true

@@ -22,6 +22,7 @@ public interface UserSubscriptionRepository extends
 
     UserSubscription findByUser(User user);
 
+
     // ==========================================
     // USER HISTORY
     // ==========================================
@@ -35,6 +36,20 @@ public interface UserSubscriptionRepository extends
     ORDER BY us.createdAt DESC
 """)
     List<UserSubscription> findByUserId(
+            @Param("userId") Long userId
+    );
+    @Query("""
+SELECT CASE
+WHEN COUNT(us) > 0 THEN true
+ELSE false
+END
+FROM UserSubscription us
+WHERE us.user.id = :userId
+AND us.isActive = true
+AND us.status = 'ACTIVE'
+AND us.endDate > CURRENT_TIMESTAMP
+""")
+    boolean isPremiumUser(
             @Param("userId") Long userId
     );
     // ==========================================

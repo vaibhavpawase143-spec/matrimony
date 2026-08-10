@@ -47,5 +47,14 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
             @Param("userId") Long userId,
             Pageable pageable
     );
+    @Query("""
+SELECT COUNT(c)
+FROM Conversation c
+WHERE c.user1.id = :userId
+OR c.user2.id = :userId
+""")
+    long countConversations(
+            @Param("userId") Long userId
+    );
 
 }

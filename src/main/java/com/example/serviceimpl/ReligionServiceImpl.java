@@ -12,6 +12,8 @@ import com.example.service.ReligionService;
 import com.example.util.AuditHelper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -33,6 +35,14 @@ public class ReligionServiceImpl implements ReligionService {
     // =====================================================
 
     @Override
+    @CacheEvict(
+            value = {
+                    "master:religions:all",
+                    "master:religions:active",
+                    "master:religions:inactive"
+            },
+            allEntries = true
+    )
     public ReligionResponseDTO create(ReligionRequestDTO requestDto) {
         Admin admin = currentAdminService.getCurrentAdmin();
 
@@ -67,6 +77,15 @@ public class ReligionServiceImpl implements ReligionService {
     // =====================================================
 
     @Override
+    @CacheEvict(
+            value = {
+                    "master:religions:all",
+                    "master:religions:active",
+                    "master:religions:inactive",
+                    "master:religion"
+            },
+            allEntries = true
+    )
     public ReligionResponseDTO update(Long id,
                                       ReligionRequestDTO requestDto) {
 
@@ -110,6 +129,15 @@ public class ReligionServiceImpl implements ReligionService {
     // =====================================================
 
     @Override
+    @CacheEvict(
+            value = {
+                    "master:religions:all",
+                    "master:religions:active",
+                    "master:religions:inactive",
+                    "master:religion"
+            },
+            allEntries = true
+    )
     public void softDelete(Long id) {
 
         Religion entity = religionRepository
@@ -135,6 +163,14 @@ public class ReligionServiceImpl implements ReligionService {
     // =====================================================
 
     @Override
+    @CacheEvict(
+            value = {
+                    "master:religions:all",
+                    "master:religions:active",
+                    "master:religions:inactive"
+            },
+            allEntries = true
+    )
     public void restore(Long id) {
 
         Religion entity = religionRepository
@@ -161,6 +197,14 @@ public class ReligionServiceImpl implements ReligionService {
     // =====================================================
 
     @Override
+    @CacheEvict(
+            value = {
+                    "master:religions:all",
+                    "master:religions:active",
+                    "master:religions:inactive"
+            },
+            allEntries = true
+    )
     public void hardDelete(Long id) {
 
         Religion entity = religionRepository.findById(id)
@@ -183,6 +227,7 @@ public class ReligionServiceImpl implements ReligionService {
     // =====================================================
 
     @Override
+    @Cacheable(value = "master:religion", key = "#id")
     public ReligionResponseDTO getById(Long id) {
 
         Religion entity = religionRepository
@@ -198,6 +243,7 @@ public class ReligionServiceImpl implements ReligionService {
     // =====================================================
 
     @Override
+    @Cacheable(value = "master:religions:all")
     public List<ReligionResponseDTO> getAll() {
 
         return religionRepository.findAllByDeletedAtIsNullOrderByIdAsc()
@@ -220,6 +266,7 @@ public class ReligionServiceImpl implements ReligionService {
     // =====================================================
 
     @Override
+    @Cacheable(value = "master:religions:active")
     public List<ReligionResponseDTO> getActive() {
 
         return religionRepository.findByIsActiveTrueAndDeletedAtIsNull()
@@ -229,6 +276,7 @@ public class ReligionServiceImpl implements ReligionService {
     }
 
     @Override
+    @Cacheable(value = "master:religions:inactive")
     public List<ReligionResponseDTO> getInactive() {
 
         return religionRepository.findByIsActiveFalseAndDeletedAtIsNull()

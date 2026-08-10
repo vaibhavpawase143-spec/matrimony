@@ -13,7 +13,11 @@ public interface MatchService {
 
     PageResponse<MatchResponseDTO> getMatches(Long userId, int page, int size);
 
-    List<MatchResponseDTO> getTopMatches(Long userId, int limit);
+    List<MatchResponseDTO> getTopMatches(
+            Long userId,
+            int page,
+            int size
+    );
 
     MatchExplanationResponseDTO getMatchExplanation(Long userId, Long profileId);
 

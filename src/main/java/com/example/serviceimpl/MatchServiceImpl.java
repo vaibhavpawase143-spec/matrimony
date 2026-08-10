@@ -18,11 +18,15 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.Period;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.HashSet;
+import java.util.Set;
+import com.example.model.Profile;
 
 @Service
 @RequiredArgsConstructor
@@ -37,6 +41,7 @@ public class MatchServiceImpl implements MatchService {
     private final WeightRepository weightRepository;
     private final UserBlockRepository userBlockRepository;
     private final UserSubscriptionRepository userSubscriptionRepository;
+    private final ProfileRepository profileRepository;
 
     // ================= SWIPE =================
     private static class ScoredUser {
@@ -57,10 +62,6 @@ public class MatchServiceImpl implements MatchService {
         }
     }
     @Override
-    @CacheEvict(
-            value = "topMatches",
-            key = "#fromUserId + '_15'"
-    )
     public void swipe(Long fromUserId, Long toUserId, SwipeType type) {
 
         if (fromUserId.equals(toUserId)) {
@@ -376,88 +377,245 @@ public class MatchServiceImpl implements MatchService {
 
     // ================= TOP MATCHES =================
     @Override
-    @Cacheable(
-            value = "topMatches",
-            key = "#userId + '_' + #limit"
-    )
-    public List<MatchResponseDTO> getTopMatches(Long userId, int limit) {
+    @Transactional(readOnly = true)
+    public List<MatchResponseDTO> getTopMatches(
+            Long userId,
+            int page,
+            int size
+    ) {
 
-        User currentUser = userRepository.findByIdWithProfileAndPreference(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        // =========================================================
+        // VALIDATION
+        // =========================================================
 
-        List<Long> blockedIds =
-                userBlockRepository.findBlockedUserIds(userId);
+        if (userId == null) {
+            throw new IllegalArgumentException("User ID is required");
+        }
+
+        if (page < 0) {
+            throw new IllegalArgumentException(
+                    "Page cannot be negative"
+            );
+        }
+
+        if (size < 1 || size > 20) {
+            throw new IllegalArgumentException(
+                    "Page size must be between 1 and 20"
+            );
+        }
+
+
+        long totalStart = System.currentTimeMillis();
+
+
+        // =========================================================
+        // CURRENT USER
+        // =========================================================
+
+        long currentUserStart = System.currentTimeMillis();
+
+        User currentUser =
+                userRepository.findByIdForMatching(userId)
+                        .orElseThrow(() ->
+                                new RuntimeException("User not found")
+                        );
+
+        System.out.println(
+                "MATCH CURRENT USER = "
+                        + (System.currentTimeMillis()
+                        - currentUserStart)
+                        + " ms"
+        );
+
+
+        // =========================================================
+        // VALIDATE PROFILE / GENDER
+        // =========================================================
+
+        if (currentUser.getProfile() == null) {
+            throw new RuntimeException(
+                    "Current user profile not found"
+            );
+        }
+
+        if (currentUser.getProfile().getGender() == null) {
+            throw new RuntimeException(
+                    "Current user gender not found"
+            );
+        }
+
+
+        // =========================================================
+        // BLOCKED USERS
+        // =========================================================
+
+        long blockedStart = System.currentTimeMillis();
+
+        Set<Long> blockedIds =
+                new HashSet<>(
+                        userBlockRepository
+                                .findBlockedUserIds(userId)
+                );
+
+        System.out.println(
+                "MATCH BLOCKED USERS = "
+                        + (System.currentTimeMillis()
+                        - blockedStart)
+                        + " ms"
+        );
+
+
+        // =========================================================
+        // OPPOSITE GENDER
+        // =========================================================
 
         Long oppositeGenderId =
-                currentUser.getProfile().getGender().getId().equals(1L)
+                currentUser
+                        .getProfile()
+                        .getGender()
+                        .getId()
+                        .equals(1L)
                         ? 2L
                         : 1L;
 
-        PartnerPreference pref = currentUser.getPartnerPreference();
 
+        // =========================================================
+        // PAGINATED CANDIDATE QUERY
+        // =========================================================
 
-        List<User> users =
-                userRepository.findCandidateUsers(
+        long candidateStart =
+                System.currentTimeMillis();
+
+        Pageable pageable =
+                PageRequest.of(
+                        page,
+                        size
+                );
+
+        List<Long> ids =
+                userRepository.findCandidateIds(
                         userId,
                         oppositeGenderId,
-                        PageRequest.of(0, 50)
+                        PageRequest.of(page, size)
                 );
-        return users.stream()
-
-                .filter(user -> !blockedIds.contains(user.getId()))
 
 
-                .filter(user ->
-                        user.getProfile() != null &&
-                                Boolean.TRUE.equals(user.getProfile().getProfileCompleted())
-                )
-                // Show only opposite gender
-                .filter(user -> {
+        if (ids.isEmpty()) {
 
-                    Profile currentProfile = currentUser.getProfile();
-                    Profile candidateProfile = user.getProfile();
+            System.out.println(
+                    "MATCH PAGE " + page +
+                            " -> NO MORE CANDIDATES"
+            );
 
-                    if (currentProfile == null || candidateProfile == null) {
-                        return false;
-                    }
+            return List.of();
+        }
 
-                    if (currentProfile.getGender() == null || candidateProfile.getGender() == null) {
-                        return false;
-                    }
 
-                    return !currentProfile.getGender().getId()
-                            .equals(candidateProfile.getGender().getId());
-                })
+        // =========================================================
+        // FETCH FULL CANDIDATE DATA
+        // =========================================================
 
-                // ✅ Calculate score only once
-                .map(user -> new ScoredUser(
-                        user,
-                        calculateMatchScore(currentUser, user)
-                ))
+        List<User> users =
+                userRepository.findCandidatesByIds(ids);
 
-                // ✅ Sort using stored score
-                .sorted((a, b) ->
-                        Integer.compare(
-                                b.getScore(),
-                                a.getScore()
+
+        System.out.println(
+                "MATCH CANDIDATES = "
+                        + (System.currentTimeMillis()
+                        - candidateStart)
+                        + " ms"
+        );
+
+
+        // =========================================================
+        // SCORE + DTO
+        // =========================================================
+
+        long dtoStart =
+                System.currentTimeMillis();
+
+
+        List<MatchResponseDTO> result =
+                users.stream()
+
+                        // Safety filter
+                        .filter(Objects::nonNull)
+
+                        .filter(user ->
+                                !blockedIds.contains(
+                                        user.getId()
+                                )
                         )
-                )
 
-                .limit(limit)
+                        // Calculate match score
+                        .map(user ->
+                                new ScoredUser(
+                                        user,
+                                        calculateMatchScore(
+                                                currentUser,
+                                                user
+                                        )
+                                )
+                        )
 
-                // DTO uses stored score
-                .map(s -> mapUserToDTO(
-                        s.getUser(),
-                        s.getScore()
-                ))
+                        // Highest score first
+                        .sorted(
+                                (a, b) ->
+                                        Integer.compare(
+                                                b.getScore(),
+                                                a.getScore()
+                                        )
+                        )
 
-                .collect(Collectors.toList());
+                        // Never return more than requested size
+                        .limit(size)
+
+                        // DTO
+                        .map(scoredUser ->
+                                mapUserToDTO(
+                                        scoredUser.getUser(),
+                                        scoredUser.getScore()
+                                )
+                        )
+
+                        .collect(Collectors.toList());
+
+
+        System.out.println(
+                "MATCH DTO + SCORE = "
+                        + (System.currentTimeMillis()
+                        - dtoStart)
+                        + " ms"
+        );
+
+
+        // =========================================================
+        // TOTAL
+        // =========================================================
+
+        System.out.println(
+                "MATCH PAGE = "
+                        + page
+                        + " | SIZE = "
+                        + size
+                        + " | RESULT = "
+                        + result.size()
+        );
+
+        System.out.println(
+                "TOTAL MATCH API = "
+                        + (System.currentTimeMillis()
+                        - totalStart)
+                        + " ms"
+        );
+
+
+        return result;
     }
     // ================= EXPLANATION =================
 
     @Override
     public MatchExplanationResponseDTO getMatchExplanation(Long userId, Long profileId) {
-
 
         User u1 = userRepository.findByIdWithProfileAndPreference(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -468,11 +626,13 @@ public class MatchServiceImpl implements MatchService {
         PartnerPreference pref = u1.getPartnerPreference();
         Profile profile = u2.getProfile();
 
+        // ✅ calculate only once
+        int score = calculateMatchScore(u1, u2);
+
         return MatchExplanationResponseDTO.builder()
                 .profileId(profileId)
-                .totalScore(calculateMatchScore(u1, u2))
-                .matchPercentage(calculateMatchScore(u1, u2) + "%")
-
+                .totalScore(score)
+                .matchPercentage(score + "%")
                 .ageMatch(isAgeMatched(pref, profile))
                 .heightMatch(isHeightMatched(pref, profile))
                 .weightMatch(isWeightMatched(pref, profile))
@@ -485,7 +645,6 @@ public class MatchServiceImpl implements MatchService {
                 .smokingMatch(isSmokingMatched(pref, profile))
                 .drinkingMatch(isDrinkingMatched(pref, profile))
                 .dietMatch(isDietMatched(pref, profile))
-
                 .reason("Compatibility based on profile & partner preferences")
                 .build();
     }
@@ -748,10 +907,10 @@ public class MatchServiceImpl implements MatchService {
 
         return pref.getEducationLevel() != null &&
                 profile.getEducationLevel() != null &&
-                pref.getEducationLevel().getName().trim()
-                        .equalsIgnoreCase(
-                                profile.getEducationLevel().getName().trim()
-                        );
+                Objects.equals(
+                        pref.getEducationLevel().getId(),
+                        profile.getEducationLevel().getId()
+                );
     }
     private boolean isOccupationMatched(PartnerPreference pref, Profile profile) {
 
@@ -766,19 +925,19 @@ public class MatchServiceImpl implements MatchService {
 
         return pref.getMaritalStatus() != null &&
                 profile.getMaritalStatus() != null &&
-                pref.getMaritalStatus().getName().trim()
-                        .equalsIgnoreCase(
-                                profile.getMaritalStatus().getName().trim()
-                        );
+                Objects.equals(
+                        pref.getMaritalStatus().getId(),
+                        profile.getMaritalStatus().getId()
+                );
     }
     private boolean isSmokingMatched(PartnerPreference pref, Profile profile) {
 
         return pref.getSmoking() != null &&
                 profile.getSmoking() != null &&
-                pref.getSmoking().getValue().trim()
-                        .equalsIgnoreCase(
-                                profile.getSmoking().getValue().trim()
-                        );
+                Objects.equals(
+                        pref.getSmoking().getId(),
+                        profile.getSmoking().getId()
+                );
     }
     private boolean isDrinkingMatched(PartnerPreference pref, Profile profile) {
 
@@ -793,10 +952,10 @@ public class MatchServiceImpl implements MatchService {
 
         return pref.getDiet() != null &&
                 profile.getDiet() != null &&
-                pref.getDiet().getName().trim()
-                        .equalsIgnoreCase(
-                                profile.getDiet().getName().trim()
-                        );
+                Objects.equals(
+                        pref.getDiet().getId(),
+                        profile.getDiet().getId()
+                );
     }
 //    private Integer extractHeight(String height) {
 //
@@ -929,15 +1088,12 @@ public class MatchServiceImpl implements MatchService {
     }
     private void validatePremium(Long userId) {
 
-        boolean premium = userSubscriptionRepository
-                .findFirstByUser_IdAndIsActiveTrueAndStatusAndEndDateAfter(
-                        userId,
-                        "ACTIVE",
-                        LocalDateTime.now()
-                )
-                .isPresent();
+        Profile profile = profileRepository
+                .findByUserId(userId)
+                .orElseThrow(() ->
+                        new RuntimeException("Profile not found"));
 
-        if (!premium) {
+        if (!Boolean.TRUE.equals(profile.getIsPremium())) {
             throw new PremiumRequiredException(
                     "Premium membership required to access matches."
             );
@@ -969,13 +1125,9 @@ public class MatchServiceImpl implements MatchService {
 
 
             // Check active subscription
-            isPremium = userSubscriptionRepository
-                    .findFirstByUser_IdAndIsActiveTrueAndStatusAndEndDateAfter(
-                            user.getId(),
-                            "ACTIVE",
-                            LocalDateTime.now()
-                    )
-                    .isPresent();
+            isPremium =
+                    Boolean.TRUE.equals(profile.getIsPremium()
+                    );
 
 
             if (profile.getCity() != null)
@@ -992,8 +1144,10 @@ public class MatchServiceImpl implements MatchService {
 
             if (profile.getDateOfBirth() != null) {
 
-                age = LocalDate.now().getYear()
-                        - profile.getDateOfBirth().getYear();
+                age = Period.between(
+                        profile.getDateOfBirth(),
+                        LocalDate.now()
+                ).getYears();
             }
         }
 

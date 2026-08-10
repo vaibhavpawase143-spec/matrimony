@@ -11,7 +11,8 @@ import { swipeAPI } from "@/services/swipeAPI";
 import { getConversations } from "@/services/chatApi";
 import { motion } from "framer-motion";
 import ReportModal from "../components/ReportModal";
-import { useState, useEffect,useCallback,useMemo   } from "react";
+import { useState, useEffect,useCallback,useMemo ,useRef  } from "react";
+import profile1 from "@/assets/profile1.jpg";
 
 
 import { useAuth } from "@/hooks/useAuth";
@@ -43,7 +44,8 @@ import {
   blockAPI,
   reportAPI,
   subscriptionAPI,
-  matchAPI
+  matchAPI,
+  dashboardAPI
 } from "@/services/api";
 
 import {
@@ -80,6 +82,11 @@ const [blockedUsers, setBlockedUsers] = useState([]);
 const [showUpgradePopup, setShowUpgradePopup] = useState(false);
 const [premiumFeature, setPremiumFeature] = useState("Chat");
 const { userName, logout } = useAuth();
+const loadMoreRef = useRef(null);
+const loadingMoreRef = useRef(false);
+const currentPageRef = useRef(0);
+const loadingStartedAtRef = useRef(0);
+const hideLoaderAfterAppendRef = useRef(false);
 
 const { startLoading, stopLoading } =
 useLoading();
@@ -105,126 +112,40 @@ const [receivedInterests, setReceivedInterests] = useState([]);
 const [shortlists, setShortlists] = useState([]);
 const [sentInterests, setSentInterests] = useState([]);
 
-console.time("Dashboard");
 const refreshDashboard = useCallback(async () => {
-      if (dashboardRefreshing) return;
+    console.log("REFRESH DASHBOARD START");
 
-        setDashboardRefreshing(true);
-  try {
-    const currentUser = JSON.parse(
-      localStorage.getItem("user") || "{}"
-    );
+    console.log("STEP 1");
 
-    const userId = Number(
-      currentUser?.profile?.userId ||
-      currentUser?.userId ||
-      currentUser?.id
-    );
+    if (dashboardRefreshing) return;
 
-    if (!userId) {
-      console.warn("Dashboard: userId not found");
-      return;
+    console.log("STEP 2");
+
+    setDashboardRefreshing(true);
+
+    try {
+
+        console.time("DASHBOARD API");
+
+        const summary = await dashboardAPI.getSummary();
+
+        console.timeEnd("DASHBOARD API");
+
+        setDashboardStats(summary);
+
+    } catch (error) {
+
+        console.log("STEP ERROR", error);
+
+    } finally {
+
+        console.log("STEP 5");
+
+        setDashboardRefreshing(false);
+
     }
 
-
-
-
-
-  const [
-      receivedResponse,
-      shortlistResponse,
-      visitorsResponse,
-      sentResponse,
-      conversationsResponse,
-      likesResponse
-  ] = await Promise.allSettled([
-      interestAPI.getReceivedInterests(userId),
-      shortlistAPI.getMyShortlists(),
-      profileVisitorAPI.getMyVisitors(),
-      interestAPI.getSentInterests(userId),
-      getConversations(),
-      swipeAPI.getReceivedLikes()
-  ]);
-    const safeArray = (response) => {
-      if (response.status !== "fulfilled") {
-        console.warn("Dashboard API failed:", response.reason);
-        return [];
-      }
-
-      const data = response.value;
-
-      if (Array.isArray(data)) {
-        return data;
-      }
-
-      if (Array.isArray(data?.data)) {
-        return data.data;
-      }
-
-      if (Array.isArray(data?.content)) {
-        return data.content;
-      }
-
-      return [];
-    };
-
-    const visitorsData = safeArray(visitorsResponse);
-    const receivedData = safeArray(receivedResponse);
-    const sentData = safeArray(sentResponse);
-    const shortlistsData = safeArray(shortlistResponse);
-    const conversationsData = safeArray(conversationsResponse);
-const likesData = safeArray(likesResponse);
-    setVisitors(visitorsData);
-    setReceivedInterests(receivedData);
-    setSentInterests(sentData);
-    setShortlists(shortlistsData);
-
-    const unreadMessages = conversationsData.reduce(
-      (total, conversation) =>
-        total + Number(
-          conversation.unreadCount ||
-          conversation.unreadMessages ||
-          0
-        ),
-      0
-    );
-
-
-
-    const acceptedMatches = receivedData.filter((interest) =>
-      String(
-        interest.status ||
-        interest.interestStatus ||
-        ""
-      ).toUpperCase() === "ACCEPTED"
-    ).length;
-
-    setDashboardStats({
-    totalMatches: acceptedMatches,
-      interestsSent: sentData.length,
-    interestsReceived:
-    receivedData.filter(
-        interest =>
-            String(
-                interest.status ||
-                interest.interestStatus ||
-                ""
-            ).toUpperCase() === "PENDING"
-    ).length,
-      shortlists: shortlistsData.length,
-      profileViews: visitorsData.length,
-    likesReceived: likesData.length,
-      messages: unreadMessages
-    });
-
-  } catch (error) {
-    console.error("Dashboard refresh failed:", error);
-  }
-finally {
-    setDashboardRefreshing(false);
-}
-}, []);
-
+}, [dashboardRefreshing]);
 
 
 
@@ -291,72 +212,282 @@ const calculateAge = (dob) => {
 // Load real profiles from API
 const [initialized, setInitialized] = useState(false);
 
-console.time("Profiles");
 
-const loadProfiles = useCallback(async () => {
+const PAGE_SIZE = 20;
 
-    startLoading("Loading dashboard...");
+const loadProfiles = useCallback(
+    async (pageNumber = 0, append = false) => {
 
-    try {
+        if (append) {
 
-        setLoadingProfiles(true);
+            if (loadingMoreRef.current) {
+                return;
+            }
 
-        const currentUser = JSON.parse(
-            localStorage.getItem("user") || "{}"
-        );
+            loadingMoreRef.current = true;
+            hideLoaderAfterAppendRef.current = false;
+            setLoadingMore(true);
 
-        const userId = Number(
-            currentUser?.profile?.userId ||
-            currentUser?.userId ||
-            currentUser?.id
-        );
+        } else {
 
-        const data = await matchAPI.getTopMatches(userId, 15);
+            startLoading("Loading dashboard...");
+            setLoadingProfiles(true);
+        }
 
-        const blockedUsers = await blockAPI.getMyBlockedUsers(userId);
+        try {
 
-        const blockedIds = blockedUsers.map(u => u.blockedId);
+            const currentUser = JSON.parse(
+                localStorage.getItem("user") || "{}"
+            );
 
-        const filteredProfiles = data.filter(
-            profile => !blockedIds.includes(profile.userId)
-        );
+            const userId = Number(
+                currentUser?.profile?.userId ||
+                currentUser?.userId ||
+                currentUser?.id
+            );
 
-        setProfiles(filteredProfiles);
+            if (!userId) {
+                throw new Error(
+                    "Current user not found"
+                );
+            }
 
-    } finally {
 
-        setLoadingProfiles(false);
+            // =============================================
+            // Load blocked users only on first page
+            // =============================================
 
-        stopLoading();
+            let currentBlockedUsers =
+                blockedUsers;
 
+            if (pageNumber === 0) {
+
+                currentBlockedUsers =
+                    await blockAPI
+                        .getMyBlockedUsers(userId);
+
+                setBlockedUsers(
+                    currentBlockedUsers
+                );
+            }
+
+
+            const blockedIds =
+                currentBlockedUsers.map(
+                    u => u.blockedId
+                );
+
+
+            // =============================================
+            // Load profiles
+            // =============================================
+
+            console.time(
+                `MATCH API page ${pageNumber}`
+            );
+
+            const data =
+                await matchAPI.getTopMatches(
+                    userId,
+                    pageNumber,
+                    PAGE_SIZE
+                );
+            if (append) {
+                currentPageRef.current = pageNumber;
+            }
+
+            console.timeEnd(
+                `MATCH API page ${pageNumber}`
+            );
+
+
+            // =============================================
+            // Filter blocked
+            // =============================================
+
+            const filteredProfiles =
+                data.filter(
+                    profile =>
+                        !blockedIds.includes(
+                            profile.userId
+                        )
+                );
+
+
+           // =============================================
+           // Determine whether more exists
+           // =============================================
+
+           if (data.length === 0) {
+               setHasMore(false);
+           } else {
+               setHasMore(true);
+           }
+
+
+           // =============================================
+           // Append profiles
+           // =============================================
+
+           setProfiles(prev => {
+
+               if (!append) {
+                   return filteredProfiles;
+               }
+
+               const existingIds = new Set(
+                   prev.map(
+                       profile => profile.userId
+                   )
+               );
+
+               const uniqueProfiles =
+                   filteredProfiles.filter(
+                       profile =>
+                           !existingIds.has(
+                               profile.userId
+                           )
+                   );
+
+               return [
+                   ...prev,
+                   ...uniqueProfiles
+               ];
+           });
+              } catch (error) {
+
+                  console.error(
+                      "Failed to load profiles:",
+                      error
+                  );
+
+              } finally {
+
+                  if (append) {
+
+                      loadingMoreRef.current = false;
+                      setLoadingMore(false);
+
+                  } else {
+
+                      setLoadingProfiles(false);
+                      stopLoading();
+
+                  }
+              }
+    },
+    [
+        blockedUsers,
+        startLoading,
+        stopLoading
+    ]
+);
+useEffect(() => {
+
+    if (!hideLoaderAfterAppendRef.current) {
+        return;
     }
 
-}, [startLoading, stopLoading]);
+    hideLoaderAfterAppendRef.current = false;
+    loadingMoreRef.current = false;
 
+    setLoadingMore(false);
+
+}, [profiles.length]);
 const loadInitialData = useCallback(async () => {
 
-    await loadProfiles();
+     console.log("STEP 1");
 
-    requestIdleCallback(() => {
-        refreshDashboard();
-    });
+     try {
 
-}, [loadProfiles, refreshDashboard]);
+         console.log("STEP 2");
+         currentPageRef.current = 0;
+
+
+         await loadProfiles(0, false);
+
+         console.log("STEP 3");
+
+     } catch (e) {
+
+         console.error("loadProfiles Error", e);
+
+     }
+
+     console.log("STEP 4");
+
+     refreshDashboard();
+
+     console.log("STEP 5");
+
+ }, [loadProfiles, refreshDashboard]);
+
+useEffect(() => {
+    if (initialized) return;
+
+    setInitialized(true);
+    loadInitialData();
+}, [initialized, loadInitialData]);
 
 useEffect(() => {
 
-    if (!profileData?.email || initialized) return;
+    const element = loadMoreRef.current;
 
-    setInitialized(true);
+    if (!element) {
+        return;
+    }
 
-    loadInitialData();
+    const observer =
+        new IntersectionObserver(
+            entries => {
 
-}, [profileData?.email, initialized, loadInitialData]);
+                const firstEntry =
+                    entries[0];
+
+                if (
+                    !firstEntry.isIntersecting ||
+                    loadingMoreRef.current ||
+                    !hasMore ||
+                    loadingProfiles
+                ) {
+                    return;
+                }
+
+                const nextPage =
+                    currentPageRef.current + 1;
+
+                loadProfiles(
+                    nextPage,
+                    true
+                );
+
+            },
+            {
+                root: null,
+
+                // Load when user is reasonably close to bottom
+                rootMargin: "100px 0px",
+
+                threshold: 0
+            }
+        );
+
+    observer.observe(element);
+
+    return () => {
+        observer.disconnect();
+    };
+
+}, [
+    loadProfiles,
+    hasMore,
+    loadingProfiles
+]);
 
   // Use real profile data for completion tracking
 const profileCompletion = {
   completionPercentage:
-    profileData?.currentStep || 0,
+      profileData?.profileCompletionPercentage || 0,
 
  message:
  (profileData?.currentStep || 0) >= 100
@@ -565,9 +696,23 @@ return (
 
 )}
 
-    <div className="min-h-screen bg-muted/30 flex">
+    <div className="h-screen bg-muted/30 flex overflow-hidden">
       {/* Sidebar */}
-      <aside className={`hidden md:flex flex-col bg-card border-r border-border min-h-screen sticky top-0 transition-all duration-300 ${isSidebarOpen ? 'w-64' : 'w-20'}`}>
+      <aside
+          className={`
+              hidden
+              md:flex
+              flex-col
+              bg-card
+              border-r
+              border-border
+              h-full
+              shrink-0
+              transition-all
+              duration-300
+              ${isSidebarOpen ? "w-64" : "w-20"}
+          `}
+      >
         <div className="p-5 border-b border-border">
           <Link to="/home" className="flex items-center gap-2">
             <Heart className="h-6 w-6 text-primary fill-primary" />
@@ -665,7 +810,17 @@ return (
       </aside>
 
       {/* Main content */}
-      <div className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ${isSidebarOpen ? 'md:ml-0' : 'md:ml-0'}`}>
+      <div
+          className="
+              flex-1
+              min-w-0
+              h-full
+              overflow-y-auto
+              overflow-x-hidden
+              flex
+              flex-col
+          "
+      >
         <header className="sticky top-0 z-40 bg-card/95 backdrop-blur border-b border-border px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button
@@ -779,7 +934,7 @@ return (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mx-6 mt-6 rounded-2xl p-8 text-primary-foreground relative overflow-hidden"
+          className="mx-6 mt-6 rounded-2xl px-8 py-7 min-h-[140px] shrink-0 flex flex-col justify-center text-primary-foreground relative overflow-hidden"
           style={{ background: "linear-gradient(135deg, hsl(270 60% 35%), hsl(290 55% 45%), hsl(270 50% 55%))" }}
         >
           <Heart className="absolute top-4 right-8 h-8 w-8 text-pink-soft/40 fill-pink-soft/30 animate-float-heart" />
@@ -787,9 +942,9 @@ return (
           <p className="text-primary-foreground/70 text-sm max-w-md">{t?.home?.hero?.subtitle || "Connect with like-minded individuals seeking meaningful relationships"}</p>
         </motion.div>
 
-        <div className="px-6 py-6 grid grid-cols-1 lg:grid-cols-3 gap-6 pb-24 md:pb-6">
+        <div className="px-6 py-6 pb-24 md:pb-6">
           {/* Left column */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-3 space-y-6">
             {/* Profile Completion */}
           {profileLoading ? (
 
@@ -849,7 +1004,17 @@ p-8
                   <p className="text-muted-foreground">Loading profiles...</p>
                 </div>
               ) : profiles.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <>
+                    <div className="
+                        grid
+                        grid-cols-1
+                        sm:grid-cols-2
+                        md:grid-cols-3
+                        lg:grid-cols-4
+                        xl:grid-cols-5
+                        gap-5
+                        w-full
+                    ">
                   {profiles.map((profile, i) => (
 
                     <motion.div
@@ -958,16 +1123,17 @@ onDoubleClick={async (e) => {
          }
          alt={profile.name || "Profile"}
          className="w-full h-full object-cover"
-         onError={(e) => {
-
-             e.currentTarget.src = "/profile1.jpg";
-         }}
-     />
+        onError={(e) => {
+            e.currentTarget.onerror = null;
+            e.currentTarget.src = profile1;
+          }}
+        />
       <div className="absolute bottom-3 left-3 bg-white/90 px-3 py-1 rounded-full text-sm font-medium shadow">
         ❤️ {profile.matchPercentage || 0} Match
       </div>
     </>
-  ) : (
+
+               ) : (
     <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400">
       No Image
     </div>
@@ -1323,9 +1489,53 @@ showLabel={false}
 </div>
                    </div>
                     </motion.div>
-                  ))}
-                </div>
-              ) : (
+                                   ))}
+                                 </div>
+
+
+{/* Loading More Profiles */}
+{loadingMore && (
+    <div className="w-full flex justify-center items-center py-8">
+        <div className="flex items-center gap-3 text-muted-foreground">
+
+            <div
+                className="
+                    animate-spin
+                    rounded-full
+                    h-6
+                    w-6
+                    border-2
+                    border-primary
+                    border-t-transparent
+                "
+            />
+
+            <span className="text-sm font-medium">
+                Loading more profiles...
+            </span>
+
+        </div>
+    </div>
+)}
+
+{/* Load More Sentinel */}
+{hasMore && (
+    <div
+        ref={loadMoreRef}
+        className="h-4 w-full"
+        aria-hidden="true"
+    />
+)}
+
+                                 {!hasMore && profiles.length > 0 && (
+                                   <div className="text-center py-8">
+                                     <p className="text-sm text-muted-foreground">
+                                       You've reached the end of available profiles.
+                                     </p>
+                                   </div>
+                                 )}
+                                 </>
+                               ) : (
               <div className="text-center py-8">
 
                 <p className="text-muted-foreground">
