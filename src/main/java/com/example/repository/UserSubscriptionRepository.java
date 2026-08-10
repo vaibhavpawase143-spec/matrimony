@@ -134,6 +134,26 @@ AND created_at < DATE_TRUNC('month', CURRENT_DATE)
     List<UserSubscription> findByIsActiveTrueAndEndDateBefore(
             java.time.LocalDateTime dateTime
     );
+
+    @Query("""
+        SELECT us
+        FROM UserSubscription us
+        JOIN FETCH us.user
+        JOIN FETCH us.subscriptionPlan
+        WHERE us.isActive = true
+        AND us.status = 'ACTIVE'
+        AND us.endDate <= :now
+    """)
+    List<UserSubscription> findActiveSubscriptionsDueForExpiry(@Param("now") java.time.LocalDateTime now);
+
+    @org.springframework.data.jpa.repository.Modifying
+    @Query("""
+        UPDATE UserSubscription us
+        SET us.isActive = false, us.status = 'EXPIRED'
+        WHERE us.id = :id AND us.isActive = true AND us.status = 'ACTIVE'
+    """)
+    int expireSubscriptionAtomically(@Param("id") Long id);
+
     @Query("""
 SELECT us
 FROM UserSubscription us
