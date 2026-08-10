@@ -445,14 +445,6 @@ public class NotificationServiceImpl implements NotificationService {
                 "/topic/notifications/" + receiverId,
                 response
         );
-
-        User user = userRepository.findById(receiverId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        emailService.sendPremiumExpiredEmail(
-                user.getEmail(),
-                user.getFirstName()
-        );
     }
     @Override
     public Page<NotificationResponse> getNotificationHistory(Pageable pageable) {

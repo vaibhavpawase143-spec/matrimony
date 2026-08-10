@@ -1,66 +1,41 @@
 package com.example.scheduler;
 
-import com.example.model.UserSubscription;
-import com.example.repository.UserSubscriptionRepository;
-import com.example.service.NotificationService;
-import com.example.service.ProfilePremiumSyncService;
+import com.example.service.SubscriptionExpiryWorkflowService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDateTime;
-import java.util.List;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class SubscriptionExpiryScheduler {
 
-    private final UserSubscriptionRepository userSubscriptionRepository;
-    private final ProfilePremiumSyncService profilePremiumSyncService;
-    private final NotificationService notificationService;
+    private final SubscriptionExpiryWorkflowService expiryWorkflowService;
+
+    @Value("${subscription.expiry.scheduler.enabled:true}")
+    private boolean schedulerEnabled;
+
     /**
-     * Runs every hour.
-     * Expires subscriptions whose end date has passed.
+     * Daily Scheduler for Subscription Expiry Workflow.
+     * Default: 9:00 AM every day using application configured timezone.
      */
-    @Scheduled(cron = "0 0 * * * *")
-    @Transactional
-    public void expireSubscriptions() {
-
-        List<UserSubscription> expiredSubscriptions =
-                userSubscriptionRepository.findByIsActiveTrueAndEndDateBefore(
-                        LocalDateTime.now()
-                );
-
-        if (expiredSubscriptions.isEmpty()) {
+    @Scheduled(cron = "${subscription.expiry.scheduler.cron:0 0 9 * * *}", zone = "${subscription.expiry.scheduler.zone:Asia/Kolkata}")
+    public void executeSubscriptionExpiryWorkflow() {
+        if (!schedulerEnabled) {
+            log.info("Subscription Expiry Scheduler is disabled in configuration.");
             return;
         }
 
-        int expiredCount = 0;
+        log.info("========== Subscription Expiry Scheduler Started ==========");
 
-        for (UserSubscription subscription : expiredSubscriptions) {
-
-            subscription.setIsActive(false);
-            subscription.setStatus("EXPIRED");
-
-            userSubscriptionRepository.save(subscription);
-
-            profilePremiumSyncService.sync(
-                    subscription.getUser(),
-                    subscription
-            );
-            notificationService.createSubscriptionExpiredNotification(
-                    subscription.getUser().getId(),
-                    subscription.getId()
-            );
-            expiredCount++;
+        try {
+            expiryWorkflowService.processAndPublishExpiringSubscriptions();
+        } catch (Exception e) {
+            log.error("Error executing Subscription Expiry Scheduler: {}", e.getMessage(), e);
         }
 
-        log.info(
-                "SubscriptionExpiryScheduler completed. Expired {} subscription(s).",
-                expiredCount
-        );
+        log.info("========== Subscription Expiry Scheduler Completed ==========");
     }
 }
