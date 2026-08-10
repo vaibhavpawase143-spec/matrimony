@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
@@ -13,7 +14,9 @@ import java.util.Map;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class AdminDashboardDTO {
+public class AdminDashboardDTO implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     // ================= USER STATISTICS =================
 
@@ -21,7 +24,6 @@ public class AdminDashboardDTO {
     private Long activeUsers;
     private Long inactiveUsers;
 
-    // Optional (implement later if supported)
     private Long blockedUsers;
     private Long verifiedUsers;
     private Long unverifiedUsers;
@@ -88,7 +90,9 @@ public class AdminDashboardDTO {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class TopPaymentPlanDTO {
+    public static class TopPaymentPlanDTO implements Serializable {
+
+        private static final long serialVersionUID = 1L;
 
         private Long planId;
         private String planName;
@@ -100,7 +104,9 @@ public class AdminDashboardDTO {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class TopCityDTO {
+    public static class TopCityDTO implements Serializable {
+
+        private static final long serialVersionUID = 1L;
 
         private Long cityId;
         private String cityName;
@@ -111,7 +117,9 @@ public class AdminDashboardDTO {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class TopReligionDTO {
+    public static class TopReligionDTO implements Serializable {
+
+        private static final long serialVersionUID = 1L;
 
         private Long religionId;
         private String religionName;

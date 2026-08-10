@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { FaArrowLeft } from "react-icons/fa";
+import BackButton from "../components/common/BackButton";
 import { getSubscriptionById } from "../services/subscriptionService";
 import { toast } from "sonner";
 
@@ -18,11 +18,7 @@ export default function SubscriptionDetails() {
   const loadSubscription = async () => {
     try {
       setLoading(true);
-
       const data = await getSubscriptionById(id);
-
-      console.log("Subscription API Response:", data);
-
       setSubscription(data);
     } catch (err) {
       console.error(err);
@@ -34,7 +30,7 @@ export default function SubscriptionDetails() {
 
   if (loading) {
     return (
-      <div className="p-6 text-center text-gray-500">
+      <div className="p-6 text-center text-sm font-medium text-slate-500 animate-pulse">
         Loading subscription details...
       </div>
     );
@@ -42,54 +38,43 @@ export default function SubscriptionDetails() {
 
   if (!subscription) {
     return (
-      <div className="p-6 text-center text-red-500">
+      <div className="p-6 text-center text-sm font-medium text-rose-600 bg-rose-50 rounded-xl border border-rose-200">
         Subscription not found.
       </div>
     );
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-2 sm:p-4 max-w-7xl mx-auto space-y-6">
+      <BackButton label="Back to Subscriptions" to="/subscriptions" />
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <button
-            onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-violet-600 hover:text-violet-800 mb-2"
-          >
-            <FaArrowLeft />
-            Back
-          </button>
-
-          <h1 className="text-3xl font-bold">Subscription Details</h1>
-
-          <p className="text-gray-500">
-            View subscription information.
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">Subscription Details</h1>
+          <p className="text-sm text-slate-500 mt-1">
+            View detailed subscription status and timeline.
           </p>
         </div>
-<button
-    onClick={() =>
-        navigate(`/admin/users/${subscription.userId}/subscriptions`)
-    }
-    className="px-4 py-2 rounded-lg border border-violet-600
-               text-violet-600
-               hover:bg-violet-600
-               hover:text-white
-               transition"
->
-    Subscription History
-</button>
-        <span
-          className={`px-4 py-2 rounded-full text-sm font-semibold ${
-            subscription.status === "ACTIVE"
-              ? "bg-green-100 text-green-700"
-              : subscription.status === "EXPIRED"
-              ? "bg-yellow-100 text-yellow-700"
-              : "bg-red-100 text-red-700"
-          }`}
-        >
-          {subscription.status}
-        </span>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => navigate(`/admin/users/${subscription.userId}/subscriptions`)}
+            className="px-4 py-2 text-sm font-medium rounded-xl border border-violet-600 text-violet-600 hover:bg-violet-600 hover:text-white transition-all shadow-2xs cursor-pointer"
+          >
+            Subscription History
+          </button>
+          <span
+            className={`px-4 py-2 rounded-full text-sm font-semibold ${
+              subscription.status === "ACTIVE"
+                ? "bg-green-100 text-green-700"
+                : subscription.status === "EXPIRED"
+                ? "bg-yellow-100 text-yellow-700"
+                : "bg-red-100 text-red-700"
+            }`}
+          >
+            {subscription.status}
+          </span>
+        </div>
       </div>
 
       {/* Details Card */}

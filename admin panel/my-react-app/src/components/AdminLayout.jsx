@@ -7,9 +7,9 @@ export default function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="flex h-screen bg-white">
+    <div className="flex h-screen bg-slate-100/70 font-sans text-slate-900 antialiased">
       {/* Sidebar - Desktop */}
-      <div className="hidden md:block md:w-72">
+      <div className="hidden md:block md:w-72 flex-shrink-0">
         <Sidebar />
       </div>
 
@@ -17,7 +17,7 @@ export default function AdminLayout() {
       {sidebarOpen && (
         <div className="fixed inset-0 z-40 md:hidden">
           <div
-            className="absolute inset-0 bg-black/50"
+            className="absolute inset-0 bg-slate-950/60 backdrop-blur-xs transition-opacity"
             onClick={() => setSidebarOpen(false)}
           />
           <div className="relative w-72 h-full z-50">
@@ -27,7 +27,7 @@ export default function AdminLayout() {
       )}
 
       {/* Main Content */}
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="flex flex-1 flex-col overflow-hidden bg-slate-50">
         {/* Navbar */}
         <Navbar
           onMenuToggle={() => setSidebarOpen(!sidebarOpen)}
@@ -35,7 +35,7 @@ export default function AdminLayout() {
         />
 
         {/* Dashboard Content */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 bg-white">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 bg-slate-50">
           <Outlet />
         </main>
       </div>

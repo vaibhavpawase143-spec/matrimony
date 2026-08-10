@@ -1,3 +1,4 @@
+import BackButton from "../components/common/BackButton";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -123,6 +124,7 @@ export default function UserDetails() {
           break;
       }
 
+      sessionStorage.removeItem("admin_dashboard_cache");
       setIsModalOpen(false);
 
       setSelectedAction("");
@@ -168,17 +170,10 @@ export default function UserDetails() {
     );
   }
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-2 sm:p-4 max-w-7xl mx-auto space-y-6">
 
       {/* Back Button */}
-
-      <Link
-        to="/users"
-        className="inline-flex items-center gap-2 text-purple-600 hover:text-purple-800 font-medium"
-      >
-        <FaArrowLeft />
-        Back to Users
-      </Link>
+      <BackButton label="Back to Users" to="/users" />
 
       {/* Header */}
 

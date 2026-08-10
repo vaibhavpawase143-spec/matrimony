@@ -12,9 +12,14 @@ import com.example.repository.UserPhotoRepository;
 import com.example.repository.UserRepository;
 import com.example.repository.UserSubscriptionRepository;
 import com.example.service.AdminAuditLogService;
+import com.example.service.AdminDashboardService;
 import com.example.service.AdminUserService;
 import com.example.service.CurrentAdminService;
+import com.example.service.DashboardCacheService;
 import com.example.specification.UserSpecification;
+import java.util.Map;
+import java.util.List;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
@@ -42,6 +47,8 @@ public class AdminUserServiceImpl implements AdminUserService {
     private final UserSubscriptionRepository userSubscriptionRepository;
     private final UserPhotoRepository userPhotoRepository;
     private final CurrentAdminService currentAdminService;
+    private final DashboardCacheService dashboardCacheService;
+    private final AdminDashboardService dashboardService;
     @Override
     @Transactional
     public Page<AdminUserResponseDTO> getAllUsers(
@@ -58,23 +65,32 @@ public class AdminUserServiceImpl implements AdminUserService {
 
         Pageable pageable = PageRequest.of(page, size, sort);
 
-        return userRepository.findAll(
+        Page<User> usersPage = userRepository.findAll(
                 UserSpecification.getUsers(filter),
                 pageable
-        ).map(user -> {
+        );
 
+        List<Long> userIds = usersPage.getContent().stream().map(User::getId).toList();
+
+        Map<Long, com.example.model.UserSubscription> activeSubMap = userIds.isEmpty() ? Map.of() :
+                userSubscriptionRepository.findByUserIdInAndIsActiveTrue(userIds)
+                        .stream()
+                        .collect(java.util.stream.Collectors.toMap(
+                                sub -> sub.getUser().getId(),
+                                sub -> sub,
+                                (existing, replacement) -> existing
+                        ));
+
+        return usersPage.map(user -> {
             AdminUserResponseDTO dto = AdminUserMapper.toDTO(user);
-
-            userSubscriptionRepository
-                    .findByUserIdAndIsActiveTrue(user.getId())
-                    .ifPresentOrElse(subscription -> {
-                        dto.setPremium(true);
-                        dto.setPremiumPlan(subscription.getSubscriptionPlan().getName());
-                    }, () -> {
-                        dto.setPremium(false);
-                        dto.setPremiumPlan("Free Plan");
-                    });
-
+            com.example.model.UserSubscription subscription = activeSubMap.get(user.getId());
+            if (subscription != null) {
+                dto.setPremium(true);
+                dto.setPremiumPlan(subscription.getSubscriptionPlan().getName());
+            } else {
+                dto.setPremium(false);
+                dto.setPremiumPlan("Free Plan");
+            }
             return dto;
         });
     }
@@ -173,7 +189,7 @@ public class AdminUserServiceImpl implements AdminUserService {
         user.setIsActive(true);
 
         User savedUser = userRepository.save(user);
-
+        refreshDashboardCache();
         Admin admin = currentAdminService.getCurrentAdmin();
 
         adminAuditLogService.log(
@@ -197,7 +213,7 @@ public class AdminUserServiceImpl implements AdminUserService {
         user.setIsActive(false);
 
         User savedUser = userRepository.save(user);
-
+        refreshDashboardCache();
         Admin admin = currentAdminService.getCurrentAdmin();
 
         adminAuditLogService.log(
@@ -275,6 +291,7 @@ public class AdminUserServiceImpl implements AdminUserService {
         user.setIsBlocked(true);
 
         User savedUser = userRepository.save(user);
+        refreshDashboardCache();
 
         Admin admin = currentAdminService.getCurrentAdmin();
 
@@ -300,6 +317,7 @@ public class AdminUserServiceImpl implements AdminUserService {
         user.setIsBlocked(false);
 
         User savedUser = userRepository.save(user);
+        refreshDashboardCache();
 
         Admin admin = currentAdminService.getCurrentAdmin();
 
@@ -326,7 +344,7 @@ public class AdminUserServiceImpl implements AdminUserService {
         user.setIsActive(false);
 
         User savedUser = userRepository.save(user);
-
+        refreshDashboardCache();
         Admin admin = currentAdminService.getCurrentAdmin();
 
         adminAuditLogService.log(
@@ -351,6 +369,7 @@ public class AdminUserServiceImpl implements AdminUserService {
         String email = user.getEmail();
 
         userRepository.delete(user);
+        refreshDashboardCache();
 
         Admin admin = currentAdminService.getCurrentAdmin();
 
@@ -405,6 +424,7 @@ public class AdminUserServiceImpl implements AdminUserService {
         List<User> users = getValidatedUsers(userIds);
 
         users.forEach(user -> user.setIsActive(true));
+        refreshDashboardCache();
 
         userRepository.saveAll(users);
 
@@ -430,6 +450,7 @@ public class AdminUserServiceImpl implements AdminUserService {
         users.forEach(user -> user.setIsBlocked(true));
 
         userRepository.saveAll(users);
+        refreshDashboardCache();
 
         Admin admin = currentAdminService.getCurrentAdmin();
 
@@ -453,6 +474,7 @@ public class AdminUserServiceImpl implements AdminUserService {
         users.forEach(user -> user.setIsBlocked(false));
 
         userRepository.saveAll(users);
+        refreshDashboardCache();
 
         Admin admin = currentAdminService.getCurrentAdmin();
 
@@ -478,7 +500,7 @@ public class AdminUserServiceImpl implements AdminUserService {
         });
 
         userRepository.saveAll(users);
-
+        refreshDashboardCache();
         Admin admin = currentAdminService.getCurrentAdmin();
 
         adminAuditLogService.log(
@@ -503,7 +525,7 @@ public class AdminUserServiceImpl implements AdminUserService {
         user.setIsActive(true);
 
         User savedUser = userRepository.save(user);
-
+        refreshDashboardCache();
         Admin admin = currentAdminService.getCurrentAdmin();
 
         adminAuditLogService.log(
@@ -714,5 +736,8 @@ public class AdminUserServiceImpl implements AdminUserService {
         } catch (IOException e) {
             throw new RuntimeException("Failed to export users to Excel", e);
         }
+    }
+    private void refreshDashboardCache() {
+        dashboardCacheService.refreshAsync(dashboardService);
     }
 }

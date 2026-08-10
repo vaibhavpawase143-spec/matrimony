@@ -9,14 +9,33 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+
 @Repository
 public interface RoleRepository extends JpaRepository<Role, Long> {
 
     // =====================================================
-    // JWT / SPRING SECURITY
+    // SECURITY
     // =====================================================
 
+    /**
+     * Existing method used throughout the project.
+     * DO NOT REMOVE.
+     */
+    @EntityGraph(attributePaths = "permissions")
     Optional<Role> findByName(String name);
+
+    /**
+     * Used when permissions must be eagerly loaded and
+     * deleted roles should be ignored.
+     */
+    @EntityGraph(attributePaths = "permissions")
+    @Query("""
+            SELECT r
+            FROM Role r
+            WHERE r.name = :name
+              AND r.deletedAt IS NULL
+            """)
+    Optional<Role> findByNameWithPermissions(@Param("name") String name);
 
     Optional<Role> findByNameIgnoreCase(String name);
 
@@ -52,19 +71,5 @@ public interface RoleRepository extends JpaRepository<Role, Long> {
     // SEARCH
     // =====================================================
 
-    List<Role> findByNameContainingIgnoreCaseAndDeletedAtIsNull(
-            String keyword
-    );
-    // =====================================================
-// RBAC
-// =====================================================
-
-    @EntityGraph(attributePaths = {"permissions"})
-    @Query("""
-       SELECT r
-       FROM Role r
-       WHERE r.name = :name
-       AND r.deletedAt IS NULL
-       """)
-    Optional<Role> findByNameWithPermissions(@Param("name") String name);
+    List<Role> findByNameContainingIgnoreCaseAndDeletedAtIsNull(String keyword);
 }

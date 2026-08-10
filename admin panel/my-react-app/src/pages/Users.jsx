@@ -1,7 +1,8 @@
 import { useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { FaSearch, FaFilter, FaChevronDown, FaChevronUp, FaUndo, FaCheck } from "react-icons/fa";
 import { toast } from "sonner";
+import AdminErrorAlert from "../components/common/AdminErrorAlert";
 import ExportDropdown from "../components/common/ExportDropdown";
 import { exportToPDF } from "../utils/export/pdfExport";
 import { exportToCSV } from "../utils/export/csvExport";
@@ -17,8 +18,7 @@ import {
 
   // Bulk Operations
   bulkActivateUsers,
-  bulkBlockUsers,
-  bulkUnblockUsers,
+
   bulkSoftDeleteUsers,
 } from "../services/adminUserService";
 import {
@@ -61,6 +61,7 @@ export default function Users() {
   const [search, setSearch] = useState("");
 
   const [users, setUsers] = useState([]);
+  const [sortBy, setSortBy] = useState("a-z"); // "a-z", "z-a", "oldest", "newest"
 
   const [loading, setLoading] = useState(true);
 
@@ -142,20 +143,58 @@ export default function Users() {
   // ===========================
 
   useEffect(() => {
+    const applyMasterData = ([
+      gData,
+      rData,
+      cData,
+      scData,
+      cntData,
+      stData,
+      ctData,
+      mData,
+      eData,
+      oData,
+    ]) => {
+      setGenders(filterActiveOnly(gData));
+      setReligions(filterActiveOnly(rData));
+
+      const activeCastes = filterActiveOnly(cData);
+      setAllCastesList(activeCastes);
+      setCastes(activeCastes);
+
+      const activeSubCastes = filterActiveOnly(scData);
+      setAllSubCastesList(activeSubCastes);
+      setSubCastes(activeSubCastes);
+
+      setCountries(filterActiveOnly(cntData));
+
+      const activeStates = filterActiveOnly(stData);
+      setAllStatesList(activeStates);
+      setStatesList(activeStates);
+
+      const activeCities = filterActiveOnly(ctData);
+      setAllCitiesList(activeCities);
+      setCities(activeCities);
+
+      setMaritalStatuses(filterActiveOnly(mData));
+      setEducationLevels(filterActiveOnly(eData));
+      setOccupations(filterActiveOnly(oData));
+    };
+
     const fetchMasterData = async () => {
       try {
-        const [
-          gData,
-          rData,
-          cData,
-          scData,
-          cntData,
-          stData,
-          ctData,
-          mData,
-          eData,
-          oData,
-        ] = await Promise.all([
+        const cached = localStorage.getItem("admin_master_data_cache");
+        if (cached) {
+          try {
+            const parsed = JSON.parse(cached);
+            if (parsed.timestamp && Date.now() - parsed.timestamp < 3600000 && Array.isArray(parsed.data)) {
+              applyMasterData(parsed.data);
+              return;
+            }
+          } catch (e) {}
+        }
+
+        const data = await Promise.all([
           getAllGenders(),
           getAllReligions(),
           getAllCastes(),
@@ -168,30 +207,11 @@ export default function Users() {
           getOccupations(),
         ]);
 
-        setGenders(filterActiveOnly(gData));
-        setReligions(filterActiveOnly(rData));
-
-        const activeCastes = filterActiveOnly(cData);
-        setAllCastesList(activeCastes);
-        setCastes(activeCastes);
-
-        const activeSubCastes = filterActiveOnly(scData);
-        setAllSubCastesList(activeSubCastes);
-        setSubCastes(activeSubCastes);
-
-        setCountries(filterActiveOnly(cntData));
-
-        const activeStates = filterActiveOnly(stData);
-        setAllStatesList(activeStates);
-        setStatesList(activeStates);
-
-        const activeCities = filterActiveOnly(ctData);
-        setAllCitiesList(activeCities);
-        setCities(activeCities);
-
-        setMaritalStatuses(filterActiveOnly(mData));
-        setEducationLevels(filterActiveOnly(eData));
-        setOccupations(filterActiveOnly(oData));
+        applyMasterData(data);
+        localStorage.setItem(
+          "admin_master_data_cache",
+          JSON.stringify({ timestamp: Date.now(), data })
+        );
       } catch (err) {
         console.error("Error loading master data:", err);
       }
@@ -330,54 +350,46 @@ export default function Users() {
 
   const handleConfirmAction = async () => {
     if (!selectedUser) return;
+    const targetUser = selectedUser;
+    const action = selectedAction;
 
+    // ⚡ 1. INSTANT OPTIMISTIC UI UPDATE (0ms delay)
+    setUsers((prevUsers) =>
+      prevUsers.map((u) => {
+        if (u.id === targetUser.id) {
+          if (action === "activate" || action === "restore") {
+            return { ...u, active: true, blocked: false, status: "Active" };
+          } else if (action === "deactivate" || action === "softDelete") {
+            return { ...u, active: false, status: "Inactive" };
+          } else if (action === "block") {
+            return { ...u, blocked: true, status: "Blocked" };
+          } else if (action === "unblock") {
+            return { ...u, blocked: false, status: u.active ? "Active" : "Inactive" };
+          }
+        }
+        return u;
+      })
+    );
+
+    // Invalidate dashboard cache so stats refresh on dashboard visit
+    sessionStorage.removeItem("admin_dashboard_cache");
+
+    // Close modal & notify immediately
+    setIsModalOpen(false);
+    setSelectedUser(null);
+    setSelectedAction("");
+    toast.success("Action completed successfully.");
+
+    // 🔄 2. API CALL IN BACKGROUND
     try {
-      switch (selectedAction) {
-        case "activate":
-          await activateUser(selectedUser.id);
-          break;
-
-        case "deactivate":
-          await deactivateUser(selectedUser.id);
-          break;
-
-        case "block":
-          await blockUser(selectedUser.id);
-          break;
-
-        case "unblock":
-          await unblockUser(selectedUser.id);
-          break;
-
-        case "restore":
-          await restoreUser(selectedUser.id);
-          break;
-
-        case "softDelete":
-          await softDeleteUser(selectedUser.id);
-          break;
-
-        default:
-          return;
-      }
-
-      // Reload latest data
-      await loadUsers(page, search, filters);
-
-      // Close modal
-      setIsModalOpen(false);
-      setSelectedUser(null);
-      setSelectedAction("");
-
-      toast.success("Action completed successfully.");
+      if (action === "activate") await activateUser(targetUser.id);
+      else if (action === "deactivate") await deactivateUser(targetUser.id);
+      else if (action === "restore") await restoreUser(targetUser.id);
+      else if (action === "softDelete") await softDeleteUser(targetUser.id);
     } catch (err) {
       console.error(err);
-      const message =
-        err?.response?.data?.message ||
-        err?.message ||
-        "Something went wrong.";
-
-      toast.error(message);
+      toast.error(err?.response?.data?.message || err?.message || "Failed to update status on server.");
+      loadUsers(page, search, filters);
     }
   };
 
@@ -486,47 +498,37 @@ export default function Users() {
       toast.error("Please select at least one user.");
       return;
     }
+    const ids = [...selectedUsers];
 
+    // ⚡ 1. INSTANT OPTIMISTIC UI UPDATE
+    setUsers((prevUsers) =>
+      prevUsers.map((u) => {
+        if (ids.includes(u.id)) {
+          if (action === "activate") {
+            return { ...u, active: true, blocked: false, status: "Active" };
+          } else if (action === "softDelete") {
+            return { ...u, active: false, status: "Inactive" };
+          }
+        }
+        return u;
+      })
+    );
+
+    sessionStorage.removeItem("admin_dashboard_cache");
+    setSelectedUsers([]);
+    setIsModalOpen(false);
+    setIsBulkAction(false);
+    setSelectedAction("");
+    toast.success("Bulk action completed.");
+
+    // 🔄 2. API CALL IN BACKGROUND
     try {
-      switch (action) {
-        case "activate":
-          await bulkActivateUsers(selectedUsers);
-          toast.success("Selected users activated successfully.");
-          break;
-
-        case "block":
-          await bulkBlockUsers(selectedUsers);
-          toast.success("Selected users blocked successfully.");
-          break;
-
-        case "unblock":
-          await bulkUnblockUsers(selectedUsers);
-          toast.success("Selected users unblocked successfully.");
-          break;
-
-        case "softDelete":
-          await bulkSoftDeleteUsers(selectedUsers);
-          toast.success("Selected users soft deleted successfully.");
-          break;
-
-        default:
-          return;
-      }
-
-      // Clear selected checkboxes
-      setSelectedUsers([]);
-      setIsModalOpen(false);
-      setIsBulkAction(false);
-      setSelectedAction("");
-      // Reload current page
-      await loadUsers(page, search, filters);
+      if (action === "activate") await bulkActivateUsers(ids);
+      else if (action === "softDelete") await bulkSoftDeleteUsers(ids);
     } catch (err) {
       console.error("Bulk action failed:", err);
-
-      toast.error(
-        err?.message ||
-        "Bulk operation failed."
-      );
+      toast.error(err?.message || "Bulk operation failed on server.");
+      loadUsers(page, search, filters);
     }
   };
 
@@ -550,6 +552,8 @@ export default function Users() {
   // INITIAL LOAD
   // ===========================
 
+  const isInitialSearchMount = useRef(true);
+
   useEffect(() => {
     loadUsers(page, search, filters);
   }, [page, size]);
@@ -559,6 +563,11 @@ export default function Users() {
   // ===========================
 
   useEffect(() => {
+    if (isInitialSearchMount.current) {
+      isInitialSearchMount.current = false;
+      return;
+    }
+
     const timer = setTimeout(() => {
       setPage(0);
       loadUsers(0, search, filters);
@@ -657,6 +666,15 @@ export default function Users() {
         />
       </div>
 
+      {error && (
+        <AdminErrorAlert
+          title="User Data Loading Failed"
+          error={error}
+          onRetry={() => loadUsers(page, search, filters)}
+          className="mb-6"
+        />
+      )}
+
       {/* ================= SEARCH & FILTER TOGGLE BAR ================= */}
 
       <div className="bg-white shadow-md rounded-xl p-4 mb-6 flex flex-col md:flex-row items-center justify-between gap-4 border border-gray-200">
@@ -669,6 +687,21 @@ export default function Users() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
+        </div>
+
+        {/* SORT BY DROPDOWN */}
+        <div className="flex items-center gap-2 shrink-0">
+          <label className="text-xs font-semibold text-gray-500 whitespace-nowrap">Sort By:</label>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="px-3 py-2 border border-purple-200 rounded-lg text-sm font-medium bg-purple-50 text-purple-700 outline-none focus:ring-2 focus:ring-purple-500 cursor-pointer"
+          >
+            <option value="a-z">A to Z</option>
+            <option value="z-a">Z to A</option>
+            <option value="oldest">Oldest to Newest</option>
+            <option value="newest">Newest to Oldest</option>
+          </select>
         </div>
 
         <button
@@ -958,8 +991,8 @@ export default function Users() {
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
               >
                 <option value="">All</option>
-                <option value="true">Blocked</option>
-                <option value="false">Unblocked</option>
+                <option value="true">Blocked Only</option>
+                <option value="false">Unblocked Only</option>
               </select>
             </div>
 
@@ -1120,21 +1153,7 @@ export default function Users() {
                 Activate
               </button>
 
-              <button
-                type="button"
-                onClick={() => handleBulkAction("block")}
-                className="px-4 py-2 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700 transition"
-              >
-                Block
-              </button>
 
-              <button
-                type="button"
-                onClick={() => handleBulkAction("unblock")}
-                className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition"
-              >
-                Unblock
-              </button>
 
               <button
                 type="button"
@@ -1215,23 +1234,35 @@ export default function Users() {
           </thead>
 
           <tbody className="divide-y divide-gray-200">
-            {users.length === 0 ? (
-              <tr>
-                <td
-                  colSpan="9"
-                  className="text-center py-12 text-gray-500"
-                >
-                  No users found.
-                </td>
-              </tr>
-            ) : (
-              users.map((user, index) => (
+            {(() => {
+              const sortedUsers = [...users].sort((a, b) => {
+                const nameA = (a.fullName || a.name || "").trim().toLowerCase();
+                const nameB = (b.fullName || b.name || "").trim().toLowerCase();
+                const idA = Number(a.id) || 0;
+                const idB = Number(b.id) || 0;
+
+                if (sortBy === "a-z") return nameA.localeCompare(nameB);
+                if (sortBy === "z-a") return nameB.localeCompare(nameA);
+                if (sortBy === "oldest") return idA - idB;
+                if (sortBy === "newest") return idB - idA;
+                return 0;
+              });
+
+              if (sortedUsers.length === 0) {
+                return (
+                  <tr>
+                    <td colSpan="9" className="text-center py-12 text-gray-500">
+                      No users found.
+                    </td>
+                  </tr>
+                );
+              }
+
+              return sortedUsers.map((user, index) => (
                 <tr
                   key={user.id}
                   className={`transition ${
-                    index % 2 === 0
-                      ? "bg-white"
-                      : "bg-gray-50"
+                    index % 2 === 0 ? "bg-white" : "bg-gray-50"
                   } hover:bg-purple-50`}
                 >
                   <td className="px-4 py-4 text-center">
@@ -1259,18 +1290,23 @@ export default function Users() {
                   {/* Name */}
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <img
-                        src={
-                          user.imageUrl ||
-                          "https://ui-avatars.com/api/?name=" +
-                            encodeURIComponent(
-                              user.fullName || "User"
-                            )
-                        }
-                        alt={user.fullName}
-                        className="w-10 h-10 rounded-full object-cover border"
-                      />
-
+                <img
+                  src={
+                    user?.imageUrl
+                      ? `https://localhost:9090${user.imageUrl}`
+                      : `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                          user?.fullName || "User"
+                        )}`
+                  }
+                  alt={user?.fullName || "User"}
+                  className="w-10 h-10 rounded-full object-cover border"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                      user?.fullName || "User"
+                    )}`;
+                  }}
+                />
                       <div>
                         <div className="font-medium text-gray-900">
                           {user.fullName}
@@ -1338,16 +1374,15 @@ export default function Users() {
                         onView={(user) => navigate(`/users/${user.id}`)}
                         onActivate={(user) => openConfirmModal(user, "activate")}
                         onDeactivate={(user) => openConfirmModal(user, "deactivate")}
-                        onBlock={(user) => openConfirmModal(user, "block")}
-                        onUnblock={(user) => openConfirmModal(user, "unblock")}
+
                         onRestore={(user) => openConfirmModal(user, "restore")}
                         onSoftDelete={(user) => openConfirmModal(user, "softDelete")}
                       />
                     </div>
                   </td>
                 </tr>
-              ))
-            )}
+              ));
+            })()}
           </tbody>
         </table>
       </div>

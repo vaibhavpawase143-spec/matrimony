@@ -1,8 +1,7 @@
 import {
   FaCheckCircle,
   FaTimesCircle,
-  FaBan,
-  FaLockOpen,
+
   FaEnvelope,
   FaMobileAlt,
   FaUndo,
@@ -13,8 +12,7 @@ export default function UserQuickActions({
   user,
   onActivate,
   onDeactivate,
-  onBlock,
-  onUnblock,
+
   onVerifyEmail,
   onVerifyPhone,
   onRestore,
@@ -52,24 +50,6 @@ export default function UserQuickActions({
           </button>
         )}
 
-        {/* Block / Unblock */}
-        {!user?.blocked ? (
-          <button
-            onClick={onBlock}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white transition"
-          >
-            <FaBan />
-            Block
-          </button>
-        ) : (
-          <button
-            onClick={onUnblock}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white transition"
-          >
-            <FaLockOpen />
-            Unblock
-          </button>
-        )}
 
         {/* Verify Email */}
         {!user?.emailVerified && (
@@ -113,13 +93,7 @@ export default function UserQuickActions({
         )}
 
         {/* Permanent Delete */}
-        <button
-          onClick={onDelete}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-800 hover:bg-red-900 text-white transition"
-        >
-          <FaTrashAlt />
-          Delete Permanently
-        </button>
+
       </div>
     </div>
   );

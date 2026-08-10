@@ -139,7 +139,17 @@ public class UserServiceImpl implements UserService {
 
         User user = userRepository.findByEmailWithRoles(email)
                 .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+        if (Boolean.TRUE.equals(user.getIsDeleted())) {
+            throw new RuntimeException(
+                    "Your account has been deleted. Please contact support."
+            );
+        }
 
+        if (!Boolean.TRUE.equals(user.getIsActive())) {
+            throw new RuntimeException(
+                    "Your account has been deactivated. Please contact support."
+            );
+        }
         if (!passwordEncoder.matches(password, user.getPassword())) {
             throw new RuntimeException("Invalid password. Please check your credentials and try again.");
         }
@@ -185,7 +195,17 @@ public class UserServiceImpl implements UserService {
 
         User user = userRepository.findByEmailWithRoles(email)
                 .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+        if (Boolean.TRUE.equals(user.getIsDeleted())) {
+            throw new RuntimeException(
+                    "Your account has been deleted. Please contact support."
+            );
+        }
 
+        if (!Boolean.TRUE.equals(user.getIsActive())) {
+            throw new RuntimeException(
+                    "Your account has been deactivated. Please contact support."
+            );
+        }
         if (!passwordEncoder.matches(password, user.getPassword())) {
             throw new RuntimeException("Invalid password. Please check your credentials and try again.");
         }
@@ -241,7 +261,17 @@ public class UserServiceImpl implements UserService {
         // Authenticate user
         User user = userRepository.findByEmailWithRoles(email)
                 .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+        if (Boolean.TRUE.equals(user.getIsDeleted())) {
+            throw new RuntimeException(
+                    "Your account has been deleted. Please contact support."
+            );
+        }
 
+        if (!Boolean.TRUE.equals(user.getIsActive())) {
+            throw new RuntimeException(
+                    "Your account has been deactivated. Please contact support."
+            );
+        }
         if (!passwordEncoder.matches(password, user.getPassword())) {
             throw new RuntimeException("Invalid password. Please check your credentials and try again.");
         }
@@ -590,11 +620,28 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         user.setIsActive(false);
-
+        user.setIsOnline(false);
+        user.setLastSeen(LocalDateTime.now());
+        user.setLastHeartbeat(null);
 
         userRepository.save(user);
     }
+    @Override
+    @Transactional
+    public void activate(Long id) {
 
+        User user = userRepository.findById(id)
+                .orElseThrow(() ->
+                        new RuntimeException("User not found"));
+
+        if (Boolean.TRUE.equals(user.getIsDeleted())) {
+            throw new RuntimeException("Deleted users cannot be activated.");
+        }
+
+        user.setIsActive(true);
+
+        userRepository.save(user);
+    }
     // ================= SEARCH =================
     @Override
     @Transactional(readOnly = true)

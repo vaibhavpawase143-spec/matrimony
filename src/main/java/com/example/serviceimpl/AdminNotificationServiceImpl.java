@@ -12,6 +12,7 @@ import com.example.repository.UserRepository;
 import com.example.service.AdminAuditLogService;
 import com.example.service.AdminNotificationService;
 import com.example.service.CurrentAdminService;
+import com.example.queue.NotificationProducer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.*;
@@ -33,6 +34,7 @@ public class AdminNotificationServiceImpl implements AdminNotificationService {
     private final AdminAuditLogService adminAuditLogService;
     private final AdminRepository adminRepository;
     private final AdminNotificationRepository adminNotificationRepository;
+    private final NotificationProducer notificationProducer;
 
     private static final List<NotificationType> ADMIN_NOTIFICATION_TYPES = List.of(
             NotificationType.ANNOUNCEMENT,
@@ -56,44 +58,13 @@ public class AdminNotificationServiceImpl implements AdminNotificationService {
         Admin currentAdmin = currentAdminService.getCurrentAdmin();
         int recipientCount = request.getReceiverIds().size();
 
-        for (Long userId : request.getReceiverIds()) {
-
-            User user = userRepository
-                    .findByIdAndIsActiveTrue(userId)
-                    .orElseThrow(() ->
-                            new ResourceNotFoundException(
-                                    "User not found with id : " + userId
-                            ));
-
-            Notification notification = new Notification();
-
-            notification.setSenderId(null);
-            notification.setReceiverId(user.getId());
-            notification.setTitle(request.getTitle());
-            notification.setMessage(request.getMessage());
-            notification.setType(request.getType());
-            notification.setRead(false);
-            notification.setDeleted(false);
-            notification.setCreatedAt(LocalDateTime.now());
-
-            Notification saved = notificationRepository.save(notification);
-
-            NotificationResponse response = new NotificationResponse();
-            response.setId(saved.getId());
-            response.setSenderId(saved.getSenderId());
-            response.setSenderName("System");
-            response.setReceiverId(saved.getReceiverId());
-            response.setTitle(saved.getTitle());
-            response.setMessage(saved.getMessage());
-            response.setType(saved.getType().name());
-            response.setRead(saved.isRead());
-            response.setCreatedAt(saved.getCreatedAt());
-
-            messagingTemplate.convertAndSend(
-                    "/topic/notifications/" + user.getId(),
-                    response
-            );
-        }
+        // Enqueue jobs asynchronously into Message Queue
+        notificationProducer.enqueueBulkNotifications(
+                request.getReceiverIds(),
+                request.getTitle(),
+                request.getMessage(),
+                request.getType()
+        );
 
         adminAuditLogService.log(
                 currentAdmin.getId(),
@@ -101,7 +72,7 @@ public class AdminNotificationServiceImpl implements AdminNotificationService {
                 "NOTIFICATION_SENT",
                 "NOTIFICATION",
                 null,
-                "Admin sent notification to " + recipientCount + " selected users",
+                "Admin sent notification job to " + recipientCount + " selected users via Queue",
                 null,
                 "Title=" + request.getTitle()
                         + ", Type=" + request.getType()
@@ -114,44 +85,17 @@ public class AdminNotificationServiceImpl implements AdminNotificationService {
     @Override
     public void broadcastNotification(AdminNotificationRequestDTO request) {
 
-        List<User> users = userRepository.findByIsActiveTrue();
         Admin currentAdmin = currentAdminService.getCurrentAdmin();
 
-        int recipientCount = users.size();
+        // 1. Enqueue user broadcast notification jobs asynchronously into Message Queue
+        notificationProducer.enqueueBulkNotifications(
+                null, // null indicates all active users
+                request.getTitle(),
+                request.getMessage(),
+                request.getType()
+        );
 
-        // ---------- Broadcast to Users ----------
-        for (User user : users) {
-
-            Notification notification = new Notification();
-
-            notification.setSenderId(null);
-            notification.setReceiverId(user.getId());
-            notification.setTitle(request.getTitle());
-            notification.setMessage(request.getMessage());
-            notification.setType(request.getType());
-            notification.setRead(false);
-            notification.setDeleted(false);
-            notification.setCreatedAt(LocalDateTime.now());
-
-            Notification saved = notificationRepository.save(notification);
-
-            NotificationResponse response = new NotificationResponse();
-            response.setId(saved.getId());
-            response.setSenderId(saved.getSenderId());
-            response.setReceiverId(saved.getReceiverId());
-            response.setTitle(saved.getTitle());
-            response.setMessage(saved.getMessage());
-            response.setType(saved.getType().name());
-            response.setRead(saved.isRead());
-            response.setCreatedAt(saved.getCreatedAt());
-
-            messagingTemplate.convertAndSend(
-                    "/topic/notifications/" + user.getId(),
-                    response
-            );
-        }
-
-        // ---------- Broadcast to Admins ----------
+        // 2. Broadcast to Admins
         List<Admin> admins = adminRepository.findAllActiveAdmins();
 
         for (Admin admin : admins) {
@@ -192,11 +136,10 @@ public class AdminNotificationServiceImpl implements AdminNotificationService {
                 "NOTIFICATION_BROADCAST",
                 "NOTIFICATION",
                 null,
-                "Admin broadcast notification sent to all active users and admins",
+                "Admin broadcast notification job queued for all active users",
                 null,
                 "Title=" + request.getTitle()
-                        + ", Type=" + request.getType()
-                        + ", Recipients=" + recipientCount,
+                        + ", Type=" + request.getType(),
                 "SYSTEM",
                 "SYSTEM"
         );

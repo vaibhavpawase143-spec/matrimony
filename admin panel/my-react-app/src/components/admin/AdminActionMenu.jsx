@@ -30,7 +30,7 @@ function AdminActionMenu({
     <div className="relative inline-block text-left" ref={menuRef}>
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-2 bg-violet-600 hover:bg-violet-700 text-white text-xs font-medium px-3 py-2 rounded-lg transition"
+        className="flex items-center gap-2 bg-violet-600 hover:bg-violet-700 text-white text-xs font-medium px-3 py-2 rounded-lg transition cursor-pointer"
       >
         <FaEllipsisV size={12} />
         Manage
@@ -43,7 +43,7 @@ function AdminActionMenu({
               setOpen(false);
               onViewProfile(admin);
             }}
-            className="w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-gray-100"
+            className="w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-gray-100 cursor-pointer"
           >
             <FaEye className="text-indigo-600" />
             View Profile

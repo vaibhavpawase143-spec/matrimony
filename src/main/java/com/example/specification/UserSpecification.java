@@ -16,14 +16,25 @@ public class UserSpecification {
 
         return (root, query, cb) -> {
 
-            // 🔥 IMPORTANT (avoid duplicate + allow fetch)
-            if (query.getResultType() != Long.class) {
-                root.fetch("roles", JoinType.LEFT);
-                query.distinct(true);
-            }
-
             Predicate predicate = cb.conjunction();
-            Join<User, Profile> profileJoin = root.join("profile", JoinType.LEFT);
+            
+            // Helper to lazily obtain profile join or fetch without duplicating joins
+            java.util.function.Supplier<Join<User, Profile>> profileJoinSupplier = new java.util.function.Supplier<>() {
+                private Join<User, Profile> profileJoin = null;
+
+                @Override
+                public Join<User, Profile> get() {
+                    if (profileJoin != null) return profileJoin;
+
+                    if (query.getResultType() != Long.class) {
+                        profileJoin = (Join<User, Profile>) (Object) root.fetch("profile", JoinType.LEFT);
+                    } else {
+                        profileJoin = root.join("profile", JoinType.LEFT);
+                    }
+                    return profileJoin;
+                }
+            };
+
             // 🔍 SEARCH
             if (filter.getSearch() != null && !filter.getSearch().isBlank()) {
 
@@ -37,10 +48,16 @@ public class UserSpecification {
                         ));
             }
 
-            // ✅ ACTIVE
+            // ✅ ACTIVE / INACTIVE FILTER
             if (filter.getIsActive() != null) {
-                predicate = cb.and(predicate,
-                        cb.equal(root.get("isActive"), filter.getIsActive()));
+                if (Boolean.TRUE.equals(filter.getIsActive())) {
+                    predicate = cb.and(predicate, cb.equal(root.get("isActive"), true));
+                } else {
+                    predicate = cb.and(predicate, cb.or(
+                            cb.equal(root.get("isActive"), false),
+                            cb.isNull(root.get("isActive"))
+                    ));
+                }
             }
             if (filter.getIsBlocked() != null) {
 
@@ -69,9 +86,11 @@ public class UserSpecification {
                         cb.equal(root.get("isDeleted"), filter.getIsDeleted()));
             }
 
-            // 🎭 ROLE FILTER
+            // 🎭 ROLE FILTER (Only apply DISTINCT when joining multi-valued roles)
             if (filter.getRole() != null && !filter.getRole().isEmpty()) {
-
+                if (query.getResultType() != Long.class) {
+                    query.distinct(true);
+                }
                 Join<Object, Object> roleJoin = root.join("roles", JoinType.LEFT);
 
                 predicate = cb.and(predicate,
@@ -82,7 +101,7 @@ public class UserSpecification {
                 predicate = cb.and(
                         predicate,
                         cb.equal(
-                                profileJoin.get("gender").get("id"),
+                                profileJoinSupplier.get().get("gender").get("id"),
                                 filter.getGenderId()
                         )
                 );
@@ -92,7 +111,7 @@ public class UserSpecification {
                 predicate = cb.and(
                         predicate,
                         cb.equal(
-                                profileJoin.get("religion").get("id"),
+                                profileJoinSupplier.get().get("religion").get("id"),
                                 filter.getReligionId()
                         )
                 );
@@ -102,7 +121,7 @@ public class UserSpecification {
                 predicate = cb.and(
                         predicate,
                         cb.equal(
-                                profileJoin.get("caste").get("id"),
+                                profileJoinSupplier.get().get("caste").get("id"),
                                 filter.getCasteId()
                         )
                 );
@@ -112,7 +131,7 @@ public class UserSpecification {
                 predicate = cb.and(
                         predicate,
                         cb.equal(
-                                profileJoin.get("subCaste").get("id"),
+                                profileJoinSupplier.get().get("subCaste").get("id"),
                                 filter.getSubCasteId()
                         )
                 );
@@ -122,7 +141,7 @@ public class UserSpecification {
                 predicate = cb.and(
                         predicate,
                         cb.equal(
-                                profileJoin.get("country").get("id"),
+                                profileJoinSupplier.get().get("country").get("id"),
                                 filter.getCountryId()
                         )
                 );
@@ -132,7 +151,7 @@ public class UserSpecification {
                 predicate = cb.and(
                         predicate,
                         cb.equal(
-                                profileJoin.get("state").get("id"),
+                                profileJoinSupplier.get().get("state").get("id"),
                                 filter.getStateId()
                         )
                 );
@@ -142,7 +161,7 @@ public class UserSpecification {
                 predicate = cb.and(
                         predicate,
                         cb.equal(
-                                profileJoin.get("city").get("id"),
+                                profileJoinSupplier.get().get("city").get("id"),
                                 filter.getCityId()
                         )
                 );
@@ -152,7 +171,7 @@ public class UserSpecification {
                 predicate = cb.and(
                         predicate,
                         cb.equal(
-                                profileJoin.get("maritalStatus").get("id"),
+                                profileJoinSupplier.get().get("maritalStatus").get("id"),
                                 filter.getMaritalStatusId()
                         )
                 );
@@ -162,7 +181,7 @@ public class UserSpecification {
                 predicate = cb.and(
                         predicate,
                         cb.equal(
-                                profileJoin.get("educationLevel").get("id"),
+                                profileJoinSupplier.get().get("educationLevel").get("id"),
                                 filter.getEducationLevelId()
                         )
                 );
@@ -172,7 +191,7 @@ public class UserSpecification {
                 predicate = cb.and(
                         predicate,
                         cb.equal(
-                                profileJoin.get("occupation").get("id"),
+                                profileJoinSupplier.get().get("occupation").get("id"),
                                 filter.getOccupationId()
                         )
                 );
@@ -182,7 +201,7 @@ public class UserSpecification {
                 predicate = cb.and(
                         predicate,
                         cb.equal(
-                                profileJoin.get("isPremium"),
+                                profileJoinSupplier.get().get("isPremium"),
                                 filter.getIsPremium()
                         )
                 );
@@ -217,7 +236,7 @@ public class UserSpecification {
                 predicate = cb.and(
                         predicate,
                         cb.lessThanOrEqualTo(
-                                profileJoin.get("dateOfBirth"),
+                                profileJoinSupplier.get().get("dateOfBirth"),
                                 maxDob
                         )
                 );
@@ -230,11 +249,17 @@ public class UserSpecification {
                 predicate = cb.and(
                         predicate,
                         cb.greaterThanOrEqualTo(
-                                profileJoin.get("dateOfBirth"),
+                                profileJoinSupplier.get().get("dateOfBirth"),
                                 minDob
                         )
                 );
             }
+
+            // Ensure profile is eager fetched for DTO construction if not already fetched
+            if (query.getResultType() != Long.class) {
+                profileJoinSupplier.get();
+            }
+
             return predicate;
         };
     }

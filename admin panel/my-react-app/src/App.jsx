@@ -24,32 +24,38 @@ import AdminManagement from "./pages/AdminManagement";
 
 import AdminLayout from "./components/AdminLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
+import AdminErrorBoundary from "./components/common/AdminErrorBoundary";
 
 function App() {
   return (
     <BrowserRouter>
       <AnalyticsTracker />
 
-      <Routes>
+      <AdminErrorBoundary>
+        <Routes>
         {/* Login */}
         <Route path="/" element={<Login />} />
 
-        <Route
-          path="/admin/users/:userId/subscriptions"
-          element={<UserSubscriptionHistory />}
-        />
-
-        <Route
-          path="/admin-management/:id"
-          element={
-            <ProtectedRoute module="adminManagement">
-              <AdminDetails />
-            </ProtectedRoute>
-          }
-        />
-
         {/* Admin Panel */}
         <Route element={<AdminLayout />}>
+          <Route
+            path="/admin/users/:userId/subscriptions"
+            element={
+              <ProtectedRoute module="subscriptions">
+                <UserSubscriptionHistory />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/admin-management/:id"
+            element={
+              <ProtectedRoute module="adminManagement">
+                <AdminDetails />
+              </ProtectedRoute>
+            }
+          />
+
           {/* Profile */}
           <Route
             path="/profile"
@@ -196,21 +202,22 @@ function App() {
               </ProtectedRoute>
             }
           />
-        </Route>
 
-        {/* Support Ticket Details */}
-        <Route
-          path="/support-tickets/:ticketNumber"
-          element={
-            <ProtectedRoute module="supportTickets">
-              <SupportTicketDetails />
-            </ProtectedRoute>
-          }
-        />
+          {/* Support Ticket Details */}
+          <Route
+            path="/support-tickets/:ticketNumber"
+            element={
+              <ProtectedRoute module="supportTickets">
+                <SupportTicketDetails />
+              </ProtectedRoute>
+            }
+          />
+        </Route>
 
         {/* Invalid URL */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      </AdminErrorBoundary>
     </BrowserRouter>
   );
 }

@@ -10,13 +10,19 @@ import com.example.service.CurrentAdminService;
 import com.example.service.RoleService;
 import com.example.util.AuditHelper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
+@Transactional
 public class RoleServiceImpl implements RoleService {
 
     private final RoleRepository roleRepository;
@@ -27,11 +33,21 @@ public class RoleServiceImpl implements RoleService {
     private static final String ENTITY = "Role";
 
     // =====================================================
-    // CREATE
+    // CREATE ROLE
     // =====================================================
 
     @Override
+    @CacheEvict(
+            value = {
+                    "roles",
+                    "activeRoles",
+                    "deletedRoles"
+            },
+            allEntries = true
+    )
     public RoleResponseDTO create(RoleRequestDTO requestDto) {
+
+        log.info("Creating new role: {}", requestDto.getName());
 
         if (roleRepository.existsByNameIgnoreCaseAndDeletedAtIsNull(
                 requestDto.getName())) {
@@ -40,8 +56,12 @@ public class RoleServiceImpl implements RoleService {
         }
 
         Role entity = Role.builder()
-                .name(requestDto.getName())
-                .isActive(requestDto.getIsActive() == null ? true : requestDto.getIsActive())
+                .name(requestDto.getName().trim())
+                .isActive(
+                        requestDto.getIsActive() == null
+                                ? Boolean.TRUE
+                                : requestDto.getIsActive()
+                )
                 .build();
 
         entity = roleRepository.save(entity);
@@ -54,16 +74,32 @@ public class RoleServiceImpl implements RoleService {
                 entity.getName()
         );
 
+        log.info(
+                "Role created successfully. Id={}, Name={}",
+                entity.getId(),
+                entity.getName()
+        );
+
         return mapToResponse(entity);
     }
 
     // =====================================================
-    // UPDATE
+    // UPDATE ROLE
     // =====================================================
 
     @Override
+    @CacheEvict(
+            value = {
+                    "roles",
+                    "activeRoles",
+                    "deletedRoles"
+            },
+            allEntries = true
+    )
     public RoleResponseDTO update(Long id,
                                   RoleRequestDTO requestDto) {
+
+        log.info("Updating role with id={}", id);
 
         Role entity = roleRepository
                 .findByIdAndDeletedAtIsNull(id)
@@ -80,12 +116,11 @@ public class RoleServiceImpl implements RoleService {
         String oldValue = entity.getName();
         Boolean oldActive = entity.getIsActive();
 
-        entity.setName(requestDto.getName());
-        entity.setIsActive(
-                requestDto.getIsActive() == null
-                        ? entity.getIsActive()
-                        : requestDto.getIsActive()
-        );
+        entity.setName(requestDto.getName().trim());
+
+        if (requestDto.getIsActive() != null) {
+            entity.setIsActive(requestDto.getIsActive());
+        }
 
         entity = roleRepository.save(entity);
 
@@ -100,6 +135,11 @@ public class RoleServiceImpl implements RoleService {
                 entity.getIsActive()
         );
 
+        log.info(
+                "Role updated successfully. Id={}",
+                entity.getId()
+        );
+
         return mapToResponse(entity);
     }
 
@@ -108,7 +148,17 @@ public class RoleServiceImpl implements RoleService {
     // =====================================================
 
     @Override
+    @CacheEvict(
+            value = {
+                    "roles",
+                    "activeRoles",
+                    "deletedRoles"
+            },
+            allEntries = true
+    )
     public void softDelete(Long id) {
+
+        log.info("Soft deleting role id={}", id);
 
         Role entity = roleRepository
                 .findByIdAndDeletedAtIsNull(id)
@@ -127,14 +177,28 @@ public class RoleServiceImpl implements RoleService {
                 entity.getName(),
                 entity.getName()
         );
-    }
 
+        log.info(
+                "Role soft deleted successfully. Id={}",
+                entity.getId()
+        );
+    }
     // =====================================================
     // RESTORE
     // =====================================================
 
     @Override
+    @CacheEvict(
+            value = {
+                    "roles",
+                    "activeRoles",
+                    "deletedRoles"
+            },
+            allEntries = true
+    )
     public void restore(Long id) {
+
+        log.info("Restoring role id={}", id);
 
         Role entity = roleRepository
                 .findByIdAndDeletedAtIsNotNull(id)
@@ -153,6 +217,8 @@ public class RoleServiceImpl implements RoleService {
                 entity.getName(),
                 entity.getName()
         );
+
+        log.info("Role restored successfully. Id={}", entity.getId());
     }
 
     // =====================================================
@@ -160,7 +226,17 @@ public class RoleServiceImpl implements RoleService {
     // =====================================================
 
     @Override
+    @CacheEvict(
+            value = {
+                    "roles",
+                    "activeRoles",
+                    "deletedRoles"
+            },
+            allEntries = true
+    )
     public void hardDelete(Long id) {
+
+        log.warn("Hard deleting role id={}", id);
 
         Role entity = roleRepository.findById(id)
                 .orElseThrow(() ->
@@ -175,6 +251,8 @@ public class RoleServiceImpl implements RoleService {
         );
 
         roleRepository.delete(entity);
+
+        log.warn("Role permanently deleted. Id={}", entity.getId());
     }
 
     // =====================================================
@@ -182,7 +260,11 @@ public class RoleServiceImpl implements RoleService {
     // =====================================================
 
     @Override
+    @Transactional(readOnly = true)
+    @Cacheable(value = "roles", key = "#id")
     public RoleResponseDTO getById(Long id) {
+
+        log.debug("Fetching role by id={}", id);
 
         Role entity = roleRepository
                 .findByIdAndDeletedAtIsNull(id)
@@ -197,7 +279,11 @@ public class RoleServiceImpl implements RoleService {
     // =====================================================
 
     @Override
+    @Transactional(readOnly = true)
+    @Cacheable("roles")
     public List<RoleResponseDTO> getAll() {
+
+        log.debug("Fetching all roles");
 
         return roleRepository.findAllByDeletedAtIsNull()
                 .stream()
@@ -205,8 +291,16 @@ public class RoleServiceImpl implements RoleService {
                 .toList();
     }
 
+    // =====================================================
+    // GET DELETED
+    // =====================================================
+
     @Override
+    @Transactional(readOnly = true)
+    @Cacheable("deletedRoles")
     public List<RoleResponseDTO> getDeleted() {
+
+        log.debug("Fetching deleted roles");
 
         return roleRepository.findByDeletedAtIsNotNull()
                 .stream()
@@ -215,11 +309,15 @@ public class RoleServiceImpl implements RoleService {
     }
 
     // =====================================================
-    // ACTIVE / INACTIVE
+    // GET ACTIVE
     // =====================================================
 
     @Override
+    @Transactional(readOnly = true)
+    @Cacheable("activeRoles")
     public List<RoleResponseDTO> getActive() {
+
+        log.debug("Fetching active roles");
 
         return roleRepository.findByIsActiveTrueAndDeletedAtIsNull()
                 .stream()
@@ -227,8 +325,15 @@ public class RoleServiceImpl implements RoleService {
                 .toList();
     }
 
+    // =====================================================
+    // GET INACTIVE
+    // =====================================================
+
     @Override
+    @Transactional(readOnly = true)
     public List<RoleResponseDTO> getInactive() {
+
+        log.debug("Fetching inactive roles");
 
         return roleRepository.findByIsActiveFalseAndDeletedAtIsNull()
                 .stream()
@@ -241,7 +346,10 @@ public class RoleServiceImpl implements RoleService {
     // =====================================================
 
     @Override
+    @Transactional(readOnly = true)
     public List<RoleResponseDTO> search(String keyword) {
+
+        log.debug("Searching roles using keyword={}", keyword);
 
         return roleRepository
                 .findByNameContainingIgnoreCaseAndDeletedAtIsNull(keyword)
@@ -249,17 +357,22 @@ public class RoleServiceImpl implements RoleService {
                 .map(this::mapToResponse)
                 .toList();
     }
-
     // =====================================================
     // JWT / SPRING SECURITY
     // =====================================================
 
     @Override
+    @Transactional(readOnly = true)
+    @Cacheable(value = "roleByName", key = "#name")
     public Role getRoleEntityByName(String name) {
+
+        log.debug("Fetching role by name={}", name);
 
         return roleRepository.findByName(name)
                 .orElseThrow(() ->
-                        new ResourceNotFoundException("Role not found: " + name));
+                        new ResourceNotFoundException(
+                                "Role not found: " + name
+                        ));
     }
 
     // =====================================================
@@ -278,4 +391,5 @@ public class RoleServiceImpl implements RoleService {
                 .deletedBy(entity.getDeletedBy())
                 .build();
     }
+
 }

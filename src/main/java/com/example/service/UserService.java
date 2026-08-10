@@ -95,4 +95,5 @@ public interface UserService {
     void saveVerificationToken(Long userId, String token);
 
     void changePassword(ChangePasswordRequestDTO request);
+    void activate(Long id);
 }

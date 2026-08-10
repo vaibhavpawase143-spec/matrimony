@@ -6,4 +6,6 @@ public interface AdminDashboardService {
 
     AdminDashboardDTO getDashboardOverview();
 
+    AdminDashboardDTO buildDashboard();
+
 }

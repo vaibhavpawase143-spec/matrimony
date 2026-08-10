@@ -1,10 +1,9 @@
 import StatusBadge from "./StatusBadge";
 import { formatDate } from "../../utils/dateUtils";
 export default function UserHeader({ user }) {
-  const image =
-    user?.imageUrl ||
-    "https://ui-avatars.com/api/?name=User&background=7c3aed&color=fff&size=200";
-
+ const image = user?.imageUrl
+   ? `https://localhost:9090${user.imageUrl}`
+   : "https://ui-avatars.com/api/?name=User&background=7c3aed&color=fff&size=200";
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
