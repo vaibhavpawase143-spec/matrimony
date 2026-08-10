@@ -20,6 +20,13 @@ import java.util.Set;
         uniqueConstraints = {
                 @UniqueConstraint(columnNames = "email"),
                 @UniqueConstraint(columnNames = "phone")
+        },
+        indexes = {
+                @Index(name = "idx_user_email", columnList = "email"),
+                @Index(name = "idx_user_created_at", columnList = "created_at"),
+                @Index(name = "idx_user_active_deleted", columnList = "is_active, is_deleted"),
+                @Index(name = "idx_user_blocked_deleted", columnList = "is_blocked, is_deleted"),
+                @Index(name = "idx_user_names", columnList = "first_name, last_name")
         }
 )
 public class User extends Auditable {

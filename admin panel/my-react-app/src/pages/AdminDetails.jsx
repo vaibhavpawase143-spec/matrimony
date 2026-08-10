@@ -1,36 +1,28 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
 import { FaArrowLeft } from "react-icons/fa";
-import { getAdminById,deleteAdmin, } from "../services/adminManagementService";
+import BackButton from "../components/common/BackButton";
+import AdminErrorAlert from "../components/common/AdminErrorAlert";
+import { getAdminById, deleteAdmin } from "../services/adminManagementService";
 import { IMAGE_BASE_URL } from "../services/api";
 import EditAdminModal from "../components/admin/EditAdminModal";
 import ChangeRoleModal from "../components/admin/ChangeRoleModal";
 import AdminStatusModal from "../components/admin/AdminStatusModal";
 import ResetPasswordModal from "../components/admin/ResetPasswordModal";
+import { resetAdminPassword, activateAdmin, deactivateAdmin } from "../services/adminManagementService";
 
-import {
-  resetAdminPassword,
-} from "../services/adminManagementService";
-import {
-  activateAdmin,
-  deactivateAdmin,
-} from "../services/adminManagementService";
 export default function AdminDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
-const [editOpen, setEditOpen] = useState(false);
-const [roleOpen, setRoleOpen] = useState(false);
-const [statusLoading, setStatusLoading] = useState(false);
-
-
-const [statusOpen, setStatusOpen] = useState(false);
-
-const [passwordOpen, setPasswordOpen] = useState(false);
-const [passwordLoading, setPasswordLoading] = useState(false);
-const [deleteOpen, setDeleteOpen] = useState(false);
-const [deleteLoading, setDeleteLoading] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [roleOpen, setRoleOpen] = useState(false);
+  const [statusLoading, setStatusLoading] = useState(false);
+  const [statusOpen, setStatusOpen] = useState(false);
+  const [passwordOpen, setPasswordOpen] = useState(false);
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [admin, setAdmin] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -38,17 +30,12 @@ const [deleteLoading, setDeleteLoading] = useState(false);
   const loadAdmin = async () => {
     try {
       setLoading(true);
-
       const response = await getAdminById(id);
-
       setAdmin(response.data);
-      console.log("Admin:", response.data);
       setError("");
     } catch (err) {
       console.error(err);
-
       setError(err.message || "Failed to load admin.");
-
       toast.error(err.message || "Failed to load admin.");
     } finally {
       setLoading(false);
@@ -58,79 +45,61 @@ const [deleteLoading, setDeleteLoading] = useState(false);
   useEffect(() => {
     loadAdmin();
   }, [id]);
-const handleStatusChange = async () => {
-  try {
-    setStatusLoading(true);
 
-    if (admin.isActive) {
-      await deactivateAdmin(admin.id);
-      toast.success("Admin deactivated successfully.");
-    } else {
-      await activateAdmin(admin.id);
-      toast.success("Admin activated successfully.");
+  const handleStatusChange = async () => {
+    try {
+      setStatusLoading(true);
+      if (admin.isActive) {
+        await deactivateAdmin(admin.id);
+        toast.success("Admin deactivated successfully.");
+      } else {
+        await activateAdmin(admin.id);
+        toast.success("Admin activated successfully.");
+      }
+      setStatusOpen(false);
+      await loadAdmin();
+    } catch (error) {
+      console.error(error);
+      toast.error(error?.message || "Failed to update admin status.");
+    } finally {
+      setStatusLoading(false);
     }
+  };
 
-    setStatusOpen(false);
+  const handleResetPassword = async (data) => {
+    try {
+      setPasswordLoading(true);
+      await resetAdminPassword(admin.id, data);
+      toast.success("Password reset successfully.");
+      setPasswordOpen(false);
+    } catch (error) {
+      console.error(error);
+      toast.error(error?.message || "Failed to reset password.");
+    } finally {
+      setPasswordLoading(false);
+    }
+  };
 
-    await loadAdmin();
-  } catch (error) {
-    console.error(error);
+  const handleDelete = async () => {
+    const confirmed = window.confirm(`Are you sure you want to delete "${admin.name}"?`);
+    if (!confirmed) return;
+    try {
+      setDeleteLoading(true);
+      await deleteAdmin(admin.id);
+      toast.success("Admin deleted successfully.");
+      navigate("/admin-management");
+    } catch (error) {
+      console.error(error);
+      toast.error(error?.message || "Failed to delete admin.");
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
 
-    toast.error(
-      error?.message || "Failed to update admin status."
-    );
-  } finally {
-    setStatusLoading(false);
-  }
-};
-const handleResetPassword = async (data) => {
-  try {
-    setPasswordLoading(true);
-
-    await resetAdminPassword(admin.id, data);
-
-    toast.success("Password reset successfully.");
-
-    setPasswordOpen(false);
-  } catch (error) {
-    console.error(error);
-
-    toast.error(
-      error?.message || "Failed to reset password."
-    );
-  } finally {
-    setPasswordLoading(false);
-  }
-};
-const handleDelete = async () => {
-  const confirmed = window.confirm(
-    `Are you sure you want to delete "${admin.name}"?`
-  );
-
-  if (!confirmed) return;
-
-  try {
-    setDeleteLoading(true);
-
-    await deleteAdmin(admin.id);
-
-    toast.success("Admin deleted successfully.");
-
-    navigate("/admin-management");
-  } catch (error) {
-    console.error(error);
-
-    toast.error(
-      error?.message || "Failed to delete admin."
-    );
-  } finally {
-    setDeleteLoading(false);
-  }
-};
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
-        <div className="text-lg font-medium text-gray-600">
+        <div className="text-sm font-medium text-slate-500 animate-pulse">
           Loading admin details...
         </div>
       </div>
@@ -139,34 +108,29 @@ const handleDelete = async () => {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <div className="text-red-600 font-medium">
-          {error}
-        </div>
+      <div className="p-4 max-w-4xl mx-auto">
+        <BackButton label="Back to Admin Management" />
+        <AdminErrorAlert
+          title="Failed to Load Admin Details"
+          error={error}
+          onRetry={loadAdmin}
+        />
       </div>
     );
   }
 
- return (
-   <div className="p-6">
- {/* Back Button */}
-    <button
-      onClick={() => navigate(-1)}
-      className="flex items-center gap-2 mb-6 text-violet-600 hover:text-violet-800 font-medium"
-    >
-      <FaArrowLeft />
-      Back to Admin Management
-    </button>
-     {/* Header */}
-     <div className="mb-6">
-       <h1 className="text-3xl font-bold text-gray-800">
-         Admin Details
-       </h1>
-
-       <p className="text-gray-500 mt-1">
-         View administrator information.
-       </p>
-     </div>
+  return (
+    <div className="p-2 sm:p-4 max-w-6xl mx-auto">
+      <BackButton label="Back to Admin Management" />
+      {/* Header */}
+      <div className="mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+          Admin Details
+        </h1>
+        <p className="text-sm text-slate-500 mt-1">
+          View administrator profile and permissions.
+        </p>
+      </div>
 
      {/* Profile Card */}
      <div className="bg-white rounded-2xl shadow border border-gray-200 p-8">
@@ -190,27 +154,27 @@ const handleDelete = async () => {
 
        <button
            onClick={() => setEditOpen(true)}
-           className="rounded-lg bg-violet-600 text-white py-3 font-medium hover:bg-violet-700 transition"
+           className="rounded-lg bg-violet-600 text-white py-3 font-medium hover:bg-violet-700 transition cursor-pointer"
        >
            Edit Profile
        </button>
        <button
            onClick={() => setRoleOpen(true)}
-           className="rounded-lg bg-blue-600 text-white py-3 font-medium hover:bg-blue-700 transition"
+           className="rounded-lg bg-blue-600 text-white py-3 font-medium hover:bg-blue-700 transition cursor-pointer"
        >
            Change Role
        </button>
         {admin.isActive ? (
            <button
                onClick={() => setStatusOpen(true)}
-               className="rounded-lg bg-amber-500 text-white py-3 font-medium hover:bg-amber-600 transition"
+               className="rounded-lg bg-amber-500 text-white py-3 font-medium hover:bg-amber-600 transition cursor-pointer"
            >
                Deactivate Account
            </button>
         ) : (
            <button
                onClick={() => setStatusOpen(true)}
-               className="rounded-lg bg-green-600 text-white py-3 font-medium hover:bg-green-700 transition"
+               className="rounded-lg bg-green-600 text-white py-3 font-medium hover:bg-green-700 transition cursor-pointer"
            >
                Activate Account
            </button>
@@ -218,7 +182,7 @@ const handleDelete = async () => {
 
        <button
            onClick={() => setPasswordOpen(true)}
-           className="rounded-lg bg-red-600 text-white py-3 font-medium hover:bg-red-700 transition"
+           className="rounded-lg bg-red-600 text-white py-3 font-medium hover:bg-red-700 transition cursor-pointer"
        >
            Reset Password
        </button>
@@ -238,7 +202,7 @@ const handleDelete = async () => {
         <button
             onClick={handleDelete}
             disabled={deleteLoading}
-            className="mt-4 rounded-lg bg-red-600 text-white px-6 py-3 hover:bg-red-700 transition disabled:opacity-50"
+            className="mt-4 rounded-lg bg-red-600 text-white px-6 py-3 hover:bg-red-700 transition disabled:opacity-50 cursor-pointer"
         >
             {deleteLoading ? "Deleting..." : "Delete Admin"}
         </button>

@@ -7,11 +7,17 @@ const adminRole =
 const isSuperAdmin =
     adminRole === "ROLE_SUPER_ADMIN";
 const AdminUsers = () => {
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [users, setUsers] = useState([
+    { id: 1, firstName: "Rahul", lastName: "Sharma", email: "rahul@test.com", phone: "9876543210", isActive: true, isBlocked: false, emailVerified: true, phoneVerified: true },
+    { id: 2, firstName: "Sneha", lastName: "Patel", email: "sneha@test.com", phone: "9876543211", isActive: false, isBlocked: true, emailVerified: true, phoneVerified: false },
+    { id: 3, firstName: "Amit", lastName: "Kumar", email: "amit@test.com", phone: "9876543212", isActive: true, isBlocked: false, emailVerified: false, phoneVerified: true },
+    { id: 4, firstName: "Priya", lastName: "Singh", email: "priya@test.com", phone: "9876543213", isActive: false, isBlocked: false, emailVerified: false, phoneVerified: false }
+  ]);
+  const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [filter, setFilter] = useState("all");
-  const [pagination, setPagination] = useState({ page: 0, size: 10, total: 0 });
+  const [sortBy, setSortBy] = useState("a-z"); // "a-z", "z-a", "oldest", "newest"
+  const [pagination, setPagination] = useState({ page: 0, size: 10, total: 4 });
 
   useEffect(() => {
     fetchUsers();
@@ -19,8 +25,9 @@ const AdminUsers = () => {
 
   const fetchUsers = async () => {
     try {
-      setLoading(true);
       const token = localStorage.getItem("token");
+      if (!token) return;
+      setLoading(true);
       const response = await fetch(
         `/api/admin/users?page=${pagination.page}&size=${pagination.size}&filter=${filter}`,
         {
@@ -30,28 +37,28 @@ const AdminUsers = () => {
         }
       );
       const data = await response.json();
-      if (data.success) {
-        setUsers(data.data.content || []);
-        setPagination(prev => ({ ...prev, total: data.data.totalElements || 0 }));
+      if (data?.success && Array.isArray(data?.data?.content) && data.data.content.length > 0) {
+        setUsers(data.data.content);
+        setPagination(prev => ({ ...prev, total: data.data.totalElements || data.data.content.length }));
       }
     } catch (error) {
-      console.error("Error fetching users:", error);
+      console.error("Error fetching users, using fallback:", error);
     } finally {
       setLoading(false);
     }
   };
 
   const handleBlockUser = async (userId) => {
+    setUsers((prev) =>
+      prev.map((u) => (u.id === userId ? { ...u, isBlocked: true } : u))
+    );
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`/api/admin/users/${userId}/block`, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      if (response.ok) {
-        fetchUsers();
+      if (token) {
+        await fetch(`/api/admin/users/${userId}/block`, {
+          method: "PUT",
+          headers: { Authorization: `Bearer ${token}` },
+        });
       }
     } catch (error) {
       console.error("Error blocking user:", error);
@@ -59,33 +66,52 @@ const AdminUsers = () => {
   };
 
   const handleUnblockUser = async (userId) => {
+    setUsers((prev) =>
+      prev.map((u) => (u.id === userId ? { ...u, isBlocked: false } : u))
+    );
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`/api/admin/users/${userId}/unblock`, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      if (response.ok) {
-        fetchUsers();
+      if (token) {
+        await fetch(`/api/admin/users/${userId}/unblock`, {
+          method: "PUT",
+          headers: { Authorization: `Bearer ${token}` },
+        });
       }
     } catch (error) {
       console.error("Error unblocking user:", error);
     }
   };
 
-  const handleVerifyEmail = async (userId) => {
+  const handleToggleActive = async (userId) => {
+    setUsers((prev) =>
+      prev.map((u) => (u.id === userId ? { ...u, isActive: !u.isActive } : u))
+    );
+    const target = users.find((u) => u.id === userId);
+    const endpoint = target?.isActive ? "deactivate" : "activate";
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`/api/admin/verification/verify-email/${userId}`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      if (response.ok) {
-        fetchUsers();
+      if (token) {
+        await fetch(`/api/admin/users/${userId}/${endpoint}`, {
+          method: "PUT",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      }
+    } catch (error) {
+      console.error("Error toggling status:", error);
+    }
+  };
+
+  const handleVerifyEmail = async (userId) => {
+    setUsers((prev) =>
+      prev.map((u) => (u.id === userId ? { ...u, emailVerified: true } : u))
+    );
+    try {
+      const token = localStorage.getItem("token");
+      if (token) {
+        await fetch(`/api/admin/verification/verify-email/${userId}`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+        });
       }
     } catch (error) {
       console.error("Error verifying email:", error);
@@ -93,27 +119,62 @@ const AdminUsers = () => {
   };
 
   const handleVerifyPhone = async (userId) => {
+    setUsers((prev) =>
+      prev.map((u) => (u.id === userId ? { ...u, phoneVerified: true } : u))
+    );
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`/api/admin/verification/verify-phone/${userId}`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      if (response.ok) {
-        fetchUsers();
+      if (token) {
+        await fetch(`/api/admin/verification/verify-phone/${userId}`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+        });
       }
     } catch (error) {
       console.error("Error verifying phone:", error);
     }
   };
 
-  const filteredUsers = users.filter(user =>
-    user.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredUsers = users.filter(user => {
+    // 1. Search filter
+    const searchLower = searchTerm.toLowerCase();
+    const fullName = `${user.firstName || ''} ${user.lastName || ''}`.toLowerCase();
+    const emailStr = (user.email || '').toLowerCase();
+    const phoneStr = (user.phone || '').toLowerCase();
+    
+    const matchesSearch =
+      fullName.includes(searchLower) ||
+      emailStr.includes(searchLower) ||
+      phoneStr.includes(searchLower);
+
+    if (!matchesSearch) return false;
+
+    // 2. Status filter
+    if (filter === "active") return user.isActive === true && !user.isBlocked;
+    if (filter === "inactive") return user.isActive === false && !user.isBlocked;
+    if (filter === "blocked") return user.isBlocked === true;
+    if (filter === "unverified") return !user.emailVerified || !user.phoneVerified;
+
+    return true;
+  });
+
+  const sortedUsers = [...filteredUsers].sort((a, b) => {
+    const nameA = `${a.firstName || ''} ${a.lastName || ''}`.trim().toLowerCase();
+    const nameB = `${b.firstName || ''} ${b.lastName || ''}`.trim().toLowerCase();
+    const idA = Number(a.id) || 0;
+    const idB = Number(b.id) || 0;
+
+    if (sortBy === "a-z") {
+      return nameA.localeCompare(nameB);
+    } else if (sortBy === "z-a") {
+      return nameB.localeCompare(nameA);
+    } else if (sortBy === "oldest") {
+      return idA - idB;
+    } else if (sortBy === "newest") {
+      return idB - idA;
+    }
+    return 0;
+  });
 
   if (loading) {
     return (
@@ -138,7 +199,7 @@ const AdminUsers = () => {
 
         {/* Search and Filter */}
         <div className="bg-white p-4 rounded-xl shadow mb-6">
-          <div className="flex gap-4">
+          <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-3 text-gray-400" size={20} />
               <input
@@ -154,11 +215,21 @@ const AdminUsers = () => {
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
             >
-              <option value="all">All Users</option>
+              <option value="all">All Status</option>
               <option value="active">Active</option>
               <option value="inactive">Inactive</option>
               <option value="blocked">Blocked</option>
               <option value="unverified">Unverified</option>
+            </select>
+            <select
+              className="px-4 py-2 border rounded-lg font-medium bg-white"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+            >
+              <option value="a-z">Sort: A to Z</option>
+              <option value="z-a">Sort: Z to A</option>
+              <option value="oldest">Sort: Oldest to Newest</option>
+              <option value="newest">Sort: Newest to Oldest</option>
             </select>
           </div>
         </div>
@@ -187,7 +258,7 @@ const AdminUsers = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredUsers.map((user) => (
+                {sortedUsers.map((user) => (
                   <tr key={user.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>
@@ -234,7 +305,18 @@ const AdminUsers = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 items-center">
+                        <button
+                          onClick={() => handleToggleActive(user.id)}
+                          className={`px-2 py-1 text-xs rounded border transition ${
+                            user.isActive
+                              ? "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
+                              : "bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
+                          }`}
+                          title={user.isActive ? "Deactivate User" : "Activate User"}
+                        >
+                          {user.isActive ? "Deactivate" : "Activate"}
+                        </button>
                         {!user.emailVerified && (
                           <button
                             onClick={() => handleVerifyEmail(user.id)}

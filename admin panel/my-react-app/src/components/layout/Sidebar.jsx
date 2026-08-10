@@ -161,16 +161,19 @@ export default function Sidebar() {
     return `
       flex
       items-center
-      gap-4
-      px-5
+      gap-3.5
+      px-4
       py-3
       rounded-xl
+      text-sm
+      font-medium
       transition-all
-      duration-300
+      duration-200
+      cursor-pointer
       ${
         isActive
-          ? "bg-white text-violet-900 font-semibold shadow-lg"
-          : "text-white hover:bg-violet-700 hover:translate-x-2"
+          ? "bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-md shadow-violet-900/30 font-semibold"
+          : "text-slate-300 hover:bg-slate-800/80 hover:text-white hover:translate-x-1"
       }
     `;
   };
@@ -185,34 +188,32 @@ export default function Sidebar() {
   };
 
   return (
-      <aside className="w-72 h-full bg-gradient-to-b from-violet-950 via-violet-900 to-purple-800 text-white flex flex-col shadow-2xl">
+      <aside className="w-72 h-full bg-slate-900 border-r border-slate-800/80 text-slate-100 flex flex-col shadow-xl select-none">
 
         {/* ==========================================
             LOGO
         ========================================== */}
 
-        <div className="p-4 sm:p-6 border-b border-violet-700">
+        <div className="p-5 border-b border-slate-800/80 flex items-center justify-between">
 
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-wide">
-            💜 Gathbandhan
-          </h1>
+          <div>
+            <h1 className="text-2xl font-black tracking-tight bg-gradient-to-r from-violet-400 via-purple-300 to-indigo-300 bg-clip-text text-transparent">
+              💜 Gathbandhan
+            </h1>
 
-          <p className="text-xs sm:text-sm text-violet-200 mt-1">
-            Matrimony Admin Panel
-          </p>
-
-          <div className="mt-3">
-
-            <button
-              type="button"
-              onClick={() => navigate(-1)}
-              className="flex items-center gap-2 text-xs sm:text-sm bg-purple-200 text-purple-900 hover:bg-purple-300 px-3 py-2 rounded-md transition"
-            >
-              <FaArrowLeft />
-              Back
-            </button>
-
+            <p className="text-xs text-slate-400 font-medium mt-0.5 tracking-wider uppercase">
+              Admin Portal
+            </p>
           </div>
+
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            title="Go Back"
+            className="flex items-center justify-center w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-all cursor-pointer border border-slate-700/60"
+          >
+            <FaArrowLeft className="text-xs" />
+          </button>
 
         </div>
 
@@ -220,7 +221,7 @@ export default function Sidebar() {
             NAVIGATION
         ========================================== */}
 
-        <nav className="flex-1 overflow-y-auto p-4 space-y-2">
+        <nav className="flex-1 overflow-y-auto p-4 space-y-1.5 scrollbar-thin scrollbar-thumb-slate-800">
 
           {/* Main Menu */}
 
@@ -234,7 +235,7 @@ export default function Sidebar() {
                 className={getMenuClass}
               >
 
-                <span className="text-lg">
+                <span className="text-base">
                   {menu.icon}
                 </span>
 
@@ -250,7 +251,7 @@ export default function Sidebar() {
 
           {visibleSupportMenus.length > 0 && (
 
-            <div>
+            <div className="pt-2">
 
               <button
                 type="button"
@@ -260,24 +261,27 @@ export default function Sidebar() {
                   flex
                   items-center
                   justify-between
-                  gap-4
-                  px-5
+                  gap-3.5
+                  px-4
                   py-3
                   rounded-xl
+                  text-sm
+                  font-medium
                   transition-all
-                  duration-300
+                  duration-200
+                  cursor-pointer
 
                   ${
                     isSupportRoute
-                      ? "bg-white text-violet-900 font-semibold shadow-lg"
-                      : "text-white hover:bg-violet-700"
+                      ? "bg-slate-800 text-violet-400 font-semibold border border-slate-700/60"
+                      : "text-slate-300 hover:bg-slate-800/80 hover:text-white"
                   }
                 `}
               >
 
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3.5">
 
-                  <span className="text-lg">
+                  <span className="text-base">
                     <FaHeadset />
                   </span>
 
@@ -287,7 +291,7 @@ export default function Sidebar() {
 
                 </div>
 
-                <span>
+                <span className="text-xs text-slate-400">
 
                   {supportOpen
                     ? <FaChevronDown />
@@ -306,13 +310,13 @@ export default function Sidebar() {
 
                   ${
                     supportOpen
-                      ? "max-h-72 opacity-100 mt-2"
+                      ? "max-h-72 opacity-100 mt-1"
                       : "max-h-0 opacity-0"
                   }
                 `}
               >
 
-                <div className="ml-5 pl-4 border-l border-violet-600 space-y-1">
+                <div className="ml-5 pl-3 border-l border-slate-800 space-y-1 my-1">
 
                   {visibleSupportMenus.map(menu => (
 
@@ -323,21 +327,23 @@ export default function Sidebar() {
                         flex
                         items-center
                         gap-3
-                        px-4
-                        py-2.5
+                        px-3.5
+                        py-2
                         rounded-lg
-                        text-sm
+                        text-xs
+                        font-medium
                         transition-all
+                        cursor-pointer
 
                         ${
                           isActive
-                            ? "bg-violet-200 text-violet-950 font-semibold"
-                            : "text-violet-100 hover:bg-violet-700 hover:text-white"
+                            ? "bg-violet-600/20 text-violet-300 font-semibold border border-violet-500/30"
+                            : "text-slate-400 hover:bg-slate-800/60 hover:text-slate-200"
                         }
                       `}
                     >
 
-                      <span>
+                      <span className="text-sm">
                         {menu.icon}
                       </span>
 
@@ -369,7 +375,7 @@ export default function Sidebar() {
                 className={getMenuClass}
               >
 
-                <span className="text-lg">
+                <span className="text-base">
                   {menu.icon}
                 </span>
 
@@ -386,34 +392,40 @@ export default function Sidebar() {
                   LOGOUT
               ========================================== */}
 
-              <div className="p-4 border-t border-violet-700">
+        <div className="p-4 border-t border-slate-800/80 bg-slate-900/50">
 
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  className="
-                    w-full
-                    bg-violet-700
-                    text-white
-                    py-3
-                    rounded-xl
-                    font-semibold
-                    hover:bg-violet-600
-                    transition-all
-                    duration-300
-                    shadow-lg
-                    flex
-                    justify-center
-                    items-center
-                    gap-2
-                  "
-                >
-                  <FaSignOutAlt />
-                  Logout
-                </button>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="
+              w-full
+              bg-slate-800/80
+              hover:bg-rose-600
+              text-slate-300
+              hover:text-white
+              border
+              border-slate-700/60
+              hover:border-rose-600
+              py-2.5
+              rounded-xl
+              text-sm
+              font-semibold
+              transition-all
+              duration-200
+              shadow-sm
+              flex
+              justify-center
+              items-center
+              gap-2.5
+              cursor-pointer
+            "
+          >
+            <FaSignOutAlt className="text-sm" />
+            Logout
+          </button>
 
-              </div>
+        </div>
 
-            </aside>
+      </aside>
           );
         }

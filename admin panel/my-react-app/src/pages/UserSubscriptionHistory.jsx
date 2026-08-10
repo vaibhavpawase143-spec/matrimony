@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { FaArrowLeft } from "react-icons/fa";
+import BackButton from "../components/common/BackButton";
 import { toast } from "sonner";
 
 import { getUserSubscriptionHistory } from "../services/subscriptionService";
@@ -19,14 +19,7 @@ export default function UserSubscriptionHistory() {
   const loadHistory = async () => {
     try {
       setLoading(true);
-
       const data = await getUserSubscriptionHistory(userId);
-
-console.log("API Response:", data);
-console.log("Is Array:", Array.isArray(data));
-console.log("Length:", data?.length);
-console.log("History Before Set:", history);
-
       setHistory(data || []);
     } catch (err) {
       console.error(err);
@@ -38,42 +31,27 @@ console.log("History Before Set:", history);
 
   if (loading) {
     return (
-      <div className="p-6 text-center text-gray-500">
+      <div className="p-6 text-center text-sm font-medium text-slate-500 animate-pulse">
         Loading subscription history...
       </div>
     );
   }
-console.log("History State:", history);
-console.log("History Is Array:", Array.isArray(history));
-console.log("History Length:", history?.length);
+
   const user = history.length ? history[0] : null;
-    return (
-      <div className="p-6 space-y-6">
 
-        {/* Header */}
-        <div className="flex items-center justify-between">
+  return (
+    <div className="p-2 sm:p-4 max-w-7xl mx-auto space-y-6">
+      <BackButton label="Back" />
 
-          <div>
-
-            <button
-              onClick={() => navigate(-1)}
-              className="flex items-center gap-2 text-violet-600 hover:text-violet-800 mb-2"
-            >
-              <FaArrowLeft />
-              Back
-            </button>
-
-            <h1 className="text-3xl font-bold">
-              Subscription History
-            </h1>
-
-            <p className="text-gray-500">
-              View all subscriptions purchased by this user.
-            </p>
-
-          </div>
-
-        </div>
+      {/* Header */}
+      <div className="mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+          Subscription History
+        </h1>
+        <p className="text-sm text-slate-500 mt-1">
+          View all subscriptions purchased by this user.
+        </p>
+      </div>
 
         {!user ? (
 

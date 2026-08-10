@@ -9,7 +9,10 @@ import java.time.LocalDateTime;
         name = "payments",
         uniqueConstraints = @UniqueConstraint(columnNames = {"transaction_id"}),
         indexes = {
-                @Index(name = "idx_payment_user", columnList = "user_id")
+                @Index(name = "idx_payment_user", columnList = "user_id"),
+                @Index(name = "idx_payment_status", columnList = "status"),
+                @Index(name = "idx_payment_created_at", columnList = "created_at"),
+                @Index(name = "idx_payment_status_created", columnList = "status, created_at")
         }
 )
 public class Payment {

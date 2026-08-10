@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import BackButton from "../components/common/BackButton";
 
 import {
   FaArrowLeft,
@@ -27,15 +28,10 @@ export default function SupportTicketDetails() {
   // ==========================================
 
   const [ticket, setTicket] = useState(null);
-
   const [loading, setLoading] = useState(true);
-
   const [savingStatus, setSavingStatus] = useState(false);
-
   const [sendingReply, setSendingReply] = useState(false);
-
   const [status, setStatus] = useState("");
-
   const [reply, setReply] = useState("");
 
   // ==========================================
@@ -43,40 +39,25 @@ export default function SupportTicketDetails() {
   // ==========================================
 
   const loadTicket = async () => {
-
     try {
-
       setLoading(true);
-
       const data = await getSupportTicket(ticketNumber);
-
       setTicket(data);
-
       setStatus(data.status);
-
       setReply(data.adminReply || "");
-
     } catch (error) {
-
       console.error(error);
-
       toast.error(
         error.message ||
         "Failed to load support ticket."
       );
-
     } finally {
-
       setLoading(false);
-
     }
-
   };
 
   useEffect(() => {
-
     loadTicket();
-
   }, [ticketNumber]);
 
   // ==========================================
@@ -84,35 +65,24 @@ export default function SupportTicketDetails() {
   // ==========================================
 
   const handleStatusUpdate = async () => {
-
     try {
-
       setSavingStatus(true);
-
       await updateSupportStatus(
         ticketNumber,
         status
       );
-
       toast.success(
         "Status updated successfully."
       );
-
       loadTicket();
-
     } catch (error) {
-
       toast.error(
         error.message ||
         "Failed to update status."
       );
-
     } finally {
-
       setSavingStatus(false);
-
     }
-
   };
 
   // ==========================================
@@ -120,133 +90,64 @@ export default function SupportTicketDetails() {
   // ==========================================
 
   const handleReply = async () => {
-
     if (!reply.trim()) {
-
-      toast.error(
-        "Reply cannot be empty."
-      );
-
+      toast.error("Reply cannot be empty.");
       return;
-
     }
-
     try {
-
       setSendingReply(true);
-
       await replySupportTicket(
         ticketNumber,
         reply
       );
-
-      toast.success(
-        "Reply sent successfully."
-      );
-
+      toast.success("Reply sent successfully.");
       loadTicket();
-
     } catch (error) {
-
       toast.error(
         error.message ||
         "Failed to send reply."
       );
-
     } finally {
-
       setSendingReply(false);
-
     }
-
   };
 
-  // ==========================================
-  // LOADING
-  // ==========================================
-
   if (loading) {
-
     return (
-
       <div className="h-[70vh] flex justify-center items-center">
-
         <div className="text-center">
-
-          <FaSpinner className="animate-spin text-5xl text-violet-600 mx-auto mb-4" />
-
-          <p className="text-gray-500">
-
+          <FaSpinner className="animate-spin text-4xl text-violet-600 mx-auto mb-4" />
+          <p className="text-slate-500 text-sm font-medium">
             Loading Ticket...
-
           </p>
-
         </div>
-
       </div>
-
     );
-
   }
 
-  // ==========================================
-  // UI
-  // ==========================================
-
   return (
-
-    <div className="p-6">
+    <div className="p-2 sm:p-4 max-w-7xl mx-auto space-y-6">
+      <BackButton label="Back to Support Tickets" to="/support-tickets" />
 
       {/* Header */}
 
-      <div className="flex justify-between items-center mb-6">
-
-        <div className="flex items-center gap-3">
-
-          <button
-
-            onClick={() => navigate(-1)}
-
-            className="bg-gray-100 hover:bg-gray-200 p-3 rounded-lg"
-
-          >
-
-            <FaArrowLeft />
-
-          </button>
-
-          <div>
-
-            <h1 className="text-3xl font-bold">
-
-              Support Ticket
-
-            </h1>
-
-            <p className="text-gray-500">
-
-              {ticket.ticketNumber}
-
-            </p>
-
-          </div>
-
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+            Support Ticket Details
+          </h1>
+          <p className="text-sm text-slate-500 mt-1">
+            Ticket #{ticket.ticketNumber}
+          </p>
         </div>
 
         <button
-
           onClick={loadTicket}
-
-          className="bg-violet-600 hover:bg-violet-700 text-white px-5 py-2 rounded-lg flex items-center gap-2"
-
+          className="bg-violet-600 hover:bg-violet-700 text-white px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-2 transition-all cursor-pointer shadow-2xs"
         >
-
-          <FaSyncAlt />
-
+          <FaSyncAlt className="text-xs" />
           Refresh
-
         </button>
-
       </div>
 
       {/* Status Cards */}

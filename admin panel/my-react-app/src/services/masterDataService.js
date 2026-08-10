@@ -43,16 +43,23 @@ Caste: ["/admins/1/castes"],
   "Mother Tongue": ["/master/mother-tongues", "/mother-tongues"],
   Employment: ["/master/employed", "/employed"],
   "Family Type": ["/master/family-types", "/family-types"],
-  "Subscription Plans": ["/master/subscription-plans", "/admin/subscription-plans"],
   Gender: ["/genders", "/master/genders"],
 };
 
-/* ==========================================================
-   GENERIC MASTER DATA CRUD (For MasterData.jsx)
-   Retrieves ALL items (active AND inactive/deleted)
-========================================================== */
+const masterCache = new Map();
+
+export const clearMasterCache = (tabName) => {
+  if (tabName) {
+    masterCache.delete(tabName);
+  } else {
+    masterCache.clear();
+  }
+};
 
 export const getMasterItems = async (tabName) => {
+  if (masterCache.has(tabName)) {
+    return masterCache.get(tabName);
+  }
   const endpoints = TAB_ENDPOINTS[tabName] || [`/master/${tabName.toLowerCase().replace(/\s+/g, "-")}`];
   let allItems = [];
 
@@ -75,46 +82,35 @@ export const getMasterItems = async (tabName) => {
 
   // Also query deleted/inactive endpoint if available to merge soft-deleted items into admin view
   if (SUPPORTS_DELETED.includes(tabName)) {
-
     for (const endpoint of endpoints) {
-
       try {
-
         const deletedResponse = await apiClient(`${endpoint}/deleted`);
         const deletedData = extractData(deletedResponse);
 
         if (deletedData.length > 0) {
-
           const existingIds = new Set(allItems.map(i => i.id));
-
           deletedData.forEach(item => {
-
             if (!existingIds.has(item.id)) {
-
               allItems.push({
                 ...item,
                 isActive: false,
                 active: false,
                 status: "Inactive",
               });
-
             }
-
           });
-
         }
-
       } catch (e) {
         console.warn(`${endpoint}/deleted not supported`);
       }
-
     }
-
   }
+  masterCache.set(tabName, allItems);
   return allItems;
 };
 
 export const createMasterItem = async (tabName, itemData) => {
+  clearMasterCache(tabName);
   const endpoints = TAB_ENDPOINTS[tabName] || [`/master/${tabName.toLowerCase().replace(/\s+/g, "-")}`];
   const endpoint = endpoints[0];
   const response = await apiClient(endpoint, {
@@ -125,6 +121,7 @@ export const createMasterItem = async (tabName, itemData) => {
 };
 
 export const updateMasterItem = async (tabName, id, itemData) => {
+  clearMasterCache(tabName);
   const endpoints = TAB_ENDPOINTS[tabName] || [`/master/${tabName.toLowerCase().replace(/\s+/g, "-")}`];
   const endpoint = endpoints[0];
   const response = await apiClient(`${endpoint}/${id}`, {
@@ -135,6 +132,7 @@ export const updateMasterItem = async (tabName, id, itemData) => {
 };
 
 export const deleteMasterItem = async (tabName, id) => {
+  clearMasterCache(tabName);
   const endpoints = TAB_ENDPOINTS[tabName] || [`/master/${tabName.toLowerCase().replace(/\s+/g, "-")}`];
   const endpoint = endpoints[0];
   return apiClient(`${endpoint}/${id}`, {
@@ -143,6 +141,7 @@ export const deleteMasterItem = async (tabName, id) => {
 };
 
 export const restoreMasterItem = async (tabName, id) => {
+  clearMasterCache(tabName);
   const endpoints = TAB_ENDPOINTS[tabName] || [`/master/${tabName.toLowerCase().replace(/\s+/g, "-")}`];
   const endpoint = endpoints[0];
   try {

@@ -37,7 +37,17 @@ export default function Navbar({ onMenuToggle, sidebarOpen }) {
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [profile, setProfile] = useState(null);
+  const [profile, setProfile] = useState(() => {
+    const cached = sessionStorage.getItem("admin_profile_cache");
+    if (cached) {
+      try {
+        return JSON.parse(cached);
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  });
   const [showChangePassword, setShowChangePassword] =
     useState(false);
 const [unreadCount, setUnreadCount] = useState(0);
@@ -126,7 +136,9 @@ const handleDelete = async (id) => {
    const loadProfile = async () => {
      try {
        const response = await getAdminProfile();
-       setProfile(response.data || response);
+       const data = response.data || response;
+       setProfile(data);
+       sessionStorage.setItem("admin_profile_cache", JSON.stringify(data));
 
        await loadUnreadCount();
      } catch (error) {
@@ -276,7 +288,7 @@ const loadUnreadCount = async () => {
 
   return (
     <>
-          <header className="sticky top-0 z-50 h-20 bg-purple-100 border-b border-purple-200 shadow-sm flex items-center justify-between px-4 md:px-8">
+          <header className="sticky top-0 z-30 h-18 bg-white/80 backdrop-blur-md border-b border-slate-200/80 shadow-2xs flex items-center justify-between px-6 md:px-8">
 
             {/* ==========================
                 Left Section
@@ -287,7 +299,7 @@ const loadUnreadCount = async () => {
               <button
                 onClick={onMenuToggle}
                 aria-expanded={sidebarOpen}
-                className="md:hidden text-xl text-violet-900"
+                className="md:hidden text-xl text-slate-700 hover:text-slate-900 transition-colors cursor-pointer"
               >
                 <FaBars />
               </button>

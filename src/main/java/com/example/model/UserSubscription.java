@@ -19,6 +19,10 @@ import java.time.LocalDateTime;
                 @Index(
                         name = "idx_user_subscription_user",
                         columnList = "user_id"
+                ),
+                @Index(
+                        name = "idx_user_sub_user_active",
+                        columnList = "user_id, is_active"
                 )
         }
 )

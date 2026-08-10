@@ -30,7 +30,7 @@ public class AdminNotificationController {
 
         return ApiResponse.<String>builder()
                 .success(true)
-                .message("Notification sent successfully.")
+                .message("Notification job enqueued successfully. Dispatching in background.")
                 .build();
     }
 
@@ -47,7 +47,7 @@ public class AdminNotificationController {
 
         return ApiResponse.<String>builder()
                 .success(true)
-                .message("Broadcast notification sent successfully.")
+                .message("Broadcast notification job enqueued successfully. Processing in background.")
                 .build();
     }
 

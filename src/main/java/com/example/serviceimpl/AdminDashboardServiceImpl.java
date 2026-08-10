@@ -39,7 +39,6 @@ public class AdminDashboardServiceImpl
     // =====================================================
 
 
-    @Cacheable(value = "admin-dashboard", unless = "#result == null")
     public AdminDashboardDTO buildDashboard() {
 
         long start = System.currentTimeMillis();
@@ -111,8 +110,32 @@ public class AdminDashboardServiceImpl
         CompletableFuture<Long> previousMonthUsers =
                 dashboardAsyncService.previousMonthUsers();
 
+        CompletableFuture<java.util.List<Object[]>> monthlyUserRegistrations =
+                dashboardAsyncService.monthlyUserRegistrations();
+
+        CompletableFuture<java.util.List<Object[]>> monthlyRevenue =
+                dashboardAsyncService.monthlyRevenue();
+
+        CompletableFuture<java.util.List<Object[]>> monthlyReports =
+                dashboardAsyncService.monthlyReports();
+
+        CompletableFuture<java.util.List<Object[]>> paymentMethodDistribution =
+                dashboardAsyncService.paymentMethodDistribution();
+
+        CompletableFuture<java.util.List<Object[]>> reportStatusDistribution =
+                dashboardAsyncService.reportStatusDistribution();
+
+        CompletableFuture<java.util.List<Object[]>> topPaymentPlans =
+                dashboardAsyncService.topPaymentPlans();
+
+        CompletableFuture<java.util.List<Object[]>> topCities =
+                dashboardAsyncService.topCities();
+
+        CompletableFuture<java.util.List<Object[]>> topReligions =
+                dashboardAsyncService.topReligions();
+
         // =====================================================
-        // WAIT
+        // WAIT FOR ALL 34 ASYNC TASKS PARALLEL
         // =====================================================
 
         CompletableFuture.allOf(
@@ -142,67 +165,28 @@ public class AdminDashboardServiceImpl
                 currentMonthSubscriptions,
                 previousMonthSubscriptions,
                 currentMonthUsers,
-                previousMonthUsers
+                previousMonthUsers,
+                monthlyUserRegistrations,
+                monthlyRevenue,
+                monthlyReports,
+                paymentMethodDistribution,
+                reportStatusDistribution,
+                topPaymentPlans,
+                topCities,
+                topReligions
         ).join();
 
-        log.info("Async tasks completed in {} ms",
+        log.info("All 34 Async dashboard tasks completed in {} ms",
                 System.currentTimeMillis() - start);
 
-        // =====================================================
-        // CHARTS
-        // =====================================================
-
-        long t = System.currentTimeMillis();
-        var registrationTrend =
-                toLongMap(userRepository.getMonthlyUserRegistrations());
-        log.info("Monthly registrations : {} ms",
-                System.currentTimeMillis() - t);
-
-        t = System.currentTimeMillis();
-        var revenueTrend =
-                toBigDecimalMap(paymentRepository.getMonthlyRevenue());
-        log.info("Monthly revenue : {} ms",
-                System.currentTimeMillis() - t);
-
-        t = System.currentTimeMillis();
-        var reportsTrend =
-                toLongMap(reportRepository.getMonthlyReports());
-        log.info("Monthly reports : {} ms",
-                System.currentTimeMillis() - t);
-
-        t = System.currentTimeMillis();
-        var paymentDistribution =
-                toLongMap(paymentRepository.getPaymentMethodDistribution());
-        log.info("Payment distribution : {} ms",
-                System.currentTimeMillis() - t);
-
-        t = System.currentTimeMillis();
-        var reportDistribution =
-                toLongMap(reportRepository.getReportStatusDistribution());
-        log.info("Report distribution : {} ms",
-                System.currentTimeMillis() - t);
-
-        // =====================================================
-        // TOP ANALYTICS
-        // =====================================================
-
-        t = System.currentTimeMillis();
-        var topPlans =
-                toTopPaymentPlans(paymentRepository.getTopPaymentPlans());
-        log.info("Top payment plans : {} ms",
-                System.currentTimeMillis() - t);
-
-        t = System.currentTimeMillis();
-        var topCities =
-                toTopCities(userRepository.getTopCities());
-        log.info("Top cities : {} ms",
-                System.currentTimeMillis() - t);
-
-        t = System.currentTimeMillis();
-        var topReligions =
-                toTopReligions(userRepository.getTopReligions());
-        log.info("Top religions : {} ms",
-                System.currentTimeMillis() - t);
+        var registrationTrend = toLongMap(monthlyUserRegistrations.join());
+        var revenueTrend = toBigDecimalMap(monthlyRevenue.join());
+        var reportsTrend = toLongMap(monthlyReports.join());
+        var paymentDistribution = toLongMap(paymentMethodDistribution.join());
+        var reportDistribution = toLongMap(reportStatusDistribution.join());
+        var topPlans = toTopPaymentPlans(topPaymentPlans.join());
+        var topCitiesList = toTopCities(topCities.join());
+        var topReligionsList = toTopReligions(topReligions.join());
 
         AdminDashboardDTO dto = AdminDashboardDTO.builder()
 
@@ -241,8 +225,8 @@ public class AdminDashboardServiceImpl
                 .reportTypeDistribution(reportDistribution)
 
                 .topPaymentPlans(topPlans)
-                .topCities(topCities)
-                .topReligions(topReligions)
+                .topCities(topCitiesList)
+                .topReligions(topReligionsList)
 
                 .userGrowthPercentage(
                         calculateGrowthPercentage(

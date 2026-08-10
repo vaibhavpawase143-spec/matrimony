@@ -39,7 +39,15 @@ public class DashboardCacheService {
         var cache = cacheManager.getCache(CACHE_NAME);
 
         if (cache != null) {
-            cache.evict(CACHE_KEY);
+            cache.clear();
+        }
+    }
+
+    @org.springframework.scheduling.annotation.Async("applicationTaskExecutor")
+    public void refreshAsync(AdminDashboardService dashboardService) {
+        clearDashboard();
+        if (dashboardService != null) {
+            saveDashboard(dashboardService.buildDashboard());
         }
     }
 }

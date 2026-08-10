@@ -23,15 +23,24 @@ import Loader from "../components/Loader";
 import StatsCard from "../components/StatsCard";
 import MiniChart from "../components/MiniChart";
 import SubscriptionChart from "../components/SubscriptionChart";
+import AdminErrorAlert from "../components/common/AdminErrorAlert";
 
 import { getDashboardStats } from "../services/dashboardService";
 
 export default function Dashboard() {
   const navigate = useNavigate();
 
-  const [loading, setLoading] = useState(true);
+  const [dashboard, setDashboard] = useState(() => {
+    const cached = sessionStorage.getItem("admin_dashboard_cache");
+    if (cached) {
+      try { return JSON.parse(cached); } catch { return {}; }
+    }
+    return {};
+  });
+  const [loading, setLoading] = useState(() => {
+    return !sessionStorage.getItem("admin_dashboard_cache");
+  });
   const [refreshing, setRefreshing] = useState(false);
-  const [dashboard, setDashboard] = useState({});
   const [error, setError] = useState("");
 
   // ===============================
@@ -44,11 +53,16 @@ export default function Dashboard() {
 
       const response = await getDashboardStats();
 
-      setDashboard(response || {});
+      if (response) {
+        setDashboard(response);
+        sessionStorage.setItem("admin_dashboard_cache", JSON.stringify(response));
+      }
     } catch (err) {
       console.error(err);
-      setDashboard({});
-      setError("Unable to load dashboard.");
+      if (!sessionStorage.getItem("admin_dashboard_cache")) {
+        setDashboard({});
+        setError("Unable to load dashboard.");
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -175,13 +189,12 @@ export default function Dashboard() {
         </div>
 
         {error && (
-
-          <div className="mt-5 rounded-xl border border-red-200 bg-red-50 text-red-600 px-4 py-3">
-
-            {error}
-
-          </div>
-
+          <AdminErrorAlert
+            title="Dashboard Analytics Warning"
+            error={error}
+            onRetry={refreshDashboard}
+            className="mt-5"
+          />
         )}
 
       </div>

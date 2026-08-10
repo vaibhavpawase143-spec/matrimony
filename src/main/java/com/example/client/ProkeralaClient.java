@@ -2,17 +2,22 @@ package com.example.client;
 
 import com.example.dto.request.KundliMatchRequestDTO;
 import com.example.service.ProkeralaTokenService;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
 @Component
-@RequiredArgsConstructor
 public class ProkeralaClient {
 
     private final WebClient webClient;
     private final ProkeralaTokenService tokenService;
+
+    @Autowired
+    public ProkeralaClient(WebClient webClient, ProkeralaTokenService tokenService) {
+        this.webClient = webClient != null ? webClient : WebClient.builder().build();
+        this.tokenService = tokenService;
+    }
 
     public String matchKundli(KundliMatchRequestDTO req) {
 

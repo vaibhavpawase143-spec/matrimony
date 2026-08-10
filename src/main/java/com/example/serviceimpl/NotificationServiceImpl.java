@@ -8,6 +8,7 @@ import com.example.repository.AdminNotificationRepository;
 import com.example.repository.AdminRepository;
 import com.example.repository.NotificationRepository;
 import com.example.repository.UserRepository;
+import com.example.queue.NotificationProducer;
 import com.example.service.EmailService;
 import com.example.service.NotificationService;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +31,7 @@ public class NotificationServiceImpl implements NotificationService {
     private final AdminRepository adminRepository;
     private final AdminNotificationRepository adminNotificationRepository;
     private final EmailService emailService;
+    private final NotificationProducer notificationProducer;
     // ✅ CREATE + REAL-TIME PUSH
     @Override
     public void create(Long senderId, Long receiverId, NotificationType type) {
@@ -258,11 +260,10 @@ public class NotificationServiceImpl implements NotificationService {
         );
     }
     // ==========================
-// ADMIN NOTIFICATIONS
-// ==========================
+    // ADMIN NOTIFICATIONS (ASYNC QUEUE)
+    // ==========================
 
     @Override
-    @Transactional
     public void sendNotification(AdminNotificationRequestDTO request) {
 
         if (request.getReceiverIds() == null || request.getReceiverIds().isEmpty()) {
@@ -270,104 +271,23 @@ public class NotificationServiceImpl implements NotificationService {
             return;
         }
 
-        List<User> users =
-                userRepository.findAllById(request.getReceiverIds());
-
-        for (User user : users) {
-
-            Notification notification = new Notification();
-
-            notification.setSenderId(null);
-            notification.setReceiverId(user.getId());
-
-            notification.setTitle(request.getTitle());
-            notification.setMessage(request.getMessage());
-            notification.setType(request.getType());
-
-            notification.setRead(false);
-            notification.setDeleted(false);
-            notification.setCreatedAt(LocalDateTime.now());
-
-            Notification saved = repo.save(notification);
-
-            NotificationResponse response = new NotificationResponse();
-
-            response.setId(saved.getId());
-            response.setSenderId(null);
-            response.setReceiverId(user.getId());
-            response.setSenderName("Admin");
-            response.setMessage(saved.getMessage());
-            response.setType(saved.getType().name());
-            response.setRead(saved.isRead());
-            response.setCreatedAt(saved.getCreatedAt());
-
-            messagingTemplate.convertAndSend(
-                    "/topic/notifications/" + user.getId(),
-                    response
-            );
-
-            // 📧 Send email
-            emailService.sendAnnouncementEmail(
-                    user.getEmail(),
-                    user.getFirstName(),
-                    request.getTitle(),
-                    request.getMessage()
-            );
-        }
+        notificationProducer.enqueueBulkNotifications(
+                request.getReceiverIds(),
+                request.getTitle(),
+                request.getMessage(),
+                request.getType()
+        );
     }
 
     @Override
-    @Transactional
-    public void broadcastNotification(
-            AdminNotificationRequestDTO request
-    ) {
+    public void broadcastNotification(AdminNotificationRequestDTO request) {
 
-        List<User> users =
-                userRepository.findByIsActiveTrue();
-
-        for (User user : users) {
-
-            Notification notification = new Notification();
-
-            notification.setSenderId(null);
-            notification.setReceiverId(user.getId());
-
-            notification.setTitle(request.getTitle());
-            notification.setMessage(request.getMessage());
-            notification.setType(request.getType());
-
-            notification.setRead(false);
-            notification.setDeleted(false);
-            notification.setCreatedAt(LocalDateTime.now());
-
-            Notification saved = repo.save(notification);
-
-            NotificationResponse response =
-                    new NotificationResponse();
-
-            response.setId(saved.getId());
-            response.setSenderId(null);
-            response.setReceiverId(user.getId());
-            response.setSenderName("Admin");
-            response.setMessage(saved.getMessage());
-            response.setType(saved.getType().name());
-            response.setRead(saved.isRead());
-            response.setCreatedAt(saved.getCreatedAt());
-
-            messagingTemplate.convertAndSend(
-                    "/topic/notifications/" + user.getId(),
-                    response
-            );
-
-
-            // 📧 Send Email
-            emailService.sendAnnouncementEmail(
-                    user.getEmail(),
-                    user.getFirstName(),
-                    request.getTitle(),
-                    request.getMessage()
-            );
-        }
+        notificationProducer.enqueueBulkNotifications(
+                null,
+                request.getTitle(),
+                request.getMessage(),
+                request.getType()
+        );
     }
     @Override
     public void createAdminNotification(

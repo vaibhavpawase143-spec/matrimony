@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { FaSearch } from "react-icons/fa";
-import { getAllAdmins, } from "../services/adminManagementService";
+import { getAllAdmins } from "../services/adminManagementService";
 import AdminActionMenu from "../components/admin/AdminActionMenu";
 import EditAdminModal from "../components/admin/EditAdminModal";
+import AdminErrorAlert from "../components/common/AdminErrorAlert";
 import { useNavigate } from "react-router-dom";
 
 export default function AdminManagement() {
@@ -156,6 +157,15 @@ const handleResetPassword = (admin) => {
         </div>
 
       </div>
+
+      {error && (
+        <AdminErrorAlert
+          title="Admin List Loading Failed"
+          error={error}
+          onRetry={() => loadAdmins(page, search)}
+          className="mb-6"
+        />
+      )}
 
       {/* ================= SEARCH ================= */}
 
@@ -332,7 +342,7 @@ className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibol
                             setSize(Number(e.target.value));
                             setPage(0);
                           }}
-                          className="border border-gray-300 rounded-lg px-3 py-2"
+                          className="border border-gray-300 rounded-lg px-3 py-2 cursor-pointer"
                         >
                           <option value={10}>10</option>
                           <option value={20}>20</option>
@@ -352,7 +362,7 @@ className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibol
                         className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
                           page === 0
                             ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                            : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+                            : "bg-gray-100 hover:bg-gray-200 text-gray-700 cursor-pointer"
                         }`}
                       >
                         Previous
@@ -368,7 +378,7 @@ className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibol
                         className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
                           page + 1 >= totalPages
                             ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                            : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+                            : "bg-gray-100 hover:bg-gray-200 text-gray-700 cursor-pointer"
                         }`}
                       >
                         Next

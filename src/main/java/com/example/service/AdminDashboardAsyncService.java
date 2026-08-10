@@ -63,8 +63,10 @@ public class AdminDashboardAsyncService {
 
         long start = System.currentTimeMillis();
 
-        Long result =
-                userRepository.countByIsActiveFalseAndIsDeletedFalse();
+        Long total = userRepository.countByIsDeletedFalse();
+        Long active = userRepository.countByIsActiveTrueAndIsDeletedFalse();
+
+        Long result = (total != null ? total : 0L) - (active != null ? active : 0L);
 
         log.info("inactiveUsers() : {} ms",
                 System.currentTimeMillis() - start);
@@ -418,6 +420,46 @@ public class AdminDashboardAsyncService {
                 System.currentTimeMillis() - start);
 
         return CompletableFuture.completedFuture(result);
+    }
+
+    @Async("applicationTaskExecutor")
+    public CompletableFuture<java.util.List<Object[]>> monthlyUserRegistrations() {
+        return CompletableFuture.completedFuture(userRepository.getMonthlyUserRegistrations());
+    }
+
+    @Async("applicationTaskExecutor")
+    public CompletableFuture<java.util.List<Object[]>> monthlyRevenue() {
+        return CompletableFuture.completedFuture(paymentRepository.getMonthlyRevenue());
+    }
+
+    @Async("applicationTaskExecutor")
+    public CompletableFuture<java.util.List<Object[]>> monthlyReports() {
+        return CompletableFuture.completedFuture(reportRepository.getMonthlyReports());
+    }
+
+    @Async("applicationTaskExecutor")
+    public CompletableFuture<java.util.List<Object[]>> paymentMethodDistribution() {
+        return CompletableFuture.completedFuture(paymentRepository.getPaymentMethodDistribution());
+    }
+
+    @Async("applicationTaskExecutor")
+    public CompletableFuture<java.util.List<Object[]>> reportStatusDistribution() {
+        return CompletableFuture.completedFuture(reportRepository.getReportStatusDistribution());
+    }
+
+    @Async("applicationTaskExecutor")
+    public CompletableFuture<java.util.List<Object[]>> topPaymentPlans() {
+        return CompletableFuture.completedFuture(paymentRepository.getTopPaymentPlans());
+    }
+
+    @Async("applicationTaskExecutor")
+    public CompletableFuture<java.util.List<Object[]>> topCities() {
+        return CompletableFuture.completedFuture(userRepository.getTopCities());
+    }
+
+    @Async("applicationTaskExecutor")
+    public CompletableFuture<java.util.List<Object[]>> topReligions() {
+        return CompletableFuture.completedFuture(userRepository.getTopReligions());
     }
 
 }

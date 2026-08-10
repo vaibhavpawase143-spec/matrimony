@@ -45,7 +45,6 @@ export default function MasterData() {
     "Mother Tongue",
     "Employment",
     "Family Type",
-    "Subscription Plans",
   ];
 
   const [activeTab, setActiveTab] = useState("Religion");

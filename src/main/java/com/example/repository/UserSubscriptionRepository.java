@@ -53,6 +53,18 @@ public interface UserSubscriptionRepository extends
             @Param("userId") Long userId
     );
 
+    @Query("""
+        SELECT us
+        FROM UserSubscription us
+        JOIN FETCH us.user
+        JOIN FETCH us.subscriptionPlan
+        WHERE us.user.id IN :userIds
+        AND us.isActive = true
+    """)
+    List<UserSubscription> findByUserIdInAndIsActiveTrue(
+            @Param("userIds") List<Long> userIds
+    );
+
     // ==========================================
     // CHECK ACTIVE
     // ==========================================
