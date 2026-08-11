@@ -3835,7 +3835,17 @@ text-foreground
                       </h3>
 
                       <p className="text-xs text-muted-foreground">
-                        Blocked on {user.blockedDate}
+                        Blocked on{" "}
+                        {user.blockedDate
+                          ? new Date(user.blockedDate).toLocaleString("en-IN", {
+                              day: "2-digit",
+                              month: "2-digit",
+                              year: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                              hour12: true,
+                            })
+                          : "-"}
                       </p>
 
                     </div>

@@ -127,9 +127,13 @@ async()=>{
 
 try{
 
-const data =
-await profileAPI
-.getProfileById(id);
+const data = await profileAPI.getProfileById(id);
+
+console.log("========== VIEW PROFILE ==========");
+console.log("PROFILE ID =", id);
+console.log("PROFILE RESPONSE =", data);
+console.log("IMAGE URL =", data?.imageUrl);
+console.log("==================================");
 
 
 const currentUser =

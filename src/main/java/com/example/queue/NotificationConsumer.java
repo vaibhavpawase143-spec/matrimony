@@ -28,7 +28,6 @@ public class NotificationConsumer {
     private static final int MAX_RETRIES = 3;
 
     @RabbitListener(queues = RabbitMQConfig.NOTIFICATION_QUEUE)
-    @Transactional
     public void processNotificationJob(NotificationJobPayload payload) {
         log.info("[JOB PROCESSING] JobID={} | UserID={} | Channel={} | Attempt={}",
                 payload.getJobId(), payload.getUserId(), payload.getChannelType(), payload.getRetryCount() + 1);
@@ -91,18 +90,7 @@ public class NotificationConsumer {
                 
                 // Exponential Backoff Delay (1s, 2s, 4s)
                 long backoffMs = (long) Math.pow(2, payload.getRetryCount()) * 1000;
-                try {
-                    Thread.sleep(backoffMs);
-                } catch (InterruptedException ie) {
-                    Thread.currentThread().interrupt();
-                }
 
-                // Re-enqueue job with incremented retry count
-                rabbitTemplate.convertAndSend(
-                        RabbitMQConfig.NOTIFICATION_EXCHANGE,
-                        RabbitMQConfig.NOTIFICATION_ROUTING_KEY,
-                        payload
-                );
             } else {
                 log.error("[JOB DEAD-LETTERED] JobID={} | UserID={} | Exhausted all {} retries. Forwarding to DLQ.",
                         payload.getJobId(), payload.getUserId(), MAX_RETRIES);

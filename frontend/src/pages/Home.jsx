@@ -1115,30 +1115,31 @@ onDoubleClick={async (e) => {
 {
   profile.imageUrl ? (
     <>
-     <img
-         src={
-             profile.imageUrl?.startsWith("http")
-                 ? profile.imageUrl
-                 : `https://localhost:9090${profile.imageUrl}`
-         }
-         alt={profile.name || "Profile"}
-         className="w-full h-full object-cover"
+      <img
+        src={
+          profile.imageUrl.startsWith("http")
+            ? profile.imageUrl
+            : `http://localhost:9090${profile.imageUrl}`
+        }
+        alt={profile.name || "Profile"}
+        className="w-full h-full object-cover"
         onError={(e) => {
-            e.currentTarget.onerror = null;
-            e.currentTarget.src = profile1;
-          }}
-        />
+          e.currentTarget.onerror = null;
+          e.currentTarget.src = profile1;
+        }}
+      />
+
       <div className="absolute bottom-3 left-3 bg-white/90 px-3 py-1 rounded-full text-sm font-medium shadow">
         ❤️ {profile.matchPercentage || 0} Match
       </div>
     </>
-
-               ) : (
+  ) : (
     <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400">
       No Image
     </div>
   )
-}                    </div>
+}
+</div>
                   <div className="p-4 flex flex-col flex-1">
                   <h3 className="text-lg font-semibold leading-tight">
                     {profile.name || "Unknown User"}

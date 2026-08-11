@@ -82,7 +82,7 @@ public class AdminController {
         );
         Admin admin = adminService.login(dto.getEmail(), dto.getPassword());
 
-   // or adminRepository.save(admin)
+        // or adminRepository.save(admin)
 
         String accessToken = jwtUtil.generateToken(
                 admin.getEmail(),
@@ -160,7 +160,7 @@ public class AdminController {
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority('ADMIN_EDIT')")
     public ApiResponse<AdminResponseDTO> update(@PathVariable Long id,@Valid
-                                                @RequestBody AdminRequestDTO dto) {
+    @RequestBody AdminRequestDTO dto) {
 
         AdminResponseDTO existing = adminService.getById(id); // ✅ FIX
 
@@ -447,4 +447,4 @@ public class AdminController {
                 .data(adminService.getById(id))
                 .build();
     }
-}
+} 

@@ -66,8 +66,8 @@ public class UserBlockService {
         UserBlock block = new UserBlock();
 
         block.setBlockerId(blockerId);
-
         block.setBlockedId(blockedId);
+        block.setIsActive(true);   // ✅ IMPORTANT
 
         userBlockRepository.save(block);
     }
@@ -135,7 +135,7 @@ public class UserBlockService {
                     .blockedUserId(user.getId())
                     .fullName(user.getFullName())
                     .photoUrl(photoUrl)
-                    .blockedDate(block.getCreatedAt())
+                    .blockedDate(block.getUpdatedAt())   // ✅ updated_at
                     .build();
 
         }).toList();

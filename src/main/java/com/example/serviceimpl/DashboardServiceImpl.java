@@ -7,6 +7,7 @@ import com.example.service.DashboardService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import com.example.service.MatchService;
 
 @Service
 @RequiredArgsConstructor
@@ -18,6 +19,7 @@ public class DashboardServiceImpl implements DashboardService {
     private final ProfileVisitorRepository visitorRepository;
     private final SwipeRepository swipeRepository;
     private final ConversationRepository conversationRepository;
+    private final MatchService matchService;
 
     @Override
     @Cacheable(
@@ -29,7 +31,10 @@ public class DashboardServiceImpl implements DashboardService {
         return DashboardSummaryDTO.builder()
 
                 .totalMatches(
-                        matchRepository.countMatches(userId)
+                        matchService.getTopMatches(userId, 0, 20)
+                                .stream()
+                                .filter(match -> match.getMatchScore() >= 75)
+                                .count()
                 )
 
                 .interestsSent(

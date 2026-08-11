@@ -30,7 +30,6 @@ import com.example.model.Profile;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class MatchServiceImpl implements MatchService {
 
     private final MatchRepository matchRepository;
@@ -347,6 +346,7 @@ public class MatchServiceImpl implements MatchService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public PageResponse<MatchResponseDTO> getMatches(Long userId, int page, int size) {
 
         validatePremium(userId);

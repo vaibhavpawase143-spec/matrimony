@@ -20,37 +20,41 @@ const Matches = () => {
     loadMatches();
   }, []);
 
-  const loadMatches = async () => {
-    try {
-      setLoading(true);
-      // Get profiles that match current user's preferences
-      const currentUser = JSON.parse(
-        localStorage.getItem("user")
-      );
+ const loadMatches = async () => {
+   try {
+     setLoading(true);
 
-      const userId = Number(
-        currentUser?.userId ||
-currentUser?.id ||
-currentUser?.profile?.userId
-      );
+     const currentUser = JSON.parse(
+       localStorage.getItem("user")
+     );
 
-      const response = await matchAPI.getTopMatches(userId, 50);
+     const userId = Number(
+       currentUser?.userId ||
+       currentUser?.id ||
+       currentUser?.profile?.userId
+     );
 
-      const filteredMatches = response.filter(
-        (match) => match.matchScore >= 75
-      );
-    console.log("MATCHES =", filteredMatches);
+     if (!userId) {
+       throw new Error("User ID not found");
+     }
 
-      setMatches(filteredMatches);
-    } catch (err) {
-      console.warn('Failed to load matches:', err.message);
-      error('Failed to load matches. Please try again.');
-      setMatches([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+     // Backend maximum page size = 20
+     const response = await matchAPI.getTopMatches(userId, 0, 20);
 
+     const filteredMatches = response.filter(
+       (match) => Number(match.matchScore) >= 75
+     );
+
+     setMatches(filteredMatches);
+
+   } catch (err) {
+     console.error("Failed to load matches:", err);
+     error("Failed to load matches. Please try again.");
+     setMatches([]);
+   } finally {
+     setLoading(false);
+   }
+ };
   return (
     <div className="min-h-screen bg-muted/30">
 
@@ -103,7 +107,7 @@ currentUser?.profile?.userId
                   }}
                 />
                 <div className="absolute top-3 right-3 bg-emerald-badge text-primary-foreground text-xs font-bold px-2.5 py-1 rounded-full">
-                 {m.matchPercentage}
+                 {Math.round(Number(m.matchScore))}% Match
                 </div>
               </div>
               <div className="p-3">

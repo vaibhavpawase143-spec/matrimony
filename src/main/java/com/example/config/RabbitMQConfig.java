@@ -123,12 +123,25 @@ public class RabbitMQConfig {
     }
 
     @Bean
-    public SimpleRabbitListenerContainerFactory rabbitListenerContainerFactory(ConnectionFactory connectionFactory) {
-        SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
+    public SimpleRabbitListenerContainerFactory rabbitListenerContainerFactory(
+            ConnectionFactory connectionFactory) {
+
+        SimpleRabbitListenerContainerFactory factory =
+                new SimpleRabbitListenerContainerFactory();
+
         factory.setConnectionFactory(connectionFactory);
         factory.setMessageConverter(jsonMessageConverter());
-        factory.setConcurrentConsumers(5);
-        factory.setMaxConcurrentConsumers(20);
+
+        // Controlled production concurrency
+        factory.setConcurrentConsumers(2);
+        factory.setMaxConcurrentConsumers(5);
+
+        // Prevent too many messages from being held in JVM memory
+        factory.setPrefetchCount(10);
+
+        // Failed messages must not loop forever
+        factory.setDefaultRequeueRejected(false);
+
         return factory;
     }
 }
