@@ -187,6 +187,12 @@ public class ChatServiceImpl implements ChatService {
                 saved
         );
 
+        notificationService.create(
+                sender.getId(),
+                receiver.getId(),
+                NotificationType.MESSAGE
+        );
+
         return saved;
     }
 
@@ -218,6 +224,12 @@ public class ChatServiceImpl implements ChatService {
         Message saved = messageRepository.save(m);
 
         saved.setContent(decrypt(saved.getContent()));
+
+        notificationService.create(
+                sender.getId(),
+                receiver.getId(),
+                NotificationType.MESSAGE
+        );
 
         return saved;
     }

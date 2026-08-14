@@ -54,6 +54,10 @@ public interface UserPhotoRepository extends JpaRepository<UserPhoto, Long> {
     Optional<UserPhoto> findFirstByUserIdAndPrimaryPhotoTrue(
             Long userId
     );
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"user"})
+    List<UserPhoto> findByUserIdInAndPrimaryPhotoTrue(
+            List<Long> userIds
+    );
     Optional<UserPhoto> findFirstByUserIdOrderByCreatedAtAsc(
             Long userId
     );

@@ -31,10 +31,7 @@ public class DashboardServiceImpl implements DashboardService {
         return DashboardSummaryDTO.builder()
 
                 .totalMatches(
-                        matchService.getTopMatches(userId, 0, 20)
-                                .stream()
-                                .filter(match -> match.getMatchScore() >= 75)
-                                .count()
+                        matchRepository.countMatches(userId)
                 )
 
                 .interestsSent(

@@ -17,6 +17,7 @@ import java.util.List;
 public class OccupationController {
 
     private final OccupationService occupationService;
+    private final com.example.service.MasterDataCacheService masterDataCacheService;
 
     // =========================
     // CREATE
@@ -115,7 +116,7 @@ public class OccupationController {
 
         return ApiResponse.success(
                 "Occupation list fetched successfully.",
-                occupationService.getAll()
+                masterDataCacheService.getOccupations()
         );
     }
 
@@ -141,7 +142,7 @@ public class OccupationController {
 
         return ApiResponse.success(
                 "Active Occupation list fetched successfully.",
-                occupationService.getActive()
+                masterDataCacheService.getOccupations()
         );
     }
 

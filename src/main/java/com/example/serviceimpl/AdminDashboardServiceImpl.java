@@ -44,72 +44,11 @@ public class AdminDashboardServiceImpl
         long start = System.currentTimeMillis();
 
         log.info("========== DASHBOARD START ==========");
-        System.out.println("******** DASHBOARD METHOD CALLED ********");
-        // =====================================================
-        // USER STATISTICS (ASYNC)
-        // =====================================================
 
-        CompletableFuture<Long> totalUsers = dashboardAsyncService.totalUsers();
-        CompletableFuture<Long> activeUsers = dashboardAsyncService.activeUsers();
-        CompletableFuture<Long> inactiveUsers = dashboardAsyncService.inactiveUsers();
-        CompletableFuture<Long> blockedUsers = dashboardAsyncService.blockedUsers();
-        CompletableFuture<Long> verifiedUsers = dashboardAsyncService.verifiedUsers();
-        CompletableFuture<Long> unverifiedUsers = dashboardAsyncService.unverifiedUsers();
+        // 1. Fetch all scalar statistics in a single consolidated SQL query (1 DB connection checkout)
+        AdminDashboardDTO dto = adminDashboardQueryRepository.getDashboardStatistics();
 
-        CompletableFuture<Long> newUsersThisMonth = dashboardAsyncService.newUsersThisMonth();
-        CompletableFuture<Long> newUsersThisWeek = dashboardAsyncService.newUsersThisWeek();
-        CompletableFuture<Long> newUsersToday = dashboardAsyncService.newUsersToday();
-
-        // =====================================================
-        // PAYMENT
-        // =====================================================
-
-        CompletableFuture<BigDecimal> totalRevenue = dashboardAsyncService.totalRevenue();
-        CompletableFuture<Long> totalTransactions = dashboardAsyncService.totalTransactions();
-        CompletableFuture<Long> successfulTransactions = dashboardAsyncService.successfulTransactions();
-        CompletableFuture<Long> failedTransactions = dashboardAsyncService.failedTransactions();
-        CompletableFuture<Long> pendingTransactions = dashboardAsyncService.pendingTransactions();
-
-        CompletableFuture<BigDecimal> currentMonthRevenue =
-                dashboardAsyncService.currentMonthRevenue();
-
-        CompletableFuture<BigDecimal> previousMonthRevenue =
-                dashboardAsyncService.previousMonthRevenue();
-
-        // =====================================================
-        // REPORTS
-        // =====================================================
-
-        CompletableFuture<Long> totalReports = dashboardAsyncService.totalReports();
-        CompletableFuture<Long> pendingReports = dashboardAsyncService.pendingReports();
-        CompletableFuture<Long> resolvedReports = dashboardAsyncService.resolvedReports();
-        CompletableFuture<Long> closedReports = dashboardAsyncService.closedReports();
-
-        // =====================================================
-        // SUBSCRIPTIONS
-        // =====================================================
-
-        CompletableFuture<Long> totalSubscriptions =
-                dashboardAsyncService.totalSubscriptions();
-
-        CompletableFuture<Long> activeSubscriptions =
-                dashboardAsyncService.activeSubscriptions();
-
-        CompletableFuture<Long> expiredSubscriptions =
-                dashboardAsyncService.expiredSubscriptions();
-
-        CompletableFuture<Long> currentMonthSubscriptions =
-                dashboardAsyncService.currentMonthSubscriptions();
-
-        CompletableFuture<Long> previousMonthSubscriptions =
-                dashboardAsyncService.previousMonthSubscriptions();
-
-        CompletableFuture<Long> currentMonthUsers =
-                dashboardAsyncService.currentMonthUsers();
-
-        CompletableFuture<Long> previousMonthUsers =
-                dashboardAsyncService.previousMonthUsers();
-
+        // 2. Fetch chart and list datasets concurrently (8 async tasks instead of 35)
         CompletableFuture<java.util.List<Object[]>> monthlyUserRegistrations =
                 dashboardAsyncService.monthlyUserRegistrations();
 
@@ -135,37 +74,10 @@ public class AdminDashboardServiceImpl
                 dashboardAsyncService.topReligions();
 
         // =====================================================
-        // WAIT FOR ALL 34 ASYNC TASKS PARALLEL
+        // WAIT FOR 8 ASYNC CHART TASKS
         // =====================================================
 
         CompletableFuture.allOf(
-                totalUsers,
-                activeUsers,
-                inactiveUsers,
-                blockedUsers,
-                verifiedUsers,
-                unverifiedUsers,
-                newUsersThisMonth,
-                newUsersThisWeek,
-                newUsersToday,
-                totalRevenue,
-                totalTransactions,
-                successfulTransactions,
-                failedTransactions,
-                pendingTransactions,
-                currentMonthRevenue,
-                previousMonthRevenue,
-                totalReports,
-                pendingReports,
-                resolvedReports,
-                closedReports,
-                totalSubscriptions,
-                activeSubscriptions,
-                expiredSubscriptions,
-                currentMonthSubscriptions,
-                previousMonthSubscriptions,
-                currentMonthUsers,
-                previousMonthUsers,
                 monthlyUserRegistrations,
                 monthlyRevenue,
                 monthlyReports,
@@ -176,80 +88,17 @@ public class AdminDashboardServiceImpl
                 topReligions
         ).join();
 
-        log.info("All 34 Async dashboard tasks completed in {} ms",
+        log.info("All 8 Async chart dashboard tasks completed in {} ms",
                 System.currentTimeMillis() - start);
 
-        var registrationTrend = toLongMap(monthlyUserRegistrations.join());
-        var revenueTrend = toBigDecimalMap(monthlyRevenue.join());
-        var reportsTrend = toLongMap(monthlyReports.join());
-        var paymentDistribution = toLongMap(paymentMethodDistribution.join());
-        var reportDistribution = toLongMap(reportStatusDistribution.join());
-        var topPlans = toTopPaymentPlans(topPaymentPlans.join());
-        var topCitiesList = toTopCities(topCities.join());
-        var topReligionsList = toTopReligions(topReligions.join());
-
-        AdminDashboardDTO dto = AdminDashboardDTO.builder()
-
-                .totalUsers(totalUsers.join())
-                .activeUsers(activeUsers.join())
-                .inactiveUsers(inactiveUsers.join())
-                .blockedUsers(blockedUsers.join())
-                .verifiedUsers(verifiedUsers.join())
-                .unverifiedUsers(unverifiedUsers.join())
-
-                .newUsersThisMonth(newUsersThisMonth.join())
-                .newUsersThisWeek(newUsersThisWeek.join())
-                .newUsersToday(newUsersToday.join())
-
-                .totalRevenue(totalRevenue.join())
-                .revenueThisMonth(currentMonthRevenue.join())
-
-                .totalTransactions(totalTransactions.join())
-                .successfulTransactions(successfulTransactions.join())
-                .failedTransactions(failedTransactions.join())
-                .pendingTransactions(pendingTransactions.join())
-
-                .totalReports(totalReports.join())
-                .pendingReports(pendingReports.join())
-                .resolvedReports(resolvedReports.join())
-                .closedReports(closedReports.join())
-
-                .totalSubscriptions(totalSubscriptions.join())
-                .activeSubscriptions(activeSubscriptions.join())
-                .expiredSubscriptions(expiredSubscriptions.join())
-
-                .userRegistrationTrend(registrationTrend)
-                .revenueTrend(revenueTrend)
-                .reportsTrend(reportsTrend)
-                .paymentMethodDistribution(paymentDistribution)
-                .reportTypeDistribution(reportDistribution)
-
-                .topPaymentPlans(topPlans)
-                .topCities(topCitiesList)
-                .topReligions(topReligionsList)
-
-                .userGrowthPercentage(
-                        calculateGrowthPercentage(
-                                currentMonthUsers.join(),
-                                previousMonthUsers.join()
-                        )
-                )
-
-                .revenueGrowthPercentage(
-                        calculateGrowthPercentage(
-                                currentMonthRevenue.join(),
-                                previousMonthRevenue.join()
-                        )
-                )
-
-                .subscriptionGrowthPercentage(
-                        calculateGrowthPercentage(
-                                currentMonthSubscriptions.join(),
-                                previousMonthSubscriptions.join()
-                        )
-                )
-
-                .build();
+        dto.setUserRegistrationTrend(toLongMap(monthlyUserRegistrations.join()));
+        dto.setRevenueTrend(toBigDecimalMap(monthlyRevenue.join()));
+        dto.setReportsTrend(toLongMap(monthlyReports.join()));
+        dto.setPaymentMethodDistribution(toLongMap(paymentMethodDistribution.join()));
+        dto.setReportTypeDistribution(toLongMap(reportStatusDistribution.join()));
+        dto.setTopPaymentPlans(toTopPaymentPlans(topPaymentPlans.join()));
+        dto.setTopCities(toTopCities(topCities.join()));
+        dto.setTopReligions(toTopReligions(topReligions.join()));
 
         log.info("========== DASHBOARD TOTAL : {} ms ==========",
                 System.currentTimeMillis() - start);

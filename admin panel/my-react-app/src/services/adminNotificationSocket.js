@@ -43,10 +43,10 @@ export const connectAdminNotifications = (adminId, onMessage) => {
   }
 
   const socket = new SockJS(
-    `https://localhost:9090/ws?token=${encodeURIComponent(token)}`,
+    `/ws?token=${encodeURIComponent(token)}`,
     null,
     {
-      transports: ["websocket"],
+      transports: ["websocket", "xhr-streaming", "xhr-polling"],
     }
   );
 

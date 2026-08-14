@@ -89,6 +89,12 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                         + " subscription plan.",
                 NotificationType.SUBSCRIPTION
         );
+        notificationService.createSubscriptionReminder(
+                user.getId(),
+                saved.getId(),
+                "Premium Activated",
+                "Your " + plan.getName() + " subscription is now active."
+        );
         // Synchronize Profile
         profilePremiumSyncService.sync(user, saved);
 
@@ -143,6 +149,12 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                         + plan.getName()
                         + " subscription plan.",
                 NotificationType.SUBSCRIPTION
+        );
+        notificationService.createSubscriptionReminder(
+                user.getId(),
+                saved.getId(),
+                "Premium Activated",
+                "Your " + plan.getName() + " subscription is now active."
         );
         // Synchronize Profile
         profilePremiumSyncService.sync(user, saved);

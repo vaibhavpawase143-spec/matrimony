@@ -31,6 +31,12 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
             NotificationType type
     );
 
+    boolean existsBySenderIdAndReceiverIdAndTypeAndReadFalseAndDeletedFalse(
+            Long senderId,
+            Long receiverId,
+            NotificationType type
+    );
+
     // ================= ADMIN =================
 
     // Notification history

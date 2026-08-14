@@ -169,9 +169,9 @@
                 <artifactId>flyway-maven-plugin</artifactId>
                 <version>9.22.3</version>
                 <configuration>
-                    <url>jdbc:postgresql://localhost:5433/gathbandhan_perf</url>
+                    <url>jdbc:postgresql://localhost:5432/gathbandhan_perf</url>
                     <user>postgres</user>
-                    <password>Pgsql@9090</password>
+                    <password>root</password>
                     <outOfOrder>true</outOfOrder>
                 </configuration>
             </plugin>

@@ -17,6 +17,7 @@ import java.util.List;
 public class EducationLevelController {
 
     private final EducationLevelService educationLevelService;
+    private final com.example.service.MasterDataCacheService masterDataCacheService;
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -87,7 +88,7 @@ public class EducationLevelController {
 
         return ApiResponse.success(
                 "Education Levels fetched successfully.",
-                educationLevelService.getAll()
+                masterDataCacheService.getEducationLevels()
         );
     }
 
@@ -105,7 +106,7 @@ public class EducationLevelController {
 
         return ApiResponse.success(
                 "Active Education Levels fetched successfully.",
-                educationLevelService.getActive()
+                masterDataCacheService.getEducationLevels()
         );
     }
 

@@ -900,7 +900,7 @@ export const searchAPI = {
     try {
 
       return await apiClient(
-        '/profiles/search',
+        '/search/profiles',
         {
           method: 'POST',
           body: JSON.stringify(filters)

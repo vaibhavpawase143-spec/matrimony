@@ -47,16 +47,16 @@ const ProfileCard = ({ profile, onSendInterest, onSave, isSaved = false, isInter
 
     // Starts with /uploads/
     if (image.startsWith("/")) {
-      return `https://localhost:9090${image}`;
+      return `http://localhost:9090${image}`;
     }
 
     // Starts with uploads/
     if (image.startsWith("uploads/")) {
-      return `https://localhost:9090/${image}`;
+      return `http://localhost:9090/${image}`;
     }
 
     // Only filename like user2.jpg
-    return `https://localhost:9090/uploads/${image}`;
+    return `http://localhost:9090/uploads/${image}`;
   };
   // Get city name with fallback
   const getCityName = () => {

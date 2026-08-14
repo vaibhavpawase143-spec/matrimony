@@ -394,6 +394,43 @@ public class EmailServiceImpl implements EmailService {
 
     }
     /**
+     * 🔹 Send Real-time OTP Email
+     */
+    @Override
+    @Async("emailTaskExecutor")
+    public void sendOTPEmail(String to, String otp, String purpose) {
+        String purposeTitle = "Verification Code";
+        if ("LOGIN".equalsIgnoreCase(purpose)) {
+            purposeTitle = "Login Verification Code";
+        } else if ("PASSWORD_RESET".equalsIgnoreCase(purpose)) {
+            purposeTitle = "Password Reset Code";
+        }
+
+        String subject = purposeTitle + ": " + otp + " - Gathbandhan";
+
+        Context context = new Context();
+        context.setVariable("otp", otp);
+        context.setVariable("purposeTitle", purposeTitle);
+
+        try {
+            String body = templateEngine.process("email/otp", context);
+
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(fromEmail);
+            helper.setTo(to);
+            helper.setSubject(subject);
+            helper.setText(body, true);
+
+            mailSender.send(message);
+            log.info("✅ OTP email ({}) sent to {}", purposeTitle, to);
+        } catch (Exception e) {
+            log.error("❌ Failed to send OTP email to {}", to, e);
+        }
+    }
+
+    /**
      * 🔹 Generic Email (optional)
      */
     @Override
@@ -418,3 +455,4 @@ public class EmailServiceImpl implements EmailService {
         }
     }
 }
+

@@ -13,6 +13,9 @@ public interface PhoneVerificationOTPRepository extends JpaRepository<PhoneVerif
 
     Optional<PhoneVerificationOTP> findByPhoneAndOtp(String phone, String otp);
 
-    Optional<PhoneVerificationOTP> findTopByPhoneOrderByCreatedAtDesc(String phone);
-}
+    Optional<PhoneVerificationOTP> findByPhoneAndPurpose(String phone, String purpose);
 
+    Optional<PhoneVerificationOTP> findTopByPhoneOrderByCreatedAtDesc(String phone);
+
+    void deleteByPhone(String phone);
+}

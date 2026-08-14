@@ -40,6 +40,7 @@ public class UserServiceImpl implements UserService {
     private final SMSService smsService;
     private final ProfileService profileService;
     private final RefreshTokenService refreshTokenService;
+    private final RealtimeOTPService realtimeOTPService;
     
     // Profile-related repositories
     private final ReligionRepository religionRepository;
@@ -707,60 +708,25 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public String sendOTPToPhone(String phone) {
-
-        // ✅ Generate OTP
-        String otp = generateOTP();
-
-        // ✅ Delete old OTP
-        otpRepository.findByPhone(phone).ifPresent(otpRepository::delete);
-
-        // ✅ Save new OTP
-        PhoneVerificationOTP phoneOTP = new PhoneVerificationOTP(phone, otp);
-        phoneOTP.setExpiryDate(LocalDateTime.now().plusMinutes(10));
-        phoneOTP.setAttemptCount(0);
-
-        otpRepository.save(phoneOTP);
-
-        // ❌ SMS disabled (free testing)
-        // smsService.sendOTP(phone, otp);
-
-        System.out.println("✅ OTP generated: " + otp);
-
-        return otp;
+        var response = realtimeOTPService.sendOTP(
+                com.example.dto.request.SendOtpRequestDTO.builder()
+                        .target(phone)
+                        .channel("PHONE")
+                        .purpose("VERIFICATION")
+                        .build()
+        );
+        return response.getDevOtp() != null ? response.getDevOtp() : "SUCCESS";
     }
 
     @Override
     public void verifyPhoneOTP(String phone, String otp) {
-
-        PhoneVerificationOTP phoneOTP = otpRepository.findByPhone(phone)
-                .orElseThrow(() -> new RuntimeException("OTP not found. Please request a new one."));
-
-        if (phoneOTP.getExpiryDate().isBefore(LocalDateTime.now())) {
-            throw new RuntimeException("OTP expired. Please request a new one.");
-        }
-
-        if (phoneOTP.getAttemptCount() >= 3) {
-            throw new RuntimeException("Too many failed attempts. Please request a new OTP.");
-        }
-
-        if (!phoneOTP.getOtp().equals(otp)) {
-            phoneOTP.setAttemptCount(phoneOTP.getAttemptCount() + 1);
-            otpRepository.save(phoneOTP);
-            throw new RuntimeException("Invalid OTP. Attempts remaining: " + (3 - phoneOTP.getAttemptCount()));
-        }
-
-        // ✅ OTP verified successfully
-        User user = userRepository.findByPhone(phone)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        user.setPhoneVerified(true);
-        user.setPhoneVerifiedAt(LocalDateTime.now());
-        userRepository.save(user);
-
-        // ✅ Clean up used OTP
-        otpRepository.delete(phoneOTP);
-
-        System.out.println("✅ PHONE VERIFIED: " + phone);
+        realtimeOTPService.verifyOTP(
+                com.example.dto.request.VerifyOtpRequestDTO.builder()
+                        .target(phone)
+                        .otp(otp)
+                        .purpose("VERIFICATION")
+                        .build()
+        );
     }
 
     @Override

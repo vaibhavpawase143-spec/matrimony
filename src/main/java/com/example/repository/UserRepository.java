@@ -443,8 +443,8 @@ WHERE u.id = :id
     @Query("SELECT COUNT(u) FROM User u WHERE u.createdAt > :date")
     long findNewUsersCount(@Param("date") LocalDateTime date);
 
-    @Query("SELECT COUNT(u) FROM User u WHERE CAST(u.createdAt AS DATE) = CAST(:date AS DATE)")
-    long findUsersCountByDate(@Param("date") LocalDateTime date);
+    @Query("SELECT COUNT(u) FROM User u WHERE u.createdAt >= :startOfDay AND u.createdAt < :endOfDay")
+    long findUsersCountByDate(@Param("startOfDay") LocalDateTime startOfDay, @Param("endOfDay") LocalDateTime endOfDay);
 
     @Query("SELECT COUNT(u) FROM User u WHERE u.lastSeen > :date AND u.isActive = true")
     long countActiveSince(@Param("date") LocalDateTime date);

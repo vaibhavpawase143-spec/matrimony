@@ -44,6 +44,15 @@ public class NotificationServiceImpl implements NotificationService {
                         ? sender.getFullName().trim()
                         : "Someone";
 
+        if (type == NotificationType.MESSAGE && senderId != null) {
+            boolean existsUnreadMessage = repo.existsBySenderIdAndReceiverIdAndTypeAndReadFalseAndDeletedFalse(
+                    senderId, receiverId, NotificationType.MESSAGE
+            );
+            if (existsUnreadMessage) {
+                return;
+            }
+        }
+
         String message = generateMessage(senderName, type);
 
         Notification n = new Notification();
@@ -156,12 +165,14 @@ public class NotificationServiceImpl implements NotificationService {
     }
     // 📥 GET ALL
     @Override
+    @Transactional(readOnly = true)
     public List<Notification> getAll(Long userId) {
         return repo.findByReceiverIdAndDeletedFalseOrderByCreatedAtDesc(userId);
     }
 
     // 🔔 UNREAD COUNT
     @Override
+    @Transactional(readOnly = true)
     public long unreadCount(Long userId) {
         return repo.countByReceiverIdAndReadFalseAndDeletedFalse(userId);
     }

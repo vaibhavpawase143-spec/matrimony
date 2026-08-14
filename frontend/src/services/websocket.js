@@ -31,13 +31,13 @@ const token = localStorage.getItem(
 
 const socket = new SockJS(
 
-`https://localhost:9090/ws?token=${token}`,
+`/ws?token=${token}`,
 
 null,
 
 {
 
-transports:["websocket"]
+transports:["websocket", "xhr-streaming", "xhr-polling"]
 
 }
 

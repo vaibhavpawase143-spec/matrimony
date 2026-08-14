@@ -17,6 +17,7 @@ import java.util.List;
 public class MaritalStatusController {
 
     private final MaritalStatusService maritalStatusService;
+    private final com.example.service.MasterDataCacheService masterDataCacheService;
 
     // =========================
     // CREATE
@@ -115,7 +116,7 @@ public class MaritalStatusController {
 
         return ApiResponse.success(
                 "Marital Status list fetched successfully.",
-                maritalStatusService.getAll()
+                masterDataCacheService.getMaritalStatus()
         );
     }
 
@@ -141,7 +142,7 @@ public class MaritalStatusController {
 
         return ApiResponse.success(
                 "Active Marital Status fetched successfully.",
-                maritalStatusService.getActive()
+                masterDataCacheService.getMaritalStatus()
         );
     }
 

@@ -23,6 +23,14 @@ public interface ProfileRepository extends
         JpaRepository<Profile, Long>,
         JpaSpecificationExecutor<Profile> {
 
+    @Override
+    @EntityGraph(attributePaths = {
+            "user", "gender", "religion", "caste", "subCaste", "city", "state", "country",
+            "educationLevel", "occupation", "income", "height", "weight", "diet", "smoking",
+            "drinking", "manglikStatus", "profileType", "motherTongue", "maritalStatus"
+    })
+    Page<Profile> findAll(org.springframework.data.jpa.domain.Specification<Profile> spec, Pageable pageable);
+
     // =====================================================
     // ✅ BASIC METHODS (no EntityGraph - minimal data)
     // =====================================================

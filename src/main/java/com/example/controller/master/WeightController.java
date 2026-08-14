@@ -17,6 +17,7 @@ import java.util.List;
 public class WeightController {
 
     private final WeightService weightService;
+    private final com.example.service.MasterDataCacheService masterDataCacheService;
 
     // =====================================================
     // CREATE
@@ -73,7 +74,7 @@ public class WeightController {
 
         return ApiResponse.success(
                 "Weights fetched successfully.",
-                weightService.getAll()
+                masterDataCacheService.getWeights()
         );
     }
 
@@ -100,7 +101,7 @@ public class WeightController {
 
         return ApiResponse.success(
                 "Active weights fetched successfully.",
-                weightService.getActive()
+                masterDataCacheService.getWeights()
         );
     }
 

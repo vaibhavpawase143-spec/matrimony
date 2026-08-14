@@ -72,6 +72,16 @@ public interface CasteRepository extends JpaRepository<Caste, Long> {
             @org.springframework.data.repository.query.Param("adminId") Long adminId
     );
 
+    @Query("""
+        SELECT c
+        FROM Caste c
+        LEFT JOIN FETCH c.religion
+        LEFT JOIN FETCH c.admin
+        WHERE c.deletedAt IS NULL
+        ORDER BY c.name ASC
+    """)
+    List<Caste> findAllWithRelations();
+
     List<Caste> findAllByDeletedAtIsNull();
 
     // =========================================

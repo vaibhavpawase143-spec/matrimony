@@ -19,6 +19,7 @@ import java.util.List;
 public class CityController {
 
     private final CityService cityService;
+    private final com.example.service.MasterDataCacheService masterDataCacheService;
 
     // ================= CREATE =================
     @PostMapping
@@ -52,15 +53,10 @@ public class CityController {
     @GetMapping
     public ApiResponse<List<CityResponseDTO>> getAll() {
 
-        List<CityResponseDTO> cities = cityService.getAll()
-                .stream()
-                .map(this::mapToResponse)
-                .toList();
-
         return ApiResponse.<List<CityResponseDTO>>builder()
                 .success(true)
                 .message("Cities retrieved successfully.")
-                .data(cities)
+                .data(masterDataCacheService.getCities())
                 .build();
     }
 
@@ -83,15 +79,10 @@ public class CityController {
     @GetMapping("/active")
     public ApiResponse<List<CityResponseDTO>> getActive() {
 
-        List<CityResponseDTO> activeCities = cityService.getActive()
-                .stream()
-                .map(this::mapToResponse)
-                .toList();
-
         return ApiResponse.<List<CityResponseDTO>>builder()
                 .success(true)
                 .message("Active cities retrieved successfully.")
-                .data(activeCities)
+                .data(masterDataCacheService.getCities())
                 .build();
     }
 

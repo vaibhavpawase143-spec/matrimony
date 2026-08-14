@@ -23,6 +23,7 @@ import java.util.List;
 public class ProfileController {
 
     private final ProfileServiceImpl service;
+    private final com.example.service.ProfileSearchService profileSearchService;
 
     // ================= CREATE =================
     @PostMapping
@@ -130,13 +131,10 @@ public class ProfileController {
 
     // ================= SEARCH =================
     @PostMapping("/search")
-    public ResponseEntity<Page<ProfileResponseDTO>> searchProfiles(
-            @RequestBody PartnerPreference pref,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+    public ResponseEntity<?> searchProfiles(
+            @RequestBody com.example.dto.request.ProfileSearchRequestDTO req
     ) {
-        Pageable pageable = PageRequest.of(page, size);
-        return ResponseEntity.ok(service.searchProfiles(pref, pageable));
+        return ResponseEntity.ok(profileSearchService.searchProfiles(req));
     }
 
     // ================= FILTER: CITY =================

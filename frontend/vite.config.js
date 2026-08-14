@@ -22,6 +22,12 @@ export default defineConfig(({ mode }) => ({
         ws: true,
       },
 
+      "/uploads": {
+        target: "http://localhost:9090",
+        changeOrigin: true,
+        secure: false,
+      },
+
       "/ws": {
         target: "ws://localhost:9090",
         ws: true,
@@ -51,5 +57,44 @@ export default defineConfig(({ mode }) => ({
 
   define: {
     global: "window",
+  },
+
+  build: {
+    target: "esnext",
+    minify: "esbuild",
+    cssCodeSplit: true,
+    chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes("node_modules")) {
+            if (id.includes("react-dom") || id.includes("react-router-dom") || id.includes("react")) {
+              return "vendor-react";
+            }
+            if (id.includes("@radix-ui") || id.includes("lucide-react")) {
+              return "vendor-ui";
+            }
+            if (id.includes("recharts") || id.includes("framer-motion")) {
+              return "vendor-charts";
+            }
+            if (id.includes("@stomp/stompjs") || id.includes("sockjs-client") || id.includes("axios") || id.includes("@tanstack")) {
+              return "vendor-network";
+            }
+          }
+        },
+      },
+    },
+  },
+
+  optimizeDeps: {
+    include: [
+      "react",
+      "react-dom",
+      "react-router-dom",
+      "lucide-react",
+      "axios",
+      "recharts",
+      "framer-motion",
+    ],
   },
 }));

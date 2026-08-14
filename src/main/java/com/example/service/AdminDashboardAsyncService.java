@@ -14,9 +14,12 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.concurrent.CompletableFuture;
 
+import org.springframework.transaction.annotation.Transactional;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Transactional(readOnly = true)
 public class AdminDashboardAsyncService {
 
     private final UserRepository userRepository;
@@ -153,9 +156,13 @@ public class AdminDashboardAsyncService {
 
         long start = System.currentTimeMillis();
 
+        LocalDateTime startOfDay = LocalDateTime.now().toLocalDate().atStartOfDay();
+        LocalDateTime endOfDay = startOfDay.plusDays(1);
+
         Long result =
                 userRepository.findUsersCountByDate(
-                        LocalDateTime.now()
+                        startOfDay,
+                        endOfDay
                 );
 
         log.info("newUsersToday() : {} ms",

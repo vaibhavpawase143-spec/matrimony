@@ -34,6 +34,7 @@ public class RazorpayPaymentService {
     private final SubscriptionPlanRepository subscriptionPlanRepository;
 
     private final SubscriptionService subscriptionService;
+    private final NotificationService notificationService;
     private final RazorpayClient razorpayClient;
     @Value("${razorpay.api.key}")
     private String razorpayKey;
@@ -142,6 +143,12 @@ public class RazorpayPaymentService {
 
             paymentRepository.save(payment);
 
+            notificationService.createAdminNotification(
+                    "Payment Received",
+                    "Payment of ₹" + payment.getAmount() + " received from " + payment.getUser().getFullName() + ".",
+                    com.example.model.NotificationType.SUBSCRIPTION
+            );
+
             subscriptionService.activateSubscription(
                     payment.getUser(),
                     payment.getSubscriptionPlan()
@@ -171,6 +178,18 @@ public class RazorpayPaymentService {
 
                 paymentRepository.save(payment);
 
+                notificationService.createAdminNotification(
+                        "Payment Failed",
+                        "Payment failed for " + payment.getUser().getFullName() + ".",
+                        com.example.model.NotificationType.WARNING
+                );
+
+                notificationService.createSubscriptionReminder(
+                        payment.getUser().getId(),
+                        null,
+                        "Payment Failed",
+                        "Your payment of ₹" + payment.getAmount() + " could not be completed."
+                );
             }
 
             return false;

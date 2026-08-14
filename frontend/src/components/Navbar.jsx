@@ -56,7 +56,7 @@ const user =
   );
 
 const currentUserId =
-  user?.profile?.userId;
+  user?.profile?.userId || user?.userId || user?.id;
   const getNotificationMeta = (type) => {
     const map = {
       REQUEST: {
@@ -254,7 +254,7 @@ useEffect(() => {
     try {
 
       await fetch(
-        "https://localhost:9090/api/chat/offline",
+        "/api/chat/offline",
         {
           method: "PUT",
           headers: {
@@ -803,10 +803,7 @@ onClick={async () => {
 
 
   try {
-
-    await notificationAPI.markRead(
-      item.id
-    );
+    await notificationAPI.markRead(item.id);
 
     setNotifications(prev =>
       prev.map(n =>
@@ -816,59 +813,57 @@ onClick={async () => {
       )
     );
 
- const user =
- JSON.parse(
-   localStorage.getItem("user")
- );
-
- const count =
- await notificationAPI.unreadCount(
-   user.profile.userId
- );
-
-setUnreadCount(count);
-
-const meta = getNotificationMeta(item.type);
-
-setShowNotifications(false);
-
-// 🎯 MATCH notification
-if (item.type === "MATCH") {
-
-    if (user?.isPremium) {
-
-        navigate(`/profile/${item.matchedUserId}`);
-
-    } else {
-
-        setPremiumFeature("Compatible Match");
-        setShowUpgradePopup(true);
-
+    const targetUserId = user?.profile?.userId || user?.userId || user?.id || currentUserId;
+    if (targetUserId) {
+      try {
+        const count = await notificationAPI.unreadCount(targetUserId);
+        setUnreadCount(Number(count) || 0);
+      } catch (cErr) {
+        console.error("Failed to update unread count:", cErr);
+      }
     }
 
-    return;
-}
-
-// Remaining notifications
-// Admin notifications
-if (
-    item.type === "ANNOUNCEMENT" ||
-    item.type === "SYSTEM" ||
-    item.type === "MAINTENANCE" ||
-    item.type === "WARNING" ||
-    item.type === "SUBSCRIPTION"
-) {
+    const meta = getNotificationMeta(item.type);
     setShowNotifications(false);
-    navigate(`/notifications/${item.id}`);
-    return;
-}
 
-// Other notifications
-navigate(meta.route);
-} catch(err) {
+    // 🎯 MATCH notification
+    if (item.type === "MATCH") {
+      const matchId = item.matchedUserId || item.senderId;
+      if (user?.isPremium) {
+        if (matchId) {
+          navigate(`/profile/${matchId}`);
+        } else {
+          navigate("/matches");
+        }
+      } else {
+        setPremiumFeature("Compatible Match");
+        setShowUpgradePopup(true);
+      }
+      return;
+    }
 
-    console.log(err);
+    // System/Announcement notifications
+    if (
+      item.type === "ANNOUNCEMENT" ||
+      item.type === "SYSTEM" ||
+      item.type === "MAINTENANCE" ||
+      item.type === "WARNING"
+    ) {
+      navigate(`/notifications/${item.id}`);
+      return;
+    }
 
+    if (item.type === "SUBSCRIPTION") {
+      navigate("/upgrade");
+      return;
+    }
+
+    // Default route navigation based on notification type (LIKE -> /likes, VIEW -> /profile-visitors, etc.)
+    navigate(meta.route);
+  } catch(err) {
+    console.error("Error processing notification click:", err);
+    setShowNotifications(false);
+    navigate("/home");
   }
 
 }}

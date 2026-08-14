@@ -185,6 +185,13 @@ public class SupportServiceImpl implements SupportService {
 
         SupportTicket updatedTicket = repository.save(ticket);
 
+        notificationService.createSubscriptionReminder(
+                updatedTicket.getUser().getId(),
+                null,
+                "Support Ticket Updated",
+                "Your support ticket #" + updatedTicket.getTicketNumber() + " status is now " + updatedTicket.getStatus() + "."
+        );
+
         Admin currentAdmin = currentAdminService.getCurrentAdmin();
 
         adminAuditLogService.log(
@@ -222,6 +229,13 @@ public class SupportServiceImpl implements SupportService {
             ticket.setStatus(SupportStatus.IN_PROGRESS);
         }
         SupportTicket updatedTicket = repository.save(ticket);
+
+        notificationService.createSubscriptionReminder(
+                updatedTicket.getUser().getId(),
+                null,
+                "Support Ticket Replied",
+                "Support staff replied to your ticket #" + updatedTicket.getTicketNumber() + "."
+        );
 
         Admin currentAdmin = currentAdminService.getCurrentAdmin();
 

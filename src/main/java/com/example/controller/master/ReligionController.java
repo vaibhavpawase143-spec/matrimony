@@ -17,6 +17,7 @@ import java.util.List;
 public class ReligionController {
 
     private final ReligionService religionService;
+    private final com.example.service.MasterDataCacheService masterDataCacheService;
 
     // =====================================================
     // CREATE
@@ -115,7 +116,7 @@ public class ReligionController {
 
         return ApiResponse.success(
                 "Religion list fetched successfully.",
-                religionService.getAll()
+                masterDataCacheService.getReligions()
         );
     }
 
@@ -141,7 +142,7 @@ public class ReligionController {
 
         return ApiResponse.success(
                 "Active religion list fetched successfully.",
-                religionService.getActive()
+                masterDataCacheService.getReligions()
         );
     }
 

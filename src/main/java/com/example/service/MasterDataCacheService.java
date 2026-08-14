@@ -119,80 +119,82 @@ public class MasterDataCacheService {
     private final EmployedRepository employedRepository;
     private final DisabilityStatusRepository disabilityStatusRepository;
     private final GenderRepository genderRepository;
+    private final java.util.concurrent.ConcurrentHashMap<String, Object> localCache = new java.util.concurrent.ConcurrentHashMap<>();
+
     @PostConstruct
     public void initializeCache() {
-
         log.info("==========================================");
-        log.info("Redis cache warmup disabled");
+        log.info("Warming up Master Data L1 ConcurrentHashMap Cache...");
         log.info("==========================================");
-
-        // warmUpCache();
-    }
-
-    @Scheduled(cron = "0 0 */6 * * *")
-    public void refreshMasterCache() {
-
-        // warmUpCache();
-
-    }
-
-    public void warmUpCache() {
         CompletableFuture.runAsync(() -> {
             try {
-                put(KEY_RELIGION, fetchReligionsFromDb());
-                put(KEY_CASTE, fetchCastesFromDb());
-                put(KEY_SUBCASTE, fetchSubCastesFromDb());
-                put(KEY_COUNTRY, fetchCountriesFromDb());
-                put(KEY_STATE, fetchStatesFromDb());
-                put(KEY_CITY, fetchCitiesFromDb());
-                put(KEY_OCCUPATION, fetchOccupationsFromDb());
-                put(KEY_EDUCATION, fetchEducationLevelsFromDb());
-                put(KEY_QUALIFICATION, fetchQualificationsFromDb());
-                put(KEY_MOTHER_TONGUE, fetchMotherTonguesFromDb());
-                put(KEY_MARITAL_STATUS, fetchMaritalStatusFromDb());
-                put(KEY_PROFILE_TYPE, fetchProfileTypesFromDb());
-                put(KEY_HEIGHT, fetchHeightsFromDb());
-                put(KEY_WEIGHT, fetchWeightsFromDb());
-                put(KEY_INCOME, fetchIncomeFromDb());
-                put(KEY_DIET, fetchDietsFromDb());
-                put(KEY_SMOKING, fetchSmokingFromDb());
-                put(KEY_DRINKING, fetchDrinkingFromDb());
-                put(KEY_BODY_TYPE, fetchBodyTypesFromDb());
-                put(KEY_COMPLEXION, fetchComplexionsFromDb());
-                put(KEY_FAMILY, fetchFamiliesFromDb());
-                put(KEY_FAMILY_STATUS, fetchFamilyStatusFromDb());
-                put(KEY_FAMILY_TYPE, fetchFamilyTypesFromDb());
-                put(KEY_FAMILY_VALUE, fetchFamilyValuesFromDb());
-                put(KEY_FIELD_OF_STUDY, fetchFieldOfStudiesFromDb());
-                put(KEY_MANGLIK_STATUS, fetchManglikStatusFromDb());
-                put(KEY_EMPLOYED, fetchEmployedFromDb());
-                put(KEY_DISABILITY_STATUS, fetchDisabilityStatusFromDb());
-                put(KEY_GENDER, fetchGenderFromDb());
+                getReligions();
+                getCastes();
+                getSubCastes();
+                getCountries();
+                getStates();
+                getCities();
+                getOccupations();
+                getEducationLevels();
+                getQualifications();
+                getMotherTongues();
+                getMaritalStatus();
+                getProfileTypes();
+                getHeights();
+                getWeights();
+                getIncome();
+                getDiets();
+                getSmoking();
+                getDrinking();
+                getBodyTypes();
+                getComplexions();
+                getGender();
+                log.info("✅ Master Data L1 Cache warmup complete!");
             } catch (Exception e) {
-                log.error("Cache warmup failed", e);
+                log.error("Master Data L1 Cache warmup error", e);
             }
         }, taskExecutor);
     }
 
+    @Scheduled(cron = "0 0 */6 * * *")
+    public void refreshMasterCache() {
+        localCache.clear();
+        initializeCache();
+    }
+
+    public void warmUpCache() {
+        initializeCache();
+    }
+
     private void put(String key, Object value) {
+        localCache.put(key, value);
         try {
             redisTemplate.opsForValue().set(key, value, CACHE_TTL);
         } catch (Exception e) {
-            log.error("Failed to put data into Redis for key: {}", key, e);
+            log.warn("Redis put skipped for key: {}", key);
         }
     }
 
     @SuppressWarnings("unchecked")
     private <T> List<T> getOrFetch(String key, Supplier<List<T>> dbFetcher) {
+        // 1. Fast L1 In-Memory Cache Lookup (0 ms)
+        Object cached = localCache.get(key);
+        if (cached != null) {
+            return (List<T>) cached;
+        }
+
+        // 2. Redis Lookup
         try {
             Object obj = redisTemplate.opsForValue().get(key);
             if (obj != null) {
+                localCache.put(key, obj);
                 return (List<T>) obj;
             }
         } catch (Exception e) {
-            log.error("Redis get failed for key: {}. Falling back to database.", key, e);
+            log.warn("Redis get skipped for key: {}", key);
         }
 
+        // 3. Fallback to Database
         List<T> data = null;
         try {
             data = dbFetcher.get();
@@ -202,6 +204,7 @@ public class MasterDataCacheService {
         }
 
         if (data != null && !data.isEmpty()) {
+            localCache.put(key, data);
             final List<T> finalData = data;
             CompletableFuture.runAsync(() -> put(key, finalData), taskExecutor);
         }
@@ -248,11 +251,11 @@ public class MasterDataCacheService {
     public List<GenderResponseDTO> getGender() { return getOrFetch(KEY_GENDER, this::fetchGenderFromDb); }
 
     private List<ReligionResponseDTO> fetchReligionsFromDb() { return religionRepository.findAllByDeletedAtIsNull().stream().map(this::toReligionDto).toList(); }
-    private List<CasteResponseDTO> fetchCastesFromDb() { return casteRepository.findAllByDeletedAtIsNull().stream().map(this::toCasteDto).toList(); }
+    private List<CasteResponseDTO> fetchCastesFromDb() { return casteRepository.findAllWithRelations().stream().map(this::toCasteDto).toList(); }
     private List<SubCasteResponseDTO> fetchSubCastesFromDb() { return subCasteRepository.findAllWithRelations().stream().map(this::toSubCasteDto).toList(); }
     private List<CountryResponseDTO> fetchCountriesFromDb() { return countryRepository.findByDeletedAtIsNull().stream().map(this::toCountryDto).toList(); }
-    private List<StateResponseDTO> fetchStatesFromDb() { return stateRepository.findAllByDeletedAtIsNull().stream().map(this::toStateDto).toList(); }
-    private List<CityResponseDTO> fetchCitiesFromDb() { return cityRepository.findByDeletedAtIsNull().stream().map(this::toCityDto).toList(); }
+    private List<StateResponseDTO> fetchStatesFromDb() { return stateRepository.findAllWithRelations().stream().map(this::toStateDto).toList(); }
+    private List<CityResponseDTO> fetchCitiesFromDb() { return cityRepository.findAllWithRelations().stream().map(this::toCityDto).toList(); }
     private List<OccupationResponseDTO> fetchOccupationsFromDb() { return occupationRepository.findAllByDeletedAtIsNull().stream().map(this::toOccupationDto).toList(); }
     private List<EducationLevelResponseDto> fetchEducationLevelsFromDb() { return educationLevelRepository.findAllByDeletedAtIsNull().stream().map(this::toEducationDto).toList(); }
     private List<QualificationResponseDTO> fetchQualificationsFromDb() { return qualificationRepository.findAllByDeletedAtIsNull().stream().map(this::toQualificationDto).toList(); }
