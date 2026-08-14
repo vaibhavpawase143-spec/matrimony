@@ -29,12 +29,12 @@ useState(null);
 const [page,setPage] =
 useState(0);
 
-const load = useCallback(async () => {
+const load = useCallback(async (force = false) => {
 
     const cache = window[CACHE_KEY];
 
     // Already loaded → API call नको
-    if (cache.loaded) {
+    if (cache.loaded && !force) {
         setItems([...cache.items]);
         return;
     }

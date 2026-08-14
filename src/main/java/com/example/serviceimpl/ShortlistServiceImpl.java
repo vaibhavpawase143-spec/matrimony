@@ -41,7 +41,8 @@ public class ShortlistServiceImpl implements ShortlistService {
             value = {
                     "user:shortlists",
                     "user:shortlists:page",
-                    "user:discover"
+                    "user:discover",
+                    "dashboardSummary"
             },
             key = "#shortlist.user.id"
     )
@@ -166,17 +167,12 @@ public class ShortlistServiceImpl implements ShortlistService {
 
     // 🔍 Get all shortlisted profiles by user
     @Override
-    @Cacheable(value = "user:shortlists", key = "#userId")
     public List<Shortlist> getByUser(Long userId) {
         return repository.findByUser_IdAndIsActiveTrue(userId);
     }
 
     // 🔍 Get paginated shortlisted profiles by user
     @Override
-    @Cacheable(
-            value = "user:shortlists:page",
-            key = "#userId + '-' + #pageable.pageNumber + '-' + #pageable.pageSize"
-    )
     public Page<Shortlist> getByUser(Long userId, Pageable pageable) {
         return repository.findByUser_IdAndIsActiveTrue(userId, pageable);
     }
@@ -193,7 +189,8 @@ public class ShortlistServiceImpl implements ShortlistService {
             value = {
                     "user:shortlists",
                     "user:shortlists:page",
-                    "user:discover"
+                    "user:discover",
+                    "dashboardSummary"
             },
             key = "#userId"
     )

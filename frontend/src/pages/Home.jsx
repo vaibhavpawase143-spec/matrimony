@@ -146,7 +146,26 @@ const refreshDashboard = useCallback(async () => {
     }
 
 }, [dashboardRefreshing]);
+useEffect(() => {
 
+    const handleDashboardUpdated = () => {
+        console.log("🔄 Dashboard update event received");
+        refreshDashboard();
+    };
+
+    window.addEventListener(
+        "dashboardUpdated",
+        handleDashboardUpdated
+    );
+
+    return () => {
+        window.removeEventListener(
+            "dashboardUpdated",
+            handleDashboardUpdated
+        );
+    };
+
+}, [refreshDashboard]);
 
 
 
