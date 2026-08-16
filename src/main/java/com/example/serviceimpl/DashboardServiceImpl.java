@@ -11,6 +11,7 @@ import com.example.service.MatchService;
 
 @Service
 @RequiredArgsConstructor
+@org.springframework.transaction.annotation.Transactional(readOnly = true)
 public class DashboardServiceImpl implements DashboardService {
 
     private final MatchRepository matchRepository;

@@ -110,7 +110,7 @@ public class UserServiceImpl implements UserService {
                     
                     // Verify the profile was saved correctly
                     profileRepository.findById(savedProfile.getId()).ifPresentOrElse(
-                        p -> System.out.println("✅ Profile verification: User=" + p.getUser().getEmail() + 
+                        p -> System.out.println("✅ Profile verification: User=" + savedUser.getEmail() + 
                             ", Profile ID=" + p.getId()),
                         () -> System.err.println("⚠️ Profile verification failed")
                     );

@@ -1,8 +1,8 @@
 package com.example.service;
 
 import com.example.dto.response.UserGalleryResponseDTO;
+import com.example.dto.response.UserPhotoResponseDTO;
 import com.example.model.PhotoType;
-import com.example.model.UserPhoto;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -13,12 +13,12 @@ public interface UserPhotoService {
     // UPLOAD
     // =========================
 
-    String upload(
+    UserPhotoResponseDTO upload(
             MultipartFile file,
             PhotoType type
     );
 
-    List<String> uploadMultiple(
+    List<UserPhotoResponseDTO> uploadMultiple(
             List<MultipartFile> files
     );
 
@@ -34,7 +34,7 @@ public interface UserPhotoService {
     // GET MY PHOTOS
     // =========================
 
-    List<UserPhoto> getMyPhotos();
+    List<UserPhotoResponseDTO> getMyPhotos();
 
     String getMyProfilePhoto();
 
@@ -52,7 +52,7 @@ public interface UserPhotoService {
     // PRIMARY PHOTO
     // =========================
 
-    void setPrimary(
+    UserPhotoResponseDTO setPrimary(
             Long photoId
     );
 

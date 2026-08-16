@@ -5,6 +5,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import org.springframework.context.annotation.Lazy;
+
 /**
  * Spring Web MVC Configuration for audit interceptor registration.
  * Registers the SecurityAuditInterceptor to intercept all HTTP requests
@@ -14,6 +16,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class AuditWebConfig implements WebMvcConfigurer {
 
     @Autowired
+    @Lazy
     private SecurityAuditInterceptor securityAuditInterceptor;
 
     /**

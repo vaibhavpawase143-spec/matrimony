@@ -164,7 +164,7 @@ public class MatchServiceImpl implements MatchService {
         }
 
         if (preference == null) {
-            throw new RuntimeException("Partner preference not found");
+            preference = new PartnerPreference();
         }
 
         List<FieldMatchDTO> fields = new ArrayList<>();
@@ -651,8 +651,9 @@ public class MatchServiceImpl implements MatchService {
 
     // ================= DYNAMIC SCORE =================
 
-    private int calculateMatchScore(User currentUser,
-                                    User candidateUser) {
+    @Override
+    public int calculateMatchScore(User currentUser,
+                                   User candidateUser) {
 
         PartnerPreference pref = currentUser.getPartnerPreference();
         Profile profile = candidateUser.getProfile();

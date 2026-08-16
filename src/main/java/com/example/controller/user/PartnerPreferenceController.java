@@ -133,40 +133,35 @@ public class PartnerPreferenceController {
 
     @PutMapping("/{userId}")
     public ResponseEntity<PartnerPreferenceResponseDTO> update(
-
             @PathVariable Long userId,
-
             @RequestBody PartnerPreferenceRequestDTO dto
-
     ){
-
-        PartnerPreference existing=
-                preferenceService
-                        .getByUserId(userId)
-                        .orElseThrow(
-                                ()->new RuntimeException(
-                                        "Preference not found"
-                                )
-                        );
+        PartnerPreference preference = preferenceService
+                .getByUserId(userId)
+                .orElseGet(() -> {
+                    User user = userRepository.findById(userId)
+                            .orElseThrow(() -> new RuntimeException("User not found: " + userId));
+                    PartnerPreference newPref = new PartnerPreference();
+                    newPref.setUser(user);
+                    return newPref;
+                });
 
         applyFields(
-                existing,
+                preference,
                 dto
         );
 
-        existing.setOtherExpectations(
+        preference.setOtherExpectations(
                 dto.getOtherExpectations()
         );
 
-        PartnerPreference updated=
-                preferenceService.savePreference(
-                        existing
-                );
+        PartnerPreference updated = preferenceService.savePreference(
+                preference
+        );
 
         return ResponseEntity.ok(
                 mapToResponse(updated)
         );
-
     }
 
     private void applyFields(

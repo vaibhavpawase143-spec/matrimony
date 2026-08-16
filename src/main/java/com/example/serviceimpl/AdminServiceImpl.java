@@ -41,7 +41,7 @@ public class AdminServiceImpl implements AdminService {
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
-    private final AdminAuditLogService auditLogService;
+    private final @org.springframework.context.annotation.Lazy AdminAuditLogService auditLogService;
     private final FileStorageService fileStorageService;
     // ================= CURRENT ADMIN =================
     private Admin getCurrentAdmin() {

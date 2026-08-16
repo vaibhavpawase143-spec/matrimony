@@ -111,83 +111,135 @@ const [visitors, setVisitors] = useState([]);
 const [receivedInterests, setReceivedInterests] = useState([]);
 const [shortlists, setShortlists] = useState([]);
 const [sentInterests, setSentInterests] = useState([]);
+const [activityLoading, setActivityLoading] = useState(true);
+
+const loadRecentActivity = useCallback(async () => {
+    try {
+        setActivityLoading(true);
+        const currentUserStr = localStorage.getItem("user");
+        if (!currentUserStr) {
+            setActivityLoading(false);
+            return;
+        }
+
+        const currentUser = JSON.parse(currentUserStr);
+        const userId = Number(
+            currentUser?.userId ||
+            currentUser?.id ||
+            currentUser?.profile?.userId
+        );
+
+        if (!userId) {
+            setActivityLoading(false);
+            return;
+        }
+
+        const [visitorsRes, receivedRes, sentRes, shortlistsRes] = await Promise.allSettled([
+            profileVisitorAPI.getMyVisitors(),
+            interestAPI.getReceivedInterests(userId),
+            interestAPI.getSentInterests(userId),
+            shortlistAPI.getMyShortlists(0, 10)
+        ]);
+
+        if (visitorsRes.status === "fulfilled" && visitorsRes.value) {
+            const raw = Array.isArray(visitorsRes.value)
+                ? visitorsRes.value
+                : visitorsRes.value?.data || [];
+            setVisitors(raw);
+        }
+
+        if (receivedRes.status === "fulfilled" && receivedRes.value) {
+            const raw = Array.isArray(receivedRes.value)
+                ? receivedRes.value
+                : receivedRes.value?.data || [];
+            setReceivedInterests(raw);
+        }
+
+        if (sentRes.status === "fulfilled" && sentRes.value) {
+            const raw = Array.isArray(sentRes.value)
+                ? sentRes.value
+                : sentRes.value?.data || [];
+            setSentInterests(raw);
+        }
+
+        if (shortlistsRes.status === "fulfilled" && shortlistsRes.value) {
+            const raw = Array.isArray(shortlistsRes.value)
+                ? shortlistsRes.value
+                : shortlistsRes.value?.content || shortlistsRes.value?.data || [];
+            setShortlists(raw);
+        }
+    } catch (err) {
+        console.error("Recent Activity load error:", err);
+    } finally {
+        setActivityLoading(false);
+    }
+}, []);
 
 const refreshDashboard = useCallback(async () => {
     console.log("REFRESH DASHBOARD START");
 
-    console.log("STEP 1");
-
     if (dashboardRefreshing) return;
-
-    console.log("STEP 2");
 
     setDashboardRefreshing(true);
 
     try {
-
-        console.time("DASHBOARD API");
-
         const summary = await dashboardAPI.getSummary();
-
-        console.timeEnd("DASHBOARD API");
-
         setDashboardStats(summary);
-
     } catch (error) {
-
         console.log("STEP ERROR", error);
-
     } finally {
-
-        console.log("STEP 5");
-
         setDashboardRefreshing(false);
-
     }
 
 }, [dashboardRefreshing]);
-useEffect(() => {
 
+useEffect(() => {
     const handleDashboardUpdated = () => {
         console.log("🔄 Dashboard update event received");
         refreshDashboard();
+        loadRecentActivity();
     };
 
-    window.addEventListener(
-        "dashboardUpdated",
-        handleDashboardUpdated
-    );
+    const handleActivityOnlyUpdate = () => {
+        loadRecentActivity();
+    };
+
+    window.addEventListener("dashboardUpdated", handleDashboardUpdated);
+    window.addEventListener("interestUpdated", handleActivityOnlyUpdate);
+    window.addEventListener("shortlist:updated", handleActivityOnlyUpdate);
+    window.addEventListener("visitorUpdated", handleActivityOnlyUpdate);
 
     return () => {
-        window.removeEventListener(
-            "dashboardUpdated",
-            handleDashboardUpdated
-        );
+        window.removeEventListener("dashboardUpdated", handleDashboardUpdated);
+        window.removeEventListener("interestUpdated", handleActivityOnlyUpdate);
+        window.removeEventListener("shortlist:updated", handleActivityOnlyUpdate);
+        window.removeEventListener("visitorUpdated", handleActivityOnlyUpdate);
     };
-
-}, [refreshDashboard]);
+}, [refreshDashboard, loadRecentActivity]);
 
 
 
 
 const [loadingProfiles,setLoadingProfiles] =
 useState(true);
-const [showProfilePopup, setShowProfilePopup] =
-useState(false);
+const [showProfilePopup, setShowProfilePopup] = useState(false);
 useEffect(() => {
-
-  if (
-    profileData &&
-    profileData.profileCompleted === false
-  ) {
-
-
-
-    setShowProfilePopup(true);
-
+  if (profileLoading || !profileData) {
+    setShowProfilePopup(false);
+    return;
   }
 
-}, [profileData]);
+  const isCompleted = Boolean(
+    profileData?.profileCompleted ||
+    (profileData?.profileCompletionPercentage >= 80)
+  );
+
+  if (!isCompleted) {
+    setShowProfilePopup(true);
+  } else {
+    setShowProfilePopup(false);
+  }
+}, [profileData, profileLoading]);
 
 const [showHeart,setShowHeart] =
 useState(null);
@@ -414,32 +466,13 @@ useEffect(() => {
 
 }, [profiles.length]);
 const loadInitialData = useCallback(async () => {
-
-     console.log("STEP 1");
-
-     try {
-
-         console.log("STEP 2");
-         currentPageRef.current = 0;
-
-
-         await loadProfiles(0, false);
-
-         console.log("STEP 3");
-
-     } catch (e) {
-
-         console.error("loadProfiles Error", e);
-
-     }
-
-     console.log("STEP 4");
-
-     refreshDashboard();
-
-     console.log("STEP 5");
-
- }, [loadProfiles, refreshDashboard]);
+     currentPageRef.current = 0;
+     Promise.allSettled([
+         loadProfiles(0, false),
+         refreshDashboard(),
+         loadRecentActivity()
+     ]);
+ }, [loadProfiles, refreshDashboard, loadRecentActivity]);
 
 useEffect(() => {
     if (initialized) return;
@@ -750,25 +783,26 @@ return (
             <Link
               key={item.label}
               to={
-                profileData?.profileCompleted
+                (profileData?.profileCompleted || (profileData?.profileCompletionPercentage >= 80))
                   ? item.to
                   : item.label === "Dashboard"
                   ? "/home"
                   : "#"
               }
              onClick={async (e) => {
-
+                 const isCompleted = Boolean(
+                   profileData?.profileCompleted ||
+                   (profileData?.profileCompletionPercentage >= 80)
+                 );
                  // Profile completion check
                  if (
-                     !profileData?.profileCompleted &&
+                     !isCompleted &&
                      item.label !== "Dashboard" &&
                      item.label !== "Settings"
                  ) {
-
                      e.preventDefault();
                      setShowProfilePopup(true);
                      return;
-
                  }
 
                  // Premium check for Messages & Matches
@@ -1013,6 +1047,7 @@ p-8
   receivedInterests={receivedInterests}
   shortlists={shortlists}
   sentInterests={sentInterests}
+  loading={activityLoading}
 />
             {/* Real Profiles Section */}
             <div className="mb-8">
@@ -1200,7 +1235,7 @@ onDoubleClick={async (e) => {
      onClick={() => {
 
        if (
-         !profileData?.profileCompleted
+         !(profileData?.profileCompleted || (profileData?.profileCompletionPercentage >= 80))
        ) {
 
          setShowProfilePopup(true);
@@ -1260,7 +1295,7 @@ onDoubleClick={async (e) => {
                    e.stopPropagation();
 
                    if (
-                     !profileData?.profileCompleted
+                     !(profileData?.profileCompleted || (profileData?.profileCompletionPercentage >= 80))
                    ) {
 
                      setShowProfilePopup(true);

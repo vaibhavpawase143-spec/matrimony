@@ -23,6 +23,8 @@ public interface MatchService {
 
     int calculateMatchScore(Long currentUserId, Long candidateUserId);
 
+    int calculateMatchScore(User currentUser, User candidateUser);
+
     // 🔥 NEW
     void swipe(Long fromUserId, Long toUserId, SwipeType type);
     List<User> getMyMatches(Long userId);

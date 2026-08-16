@@ -28,8 +28,9 @@ import java.time.Instant;
  * 1. Sets the audit user at the beginning of each request
  * 2. Clears it at the end to prevent ThreadLocal memory leaks
  */
+import org.springframework.context.annotation.Lazy;
+
 @Component
-@RequiredArgsConstructor
 public class SecurityAuditInterceptor implements HandlerInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(SecurityAuditInterceptor.class);
@@ -41,6 +42,16 @@ public class SecurityAuditInterceptor implements HandlerInterceptor {
     private final UserRepository userRepository;
     private final AdminRepository adminRepository;
     private final RequestAuditLogService requestAuditLogService;
+
+    public SecurityAuditInterceptor(
+            UserRepository userRepository,
+            AdminRepository adminRepository,
+            @Lazy RequestAuditLogService requestAuditLogService
+    ) {
+        this.userRepository = userRepository;
+        this.adminRepository = adminRepository;
+        this.requestAuditLogService = requestAuditLogService;
+    }
 
     /**
      * Called BEFORE the request is handled.

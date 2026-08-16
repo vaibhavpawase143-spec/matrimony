@@ -4,7 +4,9 @@ import com.example.model.RequestAuditLog;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
+@Repository
 public interface RequestAuditLogRepository extends JpaRepository<RequestAuditLog, Long> {
     Page<RequestAuditLog> findByActorId(Long actorId, Pageable pageable);
 }

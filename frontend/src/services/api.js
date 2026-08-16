@@ -131,7 +131,6 @@ export const apiClient = async (endpoint, options = {}) => {
 export const photoAPI = {
 
   getMyPhotos: async () => {
-
     const response = await fetch(
       `${API_BASE_URL}/photos/me`,
       {
@@ -147,28 +146,53 @@ export const photoAPI = {
 
     return await response.json();
   },
-getUserPhotos: async (userId) => {
 
-  const response = await fetch(
-    `${API_BASE_URL}/photos/user/${userId}`,
-    {
-      headers: {
-        Authorization:
-          `Bearer ${localStorage.getItem("token")}`
+  getUserPhotos: async (userId) => {
+    const response = await fetch(
+      `${API_BASE_URL}/photos/user/${userId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`
+        }
       }
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error(
-      "Failed to load photos"
     );
-  }
 
-  return await response.json();
-},
+    if (!response.ok) {
+      throw new Error("Failed to load photos");
+    }
+
+    return await response.json();
+  },
+
+  upload: async (file, type = "PROFILE") => {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("type", type);
+
+    const response = await fetch(
+      `${API_BASE_URL}/photos/upload`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`
+        },
+        body: formData
+      }
+    );
+
+    const text = await response.text();
+    if (!response.ok) {
+      throw new Error(text || "Photo upload failed");
+    }
+
+    try {
+      return JSON.parse(text);
+    } catch {
+      return text;
+    }
+  },
+
   uploadMultiple: async (formData) => {
-
     const response = await fetch(
       `${API_BASE_URL}/photos/upload-multiple`,
       {
@@ -181,13 +205,6 @@ getUserPhotos: async (userId) => {
     );
 
     const text = await response.text();
-
-    console.log(
-      "UPLOAD RESPONSE:",
-      response.status,
-      text
-    );
-
     if (!response.ok) {
       throw new Error(text || "Photo upload failed");
     }
@@ -199,8 +216,30 @@ getUserPhotos: async (userId) => {
     }
   },
 
-  deletePhoto: async (photoId) => {
+  setPrimary: async (photoId) => {
+    const response = await fetch(
+      `${API_BASE_URL}/photos/primary/${photoId}`,
+      {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`
+        }
+      }
+    );
 
+    const text = await response.text();
+    if (!response.ok) {
+      throw new Error(text || "Failed to set primary photo");
+    }
+
+    try {
+      return JSON.parse(text);
+    } catch {
+      return text;
+    }
+  },
+
+  deletePhoto: async (photoId) => {
     const response = await fetch(
       `${API_BASE_URL}/photos/${photoId}`,
       {
@@ -446,6 +485,59 @@ changePassword: async (data) => {
   });
 },
 
+};
+
+export const otpAPI = {
+  sendOTP: async (target, channel = null, purpose = "VERIFICATION") => {
+    return await apiClient("/auth/otp/send", {
+      method: "POST",
+      body: JSON.stringify({ target, channel, purpose }),
+    });
+  },
+
+  resendOTP: async (target, purpose = "VERIFICATION") => {
+    return await apiClient(`/auth/otp/resend?target=${encodeURIComponent(target)}&purpose=${encodeURIComponent(purpose)}`, {
+      method: "POST",
+    });
+  },
+
+  verifyOTP: async (target, otp, purpose = "VERIFICATION") => {
+    return await apiClient("/auth/otp/verify", {
+      method: "POST",
+      body: JSON.stringify({ target, otp, purpose }),
+    });
+  },
+
+  sendLoginOTP: async (target) => {
+    return await apiClient(`/auth/otp/login-send?target=${encodeURIComponent(target)}`, {
+      method: "POST",
+    });
+  },
+
+  loginWithOTP: async (target, otp) => {
+    const result = await apiClient("/auth/otp/login-verify", {
+      method: "POST",
+      body: JSON.stringify({ target, otp, purpose: "LOGIN" }),
+    });
+
+    const token = result.data?.accessToken || result.accessToken || result.token;
+    const userData = result.data?.profile || result.profile || result.user || result.data || result;
+
+    if (token) {
+      localStorage.setItem("token", token);
+      localStorage.setItem("isAdmin", "false");
+      if (userData) {
+        localStorage.setItem("user", JSON.stringify(userData));
+      }
+    }
+
+    return {
+      success: true,
+      data: userData,
+      token,
+      role: result.data?.role,
+    };
+  },
 };
 
 export const profileVisitorAPI = {
@@ -924,987 +1016,117 @@ export const searchAPI = {
   }
 
 };
+let bulkMasterMemoryCache = null;
+let bulkMasterFetchPromise = null;
+
+const getBulkCache = () => {
+  if (bulkMasterMemoryCache && Object.keys(bulkMasterMemoryCache).length > 0) {
+    return bulkMasterMemoryCache;
+  }
+  try {
+    const stored = sessionStorage.getItem("gathbandhan_bulk_master_v2");
+    if (stored) {
+      bulkMasterMemoryCache = JSON.parse(stored);
+      return bulkMasterMemoryCache;
+    }
+  } catch (e) {}
+  return null;
+};
+
+const getCachedKeyOrFetch = async (key, fallbackPath) => {
+  let cache = getBulkCache();
+  if (!cache || Object.keys(cache).length === 0) {
+    cache = await masterDataAPI.getAllMasterData();
+  }
+  if (cache && cache[key] && Array.isArray(cache[key])) {
+    return cache[key];
+  }
+  return (cache && cache[key] && Array.isArray(cache[key])) ? cache[key] : [];
+};
+
 export const masterDataAPI = {
-
-  // ==========================================
-  // RELIGIONS
-  // ==========================================
-
-getReligions: async () => {
-
-  try {
-
-    console.log(
-      '🔍 Fetching religions...'
-    );
-
-    const result =
-      await apiClient(
-        '/master/religions'
-      );
-
-    console.log(
-      '✅ MASTER API RESPONSE - Religions:',
-      result
-    );
-
-    // Extract data from ApiResponse wrapper
-    const religions = result?.data || result;
-
-    return Array.isArray(religions)
-      ? religions
-      : [];
-
-   } catch(error){
-
-     console.error(
-       '❌ Get Religions API error:',
-       error
-     );
-
-     return [];
-
-   }
-
- },
-
-
-
-// ==========================================
-// GENDERS
-// ==========================================
-
-getGenders: async () => {
-
-  try {
-
-    console.log(
-      '🔍 Fetching genders...'
-    );
-
-    const result =
-      await apiClient(
-        '/genders'
-      );
-
-    console.log(
-      '✅ MASTER API RESPONSE - Genders:',
-      result
-    );
-
-   const data = result?.data ?? result;
-
-   return Array.isArray(data)
-       ? data
-       : [];
-
-  } catch(error){
-
-    console.error(
-      '❌ Get Genders API error:',
-      error
-    );
-
-    return [];
-
-  }
-
-},
-  // ==========================================
-  // EDUCATION LEVELS
-  // ==========================================
-
-  getEducationLevels: async () => {
-    try {
-
-      console.log('🔍 Fetching education levels...');
-
-      const result =
-        await apiClient('/master/education-levels');
-
-      console.log(
-        '✅ MASTER API RESPONSE - Education Levels:',
-        result
-      );
-
-     const data = result?.data ?? result;
-
-     return Array.isArray(data)
-         ? data
-         : [];
-
-    } catch (error) {
-
-      console.error(
-        '❌ Get Education Levels API error:',
-        error
-      );
-
-      return [];
-
+  getAllMasterData: async () => {
+    const cached = getBulkCache();
+    if (cached && Object.keys(cached).length > 0) {
+      return cached;
     }
-  },
-
-  // ==========================================
-  // OCCUPATIONS
-  // ==========================================
-
-  getOccupations: async () => {
-    try {
-
-      console.log('🔍 Fetching occupations...');
-
-      const result =
-        await apiClient('/master/occupations');
-
-      console.log(
-        '✅ MASTER API RESPONSE - Occupations:',
-        result
-      );
-
-      const data = result?.data ?? result;
-
-      return Array.isArray(data)
-          ? data
-          : [];
-
-    } catch (error) {
-
-      console.error(
-        '❌ Get Occupations API error:',
-        error
-      );
-
-      return [];
-
+    if (bulkMasterFetchPromise) {
+      return bulkMasterFetchPromise;
     }
-  },
-  getProfileTypes: async () => {
-
-  try {
-
-  const result =
-
-  await apiClient(
-
-  '/master/profile-types'
-
-  );
-
-  const data = result?.data ?? result;
-
-  return Array.isArray(data)
-      ? data
-      : [];
-
-  }catch(error){
-
-  console.error(
-
-  '❌ Get Profile Types API error:',
-
-  error
-
-  );
-
-  return [];
-
-  }
-
-  },
-
-  // ==========================================
-  // MARITAL STATUS
-  // ==========================================
-
-  getMaritalStatuses: async () => {
-    try {
-
-      console.log('🔍 Fetching marital statuses...');
-
-      const result =
-        await apiClient('/master/marital-status');
-
-      console.log(
-        '✅ MASTER API RESPONSE - Marital Statuses:',
-        result
-      );
-
-      const data = result?.data ?? result;
-
-      return Array.isArray(data)
-          ? data
-          : [];
-
-    } catch (error) {
-
-      console.error(
-        '❌ Get Marital Statuses API error:',
-        error
-      );
-
-      return [];
-
-    }
-  },
-
-  // ==========================================
-  // HEIGHTS
-  // ==========================================
-
-  getHeights: async () => {
-    try {
-
-      console.log('🔍 Fetching heights...');
-
-      const result =
-        await apiClient('/master/heights');
-
-      console.log(
-        '✅ MASTER API RESPONSE - Heights:',
-        result
-      );
-
-      const data = result?.data ?? result;
-
-      return Array.isArray(data)
-          ? data
-          : [];
-
-    } catch (error) {
-
-      console.error(
-        '❌ Get Heights API error:',
-        error
-      );
-
-      return [];
-
-    }
-  },
-
-  // ==========================================
-  // WEIGHTS
-  // ==========================================
-
-  getWeights: async () => {
-    try {
-
-      console.log('🔍 Fetching weights...');
-
-      const result =
-        await apiClient('/master/weights');
-
-      console.log(
-        '✅ MASTER API RESPONSE - Weights:',
-        result
-      );
-
-      const data = result?.data ?? result;
-
-      return Array.isArray(data)
-          ? data
-          : [];
-
-    } catch (error) {
-
-      console.error(
-        '❌ Get Weights API error:',
-        error
-      );
-
-      return [];
-
-    }
-  },
-
-  // ==========================================
-  // COMPLEXIONS
-  // ==========================================
-
-  getComplexions: async () => {
-    try {
-
-      const result =
-        await apiClient('/complexions');
-
-      const data = result?.data ?? result;
-
-      return Array.isArray(data)
-          ? data
-          : [];
-
-    } catch (error) {
-
-      console.error(
-        '❌ Get Complexions API error:',
-        error
-      );
-
-      return [];
-
-    }
-  },
-
-  // ==========================================
-  // BODY TYPES
-  // ==========================================
-
-  getBodyTypes: async () => {
-    try {
-
-      const result =
-        await apiClient('/body-types');
-
-      const data = result?.data ?? result;
-
-      return Array.isArray(data)
-          ? data
-          : [];
-
-    } catch (error) {
-
-      console.error(
-        '❌ Get Body Types API error:',
-        error
-      );
-
-      return [];
-
-    }
-  },
-
-  // ==========================================
-  // COUNTRIES
-  // ==========================================
-
-  getCountries: async () => {
-    try {
-
-      console.log('🔍 Fetching countries...');
-
-      const result =
-        await apiClient('/countries');
-
-      console.log('✅ Countries:', result);
-
-     const data = result?.data ?? result;
-
-     return Array.isArray(data)
-         ? data
-         : [];
-
-    } catch (error) {
-
-      console.error(
-        '❌ Get Countries API error:',
-        error
-      );
-
-      return [];
-
-    }
-  },
-
-  // ==========================================
-  // STATES
-  // ==========================================
-
-  getStates: async () => {
-    try {
-
-      console.log('🔍 Fetching states...');
-
-      const result =
-        await apiClient('/master/states');
-
-      console.log('✅ States:', result);
-
-     const data = result?.data ?? result;
-
-     return Array.isArray(data)
-         ? data
-         : [];
-
-    } catch (error) {
-
-      console.error(
-        '❌ Get States API error:',
-        error
-      );
-
-      return [];
-
-    }
-  },
-
-  // ==========================================
-  // CITIES
-  // ==========================================
-
-  getCities: async () => {
-    try {
-
-      console.log('🔍 Fetching cities...');
-
-      const result =
-        await apiClient('/cities');
-
-      console.log(
-        '✅ MASTER API RESPONSE - Cities:',
-        result
-      );
-
-      const data = result?.data ?? result;
-
-      return Array.isArray(data)
-          ? data
-          : [];
-
-    } catch (error) {
-
-      console.error(
-        '❌ Get Cities API error:',
-        error
-      );
-
-      return [];
-
-    }
-  },
-
-  // ==========================================
-  // CITIES BY STATE
-  // ==========================================
-
-  getCitiesByState: async (stateId) => {
-    try {
-
-      console.log(
-        '🔍 Fetching cities by state...',
-        stateId
-      );
-
-      const result =
-        await apiClient(
-         `/cities/state/${stateId}`
-        );
-
-      console.log(
-        '✅ Cities By State:',
-        result
-      );
-
-     const data = result?.data ?? result;
-
-     return Array.isArray(data)
-         ? data
-         : [];
-
-    } catch (error) {
-
-      console.error(
-        '❌ Get Cities By State API error:',
-        error
-      );
-
-      return [];
-
-    }
-  },
-
-  // ==========================================
-  // CASTES
-  // ==========================================
-
-  getCastes: async (religionId) => {
-
-    try {
-
-      if (!religionId) {
-        return [];
-      }
-
-      console.log(
-        '🔍 Fetching castes...',
-        religionId
-      );
-
-      const adminId = 1;
-
-      const result =
-        await apiClient(
-          `/admins/${adminId}/castes/religion/${religionId}`
-        );
-
-      console.log(
-        '✅ MASTER API RESPONSE - Castes:',
-        result
-      );
-
-      const data = result?.data ?? result;
-
-      return Array.isArray(data)
-          ? data
-          : [];
-
-    } catch (error) {
-
-      console.error(
-        '❌ Get Castes API error:',
-        error
-      );
-
-      return [];
-
-    }
-  },
-
-  // ==========================================
-  // SUB CASTES
-  // ==========================================
-
-  getSubCastes: async (casteId) => {
-
-    try {
-
-      if (!casteId) {
-        return [];
-      }
-
-      console.log(
-        '🔍 Fetching sub castes...',
-        casteId
-      );
-
-      const adminId = 1;
-
-      const result =
-        await apiClient(
-          `/master/sub-castes/caste/${casteId}/admin/${adminId}`
-        );
-
-      console.log(
-        '✅ MASTER API RESPONSE - Sub Castes:',
-        result
-      );
-
-     const data = result?.data ?? result;
-
-     return Array.isArray(data)
-         ? data
-         : [];
-
-    } catch (error) {
-
-      console.error(
-        '❌ Get Sub Castes API error:',
-        error
-      );
-
-      return [];
-
-    }
-  },
-
-  // ==========================================
-  // MOTHER TONGUES
-  // ==========================================
-
-  getMotherTongues: async () => {
-    try {
-
-      console.log('🔍 Fetching mother tongues...');
-
-      const result =
-        await apiClient('/master/mother-tongues');
-
-      console.log(
-        '✅ MASTER API RESPONSE - Mother Tongues:',
-        result
-      );
-
-     const data = result?.data ?? result;
-
-     return Array.isArray(data)
-         ? data
-         : [];
-
-    } catch (error) {
-
-      console.error(
-        '❌ Get Mother Tongues API error:',
-        error
-      );
-
-      return [];
-
-    }
-  },
-
-  // ==========================================
-  // INCOMES
-  // ==========================================
-
-  getIncomes: async () => {
-    try {
-
-      console.log('🔍 Fetching incomes...');
-
-      const result =
-        await apiClient('/master/incomes');
-
-      console.log(
-        '✅ MASTER API RESPONSE - Incomes:',
-        result
-      );
-
-     const data = result?.data ?? result;
-
-     return Array.isArray(data)
-         ? data
-         : [];
-
-    } catch (error) {
-
-      console.error(
-        '❌ Get Incomes API error:',
-        error
-      );
-
-      return [];
-
-    }
-  },
-
-  // ==========================================
-  // DIETS
-  // ==========================================
-
-  getDiets: async () => {
-    try {
-
-      console.log('🔍 Fetching diets...');
-
-      const result =
-        await apiClient('/diets');
-
-      console.log(
-        '✅ MASTER API RESPONSE - Diets:',
-        result
-      );
-
-      const data = result?.data ?? result;
-
-      return Array.isArray(data)
-          ? data
-          : [];
-
-    } catch (error) {
-
-      console.error(
-        '❌ Get Diets API error:',
-        error
-      );
-
-      return [];
-
-    }
-  },
-
-  // ==========================================
-  // SMOKING
-  // ==========================================
-
-  getSmokingOptions: async () => {
-    try {
-
-      console.log('🔍 Fetching smoking options...');
-
-      const result =
-        await apiClient('/master/smoking');
-
-      console.log(
-        '✅ MASTER API RESPONSE - Smoking:',
-        result
-      );
-
-      const data = result?.data ?? result;
-
-      return Array.isArray(data)
-          ? data
-          : [];
-
-    } catch (error) {
-
-      console.error(
-        '❌ Get Smoking API error:',
-        error
-      );
-
-      return [];
-
-    }
-  },
-// ==========================================
-// MANGLIK STATUS
-// ==========================================
-
-getManglikStatuses: async () => {
-
- try{
-
-   console.log("Fetching Manglik Statuses");
-
-  const result =
-   await apiClient(
-     '/master/manglik-status'
-   );
-
-  const data = result?.data ?? result;
-
-  return Array.isArray(data)
-      ? data
-      : [];
-
- }catch(error){
-
-   console.error(error);
-
-   return [];
-
- }
-
-},
-getFamilyTypes: async()=>{
-
- try{
-
-   const result =
-      await apiClient(
-        '/master/family-types'
-      );
-
-  const data = result?.data ?? result;
-
-  return Array.isArray(data)
-      ? data
-      : [];
-
- }catch(error){
-
-   return [];
-
- }
-
-},
-getFamilyStatuses: async()=>{
-
- try{
-
-   const result =
-      await apiClient(
-       '/master/family-status'
-      );
-
-  const data = result?.data ?? result;
-
-  return Array.isArray(data)
-      ? data
-      : [];
-
- }catch(error){
-
-   return [];
-
- }
-
-},
-getFamilyValues: async()=>{
-
- try{
-
-   const result =
-      await apiClient(
-        '/master/family-values'
-      );
-
-   const data = result?.data ?? result;
-
-   return Array.isArray(data)
-       ? data
-       : [];
-
- }catch(error){
-
-   return [];
-
- }
-
-},
-
-// ==========================================
-// QUALIFICATIONS
-// ==========================================
-
-getQualifications: async () => {
-
- try {
-
-   const result =
-     await apiClient(
-       '/master/qualifications'
-     );
-
-   const data = result?.data ?? result;
-
-   return Array.isArray(data)
-       ? data
-       : [];
-
- } catch(error){
-
-   console.error(error);
-
-   return [];
-
- }
-
-},
-
-// ==========================================
-// FIELD OF STUDIES
-// ==========================================
-
-getFieldsOfStudy: async () => {
-
- try {
-
-   const result =
-     await apiClient(
-       '/master/fields-of-study'
-     );
-
-   const data = result?.data ?? result;
-
-   return Array.isArray(data)
-       ? data
-       : [];
-
- } catch(error){
-
-   return [];
-
- }
-
-},// ==========================================
-// EMPLOYED
-// ==========================================
-
-getEmploymentStatuses: async () => {
-
- try {
-
-   const result =
-     await apiClient(
-       '/master/employed'
-     );
-
-   const data = result?.data ?? result;
-
-   return Array.isArray(data)
-       ? data
-       : [];
-
- } catch(error){
-
-   console.log(error);
-
-   return [];
-
- }
-
-},
-// ==========================================
-// DISABILITY STATUS
-// ==========================================
-
-getDisabilityStatuses: async () => {
-
- try {
-
-  const result =
-   await apiClient(
-     '/disability-statuses'
-   );
-  const data = result?.data ?? result;
-
-  return Array.isArray(data)
-      ? data
-      : [];
-
- } catch(error){
-
-   return [];
-
- }
-
-},
-
-// ==========================================
-// BLOOD GROUPS
-// ==========================================
-
-getBloodGroups: async () => {
-
- try {
-
-   const result =
-     await apiClient(
-       '/blood-groups'
-     );
-
-  const data = result?.data ?? result;
-
-  return Array.isArray(data)
-      ? data
-      : [];
-
- } catch(error){
-
-   return [];
-
- }
-
-},
-  // ==========================================
-  // DRINKING
-  // ==========================================
-
-    getDrinkingOptions: async () => {
-
+    bulkMasterFetchPromise = (async () => {
       try {
-
-        console.log('🔍 Fetching drinking options...');
-
-        const result =
-          await apiClient('/master/drinking');
-
-        const data = result?.data ?? result;
-
-        return Array.isArray(data)
-            ? data
-            : [];
-
+        const result = await apiClient('/master/all');
+        const data = result?.data || result || {};
+        if (data && typeof data === 'object' && Object.keys(data).length > 0) {
+          bulkMasterMemoryCache = data;
+          try {
+            sessionStorage.setItem("gathbandhan_bulk_master_v2", JSON.stringify(data));
+          } catch (e) {}
+        }
+        return data;
       } catch (error) {
-
-        return [];
-
+        console.error('❌ Get All Master Data API error:', error);
+        return {};
+      } finally {
+        bulkMasterFetchPromise = null;
       }
+    })();
+    return bulkMasterFetchPromise;
+  },
 
+  getReligions: async () => getCachedKeyOrFetch('religions', '/master/religions'),
+  getGenders: async () => getCachedKeyOrFetch('genders', '/genders'),
+  getEducationLevels: async () => getCachedKeyOrFetch('educationLevels', '/master/education-levels'),
+  getOccupations: async () => getCachedKeyOrFetch('occupations', '/master/occupations'),
+  getProfileTypes: async () => getCachedKeyOrFetch('profileTypes', '/master/profile-types'),
+  getMaritalStatuses: async () => getCachedKeyOrFetch('maritalStatuses', '/master/marital-status'),
+  getHeights: async () => getCachedKeyOrFetch('heights', '/master/heights'),
+  getWeights: async () => getCachedKeyOrFetch('weights', '/master/weights'),
+  getComplexions: async () => getCachedKeyOrFetch('complexions', '/complexions'),
+  getBodyTypes: async () => getCachedKeyOrFetch('bodyTypes', '/body-types'),
+  getCountries: async () => getCachedKeyOrFetch('countries', '/countries'),
+  getStates: async () => getCachedKeyOrFetch('states', '/master/states'),
+  getCities: async () => getCachedKeyOrFetch('cities', '/cities'),
+  getCitiesByState: async (stateId) => {
+    if (!stateId) return getCachedKeyOrFetch('cities', '/cities');
+    const allCities = await getCachedKeyOrFetch('cities', '/cities');
+    if (Array.isArray(allCities) && allCities.length > 0) {
+      const filtered = allCities.filter(c => Number(c.stateId) === Number(stateId) || Number(c.state?.id) === Number(stateId));
+      if (filtered.length > 0) return filtered;
     }
-
-  };
+    return allCities;
+  },
+  getCastes: async (religionId) => {
+    const allCastes = await getCachedKeyOrFetch('castes', '/master/castes');
+    if (religionId && Array.isArray(allCastes)) {
+      const filtered = allCastes.filter(c => Number(c.religionId) === Number(religionId) || Number(c.religion?.id) === Number(religionId));
+      if (filtered.length > 0) return filtered;
+    }
+    return allCastes;
+  },
+  getSubCastes: async (casteId) => {
+    const allSubCastes = await getCachedKeyOrFetch('subCastes', '/master/sub-castes');
+    if (casteId && Array.isArray(allSubCastes)) {
+      const filtered = allSubCastes.filter(sc => Number(sc.casteId) === Number(casteId) || Number(sc.caste?.id) === Number(casteId));
+      if (filtered.length > 0) return filtered;
+    }
+    return allSubCastes;
+  },
+  getMotherTongues: async () => getCachedKeyOrFetch('motherTongues', '/master/mother-tongues'),
+  getIncomes: async () => getCachedKeyOrFetch('incomes', '/master/incomes'),
+  getDiets: async () => getCachedKeyOrFetch('diets', '/diets'),
+  getSmokingOptions: async () => getCachedKeyOrFetch('smokingOptions', '/master/smoking'),
+  getDrinkingOptions: async () => getCachedKeyOrFetch('drinkingOptions', '/master/drinking'),
+  getManglikStatuses: async () => getCachedKeyOrFetch('manglikStatuses', '/master/manglik-status'),
+  getFamilyTypes: async () => getCachedKeyOrFetch('familyTypes', '/master/family-types'),
+  getFamilyStatuses: async () => getCachedKeyOrFetch('familyStatuses', '/master/family-status'),
+  getFamilyValues: async () => getCachedKeyOrFetch('familyValues', '/master/family-values'),
+  getQualifications: async () => getCachedKeyOrFetch('qualifications', '/master/qualifications'),
+  getFieldsOfStudy: async () => getCachedKeyOrFetch('fieldsOfStudy', '/master/fields-of-study'),
+  getEmploymentStatuses: async () => getCachedKeyOrFetch('employmentStatuses', '/master/employed'),
+  getDisabilityStatuses: async () => getCachedKeyOrFetch('disabilityStatuses', '/disability-statuses'),
+  getBloodGroups: async () => getCachedKeyOrFetch('bloodGroups', '/blood-groups'),
+};
   export const faqAPI = {
 
     getPublishedFaqs: async () => {

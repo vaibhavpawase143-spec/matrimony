@@ -183,18 +183,7 @@ public class MasterDataCacheService {
             return (List<T>) cached;
         }
 
-        // 2. Redis Lookup
-        try {
-            Object obj = redisTemplate.opsForValue().get(key);
-            if (obj != null) {
-                localCache.put(key, obj);
-                return (List<T>) obj;
-            }
-        } catch (Exception e) {
-            log.warn("Redis get skipped for key: {}", key);
-        }
-
-        // 3. Fallback to Database
+        // 2. Direct DB Fetch on L1 Miss (Fast & Reliable ~2ms)
         List<T> data = null;
         try {
             data = dbFetcher.get();
@@ -206,10 +195,49 @@ public class MasterDataCacheService {
         if (data != null && !data.isEmpty()) {
             localCache.put(key, data);
             final List<T> finalData = data;
-            CompletableFuture.runAsync(() -> put(key, finalData), taskExecutor);
+            CompletableFuture.runAsync(() -> {
+                try {
+                    redisTemplate.opsForValue().set(key, finalData, CACHE_TTL);
+                } catch (Exception e) {
+                    // ignore async redis write failure
+                }
+            }, taskExecutor);
         }
 
         return data != null ? data : Collections.emptyList();
+    }
+
+    public java.util.Map<String, Object> getAllMasterData() {
+        java.util.Map<String, Object> map = new java.util.HashMap<>();
+        map.put("religions", getReligions());
+        map.put("castes", getCastes());
+        map.put("subCastes", getSubCastes());
+        map.put("countries", getCountries());
+        map.put("states", getStates());
+        map.put("cities", getCities());
+        map.put("occupations", getOccupations());
+        map.put("educationLevels", getEducationLevels());
+        map.put("qualifications", getQualifications());
+        map.put("motherTongues", getMotherTongues());
+        map.put("maritalStatuses", getMaritalStatus());
+        map.put("profileTypes", getProfileTypes());
+        map.put("heights", getHeights());
+        map.put("weights", getWeights());
+        map.put("incomes", getIncome());
+        map.put("diets", getDiets());
+        map.put("smokingOptions", getSmoking());
+        map.put("drinkingOptions", getDrinking());
+        map.put("bodyTypes", getBodyTypes());
+        map.put("complexions", getComplexions());
+        map.put("familyTypes", getFamilyTypes());
+        map.put("familyStatuses", getFamilyStatus());
+        map.put("familyValues", getFamilyValues());
+        map.put("fieldsOfStudy", getFieldOfStudies());
+        map.put("manglikStatuses", getManglikStatus());
+        map.put("employmentStatuses", getEmployed());
+        map.put("disabilityStatuses", getDisabilityStatus());
+        map.put("genders", getGender());
+        return map;
     }
 
     public void evict(String key) {

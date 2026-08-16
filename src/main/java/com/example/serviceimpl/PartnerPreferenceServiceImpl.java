@@ -52,24 +52,33 @@ public class PartnerPreferenceServiceImpl implements PartnerPreferenceService {
         this.matchNotificationService = matchNotificationService;
     }
     private int extractHeightInCm(String height) {
-
         if (height == null || height.isBlank()) {
-            throw new RuntimeException("Invalid height value");
+            return 0;
         }
 
-        Matcher matcher = Pattern.compile("\\((\\d+)\\s*cm\\)").matcher(height);
-
-        if (matcher.find()) {
-            return Integer.parseInt(matcher.group(1));
+        try {
+            Matcher matcher = Pattern.compile("\\((\\d+)\\s*cm\\)").matcher(height);
+            if (matcher.find()) {
+                return Integer.parseInt(matcher.group(1));
+            }
+            Matcher numMatcher = Pattern.compile("(\\d+)").matcher(height);
+            if (numMatcher.find()) {
+                return Integer.parseInt(numMatcher.group(1));
+            }
+        } catch (Exception e) {
+            // Fallback gracefully
         }
-
-        throw new RuntimeException("Invalid height format: " + height);
+        return 0;
     }
 
-    // ✅ CREATE + UPDATE (FINAL FIX)
+    // ✅ CREATE + UPDATE (UPSERT FIX)
 
     @CacheEvict(
-            value = "topMatches",
+            value = {
+                    "user:partnerPreference",
+                    "user:discover",
+                    "topMatches"
+            },
             allEntries = true
     )
     @Override
@@ -86,9 +95,15 @@ public class PartnerPreferenceServiceImpl implements PartnerPreferenceService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // ✅ FIX: Only block duplicate on CREATE
-        if (preference.getId() == null && repository.existsByUserId(userId)) {
-            throw new RuntimeException("Preference already exists for this user!");
+        // ✅ FIX: Perform UPSERT if ID is null but preference already exists for user
+        if (preference.getId() == null) {
+            Optional<PartnerPreference> existing = repository.findByUserId(userId);
+            if (existing.isPresent()) {
+                preference.setId(existing.get().getId());
+                if (preference.getVersion() == null) {
+                    preference.setVersion(existing.get().getVersion());
+                }
+            }
         }
 
         preference.setUser(user);
@@ -100,55 +115,65 @@ public class PartnerPreferenceServiceImpl implements PartnerPreferenceService {
         }
 
         if (preference.getMinHeight() != null && preference.getMaxHeight() != null) {
+            try {
+                Height minHeight = heightRepository
+                        .findByIdAndDeletedAtIsNull(preference.getMinHeight())
+                        .orElse(null);
 
-            Height minHeight = heightRepository
-                    .findByIdAndDeletedAtIsNull(preference.getMinHeight())
-                    .orElseThrow(() -> new RuntimeException("Minimum height not found"));
+                Height maxHeight = heightRepository
+                        .findByIdAndDeletedAtIsNull(preference.getMaxHeight())
+                        .orElse(null);
 
-            Height maxHeight = heightRepository
-                    .findByIdAndDeletedAtIsNull(preference.getMaxHeight())
-                    .orElseThrow(() -> new RuntimeException("Maximum height not found"));
+                if (minHeight != null && maxHeight != null) {
+                    int minHeightCm = extractHeightInCm(minHeight.getHeight());
+                    int maxHeightCm = extractHeightInCm(maxHeight.getHeight());
 
-            int minHeightCm = extractHeightInCm(minHeight.getHeight());
-            int maxHeightCm = extractHeightInCm(maxHeight.getHeight());
-
-            if (minHeightCm > maxHeightCm) {
-                throw new RuntimeException("Min height cannot be greater than max height");
+                    if (minHeightCm > 0 && maxHeightCm > 0 && minHeightCm > maxHeightCm) {
+                        throw new RuntimeException("Min height cannot be greater than max height");
+                    }
+                }
+            } catch (RuntimeException re) {
+                throw re;
+            } catch (Exception e) {
+                // Ignore height parsing issues
             }
         }
         // 🔥 RELATION HANDLING
         if (preference.getReligion() != null && preference.getReligion().getId() != null) {
             preference.setReligion(
                     religionRepository.findById(preference.getReligion().getId())
-                            .orElseThrow(() -> new RuntimeException("Religion not found"))
+                            .orElse(null)
             );
         }
 
         if (preference.getCaste() != null && preference.getCaste().getId() != null) {
             preference.setCaste(
                     casteRepository.findById(preference.getCaste().getId())
-                            .orElseThrow(() -> new RuntimeException("Caste not found"))
+                            .orElse(null)
             );
         }
 
         if (preference.getCity() != null && preference.getCity().getId() != null) {
             preference.setCity(
                     cityRepository.findById(preference.getCity().getId())
-                            .orElseThrow(() -> new RuntimeException("City not found"))
+                            .orElse(null)
             );
         }
         System.out.println("==================================");
         System.out.println("Preference ID      = " + preference.getId());
-        System.out.println("Preference Version = " + preference.getVersion());
         System.out.println("User ID            = " + preference.getUser().getId());
         System.out.println("==================================");
         PartnerPreference saved = repository.save(preference);
 
-// Refresh matches
-        asyncService.preloadMatches(userId);
+        try {
+            // Refresh matches asynchronously
+            asyncService.preloadMatches(userId);
 
-// Generate notifications
-        matchNotificationService.generateForPreferenceUpdate(userId);
+            // Generate notifications
+            matchNotificationService.generateForPreferenceUpdate(userId);
+        } catch (Exception e) {
+            System.err.println("Async match notification trigger failed: " + e.getMessage());
+        }
 
         return saved;
     }

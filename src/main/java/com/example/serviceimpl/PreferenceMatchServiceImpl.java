@@ -35,7 +35,7 @@ public class PreferenceMatchServiceImpl implements PreferenceMatchService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         PartnerPreference pref = preferenceRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Preference not found"));
+                .orElseGet(PartnerPreference::new);
 
         Pageable pageable = PageRequest.of(0, 10);
 

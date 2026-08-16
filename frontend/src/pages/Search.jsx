@@ -212,50 +212,22 @@ useEffect(() => {
 
   // Load master data on component mount
   const loadMasterData = async () => {
-
     try {
-
-      const [
-        religionsRes,
-
-        citiesRes,
-        educationLevelsRes,
-        occupationsRes,
-        maritalStatusesRes,
-        weightsRes
-      ] = await Promise.all([
-        masterDataAPI.getReligions(),
-
-        masterDataAPI.getCities(),
-        masterDataAPI.getEducationLevels(),
-        masterDataAPI.getOccupations(),
-        masterDataAPI.getMaritalStatuses(),
-         masterDataAPI.getWeights()
-      ]);
-
-setMasterData({
-  religions: Array.isArray(religionsRes) ? religionsRes : [],
-  castes: [],
-  cities: Array.isArray(citiesRes) ? citiesRes : [],
-  educationLevels: Array.isArray(educationLevelsRes) ? educationLevelsRes : [],
-  occupations: Array.isArray(occupationsRes) ? occupationsRes : [],
-  maritalStatuses: Array.isArray(maritalStatusesRes) ? maritalStatusesRes : [],
-  subCastes: [],
-  heights: [],
-  weights: Array.isArray(weightsRes)
-    ? weightsRes
-    : [],
-});
-
+      const bulkData = await masterDataAPI.getAllMasterData();
+      setMasterData({
+        religions: Array.isArray(bulkData?.religions) ? bulkData.religions : [],
+        castes: [],
+        cities: Array.isArray(bulkData?.cities) ? bulkData.cities : [],
+        educationLevels: Array.isArray(bulkData?.educationLevels) ? bulkData.educationLevels : [],
+        occupations: Array.isArray(bulkData?.occupations) ? bulkData.occupations : [],
+        maritalStatuses: Array.isArray(bulkData?.maritalStatuses) ? bulkData.maritalStatuses : [],
+        subCastes: [],
+        heights: Array.isArray(bulkData?.heights) ? bulkData.heights : [],
+        weights: Array.isArray(bulkData?.weights) ? bulkData.weights : [],
+      });
       console.log("MASTER DATA LOADED");
-
     } catch (err) {
-
-      console.error(
-        "MASTER DATA ERROR",
-        err
-      );
-
+      console.error("MASTER DATA ERROR", err);
     }
   };
   const observerTarget = useRef(null);

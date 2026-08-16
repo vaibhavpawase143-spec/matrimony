@@ -1,8 +1,8 @@
 package com.example.controller.user;
 
 import com.example.dto.response.UserGalleryResponseDTO;
+import com.example.dto.response.UserPhotoResponseDTO;
 import com.example.model.PhotoType;
-import com.example.model.UserPhoto;
 import com.example.service.UserPhotoService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -22,15 +22,11 @@ public class UserPhotoController {
     // =========================
 
     @PostMapping("/upload")
-    public String upload(
-            @RequestParam MultipartFile file,
-            @RequestParam PhotoType type
+    public UserPhotoResponseDTO upload(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "type", required = false, defaultValue = "OTHER") PhotoType type
     ) {
-
-        return service.upload(
-                file,
-                type
-        );
+        return service.upload(file, type);
     }
 
     // =========================
@@ -38,26 +34,21 @@ public class UserPhotoController {
     // =========================
 
     @PostMapping("/upload-multiple")
-    public List<String> uploadMultiple(
-            @RequestParam List<MultipartFile> files
+    public List<UserPhotoResponseDTO> uploadMultiple(
+            @RequestParam("files") List<MultipartFile> files
     ) {
-
-        return service.uploadMultiple(
-                files
-        );
+        return service.uploadMultiple(files);
     }
 
     // =========================
-    // ❌ DELETE
+    // ❌ DELETE BY TYPE
     // =========================
 
     @DeleteMapping("/delete")
     public String delete(
             @RequestParam PhotoType type
     ) {
-
         service.delete(type);
-
         return "Photo deleted successfully";
     }
 
@@ -66,8 +57,7 @@ public class UserPhotoController {
     // =========================
 
     @GetMapping("/me")
-    public List<UserPhoto> myPhotos() {
-
+    public List<UserPhotoResponseDTO> myPhotos() {
         return service.getMyPhotos();
     }
 
@@ -77,7 +67,6 @@ public class UserPhotoController {
 
     @GetMapping("/me/profile")
     public String myProfilePhoto() {
-
         return service.getMyProfilePhoto();
     }
 
@@ -89,9 +78,7 @@ public class UserPhotoController {
     public UserGalleryResponseDTO getUserPhotos(
             @PathVariable Long userId
     ) {
-
         return service.getPhotosByUserId(userId);
-
     }
 
     // =========================
@@ -99,15 +86,10 @@ public class UserPhotoController {
     // =========================
 
     @PutMapping("/primary/{photoId}")
-    public String setPrimary(
+    public UserPhotoResponseDTO setPrimary(
             @PathVariable Long photoId
     ) {
-
-        service.setPrimary(
-                photoId
-        );
-
-        return "Primary photo updated";
+        return service.setPrimary(photoId);
     }
 
     // =========================
@@ -118,19 +100,18 @@ public class UserPhotoController {
     public long getPhotoCount(
             @PathVariable Long userId
     ) {
-
-        return service.getPhotoCount(
-                userId
-        );
+        return service.getPhotoCount(userId);
     }
+
+    // =========================
+    // ❌ DELETE BY PHOTO ID
+    // =========================
+
     @DeleteMapping("/{photoId}")
     public String deletePhoto(
             @PathVariable Long photoId
     ) {
-
         service.deletePhoto(photoId);
-
         return "Photo deleted";
-
     }
 }

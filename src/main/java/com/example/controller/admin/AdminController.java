@@ -33,10 +33,10 @@ import java.util.Map;
 @CrossOrigin(origins = "http://localhost:5173")
 public class AdminController {
 
-    private final AdminService adminService;
+    private final @org.springframework.context.annotation.Lazy AdminService adminService;
     private final JwtUtil jwtUtil;
     private final RefreshTokenService refreshTokenService;
-    private final AdminAuditLogService adminAuditLogService;
+    private final @org.springframework.context.annotation.Lazy AdminAuditLogService adminAuditLogService;
     private final RecaptchaService recaptchaService;
     // ================= CREATE ADMIN =================
     @PostMapping

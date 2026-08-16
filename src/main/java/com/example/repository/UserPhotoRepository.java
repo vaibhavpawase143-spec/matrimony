@@ -19,6 +19,7 @@ public interface UserPhotoRepository extends JpaRepository<UserPhoto, Long> {
     // USER PHOTOS
     // =========================
 
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"user"})
     List<UserPhoto> findByUserId(Long userId);
 
     long countByUserId(Long userId);

@@ -111,6 +111,7 @@ public class UserBlockService {
     }
 
     // ================= MY BLOCKED USERS =================
+    @Transactional(readOnly = true)
     @Cacheable(
             value = "blockedUsers",
             key = "#blockerId"

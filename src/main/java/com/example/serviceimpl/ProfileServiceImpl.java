@@ -3,10 +3,7 @@ package com.example.serviceimpl;
 import com.example.dto.request.ProfileRequestDTO;
 import com.example.dto.request.UpdateProfileRequestDTO;
 import com.example.dto.response.ProfileResponseDTO;
-import com.example.model.PartnerPreference;
-import com.example.model.PremiumPlan;
-import com.example.model.Profile;
-import com.example.model.User;
+import com.example.model.*;
 import com.example.repository.*;
 import com.example.service.CacheService;
 import com.example.service.MatchAsyncService;
@@ -14,13 +11,13 @@ import com.example.service.ProfileService;
 import com.example.service.SubscriptionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.cache.annotation.CacheEvict;
 
 import java.util.List;
 import java.util.Optional;
@@ -203,10 +200,6 @@ public class ProfileServiceImpl implements ProfileService {
 
     @Override
     @Transactional(readOnly = true)
-    @Cacheable(
-            value = "user:profile",
-            key = "T(org.springframework.security.core.context.SecurityContextHolder).getContext().getAuthentication().getName()"
-    )
     public ProfileResponseDTO getMyProfile() {
 
         // =========================
@@ -1081,17 +1074,28 @@ public class ProfileServiceImpl implements ProfileService {
         // PROFILE IMAGE
         // =====================================================
 
-        if (profile.getImageUrl() != null
-                && !profile.getImageUrl().isBlank()) {
+        String rawImageUrl = null;
+        if (profile.getUser() != null) {
+            rawImageUrl = userPhotoRepository
+                    .findFirstByUserIdAndPrimaryPhotoTrue(profile.getUser().getId())
+                    .map(UserPhoto::getPhotoUrl)
+                    .orElse(null);
+        }
+        if (rawImageUrl == null || rawImageUrl.isBlank()) {
+            rawImageUrl = profile.getImageUrl();
+        } else if (!rawImageUrl.equals(profile.getImageUrl())) {
+            profile.setImageUrl(rawImageUrl);
+            repository.save(profile);
+        }
 
-            dto.setImageUrl(
-                    baseUrl + profile.getImageUrl()
-            );
-
+        if (rawImageUrl != null && !rawImageUrl.isBlank()) {
+            if (rawImageUrl.startsWith("http://") || rawImageUrl.startsWith("https://")) {
+                dto.setImageUrl(rawImageUrl);
+            } else {
+                dto.setImageUrl(baseUrl + rawImageUrl);
+            }
         } else {
-
             dto.setImageUrl(null);
-
         }
 
         dto.setAbout(

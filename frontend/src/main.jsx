@@ -1,5 +1,14 @@
 window.global = window;
 
+// Automatically unregister any stale Service Workers caching old bundles
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then((registrations) => {
+    for (let registration of registrations) {
+      registration.unregister();
+    }
+  });
+}
+
 import { createRoot } from "react-dom/client";
 import App from "./App.jsx";
 import { LanguageProvider } from "./context/LanguageContext.jsx";
