@@ -262,7 +262,32 @@ useEffect(() => {
 
 const performSearch = async (pageToFetch = 0, sizeToFetch = pageSize, isAppend = false, customFilters = null) => {
   const activeFilters = customFilters || filters;
-  console.log('🔍 Performing search with filters:', activeFilters, 'Page:', pageToFetch, 'Size:', sizeToFetch, 'Append:', isAppend);
+
+  // Validate Age Range Filters before searching
+  if (activeFilters.min_age !== "" && activeFilters.min_age !== null) {
+    const minAgeNum = Number(activeFilters.min_age);
+    if (isNaN(minAgeNum) || minAgeNum < 18 || minAgeNum > 100) {
+      error("Minimum age must be between 18 and 100.");
+      return;
+    }
+  }
+
+  if (activeFilters.max_age !== "" && activeFilters.max_age !== null) {
+    const maxAgeNum = Number(activeFilters.max_age);
+    if (isNaN(maxAgeNum) || maxAgeNum < 18 || maxAgeNum > 100) {
+      error("Maximum age must be between 18 and 100.");
+      return;
+    }
+  }
+
+  if (
+    activeFilters.min_age !== "" &&
+    activeFilters.max_age !== "" &&
+    Number(activeFilters.min_age) > Number(activeFilters.max_age)
+  ) {
+    error("Minimum age cannot be greater than maximum age.");
+    return;
+  }
 
   if (isAppend) {
     setLoadingMore(true);

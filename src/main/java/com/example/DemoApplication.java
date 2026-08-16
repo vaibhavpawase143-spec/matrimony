@@ -12,7 +12,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableScheduling
 @EnableCaching
 @SpringBootApplication
-@EntityScan(basePackages = "com.example.model")
+@EntityScan(basePackages = {"com.example.model", "com.example.model.base"})
 @EnableJpaRepositories(basePackages = "com.example.repository")
 public class DemoApplication {
 

@@ -1,1299 +1,648 @@
-import { useParams, Link,useNavigate } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import ShortlistButton from "@/components/ShortlistButton";
+import { motion, AnimatePresence } from "framer-motion";
 
 import {
-Heart,
-MapPin,
-GraduationCap,
-Briefcase,
-Calendar,
-ArrowLeft,
-Star,
-MessageSquare
+  Heart,
+  MapPin,
+  GraduationCap,
+  Briefcase,
+  Calendar,
+  ArrowLeft,
+  Star,
+  MessageSquare,
+  User,
+  Users,
+  Phone,
+  Coffee,
+  Plus,
+  Minus,
+  Lock,
+  Crown,
+  ShieldCheck,
+  Building
 } from "lucide-react";
 import { photoAPI } from "@/services/api";
-
 
 import { useLanguage } from "@/context/LanguageContext";
 import {
   profileAPI,
   interestAPI,
   profileVisitorAPI,
-    blockAPI,
-    subscriptionAPI
+  blockAPI,
+  subscriptionAPI
 } from "@/services/api";
 import toast from "react-hot-toast";
 
-
-const InfoRow = ({label,value}) => (
-
-<div className="
-flex
-justify-between
-py-2.5
-border-b
-border-border
-last:border-0
-">
-
-<span className="
-text-xs
-text-muted-foreground
-">
-
-{label}
-
-</span>
-
-<span className="
-text-xs
-font-medium
-text-foreground
-text-right
-">
-
-{value || "-"}
-
-</span>
-
-</div>
-
+const InfoRow = ({ label, value }) => (
+  <div className="flex justify-between items-center py-3 border-b border-border/60 last:border-0 gap-4 transition-colors">
+    <span className="text-sm font-medium text-muted-foreground shrink-0">
+      {label}
+    </span>
+    <span className="text-sm font-semibold text-foreground text-right break-words">
+      {value || "-"}
+    </span>
+  </div>
 );
 
-const ProfileDetails=()=>{
-const navigate = useNavigate();
-const {t}=useLanguage();
-const [currentPhotoIndex, setCurrentPhotoIndex] =
-useState(0);
-const calculateAge=(dob)=>{
+const AccordionSection = ({
+  title,
+  icon: Icon,
+  isOpen,
+  onToggle,
+  children
+}) => {
+  return (
+    <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden transition-all duration-200 hover:shadow-md">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="w-full flex items-center justify-between p-5 md:p-6 text-left focus:outline-none select-none hover:bg-muted/30 transition-colors group cursor-pointer"
+        aria-expanded={isOpen}
+      >
+        <div className="flex items-center gap-3">
+          {Icon && (
+            <div className="h-9 w-9 rounded-xl bg-pink-500/10 text-pink-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+              <Icon className="h-5 w-5" />
+            </div>
+          )}
+          <h2 className="text-lg md:text-xl font-bold font-display text-foreground tracking-tight">
+            {title}
+          </h2>
+        </div>
 
-if(!dob) return "-";
+        <div className="h-8 w-8 rounded-full bg-muted/60 group-hover:bg-pink-500/15 text-muted-foreground group-hover:text-pink-600 flex items-center justify-center transition-colors shrink-0">
+          {isOpen ? (
+            <Minus className="h-5 w-5 stroke-[2.5]" />
+          ) : (
+            <Plus className="h-5 w-5 stroke-[2.5]" />
+          )}
+        </div>
+      </button>
 
-const birth=new Date(dob);
-
-const today=new Date();
-
-let age=
-today.getFullYear()-
-birth.getFullYear();
-
-const month=
-today.getMonth()-
-birth.getMonth();
-
-if(
-month<0 ||
-(
-month===0 &&
-today.getDate()<birth.getDate()
-)
-){
-
-age--;
-
-}
-
-return age;
-
+      <AnimatePresence initial={false}>
+        {isOpen && (
+          <motion.div
+            key="content"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3, ease: [0.04, 0.62, 0.23, 0.98] }}
+          >
+            <div className="px-5 pb-5 md:px-6 md:pb-6 pt-1 border-t border-border/60">
+              {children}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
 };
 
-const [galleryPhotos,setGalleryPhotos] =
-useState([]);
+const ProfileDetails = () => {
+  const navigate = useNavigate();
+  const { t } = useLanguage();
+  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
 
-const [showGallery,setShowGallery] =
-useState(false);
-const {id}=useParams();
+  // Accordion state with mandated default values:
+  // Personal Details: OPEN, Education & Career: OPEN, others: COLLAPSED
+  const [openSections, setOpenSections] = useState({
+    personal: true,
+    education: true,
+    family: false,
+    location: false,
+    contact: false,
+    lifestyle: false,
+  });
 
-const [profile,setProfile]=
-useState(null);
-const [profileNotFound, setProfileNotFound] = useState(false);
-const [blockedProfile,
-setBlockedProfile] =
-useState(false);
+  const toggleSection = (sectionKey) => {
+    setOpenSections((prev) => ({
+      ...prev,
+      [sectionKey]: !prev[sectionKey],
+    }));
+  };
 
-const [interestSent,
-setInterestSent]=
-useState(false);
-const [canViewContact,setCanViewContact] =
-useState(false);
-const [isPremiumUser, setIsPremiumUser] =
-useState(false);
-const [showUpgradePopup, setShowUpgradePopup] = useState(false);
-useEffect(()=>{
+  const calculateAge = (dob) => {
+    if (!dob) return "-";
+    const birth = new Date(dob);
+    const today = new Date();
+    let age = today.getFullYear() - birth.getFullYear();
+    const month = today.getMonth() - birth.getMonth();
 
-const loadProfile =
-async()=>{
+    if (month < 0 || (month === 0 && today.getDate() < birth.getDate())) {
+      age--;
+    }
+    return age;
+  };
 
-try{
+  const [galleryPhotos, setGalleryPhotos] = useState([]);
+  const [showGallery, setShowGallery] = useState(false);
+  const { id } = useParams();
 
-const data = await profileAPI.getProfileById(id);
+  const [profile, setProfile] = useState(null);
+  const [profileNotFound, setProfileNotFound] = useState(false);
+  const [blockedProfile, setBlockedProfile] = useState(false);
 
-console.log("========== VIEW PROFILE ==========");
-console.log("PROFILE ID =", id);
-console.log("PROFILE RESPONSE =", data);
-console.log("IMAGE URL =", data?.imageUrl);
-console.log("==================================");
+  const [interestSent, setInterestSent] = useState(false);
+  const [canViewContact, setCanViewContact] = useState(false);
+  const [isPremiumUser, setIsPremiumUser] = useState(false);
+  const [showUpgradePopup, setShowUpgradePopup] = useState(false);
 
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const data = await profileAPI.getProfileById(id);
 
-const currentUser =
-JSON.parse(
-  localStorage.getItem("user")
-);
-const currentUserId = Number(
-    currentUser?.userId ||
-    currentUser?.id ||
-    currentUser?.profile?.userId
-);
-const myProfile =
-    await profileAPI.getProfile();
+        console.log("========== VIEW PROFILE ==========");
+        console.log("PROFILE ID =", id);
+        console.log("PROFILE RESPONSE =", data);
+        console.log("==================================");
 
-console.log(myProfile);
+        const currentUser = JSON.parse(localStorage.getItem("user"));
+        const currentUserId = Number(
+          currentUser?.userId || currentUser?.id || currentUser?.profile?.userId
+        );
 
+        const myProfile = await profileAPI.getProfile();
+        setIsPremiumUser(Boolean(myProfile.isPremium));
 
-console.log("MY PROFILE =", myProfile);
-console.log("MY PROFILE PREMIUM =", myProfile.isPremium);
+        const blockedUsers = await blockAPI.getMyBlockedUsers(currentUserId);
+        const blockedIds = blockedUsers.map((user) => user.blockedId);
 
-setIsPremiumUser(
-    Boolean(myProfile.isPremium)
-);const blockedUsers =
-await blockAPI.getMyBlockedUsers(
-currentUserId
-);
+        if (blockedIds.includes(data.userId)) {
+          setBlockedProfile(true);
+          return;
+        }
 
-const blockedIds =
-blockedUsers.map(
-  user => user.blockedId
-);
-if (
-  blockedIds.includes(
-    data.userId
-  )
-) {
+        const galleryResponse = await photoAPI.getUserPhotos(data.userId);
+        setGalleryPhotos(galleryResponse.photos || []);
 
-  setBlockedProfile(true);
+        if (currentUser?.profile?.userId !== data.userId) {
+          await profileVisitorAPI.saveVisit(data.userId);
+          window.dispatchEvent(new Event("dashboardUpdated"));
+        }
 
-  return;
+        const sentInterests = await interestAPI.getSentInterests(currentUserId);
+        const acceptedInterest = sentInterests.find(
+          (item) =>
+            Number(item.receiverId) === Number(data.userId) &&
+            item.status === "ACCEPTED"
+        );
 
-}
-if (
-  blockedIds.includes(
-    data.userId
-  )
-) {
+        setCanViewContact(!!acceptedInterest);
+        const alreadySent = sentInterests.some(
+          (item) => Number(item.receiverId) === Number(data.userId)
+        );
 
-  toast.error(
-    "This profile is blocked"
-  );
+        setInterestSent(alreadySent);
+        setProfile(data);
+      } catch (err) {
+        console.log(err);
+        setProfileNotFound(true);
+      }
+    };
 
-  return;
+    if (id) {
+      loadProfile();
+    }
+  }, [id]);
 
-}
-const galleryResponse =
-    await photoAPI.getUserPhotos(data.userId);
-
-console.log("Gallery Response =", galleryResponse);
-
-console.log(
-    "Gallery Photos =",
-    galleryResponse.photos
-);
-
-console.log(
-    "Gallery Length =",
-    galleryResponse.photos.length
-);
-
-setGalleryPhotos(
-    galleryResponse.photos
-);
-console.log(
-  "CURRENT USER",
-  currentUser
-);
-
-console.log(
-  "PROFILE DATA",
-  data
-);
-if (
-  currentUser?.profile?.userId !==
-  data.userId
-) {
-
-  console.log(
-    "VISITOR SAVE START",
-    data.userId
-  );
-
-await profileVisitorAPI.saveVisit(
-    data.userId
-);
-window.dispatchEvent(
-    new Event("dashboardUpdated")
-);
-  console.log(
-    "VISITOR SAVE SUCCESS"
-  );
-}
-const sentInterests =
-await interestAPI
-.getSentInterests(
-
-currentUserId
-
-);console.log(
-  "SENT INTERESTS =",
-  JSON.stringify(
-    sentInterests,
-    null,
-    2
-  )
-);
-const acceptedInterest =
-sentInterests.find(
-
-item =>
-
-Number(item.receiverId) ===
-Number(data.userId)
-
-&&
-
-item.status ===
-"ACCEPTED"
-
-);
-
-setCanViewContact(
-!!acceptedInterest
-);
-const alreadySent =
-sentInterests.some(
-
-item =>
-
-Number(
-item.receiverId
-)
-
-===
-
-Number(
-data.userId
-)
-
-);
-
-setInterestSent(
-alreadySent
-);
-setProfile(data);
-}
-catch (err) {
-
-     console.log(err);
-
-     setProfileNotFound(true);
-
- }
-
-};
-
-if(id){
-
-loadProfile();
-
-}
-
-},[id]);
-
-const handleMessageClick = async () => {
-
+  const handleMessageClick = async () => {
     try {
-
-        const subscription =
-            await subscriptionAPI.getMySubscription();
-
-        if (subscription?.isActive) {
-
-            navigate(`/messages?receiverId=${profile.userId}`);
-
-       } else {
-
-           setShowUpgradePopup(true);
-
-       }
-   } catch {
-
-       setShowUpgradePopup(true);
-
-   }
-};
-
-const handleSendInterest = async () => {
-  try {
-    const currentUser = JSON.parse(
-      localStorage.getItem("user") || "{}"
-    );
-
-    if (!profile) {
-      toast.error("User not found");
-      return;
+      const subscription = await subscriptionAPI.getMySubscription();
+      if (subscription?.isActive) {
+        navigate(`/messages?receiverId=${profile.userId}`);
+      } else {
+        setShowUpgradePopup(true);
+      }
+    } catch {
+      setShowUpgradePopup(true);
     }
+  };
 
-    const senderId = Number(
-      currentUser?.userId ||
-      currentUser?.id ||
-      currentUser?.profile?.userId
-    );
+  const handleSendInterest = async () => {
+    try {
+      const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
 
-    console.log("CURRENT USER:", currentUser);
-    console.log("SENDER ID:", senderId);
-    console.log("RECEIVER ID:", profile.userId);
+      if (!profile) {
+        toast.error("User not found");
+        return;
+      }
 
-    if (!senderId) {
-      toast.error("Current user ID not found");
-      return;
-    }
-
-    if (interestSent) {
-      toast("Interest already sent ❤️");
-      return;
-    }
-
-    const receiverId = Number(profile.userId);
-
-    if (senderId === receiverId) {
-      toast.error("You cannot send interest to yourself");
-      return;
-    }
-
-    await interestAPI.sendInterest(senderId, receiverId);
-
-    setInterestSent(true);
-
-    toast.success("Interest Sent Successfully ❤️");
-  } catch (err) {
-    console.log(err);
-
-    if (err?.message?.includes("Daily limit reached")) {
-      toast.error(
-        "Daily limit reached.\nUpgrade to Premium for unlimited interests."
+      const senderId = Number(
+        currentUser?.userId || currentUser?.id || currentUser?.profile?.userId
       );
-      return;
-    }
 
-    toast.error(err?.message || "Failed");
+      if (!senderId) {
+        toast.error("Current user ID not found");
+        return;
+      }
+
+      if (interestSent) {
+        toast("Interest already sent ❤️");
+        return;
+      }
+
+      const receiverId = Number(profile.userId);
+
+      if (senderId === receiverId) {
+        toast.error("You cannot send interest to yourself");
+        return;
+      }
+
+      await interestAPI.sendInterest(senderId, receiverId);
+      setInterestSent(true);
+      toast.success("Interest Sent Successfully ❤️");
+    } catch (err) {
+      console.log(err);
+
+      if (err?.message?.includes("Daily limit reached")) {
+        toast.error(
+          "Daily limit reached.\nUpgrade to Premium for unlimited interests."
+        );
+        return;
+      }
+
+      toast.error(err?.message || "Failed");
+    }
+  };
+
+  if (blockedProfile) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-2xl font-bold">
+        🚫 This profile is blocked
+      </div>
+    );
   }
-};
-if (blockedProfile) {
+
+  if (profileNotFound) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold mb-3">Profile Not Found</h1>
+          <p className="text-gray-500 mb-5">
+            This profile is unavailable or has been removed.
+          </p>
+          <button
+            onClick={() => navigate("/home")}
+            className="bg-pink-600 text-white px-5 py-2 rounded-lg"
+          >
+            Go Home
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-muted-foreground">
+        Loading Profile...
+      </div>
+    );
+  }
 
   return (
+    <>
+      <div className="min-h-screen bg-muted/30 pb-12">
+        <div className="container mx-auto px-4 py-8 max-w-6xl">
+          <Link
+            to="/search"
+            className="inline-flex items-center gap-2 mb-6 text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+          >
+            <ArrowLeft size={16} />
+            Back to Search
+          </Link>
 
-    <div
-      className="
-      min-h-screen
-      flex
-      items-center
-      justify-center
-      text-2xl
-      font-bold
-      "
-    >
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* LEFT COLUMN: Profile Card & Actions */}
+            <div>
+              <div className="sticky top-20 bg-card rounded-2xl overflow-hidden border border-border shadow-sm">
+                <div className="relative">
+                  {profile.isPremium && (
+                    <div className="absolute top-4 left-4 z-10 bg-gradient-to-r from-amber-400 to-yellow-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg flex items-center gap-1.5">
+                      <Crown size={14} /> PREMIUM
+                    </div>
+                  )}
 
-      🚫 This profile is blocked
+                  <img
+                    src={profile.imageUrl || "/default-profile.png"}
+                    alt={`${profile.firstName} ${profile.lastName}`}
+                    className="w-full aspect-[3/4] object-cover"
+                  />
+                </div>
 
-    </div>
+                <div className="p-5 space-y-3">
+                  <button
+                    onClick={handleSendInterest}
+                    disabled={interestSent}
+                    className={`w-full text-white font-semibold rounded-xl py-3 flex items-center justify-center gap-2 shadow-md transition-all ${
+                      interestSent
+                        ? "bg-emerald-600 hover:bg-emerald-700"
+                        : "bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 active:scale-98"
+                    }`}
+                  >
+                    <Heart size={18} className={interestSent ? "fill-white" : ""} />
+                    {interestSent ? "Interest Sent" : "Send Interest"}
+                  </button>
 
-  );
+                  <button
+                    onClick={handleMessageClick}
+                    className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-xl py-3 flex items-center justify-center gap-2 shadow-md transition-all active:scale-98"
+                  >
+                    <MessageSquare size={18} />
+                    Message
+                  </button>
 
-}
-if (profileNotFound) {
+                  <button
+                    onClick={() => {
+                      if (!isPremiumUser) {
+                        toast.error(
+                          "Upgrade to Premium to view this user's photo gallery."
+                        );
+                        return;
+                      }
 
-    return (
+                      if (!galleryPhotos || galleryPhotos.length === 0) {
+                        toast("This user has not uploaded any gallery photos.");
+                        return;
+                      }
 
-        <div className="min-h-screen flex items-center justify-center">
+                      setCurrentPhotoIndex(0);
+                      setShowGallery(true);
+                    }}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl py-3 flex items-center justify-center gap-2 shadow-sm transition-all active:scale-98"
+                  >
+                    View Photo Gallery
+                  </button>
 
-            <div className="text-center">
-
-                <h1 className="text-3xl font-bold mb-3">
-
-                    Profile Not Found
-
-                </h1>
-
-                <p className="text-gray-500 mb-5">
-
-                    This profile is unavailable or has been removed.
-
-                </p>
-
-                <button
-                    onClick={() => navigate("/home")}
-                    className="bg-pink-600 text-white px-5 py-2 rounded-lg"
-                >
-                    Go Home
-                </button>
-
+                  <ShortlistButton
+                    profileId={profile.id}
+                    size="lg"
+                    showLabel={true}
+                  />
+                </div>
+              </div>
             </div>
 
+            {/* RIGHT COLUMN: Profile Overview & Accordion Sections */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Profile Header Box */}
+              <div className="bg-card rounded-2xl p-6 border border-border shadow-sm space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <h1 className="text-2xl md:text-3xl font-bold font-display text-foreground flex items-center gap-2.5">
+                    {profile.firstName} {profile.lastName}
+                    {profile.isPremium && (
+                      <span className="bg-amber-100 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 text-xs px-2.5 py-1 rounded-full font-semibold inline-flex items-center gap-1">
+                        <Crown size={12} /> Premium
+                      </span>
+                    )}
+                  </h1>
+
+                  {profile.verified && (
+                    <div className="inline-flex items-center gap-1.5 bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 px-3 py-1 rounded-full text-xs font-semibold">
+                      <ShieldCheck size={14} /> Verified Profile
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex flex-wrap gap-4 text-sm text-muted-foreground pt-1">
+                  <span className="flex items-center gap-1.5">
+                    <Calendar size={15} className="text-pink-600" />
+                    {calculateAge(profile.dateOfBirth)} yrs
+                  </span>
+
+                  <span className="flex items-center gap-1.5">
+                    <MapPin size={15} className="text-pink-600" />
+                    {profile.cityName || "-"}
+                  </span>
+
+                  <span className="flex items-center gap-1.5">
+                    <GraduationCap size={15} className="text-pink-600" />
+                    {profile.educationLevelName || "-"}
+                  </span>
+
+                  <span className="flex items-center gap-1.5">
+                    <Briefcase size={15} className="text-pink-600" />
+                    {profile.occupationName || "-"}
+                  </span>
+                </div>
+
+                {profile.aboutMe && (
+                  <p className="text-sm leading-relaxed text-muted-foreground pt-3 border-t border-border/60">
+                    {profile.aboutMe}
+                  </p>
+                )}
+              </div>
+
+              {/* ACCORDION INFORMATION SECTIONS */}
+              <div className="space-y-4">
+                {/* 1. PERSONAL DETAILS (Default: OPEN) */}
+                <AccordionSection
+                  title="Personal Details"
+                  icon={User}
+                  isOpen={openSections.personal}
+                  onToggle={() => toggleSection("personal")}
+                >
+                  <InfoRow label="Gender" value={profile.genderName} />
+                  <InfoRow label="Religion" value={profile.religionName} />
+                  <InfoRow label="Caste" value={profile.casteName} />
+                  <InfoRow label="Sub Caste" value={profile.subCasteName} />
+                  <InfoRow label="Mother Tongue" value={profile.motherTongueName} />
+                  <InfoRow label="Marital Status" value={profile.maritalStatusName} />
+                  <InfoRow label="Height" value={profile.heightValue} />
+                  <InfoRow label="Weight" value={profile.weightValue} />
+                  <InfoRow label="Blood Group" value={profile.bloodGroupName} />
+                  <InfoRow label="Manglik" value={profile.manglikStatusName} />
+                  <InfoRow label="Disability" value={profile.disabilityStatusName} />
+                </AccordionSection>
+
+                {/* 2. EDUCATION & CAREER (Default: OPEN) */}
+                <AccordionSection
+                  title="Education & Career"
+                  icon={GraduationCap}
+                  isOpen={openSections.education}
+                  onToggle={() => toggleSection("education")}
+                >
+                  <InfoRow label="Qualification" value={profile.qualificationName} />
+                  <InfoRow label="Field Of Study" value={profile.fieldOfStudyName} />
+                  <InfoRow label="Education" value={profile.educationLevelName} />
+                  <InfoRow label="Occupation" value={profile.occupationName} />
+                  <InfoRow label="Employment" value={profile.employedStatusName} />
+                  <InfoRow label="Income" value={profile.incomeValue} />
+                  <InfoRow label="Company" value={profile.companyName} />
+                </AccordionSection>
+
+                {/* 3. FAMILY DETAILS (Default: COLLAPSED) */}
+                <AccordionSection
+                  title="Family Details"
+                  icon={Users}
+                  isOpen={openSections.family}
+                  onToggle={() => toggleSection("family")}
+                >
+                  <InfoRow label="Father Name" value={profile.fatherName} />
+                  <InfoRow label="Father Occupation" value={profile.fatherOccupation} />
+                  <InfoRow label="Mother Name" value={profile.motherName} />
+                  <InfoRow label="Mother Occupation" value={profile.motherOccupation} />
+                  <InfoRow label="Siblings" value={profile.siblingsCount} />
+                  <InfoRow label="Family Type" value={profile.familyTypeName} />
+                  <InfoRow label="Family Status" value={profile.familyStatusName} />
+                  <InfoRow label="Family Value" value={profile.familyValueName} />
+                </AccordionSection>
+
+                {/* 4. LOCATION (Default: COLLAPSED) */}
+                <AccordionSection
+                  title="Location"
+                  icon={MapPin}
+                  isOpen={openSections.location}
+                  onToggle={() => toggleSection("location")}
+                >
+                  <InfoRow label="Country" value={profile.countryName} />
+                  <InfoRow label="State" value={profile.stateName} />
+                  <InfoRow label="City" value={profile.cityName} />
+                  <InfoRow label="Address" value={profile.address} />
+                </AccordionSection>
+
+                {/* 5. CONTACT DETAILS (Default: COLLAPSED) */}
+                <AccordionSection
+                  title="Contact Details"
+                  icon={Phone}
+                  isOpen={openSections.contact}
+                  onToggle={() => toggleSection("contact")}
+                >
+                  <InfoRow
+                    label="Email"
+                    value={
+                      !canViewContact
+                        ? "🔒 Send Interest & Get Accepted"
+                        : isPremiumUser
+                        ? profile.email
+                        : "👑 Upgrade to Premium to view Email"
+                    }
+                  />
+                  <InfoRow
+                    label="Phone"
+                    value={
+                      !canViewContact
+                        ? "🔒 Send Interest & Get Accepted"
+                        : isPremiumUser
+                        ? profile.phone
+                        : "👑 Upgrade to Premium to view Phone"
+                    }
+                  />
+                </AccordionSection>
+
+                {/* 6. LIFESTYLE (Default: COLLAPSED) */}
+                <AccordionSection
+                  title="Lifestyle"
+                  icon={Coffee}
+                  isOpen={openSections.lifestyle}
+                  onToggle={() => toggleSection("lifestyle")}
+                >
+                  <InfoRow label="Diet" value={profile.dietValue} />
+                  <InfoRow label="Smoking" value={profile.smokingValue} />
+                  <InfoRow label="Drinking" value={profile.drinkingValue} />
+                </AccordionSection>
+              </div>
+            </div>
+          </div>
         </div>
+      </div>
 
-    );
+      {/* PHOTO GALLERY MODAL */}
+      {showGallery && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+          <div className="bg-card rounded-2xl max-w-5xl w-full p-6 max-h-[90vh] overflow-auto shadow-2xl border border-border">
+            <div className="flex justify-between items-center mb-4 pb-3 border-b border-border">
+              <h2 className="text-xl font-bold">Photo Gallery</h2>
+              <button
+                onClick={() => setShowGallery(false)}
+                className="text-muted-foreground hover:text-foreground text-xl p-1"
+              >
+                ✕
+              </button>
+            </div>
 
-}
+            <div className="flex items-center justify-center gap-4">
+              {galleryPhotos.length > 1 && (
+                <>
+                  <button
+                    onClick={() =>
+                      setCurrentPhotoIndex((prev) =>
+                        prev === 0 ? galleryPhotos.length - 1 : prev - 1
+                      )
+                    }
+                    className="bg-muted hover:bg-muted/80 px-4 py-2 rounded-xl text-sm font-semibold transition"
+                  >
+                    ◀ Prev
+                  </button>
 
-if (!profile) {
+                  <button
+                    onClick={() =>
+                      setCurrentPhotoIndex((prev) =>
+                        prev === galleryPhotos.length - 1 ? 0 : prev + 1
+                      )
+                    }
+                    className="bg-muted hover:bg-muted/80 px-4 py-2 rounded-xl text-sm font-semibold transition"
+                  >
+                    Next ▶
+                  </button>
+                </>
+              )}
 
-    return (
-
-        <div className="min-h-screen flex items-center justify-center">
-
-            Loading Profile...
-
+              {galleryPhotos.length > 0 && (
+                <img
+                  src={
+                    galleryPhotos[currentPhotoIndex]?.photoUrl ||
+                    galleryPhotos[currentPhotoIndex]?.imageUrl ||
+                    galleryPhotos[currentPhotoIndex]?.url
+                  }
+                  alt=""
+                  className="max-h-[70vh] max-w-[70vw] object-contain rounded-xl"
+                />
+              )}
+            </div>
+          </div>
         </div>
-
-    );
-
-}
-return(
-<>
-<div className="
-min-h-screen
-bg-muted/30
-">
-
-
-
-<div className="
-container
-mx-auto
-px-4
-py-8
-">
-
-<Link
-
-to="/search"
-
-className="
-inline-flex
-items-center
-gap-2
-mb-6
-"
-
->
-
-<ArrowLeft size={16}/>
-
-Back
-
-</Link>
-
-<div className="
-grid
-grid-cols-1
-lg:grid-cols-3
-gap-6
-">
-
-{/* LEFT */}
-
-<div>
-
-<div className="
-relative
-bg-card
-rounded-xl
-overflow-hidden
-border
-border-border
-">
-{
-profile.isPremium && (
-
-<div
-className="
-absolute
-top-4
-left-4
-z-10
-bg-gradient-to-r
-from-yellow-400
-to-amber-500
-text-white
-px-4
-py-1
-rounded-full
-text-sm
-font-bold
-shadow-lg
-"
->
-
-👑 PREMIUM
-
-</div>
-
-)
-}
-<img
-
-src={
-profile.imageUrl ||
-"/default-profile.png"
-}
-
-className="
-w-full
-aspect-[3/4]
-object-cover
-"
-
-/>
-
-<div className="p-4 space-y-2">
-<button
-
-onClick={handleSendInterest}
-
-disabled={interestSent}
-
-className={`
-w-full
-text-white
-rounded-lg
-py-3
-flex
-justify-center
-gap-2
-
-${interestSent
-? "bg-green-600"
-: "bg-red-600"}
-
-`}
-
->
-
-<Heart size={18}/>
-{interestSent ? "Interest Sent" : "Send Interest"}
-</button>
-
-
-
-<button
-onClick={handleMessageClick}
-className="
-w-full
-bg-purple-700
-hover:bg-purple-800
-text-white
-rounded-lg
-py-3
-flex
-justify-center
-gap-2
-transition
-"
->
-
-<MessageSquare size={18}/>
-
-Message
-
-</button>
-<button
-onClick={() => {
-
-    if (!isPremiumUser) {
-
-        toast.error(
-            "Upgrade to Premium to view this user's photo gallery."
-        );
-
-        return;
-    }
-
-    if (!galleryPhotos || galleryPhotos.length === 0) {
-
-        toast(
-            "This user has not uploaded any gallery photos."
-        );
-
-        return;
-    }
-
-    setCurrentPhotoIndex(0);
-
-    setShowGallery(true);
-
-}}
-  className="
-  w-full
-  bg-blue-600
-  hover:bg-blue-700
-  text-white
-  rounded-lg
-  py-3
-  font-medium
-  transition
-  "
->
-  View Photo Gallery
-</button>
-
-<ShortlistButton
-
-profileId={profile.id}
-
-size="lg"
-
-showLabel={true}
-
-/>
-
-</div>
-
-</div>
-
-</div>
-
-{/* RIGHT */}
-
-<div className="
-lg:col-span-2
-space-y-5
-">
-
-<div className="
-bg-card
-rounded-xl
-p-6
-border
-border-border
-">
-
-<h1
-className="
-text-3xl
-font-bold
-flex
-items-center
-gap-2
-"
->
-
-{profile.firstName}
-
-{" "}
-
-{profile.lastName}
-
-{
-profile.isPremium && (
-
-<span
-className="
-bg-yellow-100
-text-yellow-700
-text-sm
-px-3
-py-1
-rounded-full
-font-semibold
-"
->
-
-👑 Premium
-
-</span>
-
-)
-
-}
-
-</h1>{
-profile.verified && (
-
-<div className="
-mt-2
-inline-flex
-items-center
-bg-green-100
-text-green-700
-px-3
-py-1
-rounded-full
-text-sm
-font-medium
-">
-
-🛡 Verified Profile
-
-</div>
-
-)
-}
-{/* TOP SECTION */}
-
-<div className="
-flex
-flex-wrap
-gap-4
-mt-3
-text-sm
-text-muted-foreground
-">
-
-<span className="flex gap-1">
-
-<Calendar size={15}/>
-
-{calculateAge(profile.dateOfBirth)}
-
-yrs
-
-</span>
-
-<span className="flex gap-1">
-
-<MapPin size={15}/>
-
-{profile.cityName}
-
-</span>
-
-<span className="flex gap-1">
-
-<GraduationCap size={15}/>
-
-{profile.educationLevelName}
-
-</span>
-
-<span className="flex gap-1">
-
-<Briefcase size={15}/>
-
-{profile.occupationName}
-
-</span>
-
-</div>
-<p className="mt-5">
-
-{profile.aboutMe}
-
-</p>
-
-</div>
-
-
-{/* PERSONAL */}
-
-<div className="
-bg-card
-rounded-xl
-border
-border-border
-p-6
-">
-
-<h2 className="
-font-bold
-mb-4
-">
-
-Personal Details
-
-</h2>
-
-<InfoRow
-label="Gender"
-value={profile.genderName}
-/>
-
-<InfoRow
-label="Religion"
-value={profile.religionName}
-/>
-
-<InfoRow
-label="Caste"
-value={profile.casteName}
-/>
-
-<InfoRow
-label="Sub Caste"
-value={profile.subCasteName}
-/>
-
-<InfoRow
-label="Mother Tongue"
-value={profile.motherTongueName}
-/>
-
-<InfoRow
-label="Marital Status"
-value={profile.maritalStatusName}
-/>
-
-<InfoRow
-label="Height"
-value={profile.heightValue}
-/>
-
-<InfoRow
-label="Weight"
-value={profile.weightValue}
-/>
-
-<InfoRow
-label="Blood Group"
-value={profile.bloodGroupName}
-/>
-
-<InfoRow
-label="Manglik"
-value={profile.manglikStatusName}
-/>
-
-<InfoRow
-label="Disability"
-value={profile.disabilityStatusName}
-/>
-</div>
-
-
-{/* EDUCATION */}
-
-<div className="
-bg-card
-rounded-xl
-border
-border-border
-p-6
-">
-
-<h2 className="
-font-bold
-mb-4
-">
-
-Education & Career
-
-</h2>
-
-<InfoRow
-label="Qualification"
-value={profile.qualificationName}
-/>
-
-<InfoRow
-label="Field Of Study"
-value={profile.fieldOfStudyName}
-/>
-
-<InfoRow
-label="Education"
-value={profile.educationLevelName}
-/>
-<InfoRow
-label="Occupation"
-value={profile.occupationName}
-/>
-
-<InfoRow
-label="Employment"
-value={profile.employedStatusName}
-/>
-
-<InfoRow
-label="Income"
-value={profile.incomeValue}
-/>
-
-<InfoRow
-label="Company"
-value={profile.companyName}
-/>
-
-</div>
-
-
-{/* FAMILY */}
-
-<div className="
-bg-card
-rounded-xl
-border
-border-border
-p-6
-">
-
-<h2 className="
-font-bold
-mb-4
-">
-
-Family Details
-
-</h2>
-
-<InfoRow
-label="Father Name"
-value={profile.fatherName}
-/>
-
-<InfoRow
-label="Father Occupation"
-value={profile.fatherOccupation}
-/>
-
-<InfoRow
-label="Mother Name"
-value={profile.motherName}
-/>
-
-<InfoRow
-label="Mother Occupation"
-value={profile.motherOccupation}
-/>
-
-<InfoRow
-label="Siblings"
-value={profile.siblingsCount}
-/>
-
-<InfoRow
-label="Family Type"
-value={profile.familyTypeName}
-/>
-
-<InfoRow
-label="Family Status"
-value={profile.familyStatusName}
-/>
-
-<InfoRow
-label="Family Value"
-value={profile.familyValueName}
-/>
-
-</div>
-
-
-{/* LOCATION */}
-
-<div className="
-bg-card
-rounded-xl
-border
-border-border
-p-6
-">
-
-<h2 className="
-font-bold
-mb-4
-">
-
-Location
-
-</h2>
-
-<InfoRow
-label="Country"
-value={profile.countryName}
-/>
-
-<InfoRow
-label="State"
-value={profile.stateName}
-/>
-
-<InfoRow
-label="City"
-value={profile.cityName}
-/>
-
-<InfoRow
-label="Address"
-value={profile.address}
-/>
-
-</div>
-
-<div
-className="
-bg-card
-rounded-xl
-border
-border-border
-p-6
-"
->
-
-<h2
-className="
-font-bold
-mb-4
-"
->
-
-Contact Details
-
-</h2>
-
-<InfoRow
-label="Email"
-value={
-!canViewContact
-? "🔒 Send Interest & Get Accepted"
-
-: isPremiumUser
-
-? profile.email
-
-: "👑 Upgrade to Premium to view Email"
-}
-/>
-
-<InfoRow
-label="Phone"
-value={
-!canViewContact
-? "🔒 Send Interest & Get Accepted"
-
-: isPremiumUser
-
-? profile.phone
-
-: "👑 Upgrade to Premium to view Phone"
-}
-/>
-</div>
-{/* LIFESTYLE */}
-
-<div className="
-bg-card
-rounded-xl
-border
-border-border
-p-6
-">
-
-<h2 className="
-font-bold
-mb-4
-">
-
-Lifestyle
-
-</h2>
-
-<InfoRow
-label="Diet"
-value={profile.dietValue}
-/>
-
-<InfoRow
-label="Smoking"
-value={profile.smokingValue}
-/>
-
-<InfoRow
-label="Drinking"
-value={profile.drinkingValue}
-/>
-
-</div>
-
-</div>
-
-</div>
-
-</div>
-
-</div>
-{
-showGallery && (
-
-<div
-className="
-fixed
-inset-0
-bg-black/80
-z-50
-flex
-items-center
-justify-center
-p-4
-"
->
-
-<div
-className="
-bg-white
-rounded-xl
-max-w-6xl
-w-full
-p-5
-max-h-[90vh]
-overflow-auto
-"
->
-
-<div
-className="
-flex
-justify-between
-items-center
-mb-4
-"
->
-
-<h2 className="text-xl font-bold">
-Photo Gallery
-</h2>
-
-<button
-onClick={() =>
-setShowGallery(false)
-}
->
-✕
-</button>
-
-</div>
-<div className="
-flex
-items-center
-justify-center
-gap-4
-">
-
-{galleryPhotos.length > 1 && (
-
-<>
-    <button
-        onClick={() =>
-            setCurrentPhotoIndex(prev =>
-                prev === 0
-                    ? galleryPhotos.length - 1
-                    : prev - 1
-            )
-        }
-        className="bg-gray-200 px-4 py-2 rounded"
-    >
-        ◀ Prev
-    </button>
-
-    <button
-        onClick={() =>
-            setCurrentPhotoIndex(prev =>
-                prev === galleryPhotos.length - 1
-                    ? 0
-                    : prev + 1
-            )
-        }
-        className="bg-gray-200 px-4 py-2 rounded"
-    >
-        Next ▶
-    </button>
-</>
-
-)}
-
-{galleryPhotos.length > 0 && (
-
-<img
-src={
-galleryPhotos[
-currentPhotoIndex
-]?.photoUrl ||
-
-galleryPhotos[
-currentPhotoIndex
-]?.imageUrl ||
-
-galleryPhotos[
-currentPhotoIndex
-]?.url
-}
-alt=""
-className="
-max-h-[70vh]
-max-w-[70vw]
-object-contain
-rounded-lg
-"
-/>
-
-)}
-
-</div>
-</div>
-
-</div>
-
-)
-}
-{
-showUpgradePopup && (
-
-<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[999999]">
-
-    <div className="bg-white rounded-3xl p-8 w-[420px] text-center">
-
-        <div className="text-6xl mb-4">
-            👑
-        </div>
-
-        <h2 className="text-2xl font-bold mb-3">
-            Premium Required
-        </h2>
-
-        <p className="text-gray-600 mb-6">
-            Chat is available only for Premium members.
-        </p>
-
-        <div className="flex justify-center gap-3">
-
-            <button
+      )}
+
+      {/* UPGRADE POPUP MODAL */}
+      {showUpgradePopup && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[999999]">
+          <div className="bg-card rounded-3xl p-8 w-[420px] text-center border border-border shadow-2xl">
+            <div className="text-6xl mb-4">👑</div>
+            <h2 className="text-2xl font-bold mb-3">Premium Required</h2>
+            <p className="text-muted-foreground text-sm mb-6">
+              Chat is available only for Premium members.
+            </p>
+
+            <div className="flex justify-center gap-3">
+              <button
                 onClick={() => {
-                    setShowUpgradePopup(false);
-                    navigate("/home");
+                  setShowUpgradePopup(false);
+                  navigate("/home");
                 }}
-                className="px-5 py-2 rounded-xl bg-gray-200"
-            >
-                Home
-            </button>
+                className="px-5 py-2.5 rounded-xl bg-muted text-muted-foreground hover:bg-muted/80 font-medium transition"
+              >
+                Cancel
+              </button>
 
-            <button
+              <button
                 onClick={() => {
-                    setShowUpgradePopup(false);
-                    navigate("/upgrade");
+                  setShowUpgradePopup(false);
+                  navigate("/upgrade");
                 }}
-                className="px-5 py-2 rounded-xl bg-pink-600 text-white"
-            >
+                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-pink-600 to-rose-600 text-white font-semibold shadow-md transition"
+              >
                 Upgrade Premium
-            </button>
-
+              </button>
+            </div>
+          </div>
         </div>
-
-    </div>
-
-</div>
-
-)
-}
-</>
-);
-
+      )}
+    </>
+  );
 };
 
 export default ProfileDetails;

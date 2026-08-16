@@ -10,6 +10,17 @@ import {
   Eye,
   EyeOff,
   Loader2,
+  Plus,
+  Minus,
+  Camera,
+  Ruler,
+  GraduationCap,
+  MapPin,
+  Heart,
+  Users,
+  FileText,
+  HeartHandshake,
+  Image as ImageIcon,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -25,6 +36,7 @@ import {
 } from "@/services/api";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
+import SearchableSelect from "@/components/SearchableSelect";
 
 const tabs = [
   { id: "profile", label: "Profile", icon: <User className="h-4 w-4" /> },
@@ -32,6 +44,87 @@ const tabs = [
   { id: "notifications", label: "Notifications", icon: <Bell className="h-4 w-4" /> },
   { id: "blocked", label: "Blocked Users", icon: <Ban className="h-4 w-4" /> },
 ];
+
+/**
+ * Reusable master data sorting helper (Case-insensitive A-Z by display name)
+ */
+export const getDisplayName = (option) => {
+  if (!option) return "";
+  if (typeof option === "string" || typeof option === "number") return String(option);
+  return (
+    option.name ||
+    option.value ||
+    option.label ||
+    option.cityName ||
+    option.stateName ||
+    option.countryName ||
+    option.religionName ||
+    option.casteName ||
+    option.subCasteName ||
+    option.height ||
+    option.range ||
+    ""
+  );
+};
+
+export const sortMasterOptions = (options = []) => {
+  if (!Array.isArray(options)) return [];
+  return [...options].sort((a, b) =>
+    getDisplayName(a).localeCompare(
+      getDisplayName(b),
+      undefined,
+      { sensitivity: "base", numeric: true }
+    )
+  );
+};
+
+// Reusable Accordion Settings Section Component
+const SettingsSection = ({
+  id,
+  title,
+  icon: Icon,
+  isOpen,
+  onToggle,
+  children,
+}) => {
+  return (
+    <div className="border border-border rounded-xl bg-card overflow-hidden shadow-sm transition-all duration-200 hover:border-primary/30 mb-4">
+      <button
+        type="button"
+        onClick={() => onToggle(id)}
+        className="w-full flex items-center justify-between p-4 bg-muted/20 hover:bg-muted/50 transition-colors text-left focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer"
+      >
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+            {Icon && <Icon className="h-5 w-5" />}
+          </div>
+          <span className="font-semibold text-base text-foreground tracking-tight">
+            {title}
+          </span>
+        </div>
+        <div className="p-1.5 rounded-full bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors flex items-center justify-center">
+          {isOpen ? (
+            <Minus className="h-4 w-4" />
+          ) : (
+            <Plus className="h-4 w-4" />
+          )}
+        </div>
+      </button>
+
+      <motion.div
+        initial={false}
+        animate={{
+          height: isOpen ? "auto" : 0,
+          opacity: isOpen ? 1 : 0,
+        }}
+        transition={{ duration: 0.25, ease: "easeInOut" }}
+        className="overflow-hidden"
+      >
+        <div className="p-5 border-t border-border/50">{children}</div>
+      </motion.div>
+    </div>
+  );
+};
 
 const SettingsPage = () => {
   const [activeTab, setActiveTab] = useState("profile");
@@ -43,6 +136,26 @@ const SettingsPage = () => {
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [notificationLoading, setNotificationLoading] = useState(false);
   const [blockedLoading, setBlockedLoading] = useState(false);
+
+  const [openSections, setOpenSections] = useState({
+    profilePhoto: true,
+    personalDetails: true,
+    physicalDetails: false,
+    educationCareer: false,
+    locationDetails: false,
+    lifestyle: false,
+    familyDetails: false,
+    aboutMe: false,
+    partnerPreferences: false,
+    photoGallery: false,
+  });
+
+  const toggleSection = (id) => {
+    setOpenSections((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+  };
 
   const [showPassword, setShowPassword] = useState({
     currentPassword: false,
@@ -71,6 +184,8 @@ const SettingsPage = () => {
     religions: [],
     genders: [],
     cities: [],
+    allCities: [],
+    userStateCities: [],
     educationLevels: [],
     occupations: [],
     heights: [],
@@ -224,12 +339,12 @@ const SettingsPage = () => {
 
         setMasterOptions((prev) => ({
           ...prev,
-          profileTypes: extractArray(highPriorityResults[0]),
-          genders: extractArray(highPriorityResults[1]),
-          religions: extractArray(highPriorityResults[2]),
-          maritalStatuses: extractArray(highPriorityResults[3]),
-          educationLevels: extractArray(highPriorityResults[4]),
-          occupations: extractArray(highPriorityResults[5]),
+          profileTypes: sortMasterOptions(extractArray(highPriorityResults[0])),
+          genders: sortMasterOptions(extractArray(highPriorityResults[1])),
+          religions: sortMasterOptions(extractArray(highPriorityResults[2])),
+          maritalStatuses: sortMasterOptions(extractArray(highPriorityResults[3])),
+          educationLevels: sortMasterOptions(extractArray(highPriorityResults[4])),
+          occupations: sortMasterOptions(extractArray(highPriorityResults[5])),
         }));
       } catch (err) {
         console.error("High priority master data load failed:", err);
@@ -263,29 +378,31 @@ const SettingsPage = () => {
           masterDataAPI.getCities(),
         ]);
 
+        const allCitiesData = sortMasterOptions(extractArray(progressiveResults[20]));
         setMasterOptions((prev) => ({
           ...prev,
-          qualifications: extractArray(progressiveResults[0]),
-          fieldsOfStudy: extractArray(progressiveResults[1]),
-          employmentStatuses: extractArray(progressiveResults[2]),
-          heights: extractArray(progressiveResults[3]),
-          weights: extractArray(progressiveResults[4]),
-          complexions: extractArray(progressiveResults[5]),
-          bodyTypes: extractArray(progressiveResults[6]),
-          motherTongues: extractArray(progressiveResults[7]),
-          familyTypes: extractArray(progressiveResults[8]),
-          familyStatuses: extractArray(progressiveResults[9]),
-          familyValues: extractArray(progressiveResults[10]),
-          manglikStatuses: extractArray(progressiveResults[11]),
-          bloodGroups: extractArray(progressiveResults[12]),
-          disabilityStatuses: extractArray(progressiveResults[13]),
-          incomes: extractArray(progressiveResults[14]),
-          diets: extractArray(progressiveResults[15]),
-          smokingOptions: extractArray(progressiveResults[16]),
-          drinkingOptions: extractArray(progressiveResults[17]),
-          countries: extractArray(progressiveResults[18]),
-          states: extractArray(progressiveResults[19]),
-          cities: extractArray(progressiveResults[20]),
+          qualifications: sortMasterOptions(extractArray(progressiveResults[0])),
+          fieldsOfStudy: sortMasterOptions(extractArray(progressiveResults[1])),
+          employmentStatuses: sortMasterOptions(extractArray(progressiveResults[2])),
+          heights: sortMasterOptions(extractArray(progressiveResults[3])),
+          weights: sortMasterOptions(extractArray(progressiveResults[4])),
+          complexions: sortMasterOptions(extractArray(progressiveResults[5])),
+          bodyTypes: sortMasterOptions(extractArray(progressiveResults[6])),
+          motherTongues: sortMasterOptions(extractArray(progressiveResults[7])),
+          familyTypes: sortMasterOptions(extractArray(progressiveResults[8])),
+          familyStatuses: sortMasterOptions(extractArray(progressiveResults[9])),
+          familyValues: sortMasterOptions(extractArray(progressiveResults[10])),
+          manglikStatuses: sortMasterOptions(extractArray(progressiveResults[11])),
+          bloodGroups: sortMasterOptions(extractArray(progressiveResults[12])),
+          disabilityStatuses: sortMasterOptions(extractArray(progressiveResults[13])),
+          incomes: sortMasterOptions(extractArray(progressiveResults[14])),
+          diets: sortMasterOptions(extractArray(progressiveResults[15])),
+          smokingOptions: sortMasterOptions(extractArray(progressiveResults[16])),
+          drinkingOptions: sortMasterOptions(extractArray(progressiveResults[17])),
+          countries: sortMasterOptions(extractArray(progressiveResults[18])),
+          states: sortMasterOptions(extractArray(progressiveResults[19])),
+          cities: allCitiesData,
+          allCities: allCitiesData,
         }));
       } catch (err) {
         console.error("Progressive master data load failed:", err);
@@ -367,7 +484,11 @@ const SettingsPage = () => {
           ? Number(savedProfileData.employedId)
           : null,
         disabilityStatusId: savedProfileData.disabilityStatusId ? Number(savedProfileData.disabilityStatusId) : null,
-        bloodGroupId: savedProfileData.bloodGroupId ? Number(savedProfileData.bloodGroupId) : null,
+        bloodGroupId: savedProfileData.bloodGroupId
+          ? Number(savedProfileData.bloodGroupId)
+          : savedProfileData.bloodGroup?.id
+          ? Number(savedProfileData.bloodGroup.id)
+          : null,
         countryId: savedProfileData.countryId
           ? Number(savedProfileData.countryId)
           : savedProfileData.country?.id
@@ -389,8 +510,25 @@ const SettingsPage = () => {
         motherName: savedProfileData.motherName || "",
         motherOccupation: savedProfileData.motherOccupation || "",
         siblingsCount: savedProfileData.siblingsCount || savedProfileData.siblings || "",
-        dietId: savedProfileData.dietId ? Number(savedProfileData.dietId) : null,
-        smokingId: savedProfileData.smokingId ? Number(savedProfileData.smokingId) : null,
+        dietId: savedProfileData.dietId
+          ? Number(savedProfileData.dietId)
+          : savedProfileData.diet?.id
+          ? Number(savedProfileData.diet.id)
+          : null,
+        smokingId: savedProfileData.smokingId
+          ? Number(savedProfileData.smokingId)
+          : savedProfileData.smoking?.id
+          ? Number(savedProfileData.smoking.id)
+          : savedProfileData.smokingHabitId
+          ? Number(savedProfileData.smokingHabitId)
+          : null,
+        drinkingId: savedProfileData.drinkingId
+          ? Number(savedProfileData.drinkingId)
+          : savedProfileData.drinking?.id
+          ? Number(savedProfileData.drinking.id)
+          : savedProfileData.drinkingHabitId
+          ? Number(savedProfileData.drinkingHabitId)
+          : null,
       };
       setFormData((prev) => ({
         ...prev,
@@ -454,8 +592,9 @@ const SettingsPage = () => {
       try {
         const castes = await masterDataAPI.getCastes(religionId);
         const safeCastes = Array.isArray(castes) ? castes : Array.isArray(castes?.data) ? castes.data : [];
-        casteCache.current.set(religionId, safeCastes);
-        setMasterOptions((prev) => ({ ...prev, castes: safeCastes }));
+        const sortedCastes = sortMasterOptions(safeCastes);
+        casteCache.current.set(religionId, sortedCastes);
+        setMasterOptions((prev) => ({ ...prev, castes: sortedCastes }));
       } catch (err) {
         console.error("Failed to load castes:", err);
         setMasterOptions((prev) => ({ ...prev, castes: [] }));
@@ -465,7 +604,7 @@ const SettingsPage = () => {
     loadProfileCastes();
   }, [formData.religionId]);
 
-  // Dependent Cached Loading: Caste -> SubCaste
+  // Dependent Cached Loading: Caste -> SubCaste (with N/A fallback & auto-selection)
   useEffect(() => {
     const casteId = Number(formData.casteId);
     if (!casteId) {
@@ -474,19 +613,85 @@ const SettingsPage = () => {
     }
 
     if (subCasteCache.current.has(casteId)) {
-      setMasterOptions((prev) => ({ ...prev, subCastes: subCasteCache.current.get(casteId) }));
+      let cached = subCasteCache.current.get(casteId);
+      if (!cached || cached.length === 0) {
+        cached = [{ id: "N/A", casteId, name: "N/A" }];
+        subCasteCache.current.set(casteId, cached);
+      }
+      setMasterOptions((prev) => ({ ...prev, subCastes: cached }));
+      if (cached.length === 1 && (cached[0].name === "N/A" || cached[0].name === "Not Applicable")) {
+        setFormData((prev) => {
+          if (!prev.subCasteId || (typeof cached[0].id === 'number' && Number(prev.subCasteId) !== Number(cached[0].id))) {
+            return { ...prev, subCasteId: cached[0].id };
+          }
+          return prev;
+        });
+      }
       return;
     }
 
     const loadSubCastes = async () => {
       try {
         const subCastes = await masterDataAPI.getSubCastes(casteId);
-        const safeSubCastes = Array.isArray(subCastes) ? subCastes : Array.isArray(subCastes?.data) ? subCastes.data : [];
-        subCasteCache.current.set(casteId, safeSubCastes);
-        setMasterOptions((prev) => ({ ...prev, subCastes: safeSubCastes }));
+        let rawSubCastes = Array.isArray(subCastes) ? subCastes : Array.isArray(subCastes?.data) ? subCastes.data : [];
+
+        // Check if there are real sub-castes for this caste (excluding N/A)
+        const realSubCastes = rawSubCastes.filter(
+          (sc) =>
+            sc.name &&
+            sc.name.trim().toUpperCase() !== "N/A" &&
+            sc.name.trim().toUpperCase() !== "NOT APPLICABLE"
+        );
+
+        let safeSubCastes = [];
+        if (realSubCastes.length > 0) {
+          // Caste has actual sub-castes: show only actual sub-castes (no N/A)
+          safeSubCastes = realSubCastes;
+        } else {
+          // Caste has NO actual sub-castes: find or generate N/A
+          const naOptionInRaw = rawSubCastes.find(
+            (sc) =>
+              sc.name?.trim().toUpperCase() === "N/A" ||
+              sc.name?.trim().toUpperCase() === "NOT APPLICABLE"
+          );
+          if (naOptionInRaw) {
+            safeSubCastes = [naOptionInRaw];
+          } else {
+            const allSubCastes = await masterDataAPI.getSubCastes(null);
+            const globalNa = Array.isArray(allSubCastes)
+              ? allSubCastes.find(
+                  (sc) =>
+                    sc.name?.trim().toUpperCase() === "N/A" ||
+                    sc.name?.trim().toUpperCase() === "NOT APPLICABLE"
+                )
+              : null;
+            if (globalNa) {
+              safeSubCastes = [{ ...globalNa, casteId }];
+            } else {
+              safeSubCastes = [{ id: "N/A", casteId, name: "N/A" }];
+            }
+          }
+        }
+
+        const sortedSubCastes = sortMasterOptions(safeSubCastes);
+        subCasteCache.current.set(casteId, sortedSubCastes);
+        setMasterOptions((prev) => ({ ...prev, subCastes: sortedSubCastes }));
+
+        // Auto-select N/A if it is the only sub-caste option available for this caste
+        if (
+          sortedSubCastes.length === 1 &&
+          (sortedSubCastes[0].name === "N/A" || sortedSubCastes[0].name === "Not Applicable")
+        ) {
+          setFormData((prev) => ({
+            ...prev,
+            subCasteId: sortedSubCastes[0].id,
+          }));
+        }
       } catch (error) {
         console.error("Failed to load sub castes:", error);
-        setMasterOptions((prev) => ({ ...prev, subCastes: [] }));
+        const fallbackNA = [{ id: "N/A", casteId, name: "N/A" }];
+        setMasterOptions((prev) => ({ ...prev, subCastes: fallbackNA }));
+        setFormData((prev) => ({ ...prev, subCasteId: "N/A" }));
       }
     };
 
@@ -510,8 +715,9 @@ const SettingsPage = () => {
       try {
         const castes = await masterDataAPI.getCastes(religionId);
         const safeCastes = Array.isArray(castes) ? castes : Array.isArray(castes?.data) ? castes.data : [];
-        partnerCasteCache.current.set(religionId, safeCastes);
-        setMasterOptions((prev) => ({ ...prev, partnerCastes: safeCastes }));
+        const sortedCastes = sortMasterOptions(safeCastes);
+        partnerCasteCache.current.set(religionId, sortedCastes);
+        setMasterOptions((prev) => ({ ...prev, partnerCastes: sortedCastes }));
       } catch (error) {
         console.error("Failed to load partner castes:", error);
         setMasterOptions((prev) => ({ ...prev, partnerCastes: [] }));
@@ -521,18 +727,21 @@ const SettingsPage = () => {
     loadPartnerCastes();
   }, [partnerPreference.religionId]);
 
-  // Dependent Loading: State -> Cities
+  // Dependent Loading: State -> Cities (User Location filtering)
   useEffect(() => {
-    if (!formData.stateId) return;
+    if (!formData.stateId) {
+      setMasterOptions((prev) => ({ ...prev, userStateCities: [] }));
+      return;
+    }
     const loadStateCities = async () => {
       try {
         const cities = await masterDataAPI.getCitiesByState(formData.stateId);
         const safeCities = Array.isArray(cities) ? cities : Array.isArray(cities?.data) ? cities.data : [];
-        if (safeCities.length > 0) {
-          setMasterOptions((prev) => ({ ...prev, cities: safeCities }));
-        }
+        const sortedCities = sortMasterOptions(safeCities);
+        setMasterOptions((prev) => ({ ...prev, userStateCities: sortedCities }));
       } catch (err) {
         console.error("Failed to load state cities:", err);
+        setMasterOptions((prev) => ({ ...prev, userStateCities: [] }));
       }
     };
     loadStateCities();
@@ -851,29 +1060,59 @@ const SettingsPage = () => {
     }
   };
 
+  const ensureSectionOpen = (sectionId) => {
+    setExpandedSections((prev) => ({
+      ...prev,
+      [sectionId]: true,
+    }));
+  };
+
   const validateProfileForm = () => {
     if (!formData.firstName || formData.firstName.trim() === "") {
+      ensureSectionOpen("personal");
       error("First name is required");
       return false;
     }
 
     if (!formData.lastName || formData.lastName.trim() === "") {
+      ensureSectionOpen("personal");
       error("Last name is required");
       return false;
     }
 
     if (!formData.genderId) {
+      ensureSectionOpen("personal");
       error("Gender is required");
       return false;
     }
 
     if (!formData.dateOfBirth) {
+      ensureSectionOpen("personal");
       error("Date of birth is required");
       return false;
     }
 
     if (formData.email && !formData.email.includes("@")) {
+      ensureSectionOpen("personal");
       error("Please enter a valid email address");
+      return false;
+    }
+
+    if (
+      partnerPreference.minAge &&
+      (Number(partnerPreference.minAge) < 18 || Number(partnerPreference.minAge) > 100)
+    ) {
+      ensureSectionOpen("partner");
+      error("Minimum age must be between 18 and 100");
+      return false;
+    }
+
+    if (
+      partnerPreference.maxAge &&
+      (Number(partnerPreference.maxAge) < 18 || Number(partnerPreference.maxAge) > 100)
+    ) {
+      ensureSectionOpen("partner");
+      error("Maximum age must be between 18 and 100");
       return false;
     }
 
@@ -882,12 +1121,8 @@ const SettingsPage = () => {
       partnerPreference.maxAge &&
       Number(partnerPreference.minAge) > Number(partnerPreference.maxAge)
     ) {
+      ensureSectionOpen("partner");
       error("Minimum age cannot be greater than maximum age");
-      return false;
-    }
-
-    if (galleryPhotos.length < 4) {
-      error("Please upload minimum 4 photos");
       return false;
     }
 
@@ -1162,7 +1397,7 @@ const SettingsPage = () => {
 
       if (key === "genderId") fieldOptions = masterOptions.genders || [];
       else if (key === "religionId") fieldOptions = masterOptions.religions || [];
-      else if (key === "cityId") fieldOptions = masterOptions.cities || [];
+      else if (key === "cityId") fieldOptions = masterOptions.userStateCities || [];
       else if (key === "educationLevelId") fieldOptions = masterOptions.educationLevels || [];
       else if (key === "occupationId") fieldOptions = masterOptions.occupations || [];
       else if (key === "maritalStatusId") fieldOptions = masterOptions.maritalStatuses || [];
@@ -1191,6 +1426,7 @@ const SettingsPage = () => {
       else if (key === "bloodGroupId") fieldOptions = masterOptions.bloodGroups || [];
       else fieldOptions = options || [];
 
+      const sortedOptions = sortMasterOptions(fieldOptions);
       const currentValue = formData[key] ?? "";
       const isHighPriorityKey = [
         "profileTypeId",
@@ -1201,19 +1437,20 @@ const SettingsPage = () => {
         "occupationId",
       ].includes(key);
       const isCurrentlyLoading = isHighPriorityKey ? masterLoading.highPriority : masterLoading.progressive;
-
-      const valueExists = fieldOptions.some((opt) => {
-        const val = opt?.id ?? opt?.cityId ?? opt?.stateId ?? opt?.countryId ?? opt?.casteId ?? opt?.subCasteId ?? opt?.name ?? opt;
-        return String(val) === String(currentValue);
-      });
+      const isCityDisabled = key === "cityId" && !formData.stateId;
 
       return (
         <div key={key}>
           <label className="text-xs font-medium text-foreground mb-1 block">{label}</label>
-          <select
+          <SearchableSelect
             value={currentValue}
-            onChange={(e) => {
-              const value = e.target.value;
+            options={sortedOptions}
+            placeholder={
+              isCityDisabled ? "Select state first" : `Select ${label.toLowerCase()}`
+            }
+            disabled={isCityDisabled}
+            loading={isCurrentlyLoading}
+            onChange={(value) => {
               handleInputChange(key, value);
 
               if (key === "religionId") {
@@ -1227,56 +1464,7 @@ const SettingsPage = () => {
                 handleInputChange("cityId", "");
               }
             }}
-            className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-          >
-            <option value="">
-              {isCurrentlyLoading && fieldOptions.length === 0 ? "Loading options..." : `Select ${label.toLowerCase()}`}
-            </option>
-            {currentValue && !valueExists && !isCurrentlyLoading && (
-              <option value={currentValue}>Selected ({currentValue})</option>
-            )}
-            {fieldOptions?.map((opt) => {
-              const optionValue =
-                opt?.id ??
-                opt?.cityId ??
-                opt?.stateId ??
-                opt?.countryId ??
-                opt?.casteId ??
-                opt?.subCasteId ??
-                opt?.name ??
-                opt;
-
-              const optionLabel =
-                opt?.type ||
-                opt?.bloodGroup ||
-                opt?.bloodGroupName ||
-                opt?.groupName ||
-                opt?.disabilityName ||
-                opt?.familyTypeName ||
-                opt?.familyStatusName ||
-                opt?.familyValueName ||
-                opt?.qualificationName ||
-                opt?.fieldOfStudyName ||
-                opt?.employedStatusName ||
-                opt?.value ||
-                opt?.name ||
-                opt?.status ||
-                opt?.cityName ||
-                opt?.stateName ||
-                opt?.countryName ||
-                opt?.casteName ||
-                opt?.subCasteName ||
-                opt?.range ||
-                opt?.label ||
-                String(opt);
-
-              return (
-                <option key={optionValue} value={optionValue}>
-                  {optionLabel}
-                </option>
-              );
-            })}
-          </select>
+          />
         </div>
       );
     }
@@ -1333,478 +1521,758 @@ const SettingsPage = () => {
         <motion.div key={activeTab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-xl border border-border p-6">
           {/* PROFILE TAB */}
           {activeTab === "profile" && (
-            <div className="space-y-6">
-              <h2 className="text-lg font-display font-bold text-foreground mb-4">Update Profile</h2>
+            <div className="space-y-4">
+              <h2 className="text-lg font-display font-bold text-foreground mb-4">
+                Update Profile
+              </h2>
 
-              {/* 1. Profile Photo Upload */}
-              <div className="border border-dashed border-border rounded-lg p-4 bg-muted/30">
-                <label className="text-sm font-medium text-foreground mb-3 block">Profile Photo</label>
-                {formData.profilePhotoUrl ? (
-                  <div className="relative w-20 h-20 rounded-full overflow-hidden mb-3 ring-2 ring-primary/20">
-                    <img src={formData.profilePhotoUrl} alt="Profile" className="w-full h-full object-cover" />
-                    <button
-                      type="button"
-                      onClick={removeProfilePhoto}
-                      className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity"
-                    >
-                      <X className="h-4 w-4 text-white" />
-                    </button>
+              {/* 1. Profile Photo & Profile Type */}
+              <SettingsSection
+                id="profilePhoto"
+                title="Profile Photo & Profile Type"
+                icon={Camera}
+                isOpen={openSections.profilePhoto}
+                onToggle={toggleSection}
+              >
+                <div className="space-y-4">
+                  {/* Photo Upload Box */}
+                  <div className="border border-dashed border-border rounded-lg p-4 bg-muted/30">
+                    <label className="text-sm font-medium text-foreground mb-3 block">
+                      Profile Photo
+                    </label>
+                    {formData.profilePhotoUrl ? (
+                      <div className="relative w-20 h-20 rounded-full overflow-hidden mb-3 ring-2 ring-primary/20">
+                        <img
+                          src={formData.profilePhotoUrl}
+                          alt="Profile"
+                          className="w-full h-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={removeProfilePhoto}
+                          className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity"
+                        >
+                          <X className="h-4 w-4 text-white" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-3 text-muted-foreground font-semibold text-lg border border-border">
+                        {formData.firstName
+                          ? formData.firstName.charAt(0).toUpperCase()
+                          : "U"}
+                      </div>
+                    )}
+                    <label className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg text-sm font-medium cursor-pointer transition-colors inline-block">
+                      <Upload className="h-4 w-4" />
+                      {formData.profilePhotoUrl
+                        ? "Change Photo"
+                        : "Upload Photo"}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleProfilePhotoUpload}
+                        className="hidden"
+                      />
+                    </label>
                   </div>
-                ) : (
-                  <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-3 text-muted-foreground font-semibold text-lg border border-border">
-                    {formData.firstName ? formData.firstName.charAt(0).toUpperCase() : "U"}
-                  </div>
-                )}
-                <label className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg text-sm font-medium cursor-pointer transition-colors inline-block">
-                  <Upload className="h-4 w-4" />
-                  {formData.profilePhotoUrl ? "Change Photo" : "Upload Photo"}
-                  <input type="file" accept="image/*" onChange={handleProfilePhotoUpload} className="hidden" />
-                </label>
-              </div>
 
-              {/* 2. Profile Type (TOP - immediately after Profile Photo) */}
-              <div>
-                <h3 className="text-sm font-semibold text-foreground mb-3 pb-2 border-b border-border">Profile Type</h3>
+                  {/* Profile Type */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {renderField({
+                      label: "Profile Type",
+                      key: "profileTypeId",
+                      type: "select",
+                    })}
+                  </div>
+                </div>
+              </SettingsSection>
+
+              {/* 2. Personal Details */}
+              <SettingsSection
+                id="personalDetails"
+                title="Personal Details"
+                icon={User}
+                isOpen={openSections.personalDetails}
+                onToggle={toggleSection}
+              >
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {renderField({
-                    label: "Profile Type",
-                    key: "profileTypeId",
+                    label: "Full Name",
+                    placeholder: "Your full name",
+                    key: "fullName",
+                  })}
+                  {renderField({
+                    label: "Gender",
+                    key: "genderId",
+                    type: "select",
+                  })}
+                  {renderField({
+                    label: "Date of Birth",
+                    type: "date",
+                    key: "dateOfBirth",
+                  })}
+                  {renderField({
+                    label: "Age",
+                    type: "number",
+                    key: "age",
+                    placeholder: "Auto-calculated",
+                    readOnly: true,
+                  })}
+                  {renderField({
+                    label: "Marital Status",
+                    key: "maritalStatusId",
+                    type: "select",
+                  })}
+                  {renderField({
+                    label: "Religion",
+                    key: "religionId",
+                    type: "select",
+                  })}
+                  {renderField({
+                    label: "Caste",
+                    key: "casteId",
+                    type: "select",
+                  })}
+                  {renderField({
+                    label: "Sub-caste",
+                    key: "subCasteId",
+                    type: "select",
+                  })}
+                  {renderField({
+                    label: "Mother Tongue",
+                    key: "motherTongueId",
+                    type: "select",
+                  })}
+                  {renderField({
+                    label: "Manglik Status",
+                    key: "manglikStatusId",
+                    type: "select",
+                  })}
+                  {renderField({
+                    label: "Blood Group",
+                    key: "bloodGroupId",
+                    type: "select",
+                  })}
+                  {renderField({
+                    label: "Disability Status",
+                    key: "disabilityStatusId",
+                    type: "select",
+                  })}
+                  {renderField({
+                    label: "Email",
+                    type: "email",
+                    placeholder: "your@email.com",
+                    key: "email",
+                  })}
+                  {renderField({
+                    label: "Phone",
+                    type: "tel",
+                    placeholder: "+91 98765 43210",
+                    key: "phone",
+                  })}
+                </div>
+              </SettingsSection>
+
+              {/* 3. Physical Details */}
+              <SettingsSection
+                id="physicalDetails"
+                title="Physical Details"
+                icon={Ruler}
+                isOpen={openSections.physicalDetails}
+                onToggle={toggleSection}
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {renderField({
+                    label: "Height",
+                    key: "heightId",
+                    type: "select",
+                  })}
+                  {renderField({
+                    label: "Weight",
+                    key: "weightId",
+                    type: "select",
+                  })}
+                  {renderField({
+                    label: "Complexion",
+                    key: "complexionId",
+                    type: "select",
+                  })}
+                  {renderField({
+                    label: "Body Type",
+                    key: "bodyTypeId",
                     type: "select",
                   })}
                 </div>
-              </div>
+              </SettingsSection>
 
-              {/* 3. Personal Details Section */}
-              <div>
-                <h3 className="text-sm font-semibold text-foreground mb-3 pb-2 border-b border-border">Personal Details</h3>
+              {/* 4. Education & Career */}
+              <SettingsSection
+                id="educationCareer"
+                title="Education & Career"
+                icon={GraduationCap}
+                isOpen={openSections.educationCareer}
+                onToggle={toggleSection}
+              >
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {renderField({ label: "Full Name", placeholder: "Your full name", key: "fullName" })}
-                  {renderField({ label: "Gender", key: "genderId", type: "select" })}
-                  {renderField({ label: "Date of Birth", type: "date", key: "dateOfBirth" })}
-                  {renderField({ label: "Age", type: "number", key: "age", placeholder: "Auto-calculated", readOnly: true })}
-                  {renderField({ label: "Marital Status", key: "maritalStatusId", type: "select" })}
-                  {renderField({ label: "Religion", key: "religionId", type: "select" })}
-                  {renderField({ label: "Caste", key: "casteId", type: "select" })}
-                  {renderField({ label: "Sub-caste", key: "subCasteId", type: "select" })}
-                  {renderField({ label: "Mother Tongue", key: "motherTongueId", type: "select" })}
-                  {renderField({ label: "Manglik Status", key: "manglikStatusId", type: "select" })}
-                  {renderField({ label: "Blood Group", key: "bloodGroupId", type: "select" })}
-                  {renderField({ label: "Disability Status", key: "disabilityStatusId", type: "select" })}
+                  {renderField({
+                    label: "Highest Education",
+                    key: "educationLevelId",
+                    type: "select",
+                  })}
+                  {renderField({
+                    label: "Qualification",
+                    key: "qualificationId",
+                    type: "select",
+                  })}
+                  {renderField({
+                    label: "Field Of Study",
+                    key: "fieldOfStudyId",
+                    type: "select",
+                  })}
+                  {renderField({
+                    label: "Profession / Occupation",
+                    key: "occupationId",
+                    type: "select",
+                  })}
+                  {renderField({
+                    label: "Employment Status",
+                    key: "employedId",
+                    type: "select",
+                  })}
+                  {renderField({
+                    label: "Company Name",
+                    placeholder: "Your company",
+                    key: "companyName",
+                  })}
+                  {renderField({
+                    label: "Annual Income",
+                    key: "incomeId",
+                    type: "select",
+                  })}
                 </div>
-              </div>
+              </SettingsSection>
 
-              {/* 4. Physical Details Section */}
-              <div>
-                <h3 className="text-sm font-semibold text-foreground mb-3 pb-2 border-b border-border">Physical Details</h3>
+              {/* 5. Location Details */}
+              <SettingsSection
+                id="locationDetails"
+                title="Location Details"
+                icon={MapPin}
+                isOpen={openSections.locationDetails}
+                onToggle={toggleSection}
+              >
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {renderField({ label: "Height", key: "heightId", type: "select" })}
-                  {renderField({ label: "Weight", key: "weightId", type: "select" })}
-                  {renderField({ label: "Complexion", key: "complexionId", type: "select" })}
-                  {renderField({ label: "Body Type", key: "bodyTypeId", type: "select" })}
+                  {renderField({
+                    label: "Country",
+                    key: "countryId",
+                    type: "select",
+                  })}
+                  {renderField({
+                    label: "State",
+                    key: "stateId",
+                    type: "select",
+                  })}
+                  {renderField({
+                    label: "City",
+                    key: "cityId",
+                    type: "select",
+                  })}
+                  {renderField({
+                    label: "Address",
+                    key: "address",
+                    placeholder: "Enter address",
+                  })}
                 </div>
-              </div>
+              </SettingsSection>
 
-              {/* 5. Education & Career Section */}
-              <div>
-                <h3 className="text-sm font-semibold text-foreground mb-3 pb-2 border-b border-border">Education & Career</h3>
+              {/* 6. Lifestyle */}
+              <SettingsSection
+                id="lifestyle"
+                title="Lifestyle"
+                icon={Heart}
+                isOpen={openSections.lifestyle}
+                onToggle={toggleSection}
+              >
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {renderField({ label: "Highest Education", key: "educationLevelId", type: "select" })}
-                  {renderField({ label: "Qualification", key: "qualificationId", type: "select" })}
-                  {renderField({ label: "Field Of Study", key: "fieldOfStudyId", type: "select" })}
-                  {renderField({ label: "Profession / Occupation", key: "occupationId", type: "select" })}
-                  {renderField({ label: "Employment Status", key: "employedId", type: "select" })}
-                  {renderField({ label: "Company Name", placeholder: "Your company", key: "companyName" })}
-                  {renderField({ label: "Annual Income", key: "incomeId", type: "select" })}
+                  {renderField({
+                    label: "Diet",
+                    key: "dietId",
+                    type: "select",
+                  })}
+                  {renderField({
+                    label: "Smoking",
+                    key: "smokingId",
+                    type: "select",
+                  })}
+                  {renderField({
+                    label: "Drinking",
+                    key: "drinkingId",
+                    type: "select",
+                  })}
                 </div>
-              </div>
+              </SettingsSection>
 
-              {/* 6. Location Details Section */}
-              <div>
-                <h3 className="text-sm font-semibold text-foreground mb-3 pb-2 border-b border-border">Location Details</h3>
+              {/* 7. Family Details */}
+              <SettingsSection
+                id="familyDetails"
+                title="Family Details"
+                icon={Users}
+                isOpen={openSections.familyDetails}
+                onToggle={toggleSection}
+              >
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {renderField({ label: "Country", key: "countryId", type: "select" })}
-                  {renderField({ label: "State", key: "stateId", type: "select" })}
-                  {renderField({ label: "City", key: "cityId", type: "select" })}
-                  {renderField({ label: "Address", key: "address", placeholder: "Enter address" })}
+                  {renderField({
+                    label: "Father's Name",
+                    placeholder: "Your father's name",
+                    key: "fatherName",
+                  })}
+                  {renderField({
+                    label: "Father's Occupation",
+                    placeholder: "Your father's occupation",
+                    key: "fatherOccupation",
+                  })}
+                  {renderField({
+                    label: "Mother's Name",
+                    placeholder: "Your mother's name",
+                    key: "motherName",
+                  })}
+                  {renderField({
+                    label: "Mother's Occupation",
+                    placeholder: "Your mother's occupation",
+                    key: "motherOccupation",
+                  })}
+                  {renderField({
+                    label: "Number of Siblings",
+                    key: "siblingsCount",
+                    placeholder: "Enter siblings count",
+                  })}
+                  {renderField({
+                    label: "Family Type",
+                    key: "familyTypeId",
+                    type: "select",
+                  })}
+                  {renderField({
+                    label: "Family Status",
+                    key: "familyStatusId",
+                    type: "select",
+                  })}
+                  {renderField({
+                    label: "Family Value",
+                    key: "familyValueId",
+                    type: "select",
+                  })}
                 </div>
-              </div>
+              </SettingsSection>
 
-              {/* 7. Lifestyle Section */}
-              <div>
-                <h3 className="text-sm font-semibold text-foreground mb-3 pb-2 border-b border-border">Lifestyle</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {renderField({ label: "Diet", key: "dietId", type: "select" })}
-                  {renderField({ label: "Smoking", key: "smokingId", type: "select" })}
-                  {renderField({ label: "Drinking", key: "drinkingId", type: "select" })}
-                </div>
-              </div>
-
-              {/* 8. Family Details Section */}
-              <div>
-                <h3 className="text-sm font-semibold text-foreground mb-3 pb-2 border-b border-border">Family Details</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {renderField({ label: "Father's Name", placeholder: "Your father's name", key: "fatherName" })}
-                  {renderField({ label: "Father's Occupation", placeholder: "Your father's occupation", key: "fatherOccupation" })}
-                  {renderField({ label: "Mother's Name", placeholder: "Your mother's name", key: "motherName" })}
-                  {renderField({ label: "Mother's Occupation", placeholder: "Your mother's occupation", key: "motherOccupation" })}
-                  {renderField({ label: "Number of Siblings", key: "siblingsCount", placeholder: "Enter siblings count" })}
-                  {renderField({ label: "Family Type", key: "familyTypeId", type: "select" })}
-                  {renderField({ label: "Family Status", key: "familyStatusId", type: "select" })}
-                  {renderField({ label: "Family Value", key: "familyValueId", type: "select" })}
-                </div>
-              </div>
-
-              {/* 9. Partner Preferences Section */}
-              <div>
-                <h3 className="text-sm font-semibold text-foreground mb-3 pb-2 border-b border-border">Partner Preferences</h3>
-
-                {/* Age */}
-                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 mt-4">Age Preferences</h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-xs font-medium text-foreground mb-1 block">Preferred Age Min</label>
-                    <input
-                      type="number"
-                      className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                      value={partnerPreference.minAge ?? ""}
-                      onChange={(e) => handlePartnerPreferenceChange("minAge", e.target.value)}
-                      placeholder="Enter minimum age"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium text-foreground mb-1 block">Preferred Age Max</label>
-                    <input
-                      type="number"
-                      className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                      value={partnerPreference.maxAge ?? ""}
-                      onChange={(e) => handlePartnerPreferenceChange("maxAge", e.target.value)}
-                      placeholder="Enter maximum age"
-                    />
-                  </div>
-                </div>
-
-                {/* Height */}
-                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 mt-4">Height Preferences</h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-xs font-medium text-foreground mb-1 block">Preferred Height Min</label>
-                    <select
-                      className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                      value={partnerPreference.minHeight ?? ""}
-                      onChange={(e) => handlePartnerPreferenceChange("minHeight", e.target.value)}
-                    >
-                      <option value="">Select minimum height</option>
-                      {masterOptions.heights.map((h) => (
-                        <option key={h.id} value={h.id}>
-                          {h.name || h.value || h.height}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium text-foreground mb-1 block">Preferred Height Max</label>
-                    <select
-                      className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                      value={partnerPreference.maxHeight ?? ""}
-                      onChange={(e) => handlePartnerPreferenceChange("maxHeight", e.target.value)}
-                    >
-                      <option value="">Select maximum height</option>
-                      {masterOptions.heights.map((h) => (
-                        <option key={h.id} value={h.id}>
-                          {h.name || h.value || h.height}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                {/* Weight */}
-                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 mt-4">Weight Preferences</h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-xs font-medium text-foreground mb-1 block">Preferred Weight Min</label>
-                    <select
-                      className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                      value={partnerPreference.minWeight ?? ""}
-                      onChange={(e) => handlePartnerPreferenceChange("minWeight", e.target.value)}
-                    >
-                      <option value="">Select minimum weight</option>
-                      {masterOptions.weights.map((w) => (
-                        <option key={w.id} value={w.id}>
-                          {w.name || w.value || w.weight}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium text-foreground mb-1 block">Preferred Weight Max</label>
-                    <select
-                      className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                      value={partnerPreference.maxWeight ?? ""}
-                      onChange={(e) => handlePartnerPreferenceChange("maxWeight", e.target.value)}
-                    >
-                      <option value="">Select maximum weight</option>
-                      {masterOptions.weights.map((w) => (
-                        <option key={w.id} value={w.id}>
-                          {w.name || w.value || w.weight}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                {/* Basic Preferences */}
-                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 mt-4">Basic Preferences</h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-xs font-medium text-foreground mb-1 block">Preferred Religion</label>
-                    <select
-                      className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                      value={partnerPreference.religionId ?? ""}
-                      onChange={(e) => handlePartnerPreferenceChange("religionId", e.target.value)}
-                    >
-                      <option value="">Select religion</option>
-                      {masterOptions.religions.map((r) => (
-                        <option key={r.id} value={r.id}>
-                          {r.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-medium text-foreground mb-1 block">Preferred Caste</label>
-                    <select
-                      className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                      value={partnerPreference.casteId ?? ""}
-                      onChange={(e) => handlePartnerPreferenceChange("casteId", e.target.value)}
-                    >
-                      <option value="">Select caste</option>
-                      {masterOptions.partnerCastes.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-medium text-foreground mb-1 block">Preferred City</label>
-                    <select
-                      className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                      value={partnerPreference.cityId ?? ""}
-                      onChange={(e) => handlePartnerPreferenceChange("cityId", e.target.value)}
-                    >
-                      <option value="">Select city</option>
-                      {masterOptions.cities.map((city) => (
-                        <option key={city.id || city.cityId} value={city.id || city.cityId}>
-                          {city.name || city.cityName}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-medium text-foreground mb-1 block">Preferred Education</label>
-                    <select
-                      className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                      value={partnerPreference.educationLevelId ?? ""}
-                      onChange={(e) => handlePartnerPreferenceChange("educationLevelId", e.target.value)}
-                    >
-                      <option value="">Select education</option>
-                      {masterOptions.educationLevels.map((ed) => (
-                        <option key={ed.id} value={ed.id}>
-                          {ed.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-medium text-foreground mb-1 block">Preferred Occupation</label>
-                    <select
-                      className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                      value={partnerPreference.occupationId ?? ""}
-                      onChange={(e) => handlePartnerPreferenceChange("occupationId", e.target.value)}
-                    >
-                      <option value="">Select occupation</option>
-                      {masterOptions.occupations.map((op) => (
-                        <option key={op.id} value={op.id}>
-                          {op.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-medium text-foreground mb-1 block">Preferred Marital Status</label>
-                    <select
-                      className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                      value={partnerPreference.maritalStatusId ?? ""}
-                      onChange={(e) => handlePartnerPreferenceChange("maritalStatusId", e.target.value)}
-                    >
-                      <option value="">Select marital status</option>
-                      {masterOptions.maritalStatuses.map((ms) => (
-                        <option key={ms.id} value={ms.id}>
-                          {ms.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                {/* Lifestyle Preferences */}
-                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 mt-4">Lifestyle Preferences</h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-xs font-medium text-foreground mb-1 block">Smoking Preference</label>
-                    <select
-                      className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                      value={partnerPreference.smokingId ?? ""}
-                      onChange={(e) => handlePartnerPreferenceChange("smokingId", e.target.value)}
-                    >
-                      <option value="">Select smoking preference</option>
-                      {masterOptions.smokingOptions.map((sm) => (
-                        <option key={sm.id} value={sm.id}>
-                          {sm.smokingType || sm.smokingStatus || sm.smokingPreference || sm.type || sm.name || sm.value}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-medium text-foreground mb-1 block">Drinking Preference</label>
-                    <select
-                      className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                      value={partnerPreference.drinkingId ?? ""}
-                      onChange={(e) => handlePartnerPreferenceChange("drinkingId", e.target.value)}
-                    >
-                      <option value="">Select drinking preference</option>
-                      {masterOptions.drinkingOptions.map((dr) => (
-                        <option key={dr.id} value={dr.id}>
-                          {dr.value || dr.name || dr.drinkingType}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-medium text-foreground mb-1 block">Diet Preference</label>
-                    <select
-                      className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                      value={partnerPreference.dietId ?? ""}
-                      onChange={(e) => handlePartnerPreferenceChange("dietId", e.target.value)}
-                    >
-                      <option value="">Select diet preference</option>
-                      {masterOptions.diets.map((d) => (
-                        <option key={d.id} value={d.id}>
-                          {d.dietType || d.dietName || d.name || d.value}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                {/* Additional Expectations */}
-                <div className="mt-4">
-                  <label className="text-xs font-medium text-foreground mb-1 block">Other Expectations</label>
-                  <textarea
-                    rows={4}
-                    value={partnerPreference.otherExpectations ?? ""}
-                    onChange={(e) => handlePartnerPreferenceChange("otherExpectations", e.target.value)}
-                    placeholder="Any other expectations..."
-                    className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none"
-                  />
-                </div>
-              </div>
-
-              {/* 10. Contact Information Section */}
-              <div>
-                <h3 className="text-sm font-semibold text-foreground mb-3 pb-2 border-b border-border">Contact Information</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {renderField({ label: "Email", type: "email", placeholder: "your@email.com", key: "email" })}
-                  {renderField({ label: "Phone", type: "tel", placeholder: "+91 98765 43210", key: "phone" })}
-                </div>
-              </div>
-
-              {/* 11. About Me Section */}
-              <div>
-                <h3 className="text-sm font-semibold text-foreground mb-3 pb-2 border-b border-border">About Me</h3>
+              {/* 8. About Me */}
+              <SettingsSection
+                id="aboutMe"
+                title="About Me"
+                icon={FileText}
+                isOpen={openSections.aboutMe}
+                onToggle={toggleSection}
+              >
                 <div>
-                  <label className="text-xs font-medium text-foreground mb-1 block">About Me</label>
+                  <label className="text-xs font-medium text-foreground mb-1 block">
+                    About Me
+                  </label>
                   <textarea
                     rows={4}
                     value={formData.aboutMe}
-                    onChange={(e) => handleInputChange("aboutMe", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("aboutMe", e.target.value)
+                    }
                     placeholder="Tell us about yourself, your interests, personality and what you are looking for..."
                     className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none"
                   />
                 </div>
-              </div>
+              </SettingsSection>
 
-              {/* 12. Photo Gallery Section */}
-              <div className="border border-border rounded-lg p-4 bg-card">
-                <div className="flex justify-between items-center mb-3">
-                  <h3 className="font-semibold text-foreground">Photo Gallery</h3>
-                  <span className="text-xs text-muted-foreground">{galleryPhotos.length}/8</span>
+              {/* 9. Partner Preferences */}
+              <SettingsSection
+                id="partnerPreferences"
+                title="Partner Preferences"
+                icon={HeartHandshake}
+                isOpen={openSections.partnerPreferences}
+                onToggle={toggleSection}
+              >
+                <div className="space-y-4">
+                  {/* Age */}
+                  <div>
+                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                      Age Preferences
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-xs font-medium text-foreground mb-1 block">
+                          Preferred Age Min
+                        </label>
+                        <input
+                          type="number"
+                          className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                          value={partnerPreference.minAge ?? ""}
+                          onChange={(e) =>
+                            handlePartnerPreferenceChange(
+                              "minAge",
+                              e.target.value
+                            )
+                          }
+                          placeholder="Enter minimum age"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-foreground mb-1 block">
+                          Preferred Age Max
+                        </label>
+                        <input
+                          type="number"
+                          className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                          value={partnerPreference.maxAge ?? ""}
+                          onChange={(e) =>
+                            handlePartnerPreferenceChange(
+                              "maxAge",
+                              e.target.value
+                            )
+                          }
+                          placeholder="Enter maximum age"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Height */}
+                  <div>
+                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                      Height Preferences
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-xs font-medium text-foreground mb-1 block">
+                          Preferred Height Min
+                        </label>
+                        <SearchableSelect
+                          value={partnerPreference.minHeight ?? ""}
+                          options={masterOptions.heights}
+                          placeholder="Select minimum height"
+                          onChange={(val) =>
+                            handlePartnerPreferenceChange("minHeight", val)
+                          }
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-foreground mb-1 block">
+                          Preferred Height Max
+                        </label>
+                        <SearchableSelect
+                          value={partnerPreference.maxHeight ?? ""}
+                          options={masterOptions.heights}
+                          placeholder="Select maximum height"
+                          onChange={(val) =>
+                            handlePartnerPreferenceChange("maxHeight", val)
+                          }
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Weight */}
+                  <div>
+                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                      Weight Preferences
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-xs font-medium text-foreground mb-1 block">
+                          Preferred Weight Min
+                        </label>
+                        <SearchableSelect
+                          value={partnerPreference.minWeight ?? ""}
+                          options={masterOptions.weights}
+                          placeholder="Select minimum weight"
+                          onChange={(val) =>
+                            handlePartnerPreferenceChange("minWeight", val)
+                          }
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-foreground mb-1 block">
+                          Preferred Weight Max
+                        </label>
+                        <SearchableSelect
+                          value={partnerPreference.maxWeight ?? ""}
+                          options={masterOptions.weights}
+                          placeholder="Select maximum weight"
+                          onChange={(val) =>
+                            handlePartnerPreferenceChange("maxWeight", val)
+                          }
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Basic Preferences */}
+                  <div>
+                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                      Basic Preferences
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-xs font-medium text-foreground mb-1 block">
+                          Preferred Religion
+                        </label>
+                        <SearchableSelect
+                          value={partnerPreference.religionId ?? ""}
+                          options={masterOptions.religions}
+                          placeholder="Select religion"
+                          onChange={(val) =>
+                            handlePartnerPreferenceChange("religionId", val)
+                          }
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-medium text-foreground mb-1 block">
+                          Preferred Caste
+                        </label>
+                        <SearchableSelect
+                          value={partnerPreference.casteId ?? ""}
+                          options={masterOptions.partnerCastes}
+                          placeholder="Select caste"
+                          onChange={(val) =>
+                            handlePartnerPreferenceChange("casteId", val)
+                          }
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-medium text-foreground mb-1 block">
+                          Preferred City
+                        </label>
+                        <SearchableSelect
+                          value={partnerPreference.cityId ?? ""}
+                          options={sortMasterOptions(
+                            masterOptions.allCities && masterOptions.allCities.length > 0
+                              ? masterOptions.allCities
+                              : masterOptions.cities
+                          )}
+                          placeholder="Select city"
+                          onChange={(val) =>
+                            handlePartnerPreferenceChange("cityId", val)
+                          }
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-medium text-foreground mb-1 block">
+                          Preferred Education
+                        </label>
+                        <SearchableSelect
+                          value={partnerPreference.educationLevelId ?? ""}
+                          options={masterOptions.educationLevels}
+                          placeholder="Select education"
+                          onChange={(val) =>
+                            handlePartnerPreferenceChange(
+                              "educationLevelId",
+                              val
+                            )
+                          }
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-medium text-foreground mb-1 block">
+                          Preferred Occupation
+                        </label>
+                        <SearchableSelect
+                          value={partnerPreference.occupationId ?? ""}
+                          options={masterOptions.occupations}
+                          placeholder="Select occupation"
+                          onChange={(val) =>
+                            handlePartnerPreferenceChange("occupationId", val)
+                          }
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-medium text-foreground mb-1 block">
+                          Preferred Marital Status
+                        </label>
+                        <SearchableSelect
+                          value={partnerPreference.maritalStatusId ?? ""}
+                          options={masterOptions.maritalStatuses}
+                          placeholder="Select marital status"
+                          onChange={(val) =>
+                            handlePartnerPreferenceChange(
+                              "maritalStatusId",
+                              val
+                            )
+                          }
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Lifestyle Preferences */}
+                  <div>
+                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                      Lifestyle Preferences
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-xs font-medium text-foreground mb-1 block">
+                          Smoking Preference
+                        </label>
+                        <SearchableSelect
+                          value={partnerPreference.smokingId ?? ""}
+                          options={masterOptions.smokingOptions}
+                          placeholder="Select smoking preference"
+                          onChange={(val) =>
+                            handlePartnerPreferenceChange("smokingId", val)
+                          }
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-medium text-foreground mb-1 block">
+                          Drinking Preference
+                        </label>
+                        <SearchableSelect
+                          value={partnerPreference.drinkingId ?? ""}
+                          options={masterOptions.drinkingOptions}
+                          placeholder="Select drinking preference"
+                          onChange={(val) =>
+                            handlePartnerPreferenceChange("drinkingId", val)
+                          }
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-medium text-foreground mb-1 block">
+                          Diet Preference
+                        </label>
+                        <SearchableSelect
+                          value={partnerPreference.dietId ?? ""}
+                          options={masterOptions.diets}
+                          placeholder="Select diet preference"
+                          onChange={(val) =>
+                            handlePartnerPreferenceChange("dietId", val)
+                          }
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Additional Expectations */}
+                  <div>
+                    <label className="text-xs font-medium text-foreground mb-1 block">
+                      Other Expectations
+                    </label>
+                    <textarea
+                      rows={4}
+                      value={partnerPreference.otherExpectations ?? ""}
+                      onChange={(e) =>
+                        handlePartnerPreferenceChange(
+                          "otherExpectations",
+                          e.target.value
+                        )
+                      }
+                      placeholder="Any other expectations..."
+                      className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none"
+                    />
+                  </div>
                 </div>
-                <p className="text-destructive text-xs mb-3">Minimum 4 photos required</p>
+              </SettingsSection>
 
-                <label className="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-lg text-xs font-medium cursor-pointer inline-flex items-center gap-2 transition-colors">
-                  <Upload size={14} />
-                  Add Gallery Photos
-                  <input type="file" multiple accept="image/*" className="hidden" onChange={handleGalleryUpload} />
-                </label>
+              {/* 10. Photo Gallery */}
+              <SettingsSection
+                id="photoGallery"
+                title="Photo Gallery"
+                icon={ImageIcon}
+                isOpen={openSections.photoGallery}
+                onToggle={toggleSection}
+              >
+                <div>
+                  <div className="flex justify-between items-center mb-3">
+                    <span className="text-xs text-muted-foreground">
+                      {galleryPhotos.length}/8 photos uploaded
+                    </span>
+                    <span className="text-destructive text-xs">
+                      Minimum 4 photos required
+                    </span>
+                  </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
-                  {galleryPhotos.map((photo, index) => (
-                    <div key={photo.id || index} className="relative group rounded-lg overflow-hidden border border-border">
-                      <img src={photo.preview || photo.photoUrl} alt={`Gallery photo ${index + 1}`} className="h-32 w-full object-cover" />
-                      
-                      {(photo.primaryPhoto || photo.isPrimary) ? (
-                        <span className="absolute bottom-1 left-1 bg-primary text-primary-foreground text-[10px] font-semibold px-2 py-0.5 rounded shadow">
-                          Primary Photo
-                        </span>
-                      ) : photo.id ? (
+                  <label className="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-lg text-xs font-medium cursor-pointer inline-flex items-center gap-2 transition-colors">
+                    <Upload size={14} />
+                    Add Gallery Photos
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleGalleryUpload}
+                    />
+                  </label>
+
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
+                    {galleryPhotos.map((photo, index) => (
+                      <div
+                        key={photo.id || index}
+                        className="relative group rounded-lg overflow-hidden border border-border"
+                      >
+                        <img
+                          src={photo.preview || photo.photoUrl}
+                          alt={`Gallery photo ${index + 1}`}
+                          className="h-32 w-full object-cover"
+                        />
+
+                        {photo.primaryPhoto || photo.isPrimary ? (
+                          <span className="absolute bottom-1 left-1 bg-primary text-primary-foreground text-[10px] font-semibold px-2 py-0.5 rounded shadow">
+                            Primary Photo
+                          </span>
+                        ) : photo.id ? (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleMakePrimary(photo.id, photo.photoUrl)
+                            }
+                            className="absolute bottom-1 left-1 bg-background/90 hover:bg-background text-foreground text-[10px] font-medium px-2 py-0.5 rounded border border-border transition-colors opacity-90 group-hover:opacity-100 shadow-sm"
+                          >
+                            Set as Primary
+                          </button>
+                        ) : null}
+
                         <button
                           type="button"
-                          onClick={() => handleMakePrimary(photo.id, photo.photoUrl)}
-                          className="absolute bottom-1 left-1 bg-background/90 hover:bg-background text-foreground text-[10px] font-medium px-2 py-0.5 rounded border border-border transition-colors opacity-90 group-hover:opacity-100 shadow-sm"
+                          onClick={() => removeGalleryPhoto(index)}
+                          className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1 opacity-90 hover:opacity-100 transition-opacity"
+                          title="Delete photo"
                         >
-                          Set as Primary
+                          <X size={14} />
                         </button>
-                      ) : null}
-
-                      <button
-                        type="button"
-                        onClick={() => removeGalleryPhoto(index)}
-                        className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1 opacity-90 hover:opacity-100 transition-opacity"
-                        title="Delete photo"
-                      >
-                        <X size={14} />
-                      </button>
-                    </div>
-                  ))}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              </SettingsSection>
 
-              {/* 13. Save Changes Button */}
-              <button
-                type="button"
-                onClick={handleProfileUpdate}
-                disabled={profileSaving}
-                className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-6 py-2.5 rounded-lg text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {profileSaving ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" /> Saving...
-                  </>
-                ) : (
-                  <>
-                    <Save className="h-4 w-4" /> Save Changes
-                  </>
-                )}
-              </button>
+              {/* Save Changes Button */}
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={handleProfileUpdate}
+                  disabled={profileSaving}
+                  className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-6 py-2.5 rounded-lg text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                >
+                  {profileSaving ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" /> Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4" /> Save Changes
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           )}
 

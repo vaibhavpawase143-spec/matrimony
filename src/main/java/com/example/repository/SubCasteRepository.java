@@ -88,7 +88,7 @@ public interface SubCasteRepository extends JpaRepository<SubCaste, Long> {
             String keyword
     );
     @Query("""
-SELECT sc
+SELECT DISTINCT sc
 FROM SubCaste sc
 LEFT JOIN FETCH sc.admin
 LEFT JOIN FETCH sc.caste
@@ -105,7 +105,7 @@ AND sc.deletedAt IS NULL
 """)
     Optional<SubCaste> findByIdWithRelations(@Param("id") Long id);
     @Query("""
-SELECT sc
+SELECT DISTINCT sc
 FROM SubCaste sc
 LEFT JOIN FETCH sc.admin
 LEFT JOIN FETCH sc.caste
@@ -114,7 +114,7 @@ AND sc.isActive = true
 """)
     List<SubCaste> findActiveWithRelations();
     @Query("""
-SELECT sc
+SELECT DISTINCT sc
 FROM SubCaste sc
 LEFT JOIN FETCH sc.admin
 LEFT JOIN FETCH sc.caste
@@ -126,7 +126,7 @@ AND sc.deletedAt IS NULL
             @Param("casteId") Long casteId,
             @Param("adminId") Long adminId);
     @Query("""
-SELECT sc
+SELECT DISTINCT sc
 FROM SubCaste sc
 LEFT JOIN FETCH sc.admin
 LEFT JOIN FETCH sc.caste
