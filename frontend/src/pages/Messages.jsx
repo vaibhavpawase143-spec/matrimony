@@ -2,6 +2,7 @@ import EmojiPicker from "emoji-picker-react";
 import React, { useEffect, useState, useRef } from "react";
 import { useSearchParams,useNavigate } from "react-router-dom";
 import {Search,Mic} from "lucide-react";
+import { useToast } from "@/components/Toast";
 import {
     connectCallSocket,
     sendCallRequest,
@@ -94,6 +95,7 @@ const [showReactionPicker,setShowReactionPicker] =useState(false);
 const [showCallModal,setShowCallModal] =useState(false);
 
 const [callType,setCallType] =useState(null);
+const { success, error } = useToast();
 
 const [messages,setMessages]=useState([]);
 const [incomingCall, setIncomingCall] = useState(null);
@@ -349,44 +351,111 @@ useEffect(() => {
 
     userId,
 
-(message)=>{
+(message) => {
 
+    console.log("========== LIVE MESSAGE ==========");
     console.log("LIVE MESSAGE =", message);
 
-    if (!selected) {
+    const currentSelected = selectedRef.current;
 
+    if (!currentSelected) {
         return;
-
     }
 
-    if (
-        Number(message.sender?.id) !== Number(selected.otherUserId) &&
-        Number(message.receiver?.id) !== Number(selected.otherUserId)
-    ) {
+    const senderId =
+        message.senderId ??
+        message.sender?.id;
+
+    const receiverId =
+        message.receiverId ??
+        message.receiver?.id;
+
+    const selectedUserId =
+        currentSelected.otherUserId;
+
+    // ==================================================
+    // IMPORTANT:
+    // Ignore messages sent by the currently logged-in user.
+    // handleSend() already adds our own message to the UI.
+    // ==================================================
+
+    if (Number(senderId) === Number(userId)) {
+
+        console.log(
+            "OWN MESSAGE FROM WEBSOCKET - IGNORED",
+            message
+        );
 
         return;
-
     }
+
+    // ==================================================
+    // Only process messages belonging to current chat
+    // ==================================================
+
+    const belongsToCurrentChat =
+        Number(senderId) === Number(selectedUserId) ||
+        Number(receiverId) === Number(selectedUserId);
+
+    if (!belongsToCurrentChat) {
+
+        console.log(
+            "MESSAGE BELONGS TO ANOTHER CHAT"
+        );
+
+        return;
+    }
+
+    // ==================================================
+    // Duplicate protection
+    // ==================================================
 
     setMessages(prev => {
 
-        const exists = prev.some(m => m.id === message.id);
+        const incomingId =
+            message.messageId ??
+            message.id;
+
+        const exists = prev.some(msg => {
+
+            const existingId =
+                msg.messageId ??
+                msg.id;
+
+            return (
+                incomingId != null &&
+                existingId != null &&
+                String(existingId) ===
+                String(incomingId)
+            );
+        });
 
         if (exists) {
 
-            return prev;
+            console.log(
+                "DUPLICATE MESSAGE - IGNORED",
+                incomingId
+            );
 
+            return prev;
         }
 
-        return [...prev, message];
+        console.log(
+            "ADDING INCOMING MESSAGE",
+            message
+        );
 
+        return [
+            ...prev,
+            message
+        ];
     });
-loadConversations();
 
-window.dispatchEvent(
-    new Event("dashboardUpdated")
-);
+    loadConversations();
 
+    window.dispatchEvent(
+        new Event("dashboardUpdated")
+    );
 },
 
     (data)=>{
@@ -593,11 +662,20 @@ const loadConversations = async () => {
 
     try {
 
-        const res = await getConversations();
+       const res = await getConversations();
 
-        const data = res.data || [];
+       const data =
+           Array.isArray(res?.content)
+               ? res.content
+               : Array.isArray(res?.data?.content)
+                   ? res.data.content
+                   : Array.isArray(res?.data)
+                       ? res.data
+                       : [];
 
-        setConversations(data);
+       console.log("CONVERSATIONS =", data);
+
+       setConversations(data);
 
         if (receiverId) {
 
@@ -671,80 +749,77 @@ const loadConversations = async () => {
 };
 
 const loadChat = async (chat) => {
-
-    // ✅ Conversation अजून तयार झालेली नाही
-    if (!chat?.conversationId || chat.conversationId === 0) {
-
+    if (!chat?.otherUserId) {
         setMessages([]);
-
         return;
-
     }
 
     try {
+        console.log("LOADING CHAT =", chat);
 
-        await markSeen(chat.conversationId);
+        // Mark conversation as seen only if conversation exists
+        if (chat.conversationId && chat.conversationId !== 0) {
+            try {
+                await markSeen(chat.conversationId);
+            } catch (seenError) {
+                console.log("MARK SEEN ERROR =", seenError);
+            }
+        }
 
+        // Get messages
         const res = await getMessages(
-
             Number(chat.otherUserId),
-
             0,
-
-            10000
-
+            100
         );
 
-        console.log("CHAT RESPONSE =", res);
+        console.log("GET MESSAGES RESPONSE =", res);
 
-        console.log("CONTENT =", res.data.content);
+        let content = [];
 
-        const content = [...(res.data.content || [])];
+        // Handle every possible response structure
+        if (Array.isArray(res)) {
+            content = res;
+        }
+        else if (Array.isArray(res?.content)) {
+            content = res.content;
+        }
+        else if (Array.isArray(res?.data)) {
+            content = res.data;
+        }
+        else if (Array.isArray(res?.data?.content)) {
+            content = res.data.content;
+        }
+        else if (Array.isArray(res?.data?.data)) {
+            content = res.data.data;
+        }
+        else if (Array.isArray(res?.data?.data?.content)) {
+            content = res.data.data.content;
+        }
 
+        console.log("FINAL CHAT MESSAGES =", content);
+        console.log("FINAL MESSAGE COUNT =", content.length);
+
+        // oldest -> newest
         content.sort(
-
             (a, b) =>
-
                 new Date(a.timestamp || a.createdAt) -
-
                 new Date(b.timestamp || b.createdAt)
-
         );
 
         setMessages(content);
 
-        setMessages(content);
-
         setTimeout(() => {
-
             if (chatContainerRef.current) {
-
                 chatContainerRef.current.scrollTop =
                     chatContainerRef.current.scrollHeight;
-
             }
+        }, 100);
 
-        }, 1000);
-
-        setTimeout(() => {
-
-            if (chatContainerRef.current) {
-
-                chatContainerRef.current.scrollTop =
-                    chatContainerRef.current.scrollHeight;
-
-            }
-
-        }, 0);
-
+    } catch (err) {
+        console.error("LOAD CHAT ERROR =", err);
+        setMessages([]);
     }
-
-    catch (err) {
-
-        console.log(err);
-
-    }
-
 };
 const storedUser = localStorage.getItem("user");
 
@@ -1345,65 +1420,85 @@ console.log(err);
 };
 
 const handleSend = async () => {
-if (!isPremium) {
-    setShowUpgradePopup(true);
-    return;
-}
+    if (!isPremium) {
+        setShowUpgradePopup(true);
+        return;
+    }
+
     if (!newMessage.trim() || !selected) {
         return;
     }
 
+    const text = newMessage.trim();
+
     try {
+        console.log("SENDING TO =", selected.otherUserId);
+        console.log("MESSAGE =", text);
 
         const response = await sendMessage({
-
             receiverId: Number(selected.otherUserId),
-
-            content: newMessage,
-
+            content: text,
             replyToMessageId: replyingTo?.messageId || null
-
         });
 
         console.log("SEND RESPONSE =", response);
 
-        setNewMessage("");
+        // Backend response madhun message safely ghe
+        const sentMessage = response?.data || response?.message || null;
 
-        setReplyingTo(null);
+        if (sentMessage && typeof sentMessage === "object") {
+            setMessages(prev => {
+                const exists = prev.some(
+                    msg =>
+                        Number(msg.messageId) ===
+                        Number(sentMessage.messageId)
+                );
 
-        setShowEmojiPicker(false);
+                if (exists) {
+                    return prev;
+                }
 
-        // Reload conversation list
-        await loadConversations();
-        const latest = await getConversations();
-
-        const chats = latest.data || [];
-
-        setConversations(chats);
-
-        const createdChat = chats.find(
-            c => Number(c.otherUserId) === Number(selected.otherUserId)
-        );
-
-        if (createdChat) {
-
-            setSelected(createdChat);
-
-            await loadChat(createdChat);
-            await loadChat(selected);
-window.dispatchEvent(
-    new Event("dashboardUpdated")
-);
-
+                return [...prev, sentMessage];
+            });
+        } else {
+            // Response madhye message object nasel tari
+            // UI madhye temporary message dakhav
+            setMessages(prev => [
+                ...prev,
+                {
+                    messageId: `temp-${Date.now()}`,
+                    senderId: currentUserId,
+                    receiverId: Number(selected.otherUserId),
+                    content: text,
+                    type: "TEXT",
+                    timestamp: new Date().toISOString(),
+                    status: "SENT"
+                }
+            ]);
         }
 
+        // Input clear
+        setNewMessage("");
+        setReplyingTo(null);
+        setShowEmojiPicker(false);
+
+        // IMPORTANT:
+        // current chat reload करू नको.
+        // फक्त sidebar conversations update कर.
+        await loadConversations();
+
+        window.dispatchEvent(
+            new Event("dashboardUpdated")
+        );
+
+    } catch (err) {
+        console.error("SEND ERROR =", err);
+
+        error(
+            err?.message ||
+            "Message could not be sent"
+        );
     }
-    catch (err) {
-
-        console.log("SEND ERROR =", err);
-
-    }
-
 };
 const menuItemClass = `
 w-full
@@ -1513,12 +1608,16 @@ conversations.map((chat)=>(
 
 key={chat.conversationId}
 
-onClick={()=>{
 
-setSelected(chat);
+onClick={() => {
+    setSelected(chat);
 
-loadChat(chat);
+    navigate(
+        `/messages?receiverId=${chat.otherUserId}`,
+        { replace: true }
+    );
 
+    loadChat(chat);
 }}
 
 className={`
@@ -1715,31 +1814,31 @@ Typing...
 
 
 </div>
-<div className="ml-auto flex gap-3">
+{/* <div className="ml-auto flex gap-3"> */}
 
-<button
-onClick={startAudioCall}
-className="
-p-2
-rounded-full
-hover:bg-gray-100
-"
->
-<Phone size={22}/>
-</button>
+{/* <button */}
+{/* onClick={startAudioCall} */}
+{/* className=" */}
+{/* p-2 */}
+{/* rounded-full */}
+{/* hover:bg-gray-100 */}
+{/* " */}
+{/* > */}
+{/* <Phone size={22}/> */}
+{/* </button> */}
 
-<button
-onClick={startVideoCall}
-className="
-p-2
-rounded-full
-hover:bg-gray-100
-"
->
-<Video size={22}/>
-</button>
+{/* <button */}
+{/* onClick={startVideoCall} */}
+{/* className=" */}
+{/* p-2 */}
+{/* rounded-full */}
+{/* hover:bg-gray-100 */}
+{/* " */}
+{/* > */}
+{/* <Video size={22}/> */}
+{/* </button> */}
 
-</div>
+{/* </div> */}
 
 </div>
 
@@ -3230,6 +3329,17 @@ stopTyping(
 
 },2000);
 
+}}
+onKeyDown={(e) => {
+    console.log("KEY PRESSED =", e.key);
+
+    if (e.key === "Enter") {
+        e.preventDefault();
+
+        console.log("ENTER → HANDLE SEND");
+
+        handleSend();
+    }
 }}
 placeholder="Type message..."
 

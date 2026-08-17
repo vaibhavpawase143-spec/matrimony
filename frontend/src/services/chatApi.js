@@ -55,30 +55,36 @@ export const getMessages = (
 export const sendMessage = async (data) => {
 
     const response = await fetch(
-
         `${API_BASE}/send`,
-
         {
-
             method: "POST",
 
             headers: {
-
                 "Content-Type": "application/json",
-
                 Authorization:
                     `Bearer ${localStorage.getItem("token")}`
-
             },
 
             body: JSON.stringify(data)
-
         }
-
     );
 
-    return await response.json();
+    const result = await response.json();
 
+    console.log("SEND API STATUS =", response.status);
+    console.log("SEND API RESULT =", result);
+
+    // Backend error -> throw -> Messages.jsx catch मध्ये जाईल
+    if (!response.ok) {
+
+        throw new Error(
+            result?.message ||
+            result?.error ||
+            "Message could not be sent"
+        );
+    }
+
+    return result;
 };
 
 export const markSeen = (conversationId) => {
