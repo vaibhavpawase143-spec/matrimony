@@ -202,7 +202,6 @@ useEffect(() => {
   refreshNotifications();
 }, [currentUserId]);
   const publicLinks = [
-    { label: t.navbar.home, to: "/" },
     { label: t.navbar.about, to: "/about" },
     { label: t.navbar.contact, to: "/contact" },
     { label: t.navbar.login, to: "/login" },
@@ -210,7 +209,6 @@ useEffect(() => {
   ];
 
   const privateLinks = [
-    { label: t.navbar.home, to: "/home", icon: <Home className="h-4 w-4" /> },
     { label: t.navbar.search, to: "/search", icon: <Search className="h-4 w-4" /> },
     { label: t.navbar.matches, to: "/matches", icon: <Heart className="h-4 w-4" /> },
     { label: t.navbar.kundli, to: "/kundli", icon: <Star className="h-4 w-4" /> },

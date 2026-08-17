@@ -6,6 +6,7 @@ import BackButton from "../components/common/BackButton";
 import AdminErrorAlert from "../components/common/AdminErrorAlert";
 import { getAdminById, deleteAdmin } from "../services/adminManagementService";
 import { IMAGE_BASE_URL } from "../services/api";
+import { getImageUrl, handleImageError } from "../utils/imageUtils";
 import EditAdminModal from "../components/admin/EditAdminModal";
 import ChangeRoleModal from "../components/admin/ChangeRoleModal";
 import AdminStatusModal from "../components/admin/AdminStatusModal";
@@ -213,21 +214,12 @@ export default function AdminDetails() {
          {/* Profile Photo */}
        {/* Profile Photo */}
        <div className="flex-shrink-0">
-         {admin.profilePhoto ? (
-           <img
-             src={
-               admin.profilePhoto.startsWith("http")
-                 ? admin.profilePhoto
-                 : `${IMAGE_BASE_URL}${admin.profilePhoto}`
-             }
-             alt={admin.name}
-             className="w-36 h-36 rounded-full object-cover border-4 border-violet-200"
-           />
-         ) : (
-           <div className="w-36 h-36 rounded-full bg-violet-600 text-white flex items-center justify-center text-5xl font-bold">
-             {admin.name?.charAt(0).toUpperCase()}
-           </div>
-         )}
+         <img
+           src={getImageUrl(admin.profilePhoto, admin.name)}
+           alt={admin.name || "Admin"}
+           className="w-36 h-36 rounded-full object-cover border-4 border-violet-200"
+           onError={(e) => handleImageError(e, admin.name)}
+         />
        </div>
          {/* Profile Info */}
          <div className="flex-1">

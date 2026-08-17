@@ -36,18 +36,30 @@ public class ProfileSearchServiceImpl implements ProfileSearchService {
     @Override
     @Transactional(readOnly = true)
     public PageResponse<ProfileSearchResultDTO> searchProfiles(ProfileSearchRequestDTO request) {
+        if (request != null) {
+            if (request.getAgeFrom() != null && (request.getAgeFrom() < 18 || request.getAgeFrom() > 100)) {
+                throw new com.example.exception.BadRequestException("Minimum age must be between 18 and 100.");
+            }
+            if (request.getAgeTo() != null && (request.getAgeTo() < 18 || request.getAgeTo() > 100)) {
+                throw new com.example.exception.BadRequestException("Maximum age must be between 18 and 100.");
+            }
+            if (request.getAgeFrom() != null && request.getAgeTo() != null
+                    && request.getAgeFrom() > request.getAgeTo()) {
+                throw new com.example.exception.BadRequestException("Minimum age cannot be greater than maximum age.");
+            }
+        }
+
         Long currentUserId = getCurrentUserId();
 
-        int page = request.getPage() != null && request.getPage() >= 0 ? request.getPage() : 0;
-        int size = request.getSize() != null && request.getSize() > 0 ? request.getSize() : 20;
+        int page = request != null && request.getPage() != null && request.getPage() >= 0 ? request.getPage() : 0;
+        int size = request != null && request.getSize() != null && request.getSize() > 0 ? request.getSize() : 20;
 
         Sort sort = buildSort(request.getSortBy(), request.getSortOrder());
         Pageable pageable = PageRequest.of(page, size, sort);
 
         Page<Profile> profilePage = profileRepository.findAll(
                 ProfileSearchSpecification.buildSearchSpecification(request, currentUserId),
-                pageable
-        );
+                pageable);
 
         List<Profile> profiles = profilePage.getContent();
 
@@ -78,14 +90,14 @@ public class ProfileSearchServiceImpl implements ProfileSearchService {
                 profilePage.getSize(),
                 profilePage.getTotalElements(),
                 profilePage.getTotalPages(),
-                profilePage.isLast()
-        );
+                profilePage.isLast());
     }
 
     private Long getCurrentUserId() {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            if (authentication != null && authentication.isAuthenticated() && !"anonymousUser".equals(authentication.getPrincipal())) {
+            if (authentication != null && authentication.isAuthenticated()
+                    && !"anonymousUser".equals(authentication.getPrincipal())) {
                 String username = authentication.getName();
                 return userRepository.findByEmailIgnoreCase(username)
                         .map(User::getId)
@@ -99,22 +111,25 @@ public class ProfileSearchServiceImpl implements ProfileSearchService {
 
     private Sort buildSort(String sortBy, String sortOrder) {
         boolean isAsc = "asc".equalsIgnoreCase(sortOrder);
-        if (sortBy == null) sortBy = "relevance";
+        if (sortBy == null)
+            sortBy = "relevance";
 
         return switch (sortBy.toLowerCase()) {
             case "newest", "createdat" -> isAsc ? Sort.by("createdAt").ascending() : Sort.by("createdAt").descending();
             case "age_low_high", "age_asc" -> Sort.by("dateOfBirth").descending(); // Younger first
-            case "age_high_low", "age_desc" -> Sort.by("dateOfBirth").ascending();  // Older first
+            case "age_high_low", "age_desc" -> Sort.by("dateOfBirth").ascending(); // Older first
             case "relevance", "boost" -> Sort.by(Sort.Direction.DESC, "isPremium", "boostScore", "createdAt");
             default -> isAsc ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
         };
     }
 
     private ProfileSearchResultDTO mapToSearchResultDTO(Profile p, java.util.Map<Long, String> userPhotoMap) {
-        Integer age = p.getDateOfBirth() != null ? Period.between(p.getDateOfBirth(), LocalDate.now()).getYears() : null;
+        Integer age = p.getDateOfBirth() != null ? Period.between(p.getDateOfBirth(), LocalDate.now()).getYears()
+                : null;
 
         User user = p.getUser();
-        boolean isVerified = user != null && Boolean.TRUE.equals(user.getEmailVerified()) && Boolean.TRUE.equals(user.getPhoneVerified());
+        boolean isVerified = user != null && Boolean.TRUE.equals(user.getEmailVerified())
+                && Boolean.TRUE.equals(user.getPhoneVerified());
 
         String photoUrl = p.getImageUrl();
         if ((photoUrl == null || photoUrl.isBlank()) && user != null) {

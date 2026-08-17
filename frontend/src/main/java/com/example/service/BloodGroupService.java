@@ -9,6 +9,10 @@ public interface BloodGroupService {
 
     BloodGroup getById(Long id, Long adminId);
 
+    List<BloodGroup> getAll();
+
+    List<BloodGroup> getActive();
+
     List<BloodGroup> getAll(Long adminId);
 
     List<BloodGroup> getActive(Long adminId);

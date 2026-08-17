@@ -39,6 +39,7 @@ import {
 } from "../services/masterDataService";
 import UserActionMenu from "../components/users/UserActionMenu";
 import ConfirmModal from "../components/common/ConfirmModal";
+import { getImageUrl, handleImageError } from "../utils/imageUtils";
 
 export default function Users() {
   // Helper to filter ACTIVE items only for user filters
@@ -1291,21 +1292,10 @@ export default function Users() {
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                 <img
-                  src={
-                    user?.imageUrl
-                      ? `https://localhost:9090${user.imageUrl}`
-                      : `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                          user?.fullName || "User"
-                        )}`
-                  }
+                  src={getImageUrl(user?.imageUrl, user?.fullName)}
                   alt={user?.fullName || "User"}
                   className="w-10 h-10 rounded-full object-cover border"
-                  onError={(e) => {
-                    e.target.onerror = null;
-                    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                      user?.fullName || "User"
-                    )}`;
-                  }}
+                  onError={(e) => handleImageError(e, user?.fullName)}
                 />
                       <div>
                         <div className="font-medium text-gray-900">

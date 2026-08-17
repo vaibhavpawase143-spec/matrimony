@@ -1,5 +1,7 @@
+import { BACKEND_BASE_URL } from "../utils/imageUtils";
+
 const API_BASE_URL = "/api";
-export const IMAGE_BASE_URL = "https://localhost:9090";
+export const IMAGE_BASE_URL = BACKEND_BASE_URL;
 
 /**
  * Custom Error Class for Admin Portal API calls

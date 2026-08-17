@@ -45,53 +45,46 @@ export const apiClient = async (endpoint, options = {}) => {
     };
 
     const fullUrl = `${API_BASE_URL}${endpoint}`;
-    console.log('🌐 API Request URL:', fullUrl);
-    console.log('🌐 Request options:', defaultOptions);
 
     const response = await fetch(fullUrl, defaultOptions);
-    // Auto logout if backend says session is invalid
-   if (response.status === 401) {
+    // Auto logout if backend says session is invalid (401 on protected endpoints)
+    if (response.status === 401 && !isPublicAuthEndpoint) {
+      let message = "Your session has expired. Please log in again.";
 
-     let message = "Your account has been logged in from another device. Please login again.";
+      try {
+        const errorData = await response.json();
+        if (errorData.message) {
+          message = errorData.message;
+        }
+      } catch {
+        // Ignore JSON parsing errors
+      }
 
-     try {
-       const errorData = await response.json();
+      localStorage.clear();
+      sessionStorage.clear();
 
-       if (
-         errorData.message === "Session expired. Please login again." ||
-         errorData.message?.includes("Session expired")
-       ) {
-         message = "Your account has been logged in from another device. Please login again.";
-       } else if (errorData.message) {
-         message = errorData.message;
-       }
+      localStorage.setItem("sessionExpiredMessage", message);
 
-     } catch {
-       // Ignore JSON parsing errors
-     }
+      if (!window.location.pathname.includes("/login")) {
+        window.location.replace("/login");
+      }
 
-     localStorage.clear();
-     sessionStorage.clear();
-
-     localStorage.setItem("sessionExpiredMessage", message);
-
-     if (!window.location.pathname.includes("/login")) {
-       window.location.replace("/login");
-     }
-
-     throw new Error(message);
-   }
-
-    console.log('🌐 Response status:', response.status, response.statusText);
-    console.log('🌐 Response headers:', Object.fromEntries(response.headers.entries()));
+      const err = new Error(message);
+      err.status = 401;
+      err.code = "TOKEN_EXPIRED";
+      throw err;
+    }
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      console.error('❌ API Error Response:', errorData);
-      const error = new Error(errorData.message || errorData.error || `API call failed: ${endpoint}`);
+      const errorMsg = errorData.message || errorData.error || `Request failed (${response.status})`;
+      const error = new Error(errorMsg);
       error.status = response.status;
+      error.code = errorData.code || errorData.errorCode || "API_ERROR";
+      error.field = errorData.field;
+      error.fieldErrors = errorData.fieldErrors;
+      error.data = errorData;
       error.endpoint = endpoint;
-      error.url = fullUrl;
       throw error;
     }
 
@@ -1041,7 +1034,17 @@ const getCachedKeyOrFetch = async (key, fallbackPath) => {
   if (cache && cache[key] && Array.isArray(cache[key])) {
     return cache[key];
   }
-  return (cache && cache[key] && Array.isArray(cache[key])) ? cache[key] : [];
+  if (fallbackPath) {
+    try {
+      const res = await apiClient(fallbackPath);
+      const data = Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : [];
+      return data;
+    } catch (e) {
+      console.error(`Failed to fetch fallback path ${fallbackPath}:`, e);
+      return [];
+    }
+  }
+  return [];
 };
 
 export const masterDataAPI = {
@@ -1080,7 +1083,7 @@ export const masterDataAPI = {
   getOccupations: async () => getCachedKeyOrFetch('occupations', '/master/occupations'),
   getProfileTypes: async () => getCachedKeyOrFetch('profileTypes', '/master/profile-types'),
   getMaritalStatuses: async () => getCachedKeyOrFetch('maritalStatuses', '/master/marital-status'),
-  getHeights: async () => getCachedKeyOrFetch('heights', '/master/heights'),
+  getHeights: async () => getCachedKeyOrFetch('heights', '/heights'),
   getWeights: async () => getCachedKeyOrFetch('weights', '/master/weights'),
   getComplexions: async () => getCachedKeyOrFetch('complexions', '/complexions'),
   getBodyTypes: async () => getCachedKeyOrFetch('bodyTypes', '/body-types'),
@@ -1088,27 +1091,24 @@ export const masterDataAPI = {
   getStates: async () => getCachedKeyOrFetch('states', '/master/states'),
   getCities: async () => getCachedKeyOrFetch('cities', '/cities'),
   getCitiesByState: async (stateId) => {
-    if (!stateId) return getCachedKeyOrFetch('cities', '/cities');
+    if (!stateId) return [];
     const allCities = await getCachedKeyOrFetch('cities', '/cities');
-    if (Array.isArray(allCities) && allCities.length > 0) {
-      const filtered = allCities.filter(c => Number(c.stateId) === Number(stateId) || Number(c.state?.id) === Number(stateId));
-      if (filtered.length > 0) return filtered;
+    if (Array.isArray(allCities)) {
+      return allCities.filter(c => Number(c.stateId) === Number(stateId) || Number(c.state?.id) === Number(stateId));
     }
-    return allCities;
+    return [];
   },
   getCastes: async (religionId) => {
     const allCastes = await getCachedKeyOrFetch('castes', '/master/castes');
     if (religionId && Array.isArray(allCastes)) {
-      const filtered = allCastes.filter(c => Number(c.religionId) === Number(religionId) || Number(c.religion?.id) === Number(religionId));
-      if (filtered.length > 0) return filtered;
+      return allCastes.filter(c => Number(c.religionId) === Number(religionId) || Number(c.religion?.id) === Number(religionId));
     }
     return allCastes;
   },
   getSubCastes: async (casteId) => {
     const allSubCastes = await getCachedKeyOrFetch('subCastes', '/master/sub-castes');
     if (casteId && Array.isArray(allSubCastes)) {
-      const filtered = allSubCastes.filter(sc => Number(sc.casteId) === Number(casteId) || Number(sc.caste?.id) === Number(casteId));
-      if (filtered.length > 0) return filtered;
+      return allSubCastes.filter(sc => Number(sc.casteId) === Number(casteId) || Number(sc.caste?.id) === Number(casteId));
     }
     return allSubCastes;
   },

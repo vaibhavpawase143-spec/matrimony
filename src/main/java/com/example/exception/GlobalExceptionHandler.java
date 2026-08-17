@@ -1,6 +1,8 @@
 package com.example.exception;
 
 import com.example.dto.response.ErrorResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.http.HttpStatus;
@@ -9,13 +11,14 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
-import com.example.exception.PremiumRequiredException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.SignatureException;
 
 import java.time.LocalDateTime;
-import java.util.stream.Collectors;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestControllerAdvice
 @Slf4j
@@ -25,17 +28,19 @@ public class GlobalExceptionHandler {
     // 🔴 RESOURCE NOT FOUND (404)
     // =========================
     @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleNotFound(ResourceNotFoundException ex) {
-
-        log.warn("Resource not found: {}", ex.getMessage());
+    public ResponseEntity<ErrorResponse> handleNotFound(ResourceNotFoundException ex, HttpServletRequest request) {
+        log.warn("Resource not found at {}: {}", request.getRequestURI(), ex.getMessage());
 
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
                 ErrorResponse.builder()
+                        .success(false)
                         .timestamp(LocalDateTime.now())
                         .status(404)
                         .error("NOT_FOUND")
-                        .errorCode("ERR_404")
-                        .message(ex.getMessage())
+                        .errorCode("RESOURCE_NOT_FOUND")
+                        .code("RESOURCE_NOT_FOUND")
+                        .message(ex.getMessage() != null ? ex.getMessage() : "Requested resource was not found.")
+                        .path(request.getRequestURI())
                         .build()
         );
     }
@@ -44,23 +49,54 @@ public class GlobalExceptionHandler {
     // 🔴 VALIDATION ERROR (400)
     // =========================
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException ex) {
+    public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException ex, HttpServletRequest request) {
+        Map<String, String> fieldErrors = new HashMap<>();
+        ex.getBindingResult().getFieldErrors().forEach(err -> {
+            fieldErrors.put(err.getField(), err.getDefaultMessage());
+        });
 
-        String message = ex.getBindingResult()
-                .getFieldErrors()
-                .stream()
-                .map(err -> err.getField() + ": " + err.getDefaultMessage())
-                .collect(Collectors.joining(", "));
-
-        log.warn("Validation failed: {}", message);
+        log.warn("Validation failed for {}: {}", request.getRequestURI(), fieldErrors);
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
                 ErrorResponse.builder()
+                        .success(false)
                         .timestamp(LocalDateTime.now())
                         .status(400)
                         .error("VALIDATION_ERROR")
-                        .errorCode("ERR_400_VALIDATION")
-                        .message(message)
+                        .errorCode("VALIDATION_ERROR")
+                        .code("VALIDATION_ERROR")
+                        .message("Please correct the highlighted fields.")
+                        .fieldErrors(fieldErrors)
+                        .path(request.getRequestURI())
+                        .build()
+        );
+    }
+
+    // =========================
+    // 🔴 CONSTRAINT VIOLATION (400)
+    // =========================
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ErrorResponse> handleConstraintViolation(ConstraintViolationException ex, HttpServletRequest request) {
+        Map<String, String> fieldErrors = new HashMap<>();
+        ex.getConstraintViolations().forEach(violation -> {
+            String propertyPath = violation.getPropertyPath().toString();
+            String field = propertyPath.substring(propertyPath.lastIndexOf('.') + 1);
+            fieldErrors.put(field, violation.getMessage());
+        });
+
+        log.warn("Constraint violation at {}: {}", request.getRequestURI(), fieldErrors);
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                ErrorResponse.builder()
+                        .success(false)
+                        .timestamp(LocalDateTime.now())
+                        .status(400)
+                        .error("VALIDATION_ERROR")
+                        .errorCode("CONSTRAINT_VIOLATION")
+                        .code("VALIDATION_ERROR")
+                        .message("Validation failed for request parameter(s).")
+                        .fieldErrors(fieldErrors)
+                        .path(request.getRequestURI())
                         .build()
         );
     }
@@ -69,17 +105,19 @@ public class GlobalExceptionHandler {
     // 🔴 BAD CREDENTIALS (401)
     // =========================
     @ExceptionHandler(BadCredentialsException.class)
-    public ResponseEntity<ErrorResponse> handleBadCredentials(BadCredentialsException ex) {
-
-        log.warn("Bad credentials attempt");
+    public ResponseEntity<ErrorResponse> handleBadCredentials(BadCredentialsException ex, HttpServletRequest request) {
+        log.warn("Bad credentials attempt at {}", request.getRequestURI());
 
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
                 ErrorResponse.builder()
+                        .success(false)
                         .timestamp(LocalDateTime.now())
                         .status(401)
                         .error("UNAUTHORIZED")
-                        .errorCode("ERR_401_AUTH")
-                        .message("Invalid email or password")
+                        .errorCode("INVALID_CREDENTIALS")
+                        .code("INVALID_CREDENTIALS")
+                        .message("Invalid email or password.")
+                        .path(request.getRequestURI())
                         .build()
         );
     }
@@ -88,17 +126,19 @@ public class GlobalExceptionHandler {
     // 🔴 JWT EXPIRED (401)
     // =========================
     @ExceptionHandler(ExpiredJwtException.class)
-    public ResponseEntity<ErrorResponse> handleJwtExpired(ExpiredJwtException ex) {
-
-        log.warn("JWT expired: {}", ex.getMessage());
+    public ResponseEntity<ErrorResponse> handleJwtExpired(ExpiredJwtException ex, HttpServletRequest request) {
+        log.warn("JWT expired at {}", request.getRequestURI());
 
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
                 ErrorResponse.builder()
+                        .success(false)
                         .timestamp(LocalDateTime.now())
                         .status(401)
                         .error("TOKEN_EXPIRED")
-                        .errorCode("ERR_401_EXPIRED")
+                        .errorCode("TOKEN_EXPIRED")
+                        .code("TOKEN_EXPIRED")
                         .message("Your session has expired. Please log in again.")
+                        .path(request.getRequestURI())
                         .build()
         );
     }
@@ -107,17 +147,19 @@ public class GlobalExceptionHandler {
     // 🔴 INVALID JWT (401)
     // =========================
     @ExceptionHandler(SignatureException.class)
-    public ResponseEntity<ErrorResponse> handleInvalidJwt(SignatureException ex) {
-
-        log.warn("Invalid JWT signature");
+    public ResponseEntity<ErrorResponse> handleInvalidJwt(SignatureException ex, HttpServletRequest request) {
+        log.warn("Invalid JWT signature at {}", request.getRequestURI());
 
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
                 ErrorResponse.builder()
+                        .success(false)
                         .timestamp(LocalDateTime.now())
                         .status(401)
                         .error("INVALID_TOKEN")
-                        .errorCode("ERR_401_INVALID")
+                        .errorCode("INVALID_TOKEN")
+                        .code("INVALID_TOKEN")
                         .message("Your session is invalid. Please log in again.")
+                        .path(request.getRequestURI())
                         .build()
         );
     }
@@ -126,36 +168,40 @@ public class GlobalExceptionHandler {
     // 🔴 ACCESS DENIED (403)
     // =========================
     @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException ex) {
-
-        log.warn("Access denied: {}", ex.getMessage());
+    public ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException ex, HttpServletRequest request) {
+        log.warn("Access denied at {}: {}", request.getRequestURI(), ex.getMessage());
 
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
                 ErrorResponse.builder()
+                        .success(false)
                         .timestamp(LocalDateTime.now())
                         .status(403)
                         .error("FORBIDDEN")
-                        .errorCode("ERR_403")
+                        .errorCode("ACCESS_DENIED")
+                        .code("ACCESS_DENIED")
                         .message("You don't have permission to perform this action.")
+                        .path(request.getRequestURI())
                         .build()
         );
     }
-    // =========================
-// 🔴 PREMIUM REQUIRED (403)
-// =========================
-    @ExceptionHandler(PremiumRequiredException.class)
-    public ResponseEntity<ErrorResponse> handlePremiumRequired(
-            PremiumRequiredException ex) {
 
-        log.warn("Premium required: {}", ex.getMessage());
+    // =========================
+    // 🔴 PREMIUM REQUIRED (403)
+    // =========================
+    @ExceptionHandler(PremiumRequiredException.class)
+    public ResponseEntity<ErrorResponse> handlePremiumRequired(PremiumRequiredException ex, HttpServletRequest request) {
+        log.warn("Premium required at {}: {}", request.getRequestURI(), ex.getMessage());
 
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
                 ErrorResponse.builder()
+                        .success(false)
                         .timestamp(LocalDateTime.now())
                         .status(403)
                         .error("PREMIUM_REQUIRED")
-                        .errorCode("ERR_PREMIUM_REQUIRED")
-                        .message(ex.getMessage())
+                        .errorCode("PREMIUM_REQUIRED")
+                        .code("PREMIUM_REQUIRED")
+                        .message(ex.getMessage() != null ? ex.getMessage() : "A premium membership is required to access this feature.")
+                        .path(request.getRequestURI())
                         .build()
         );
     }
@@ -164,17 +210,61 @@ public class GlobalExceptionHandler {
     // 🔴 BAD REQUEST (400)
     // =========================
     @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<ErrorResponse> handleBadRequest(IllegalArgumentException ex) {
-
-        log.warn("Bad request: {}", ex.getMessage());
+    public ResponseEntity<ErrorResponse> handleBadRequest(IllegalArgumentException ex, HttpServletRequest request) {
+        log.warn("Bad request at {}: {}", request.getRequestURI(), ex.getMessage());
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
                 ErrorResponse.builder()
+                        .success(false)
                         .timestamp(LocalDateTime.now())
                         .status(400)
                         .error("BAD_REQUEST")
-                        .errorCode("ERR_400")
-                        .message(ex.getMessage())
+                        .errorCode("INVALID_INPUT")
+                        .code("INVALID_INPUT")
+                        .message(ex.getMessage() != null ? ex.getMessage() : "Invalid input provided.")
+                        .path(request.getRequestURI())
+                        .build()
+        );
+    }
+
+    // =========================
+    // 🔴 FILE SIZE EXCEEDED (400)
+    // =========================
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ErrorResponse> handleFileSizeExceeded(MaxUploadSizeExceededException ex, HttpServletRequest request) {
+        log.warn("File upload size exceeded at {}", request.getRequestURI());
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                ErrorResponse.builder()
+                        .success(false)
+                        .timestamp(LocalDateTime.now())
+                        .status(400)
+                        .error("FILE_TOO_LARGE")
+                        .errorCode("FILE_TOO_LARGE")
+                        .code("FILE_TOO_LARGE")
+                        .message("File size is too large. Maximum allowed size is 10 MB.")
+                        .path(request.getRequestURI())
+                        .build()
+        );
+    }
+
+    // =========================
+    // 🔴 CUSTOM BAD REQUEST EXCEPTION (400)
+    // =========================
+    @ExceptionHandler(BadRequestException.class)
+    public ResponseEntity<ErrorResponse> handleBadRequestException(BadRequestException ex, HttpServletRequest request) {
+        log.warn("Bad Request Exception at {}: {}", request.getRequestURI(), ex.getMessage());
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                ErrorResponse.builder()
+                        .success(false)
+                        .timestamp(LocalDateTime.now())
+                        .status(400)
+                        .error("BAD_REQUEST")
+                        .errorCode("INVALID_INPUT")
+                        .code("INVALID_INPUT")
+                        .message(ex.getMessage() != null ? ex.getMessage() : "Invalid request parameters.")
+                        .path(request.getRequestURI())
                         .build()
         );
     }
@@ -183,51 +273,49 @@ public class GlobalExceptionHandler {
     // 🔴 RUNTIME EXCEPTION (400)
     // =========================
     @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<ErrorResponse> handleRuntime(RuntimeException ex) {
+    public ResponseEntity<ErrorResponse> handleRuntime(RuntimeException ex, HttpServletRequest request) {
+        log.error("Runtime exception at {}: ", request.getRequestURI(), ex);
 
-        log.error("Runtime exception: ", ex);
-        
         String message = ex.getMessage();
         String errorCode = "ERR_RUNTIME";
-        
-        // Handle common runtime exceptions with better messages
+
         if (message != null) {
             if (message.contains("User not found")) {
-                message =
-                        "We couldn't find your account. Please check your email or sign up.";
-                errorCode = "ERR_USER_NOT_FOUND";
+                message = "We couldn't find your account. Please check your details or sign up.";
+                errorCode = "RESOURCE_NOT_FOUND";
             } else if (message.contains("Invalid password")) {
-                message =
-                        "The password you entered is incorrect.";
-                errorCode = "ERR_INVALID_PASSWORD";
+                message = "The password you entered is incorrect.";
+                errorCode = "INVALID_CREDENTIALS";
             } else if (message.contains("Email not verified")) {
                 message = "Email not verified. Please check your inbox and verify your email before logging in.";
-                errorCode = "ERR_EMAIL_NOT_VERIFIED";
+                errorCode = "EMAIL_NOT_VERIFIED";
             } else if (message.contains("Phone not verified")) {
                 message = "Phone not verified. Please verify your phone number before logging in.";
-                errorCode = "ERR_PHONE_NOT_VERIFIED";
+                errorCode = "PHONE_NOT_VERIFIED";
             } else if (message.contains("Profile not found")) {
-                message =
-                        "Please complete your profile to continue.";
-                errorCode = "ERR_PROFILE_NOT_FOUND";
+                message = "Please complete your profile to continue.";
+                errorCode = "RESOURCE_NOT_FOUND";
             } else if (message.contains("Profile already exists")) {
-                message =
-                        "Your profile already exists. You can edit it anytime.";
-                errorCode = "ERR_PROFILE_EXISTS";
+                message = "Your profile already exists. You can edit it anytime.";
+                errorCode = "DUPLICATE_RESOURCE";
             } else if (message.contains("Email already exists")) {
-                message =
-                        "This email is already registered. Please log in or use another email address.";
-                errorCode = "ERR_EMAIL_EXISTS";
+                message = "This email is already registered. Please log in or use another email address.";
+                errorCode = "DUPLICATE_RESOURCE";
             }
+        } else {
+            message = "An unexpected error occurred.";
         }
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
                 ErrorResponse.builder()
+                        .success(false)
                         .timestamp(LocalDateTime.now())
                         .status(400)
                         .error("BAD_REQUEST")
                         .errorCode(errorCode)
+                        .code(errorCode)
                         .message(message)
+                        .path(request.getRequestURI())
                         .build()
         );
     }
@@ -236,83 +324,53 @@ public class GlobalExceptionHandler {
     // 🔴 DATABASE CONSTRAINT VIOLATION (409)
     // =========================
     @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
-    public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(org.springframework.dao.DataIntegrityViolationException ex) {
-        
-        log.warn("Database constraint violation: {}", ex.getMessage());
+    public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(org.springframework.dao.DataIntegrityViolationException ex, HttpServletRequest request) {
+        log.warn("Database constraint violation at {}: {}", request.getRequestURI(), ex.getMessage());
 
-        String message =
-                "Unable to save your changes. Please try again.";
-        String errorCode = "ERR_CONSTRAINT_VIOLATION";
-        
-        // Check for specific constraint violations
+        String message = "Unable to complete operation because a conflicting record exists or is currently in use.";
+        String errorCode = "DUPLICATE_RESOURCE";
+
         if (ex.getMessage() != null) {
-            if (ex.getMessage().contains("ukdu5v5sr43g5bfnji4vb8hg5s3") || 
-                ex.getMessage().contains("phone") && ex.getMessage().contains("already exists")) {
-                message =
-                        "This phone number is already registered. Please log in or use another phone number.";
-                errorCode = "ERR_PHONE_EXISTS";
+            if (ex.getMessage().contains("phone") && ex.getMessage().contains("already exists")) {
+                message = "This phone number is already registered. Please log in or use another phone number.";
+                errorCode = "DUPLICATE_RESOURCE";
             } else if (ex.getMessage().contains("email") && ex.getMessage().contains("already exists")) {
-                message =
-                        "This email is already registered. Please log in or use another email address.";
-                errorCode = "ERR_EMAIL_EXISTS";
+                message = "This email is already registered. Please log in or use another email address.";
+                errorCode = "DUPLICATE_RESOURCE";
             }
         }
 
         return ResponseEntity.status(HttpStatus.CONFLICT).body(
                 ErrorResponse.builder()
+                        .success(false)
                         .timestamp(LocalDateTime.now())
                         .status(409)
                         .error("CONFLICT")
                         .errorCode(errorCode)
+                        .code(errorCode)
                         .message(message)
+                        .path(request.getRequestURI())
                         .build()
         );
     }
 
     // =========================
-    // 🔴 GLOBAL ERROR (500)
+    // 🔴 GLOBAL UNCAUGHT ERROR (500)
     // =========================
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleAll(Exception ex) {
-
-        log.error("Unexpected error: ", ex);
+    public ResponseEntity<ErrorResponse> handleAll(Exception ex, HttpServletRequest request) {
+        log.error("Unexpected internal server error at {}: ", request.getRequestURI(), ex);
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
                 ErrorResponse.builder()
+                        .success(false)
                         .timestamp(LocalDateTime.now())
                         .status(500)
                         .error("INTERNAL_SERVER_ERROR")
-                        .errorCode("ERR_500")
-                        .message("Something went wrong. Please try again later")
-                        .build()
-        );
-    }
-    @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
-    public ResponseEntity<ErrorResponse> handleFileSizeExceeded(Exception ex) {
-
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                ErrorResponse.builder()
-                        .timestamp(LocalDateTime.now())
-                        .status(400)
-                        .error("FILE_TOO_LARGE")
-                        .errorCode("ERR_FILE_SIZE")
-                        .message("File is too large. Maximum allowed size is 10 MB.")
-                        .build()
-        );
-    }
-    @ExceptionHandler(BadRequestException.class)
-    public ResponseEntity<ErrorResponse> handleBadRequestException(
-            BadRequestException ex) {
-
-        log.warn("Bad Request: {}", ex.getMessage());
-
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                ErrorResponse.builder()
-                        .timestamp(LocalDateTime.now())
-                        .status(400)
-                        .error("BAD_REQUEST")
-                        .errorCode("ERR_BAD_REQUEST")
-                        .message(ex.getMessage())
+                        .errorCode("INTERNAL_SERVER_ERROR")
+                        .code("INTERNAL_SERVER_ERROR")
+                        .message("An unexpected server error occurred. Please try again later.")
+                        .path(request.getRequestURI())
                         .build()
         );
     }

@@ -3,12 +3,7 @@ import {
   Mail,
   Phone,
   Shield,
-  Bell,
   Crown,
-  BadgeCheck,
-  Lock,
-  Eye,
-  EyeOff,
   Settings,
   LogOut,
   Trash2,
@@ -54,11 +49,11 @@ const Account = () => {
     email: profileData?.email || "",
     phone: profileData?.phone || "",
     memberId: profileData?.id || "",
-profilePhoto:
-  profileData?.imageUrl ||
-  profileData?.photoUrl ||
-  profileData?.profilePhotoUrl ||
-  "",
+    profilePhoto:
+      profileData?.imageUrl ||
+      profileData?.photoUrl ||
+      profileData?.profilePhotoUrl ||
+      "",
     accountType: profileData?.isPremium ? "Premium Member" : "Free Member",
     phoneVerified: profileData?.phoneVerified || false,
     emailVerified: profileData?.emailVerified || false,
@@ -123,153 +118,6 @@ profilePhoto:
                 View contact details faster
               </p>
             </div>
-          </div>
-        </div>
-      ),
-    },
-    {
-      title: "Privacy Settings",
-      icon: <Eye className="h-5 w-5 text-primary" />,
-      content: (
-        <div className="grid sm:grid-cols-2 gap-4">
-          <div className="rounded-xl border border-border p-4">
-            <div className="flex items-center gap-3 mb-2">
-              <Phone className="h-4 w-4 text-primary" />
-              <p className="font-medium">Phone Visibility</p>
-            </div>
-            <p className="text-sm text-muted-foreground">Hidden from public profiles</p>
-          </div>
-
-          <div className="rounded-xl border border-border p-4">
-            <div className="flex items-center gap-3 mb-2">
-              <Mail className="h-4 w-4 text-primary" />
-              <p className="font-medium">Email Visibility</p>
-            </div>
-            <p className="text-sm text-muted-foreground">Visible only after connection</p>
-          </div>
-
-          <div className="rounded-xl border border-border p-4">
-            <div className="flex items-center gap-3 mb-2">
-              <EyeOff className="h-4 w-4 text-primary" />
-              <p className="font-medium">Profile Visibility</p>
-            </div>
-            <p className="text-sm text-muted-foreground">Shown to matching profiles only</p>
-          </div>
-
-          <div className="rounded-xl border border-border p-4">
-            <div className="flex items-center gap-3 mb-2">
-              <User className="h-4 w-4 text-primary" />
-              <p className="font-medium">Photo Privacy</p>
-            </div>
-            <p className="text-sm text-muted-foreground">Protected for selected members</p>
-          </div>
-        </div>
-      ),
-    },
-    {
-      title: "Security Settings",
-      icon: <Shield className="h-5 w-5 text-primary" />,
-      content: (
-        <div className="grid sm:grid-cols-2 gap-4">
-          <button className="rounded-xl border border-border p-4 text-left hover:bg-muted/40 transition-colors">
-            <div className="flex items-center gap-3 mb-2">
-              <Lock className="h-4 w-4 text-primary" />
-              <p className="font-medium">Change Password</p>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              Update your password for better account security
-            </p>
-          </button>
-
-          <button className="rounded-xl border border-border p-4 text-left hover:bg-muted/40 transition-colors">
-            <div className="flex items-center gap-3 mb-2">
-              <Mail className="h-4 w-4 text-primary" />
-              <p className="font-medium">Change Email</p>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              Update your login email address
-            </p>
-          </button>
-
-          <button className="rounded-xl border border-border p-4 text-left hover:bg-muted/40 transition-colors">
-            <div className="flex items-center gap-3 mb-2">
-              <Phone className="h-4 w-4 text-primary" />
-              <p className="font-medium">Change Mobile Number</p>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              Update your registered phone number
-            </p>
-          </button>
-
-          <button className="rounded-xl border border-border p-4 text-left hover:bg-muted/40 transition-colors">
-            <div className="flex items-center gap-3 mb-2">
-              <Clock className="h-4 w-4 text-primary" />
-              <p className="font-medium">Login Activity</p>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              Check recent login and device activity
-            </p>
-          </button>
-        </div>
-      ),
-    },
-    {
-      title: "Verification Status",
-      icon: <BadgeCheck className="h-5 w-5 text-primary" />,
-      content: (
-        <div className="grid sm:grid-cols-3 gap-4">
-          <div className="rounded-xl border border-border p-4">
-            <p className="font-medium mb-2">Phone Verification</p>
-            <span className="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
-              {userDetails.phoneVerified ? "Verified" : "Pending"}
-            </span>
-          </div>
-
-          <div className="rounded-xl border border-border p-4">
-            <p className="font-medium mb-2">Email Verification</p>
-            <span className="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
-              {userDetails.emailVerified ? "Verified" : "Pending"}
-            </span>
-          </div>
-
-          <div className="rounded-xl border border-border p-4">
-            <p className="font-medium mb-2">Profile Verification</p>
-            <span
-              className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${
-                userDetails.profileVerified
-                  ? "bg-green-100 text-green-700"
-                  : "bg-yellow-100 text-yellow-700"
-              }`}
-            >
-              {userDetails.profileVerified ? "Verified" : "Pending Review"}
-            </span>
-          </div>
-        </div>
-      ),
-    },
-    {
-      title: "Notification Preferences",
-      icon: <Bell className="h-5 w-5 text-primary" />,
-      content: (
-        <div className="grid sm:grid-cols-2 gap-4">
-          <div className="rounded-xl border border-border p-4">
-            <p className="font-medium">Match Alerts</p>
-            <p className="text-sm text-muted-foreground">Receive new match notifications</p>
-          </div>
-
-          <div className="rounded-xl border border-border p-4">
-            <p className="font-medium">Message Alerts</p>
-            <p className="text-sm text-muted-foreground">Get notified for new messages</p>
-          </div>
-
-          <div className="rounded-xl border border-border p-4">
-            <p className="font-medium">Interest Alerts</p>
-            <p className="text-sm text-muted-foreground">Know when someone sends interest</p>
-          </div>
-
-          <div className="rounded-xl border border-border p-4">
-            <p className="font-medium">Email / SMS Alerts</p>
-            <p className="text-sm text-muted-foreground">Control communication preferences</p>
           </div>
         </div>
       ),

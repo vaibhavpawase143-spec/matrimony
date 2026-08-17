@@ -54,21 +54,36 @@ public class BloodGroupServiceImpl implements BloodGroupService {
 
     // ✅ Get all
     @Override
+    public List<BloodGroup> getAll() {
+        return bloodGroupRepository.findAll();
+    }
+
+    // ✅ Get active
+    @Override
+    public List<BloodGroup> getActive() {
+        return bloodGroupRepository.findAll()
+                .stream()
+                .filter(bg -> Boolean.TRUE.equals(bg.getIsActive()))
+                .toList();
+    }
+
+    // ✅ Get all by admin
+    @Override
     public List<BloodGroup> getAll(Long adminId) {
 
         return bloodGroupRepository.findAll()
                 .stream()
-                .filter(bg -> bg.getAdmin().getId().equals(adminId))
+                .filter(bg -> bg.getAdmin() == null || bg.getAdmin().getId().equals(adminId))
                 .toList();
     }
 
-    // ✅ Get active
+    // ✅ Get active by admin
     @Override
     public List<BloodGroup> getActive(Long adminId) {
 
         return bloodGroupRepository.findAll()
                 .stream()
-                .filter(bg -> bg.getAdmin().getId().equals(adminId)
+                .filter(bg -> (bg.getAdmin() == null || bg.getAdmin().getId().equals(adminId))
                         && Boolean.TRUE.equals(bg.getIsActive()))
                 .toList();
     }

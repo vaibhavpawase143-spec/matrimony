@@ -56,9 +56,7 @@ public class BloodGroupController {
     @GetMapping
     public List<BloodGroupResponseDTO> getAll() {
 
-        Admin admin = getCurrentAdmin();
-
-        return bloodGroupService.getAll(admin.getId())
+        return bloodGroupService.getAll()
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
@@ -68,9 +66,7 @@ public class BloodGroupController {
     @GetMapping("/active")
     public List<BloodGroupResponseDTO> getActive() {
 
-        Admin admin = getCurrentAdmin();
-
-        return bloodGroupService.getActive(admin.getId())
+        return bloodGroupService.getActive()
                 .stream()
                 .map(this::mapToResponse)
                 .toList();

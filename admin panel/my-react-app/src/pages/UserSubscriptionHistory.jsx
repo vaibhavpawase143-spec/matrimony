@@ -4,6 +4,7 @@ import BackButton from "../components/common/BackButton";
 import { toast } from "sonner";
 
 import { getUserSubscriptionHistory } from "../services/subscriptionService";
+import { getImageUrl, handleImageError } from "../utils/imageUtils";
 
 export default function UserSubscriptionHistory() {
   const { userId } = useParams();
@@ -68,12 +69,10 @@ export default function UserSubscriptionHistory() {
               <div className="flex flex-col md:flex-row items-center gap-6">
 
                 <img
-                  src={
-                    user.imageUrl ||
-                    "https://placehold.co/150x150?text=No+Photo"
-                  }
-                  alt={user.userName}
+                  src={getImageUrl(user.imageUrl, user.userName)}
+                  alt={user.userName || "User"}
                   className="w-28 h-28 rounded-full object-cover border-4 border-violet-200"
+                  onError={(e) => handleImageError(e, user.userName)}
                 />
 
                 <div className="flex-1 space-y-2">

@@ -4,17 +4,19 @@ import {
   FiChevronLeft,
   FiChevronRight,
 } from "react-icons/fi";
+import { getImageUrl, handleImageError } from "../../utils/imageUtils";
 
 export default function UserGallery({ user }) {
   const photos =
     user?.photos?.length > 0
-      ? user.photos
+      ? user.photos.map((p) => ({
+          ...p,
+          photoUrl: getImageUrl(p.photoUrl || p.imageUrl, user?.fullName),
+        }))
       : [
           {
             id: 1,
-          photoUrl: user?.imageUrl
-            ? `https://localhost:9090${user.imageUrl}`
-            : "https://ui-avatars.com/api/?name=User&size=500",
+            photoUrl: getImageUrl(user?.imageUrl, user?.fullName),
             photoType: "Profile",
           },
         ];
@@ -85,6 +87,7 @@ export default function UserGallery({ user }) {
               src={selectedImage}
               alt="Profile"
               className="w-full h-80 object-cover transition duration-300 group-hover:scale-105"
+              onError={(e) => handleImageError(e, user?.fullName)}
             />
 
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/0 opacity-0 transition-all duration-300 group-hover:bg-black/40 group-hover:opacity-100">
@@ -104,6 +107,7 @@ export default function UserGallery({ user }) {
                   src={photo.photoUrl}
                   alt={photo.photoType || `Photo ${index + 1}`}
                   onClick={() => setSelectedImage(photo.photoUrl)}
+                  onError={(e) => handleImageError(e, user?.fullName)}
                   className={`h-24 w-full rounded-lg object-cover cursor-pointer border-2 transition-all duration-300 hover:scale-105 hover:shadow-lg ${
                     selectedImage === photo.photoUrl
                       ? "border-purple-600"
