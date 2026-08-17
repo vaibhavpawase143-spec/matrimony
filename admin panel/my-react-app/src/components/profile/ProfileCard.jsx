@@ -6,6 +6,7 @@ import {
   FaCalendarAlt,
   FaClock,
 } from "react-icons/fa";
+import { getImageUrl, handleImageError } from "../../utils/imageUtils";
 
 export default function ProfileCard({
   profile,
@@ -22,14 +23,10 @@ export default function ProfileCard({
       <div className="flex flex-col items-center -mt-14 px-6 pb-6">
 
         <img
-          src={
-            profile.profilePhoto ||
-            `https://ui-avatars.com/api/?name=${encodeURIComponent(
-              profile.name || "Admin"
-            )}&background=7C3AED&color=fff`
-          }
-          alt={profile.name}
+          src={getImageUrl(profile.profilePhoto, profile.name)}
+          alt={profile.name || "Admin"}
           className="w-28 h-28 rounded-full border-4 border-white object-cover shadow-lg"
+          onError={(e) => handleImageError(e, profile.name)}
         />
 
         <h2 className="mt-4 text-2xl font-bold text-gray-800">

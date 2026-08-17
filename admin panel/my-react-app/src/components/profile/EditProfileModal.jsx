@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import FormModal from "../common/FormModal";
 import { updateAdminProfile } from "../../services/adminProfileService";
 import { uploadImage } from "../../services/imageUploadService";
+import { getImageUrl, handleImageError } from "../../utils/imageUtils";
 
 export default function EditProfileModal({
   isOpen,
@@ -149,14 +150,10 @@ export default function EditProfileModal({
 
                     <div className="flex items-center gap-5">
                       <img
-                        src={
-                          preview ||
-                          `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                            formData.name || "Admin"
-                          )}`
-                        }
+                        src={getImageUrl(preview, formData.name)}
                         alt="Profile Preview"
                         className="w-24 h-24 rounded-full border object-cover"
+                        onError={(e) => handleImageError(e, formData.name)}
                       />
 
                       <input

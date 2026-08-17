@@ -15,9 +15,9 @@ public class RecaptchaProperties {
 
     private String secretKey;
 
-    private Double scoreThreshold;
+    private Double scoreThreshold = 0.5;
 
-    private String verifyUrl;
+    private String verifyUrl = "https://www.google.com/recaptcha/api/siteverify";
 
     private boolean enabled = true;
 }

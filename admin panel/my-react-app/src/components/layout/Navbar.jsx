@@ -27,6 +27,7 @@ import {
 } from "../../services/adminNotificationSocket";
 import ChangePasswordModal from "../profile/ChangePasswordModal";
 import { getAdminProfile } from "../../services/adminProfileService";
+import { getImageUrl, handleImageError } from "../../utils/imageUtils";
 
 export default function Navbar({ onMenuToggle, sidebarOpen }) {
   const navigate = useNavigate();
@@ -265,15 +266,7 @@ const handleLogout = () => {
   // Profile Image
   // ==========================================
 
-  const profileImage =
-    profile?.profilePhoto &&
-    profile.profilePhoto.trim() !== ""
-      ? profile.profilePhoto.startsWith("http")
-        ? profile.profilePhoto
-        : `https://localhost:9090${profile.profilePhoto}`
-      : `https://ui-avatars.com/api/?background=7C3AED&color=fff&name=${encodeURIComponent(
-          profile?.name || "Admin"
-        )}`;
+  const profileImage = getImageUrl(profile?.profilePhoto, profile?.name);
 const loadUnreadCount = async () => {
   try {
     const response = await getUnreadCount();
@@ -488,6 +481,7 @@ const loadUnreadCount = async () => {
                 <img
                   src={profileImage}
                   alt="Admin"
+                  onError={(e) => handleImageError(e, profile?.name)}
                   className="
                     w-11
                     h-11
@@ -549,6 +543,7 @@ const loadUnreadCount = async () => {
                       <img
                         src={profileImage}
                         alt="Admin"
+                        onError={(e) => handleImageError(e, profile?.name)}
                         className="w-16 h-16 rounded-full border-4 border-white object-cover"
                       />
 

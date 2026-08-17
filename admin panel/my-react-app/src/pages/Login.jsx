@@ -7,6 +7,7 @@ import Loader from "../components/Loader";
 import { loginAdmin } from "../services/authService";
 import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
 import { trackEvent } from "../utils/analytics";
+
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -17,54 +18,54 @@ function Login() {
   const navigate = useNavigate();
   const { executeRecaptcha } = useGoogleReCaptcha();
 
-const handleSubmit = async (event) => {
-  event.preventDefault();
+  const handleSubmit = async (event) => {
+    event.preventDefault();
 
-  if (!executeRecaptcha) {
-    setError("reCAPTCHA is not ready. Please try again.");
-    return;
-  }
+    if (!executeRecaptcha) {
+      setError("reCAPTCHA is not ready. Please try again.");
+      return;
+    }
 
-  setError("");
+    setError("");
 
-  if (!email) {
-    setError("Email is required.");
-    return;
-  }
+    if (!email) {
+      setError("Email is required.");
+      return;
+    }
 
-  if (!password) {
-    setError("Password is required.");
-    return;
-  }
+    if (!password) {
+      setError("Password is required.");
+      return;
+    }
 
-  setLoading(true);
+    setLoading(true);
 
-  try {
-    const recaptchaToken = await executeRecaptcha("login");
+    try {
+      const recaptchaToken = await executeRecaptcha("login");
 
-const { user } = await loginAdmin({
-  email: email.trim(),
-  password,
-  recaptchaToken,
-});
+      const { user } = await loginAdmin({
+        email: email.trim(),
+        password,
+        recaptchaToken,
+      });
 
-trackEvent("admin_login", {
-  admin_id: user.id,
-  role: user.role,
-});
+      trackEvent("admin_login", {
+        admin_id: user.id,
+        role: user.role,
+      });
 
-navigate("/dashboard");
-  } catch (err) {
-    console.error(err);
+      navigate("/dashboard");
+    } catch (err) {
+      console.error(err);
 
-    setError(
-      err?.message ||
-      "Login failed. Please check your credentials and try again."
-    );
-  } finally {
-    setLoading(false);
-  }
-};
+      setError(
+        err?.message ||
+        "Login failed. Please check your credentials and try again."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-purple-50 flex items-center justify-center px-4 py-12">

@@ -8,6 +8,7 @@ import {
 } from "../../services/adminManagementService";
 
 import { IMAGE_BASE_URL } from "../../services/api";
+import { getImageUrl, handleImageError } from "../../utils/imageUtils";
 
 export default function EditAdminModal({
   open,
@@ -298,14 +299,11 @@ const handleSubmit = async (e) => {
       src={
         selectedPhoto
           ? URL.createObjectURL(selectedPhoto)
-          : form.profilePhoto
-          ? form.profilePhoto.startsWith("http")
-            ? form.profilePhoto
-            : `${IMAGE_BASE_URL}${form.profilePhoto}`
-          : "/default-avatar.png"
+          : getImageUrl(form.profilePhoto, form.name)
       }
       alt="Profile"
       className="w-24 h-24 rounded-full object-cover border"
+      onError={(e) => handleImageError(e, form.name)}
     />
   </div>
 

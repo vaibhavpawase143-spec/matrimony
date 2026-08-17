@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import BackButton from "../components/common/BackButton";
 import { getSubscriptionById } from "../services/subscriptionService";
 import { toast } from "sonner";
+import { getImageUrl, handleImageError } from "../utils/imageUtils";
 
 export default function SubscriptionDetails() {
   const { id } = useParams();
@@ -84,12 +85,10 @@ export default function SubscriptionDetails() {
         <div className="flex flex-col md:flex-row gap-6 items-center border-b pb-6 mb-6">
 
           <img
-            src={
-              subscription.imageUrl ||
-              "https://placehold.co/150x150?text=No+Photo"
-            }
-            alt={subscription.userName}
+            src={getImageUrl(subscription.imageUrl, subscription.userName)}
+            alt={subscription.userName || "User"}
             className="w-32 h-32 rounded-full object-cover border-4 border-violet-200"
+            onError={(e) => handleImageError(e, subscription.userName)}
           />
 
           <div className="space-y-2 flex-1">

@@ -1,18 +1,18 @@
 import StatusBadge from "./StatusBadge";
 import { formatDate } from "../../utils/dateUtils";
+import { getImageUrl, handleImageError } from "../../utils/imageUtils";
+
 export default function UserHeader({ user }) {
- const image = user?.imageUrl
-   ? `https://localhost:9090${user.imageUrl}`
-   : "https://ui-avatars.com/api/?name=User&background=7c3aed&color=fff&size=200";
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
         {/* Left */}
         <div className="flex items-center gap-5">
           <img
-            src={image}
-            alt={user?.fullName}
+            src={getImageUrl(user?.imageUrl, user?.fullName)}
+            alt={user?.fullName || "User"}
             className="w-24 h-24 rounded-full object-cover border-4 border-purple-100"
+            onError={(e) => handleImageError(e, user?.fullName)}
           />
 
           <div>
