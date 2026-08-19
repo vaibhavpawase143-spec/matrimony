@@ -45,18 +45,24 @@ const ProfileCard = ({ profile, onSendInterest, onSave, isSaved = false, isInter
       return image;
     }
 
+    const backendBase = (
+      import.meta.env.VITE_BACKEND_URL ||
+      (import.meta.env.VITE_API_BASE_URL ? import.meta.env.VITE_API_BASE_URL.replace(/\/api\/?$/, "") : "") ||
+      "http://localhost:9090"
+    ).replace(/\/$/, "");
+
     // Starts with /uploads/
     if (image.startsWith("/")) {
-      return `http://localhost:9090${image}`;
+      return `${backendBase}${image}`;
     }
 
     // Starts with uploads/
     if (image.startsWith("uploads/")) {
-      return `http://localhost:9090/${image}`;
+      return `${backendBase}/${image}`;
     }
 
     // Only filename like user2.jpg
-    return `http://localhost:9090/uploads/${image}`;
+    return `${backendBase}/uploads/${image}`;
   };
   // Get city name with fallback
   const getCityName = () => {

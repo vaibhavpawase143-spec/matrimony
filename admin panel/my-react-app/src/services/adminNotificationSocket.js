@@ -42,8 +42,9 @@ export const connectAdminNotifications = (adminId, onMessage) => {
     client = null;
   }
 
+  const wsBase = import.meta.env.VITE_WS_URL || "/ws";
   const socket = new SockJS(
-    `/ws?token=${encodeURIComponent(token)}`,
+    `${wsBase}?token=${encodeURIComponent(token)}`,
     null,
     {
       transports: ["websocket", "xhr-streaming", "xhr-polling"],

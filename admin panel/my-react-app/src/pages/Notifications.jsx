@@ -124,9 +124,10 @@ export default function Notifications() {
 
     let stompClient = null;
     try {
-      const wsUrl = window.location.port === "5173" || window.location.port === "3000"
-        ? "http://localhost:9090/ws-raw"
-        : "/ws-raw";
+      const wsUrl = import.meta.env.VITE_WS_URL
+        || (window.location.port === "5173" || window.location.port === "3000"
+            ? "http://localhost:9090/ws"
+            : "/ws");
       const socket = new SockJS(wsUrl);
       stompClient = Stomp.over(socket);
       stompClient.debug = () => { };

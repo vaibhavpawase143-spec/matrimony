@@ -427,12 +427,9 @@ public class SuccessStoryServiceImpl implements SuccessStoryService {
             }
 
             if (jobId != null) {
-                BroadcastJob completedJob = broadcastJobRepository.findById(jobId).orElse(null);
-                if (completedJob != null) {
-                    completedJob.setStatus(BroadcastJobStatus.COMPLETED);
-                    completedJob.setCompletedAt(java.time.LocalDateTime.now());
-                    completedJob.setLastProcessedUserId(lastUserIdInDispatch);
-                    broadcastJobRepository.save(completedJob);
+                int completedRows = broadcastJobRepository.tryMarkJobCompletedNative(jobId);
+                if (completedRows == 0) {
+                    log.info("[STORY DISPATCH IN_PROGRESS] JobID={} enqueued {} recipients. Awaiting consumer processing.", jobId, totalEnqueued);
                 }
             }
 
