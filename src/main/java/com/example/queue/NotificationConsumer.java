@@ -62,6 +62,87 @@ public class NotificationConsumer {
         processBulkEmailBatchJob(batchPayload);
     }
 
+    @RabbitListener(queues = RabbitMQConfig.QUEUE_MEDIUM, containerFactory = "bulkRabbitListenerContainerFactory")
+    public void processAppNotificationBatch(AppNotificationBatchPayload batchPayload) {
+        processAppNotificationBatchJob(batchPayload);
+    }
+
+    public void processAppNotificationBatchJob(AppNotificationBatchPayload batchPayload) {
+        long startTime = System.currentTimeMillis();
+        String batchId = batchPayload.getBatchId();
+        Long storyId = batchPayload.getStoryId();
+        Integer storyVersion = batchPayload.getStoryVersion();
+        Long jobId = batchPayload.getBroadcastJobId();
+        List<AppNotificationBatchPayload.RecipientItem> recipients = batchPayload.getRecipients();
+
+        if (recipients == null || recipients.isEmpty()) {
+            log.warn("[STORY BATCH RECEIVED] Empty recipients list for BatchID={}", batchId);
+            return;
+        }
+
+        log.info("[STORY BATCH RECEIVED] BatchID={} | StoryID={} | Version={} | RecipientsCount={}",
+                batchId, storyId, storyVersion, recipients.size());
+
+        List<Long> userIds = recipients.stream().map(AppNotificationBatchPayload.RecipientItem::getUserId).toList();
+
+        try {
+            String title = batchPayload.getTitle();
+            String message = batchPayload.getMessage();
+            LocalDateTime now = LocalDateTime.now();
+            Long referenceId = batchPayload.getReferenceId() != null ? batchPayload.getReferenceId() : storyId;
+            String eventType = batchPayload.getEventType() != null ? batchPayload.getEventType() : (storyId != null ? "SUCCESS_STORY_PUBLISHED" : null);
+
+            int insertedCount = notificationRepository.bulkInsertAppNotificationsWithMetadata(
+                    userIds,
+                    title,
+                    message,
+                    batchPayload.getType() != null ? batchPayload.getType().name() : "ANNOUNCEMENT",
+                    now,
+                    referenceId,
+                    eventType
+            );
+
+            log.info("[STORY BATCH PROCESSED] BatchID={} | StoryID={} | Inserted={}/{}",
+                    batchId, storyId, insertedCount, recipients.size());
+
+            for (Long userId : userIds) {
+                try {
+                    NotificationResponse response = new NotificationResponse();
+                    response.setSenderId(null);
+                    response.setReceiverId(userId);
+                    response.setSenderName("System");
+                    response.setTitle(title);
+                    response.setMessage(message);
+                    response.setType(batchPayload.getType() != null ? batchPayload.getType().name() : "ANNOUNCEMENT");
+                    response.setRead(false);
+                    response.setCreatedAt(now);
+                    response.setReferenceId(referenceId);
+                    response.setEventType(eventType);
+                    response.setStoryId(referenceId);
+
+                    messagingTemplate.convertAndSend("/topic/notifications/" + userId, response);
+                } catch (Exception wsEx) {
+                    log.debug("[STORY BATCH WS FAILED] UserID={} | Error={}", userId, wsEx.getMessage());
+                }
+            }
+
+            if (jobId != null) {
+                adminBroadcastService.recordAppRecipientBatchStatus(jobId, userIds, AppNotificationStatus.SENT, null);
+            }
+
+            long duration = System.currentTimeMillis() - startTime;
+            log.info("[STORY BATCH ACK] BatchID={} | Duration={}ms", batchId, duration);
+
+        } catch (Exception e) {
+            log.error("[STORY BATCH FAILED] BatchID={} | Error={}", batchId, e.getMessage(), e);
+            if (jobId != null) {
+                adminBroadcastService.recordAppRecipientBatchStatus(jobId, userIds, AppNotificationStatus.FAILED, e.getMessage());
+            }
+            log.info("[STORY BATCH RETRY] BatchID={} | Rethrowing exception for RabbitMQ retry", batchId);
+            throw e;
+        }
+    }
+
     public void processBulkEmailBatchJob(BulkEmailBatchPayload batchPayload) {
         long startTime = System.currentTimeMillis();
         Long jobId = batchPayload.getBroadcastJobId();
@@ -130,6 +211,10 @@ public class NotificationConsumer {
         log.info("[JOB PROCESSING] JobID={} | Key={} | Priority={} | Event={} | UserID={} | Channel={} | Attempt={}",
                 payload.getJobId(), idempotencyKey, payload.getPriority(), payload.getEventType(), payload.getUserId(), payload.getChannelType(), payload.getRetryCount() + 1);
 
+        if (idempotencyKey.startsWith("SUCCESS_STORY_PUBLISHED_")) {
+            log.info("[STORY NOTIFICATION CONSUMED] Key={} | UserID={} | Title={}", idempotencyKey, payload.getUserId(), payload.getTitle());
+        }
+
         if (outboxRepository.existsByIdempotencyKey(idempotencyKey)) {
             int claimed = outboxRepository.claimJobAtomically(idempotencyKey, now);
             if (claimed == 0) {
@@ -156,6 +241,10 @@ public class NotificationConsumer {
                 Notification saved = notificationRepository.save(notification);
 
                 if (saved != null) {
+                    if (idempotencyKey.startsWith("SUCCESS_STORY_PUBLISHED_")) {
+                        log.info("[STORY NOTIFICATION PERSISTED] NotificationID={} | UserID={} | Title={}", saved.getId(), payload.getUserId(), saved.getTitle());
+                    }
+
                     NotificationResponse response = new NotificationResponse();
                     response.setId(saved.getId());
                     response.setSenderId(null);

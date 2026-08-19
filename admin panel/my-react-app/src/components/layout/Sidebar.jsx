@@ -24,6 +24,7 @@ import {
   FaChevronDown,
   FaChevronRight,
   FaUserShield,
+  FaHeart,
 } from "react-icons/fa";
 
 export default function Sidebar() {
@@ -132,6 +133,12 @@ export default function Sidebar() {
       icon: <FaFileAlt />,
       path: "/cms-pages",
       permission: "cmsPages",
+    },
+    {
+      name: "Success Stories",
+      icon: <FaHeart />,
+      path: "/success-stories",
+      permission: "successStories",
     },
     {
       name: "Master Data",

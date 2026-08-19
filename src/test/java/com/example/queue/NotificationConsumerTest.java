@@ -170,4 +170,32 @@ class NotificationConsumerTest {
         verify(emailProvider, times(1)).sendBatch(anyList(), eq("Bulk Title"), eq("Bulk Message"));
         verify(adminBroadcastService, times(1)).recordEmailRecipientBatchStatus(eq(456L), eq(java.util.List.of(201L, 202L)), eq(com.example.model.RecipientEmailStatus.PROVIDER_ACCEPTED), isNull());
     }
+
+    @Test
+    @DisplayName("6. Success Story Publish APP Notification is persisted and pushed via WebSocket without Email")
+    void testSuccessStoryPublishNotificationProcessing() {
+        NotificationJobPayload payload = NotificationJobPayload.builder()
+                .jobId(UUID.randomUUID().toString())
+                .idempotencyKey("SUCCESS_STORY_PUBLISHED_1_V1_USER_101")
+                .userId(101L)
+                .title("New Success Story ❤️")
+                .message("Meet Rahul & Priya! Read their inspiring Gathbandhan success story.")
+                .type(NotificationType.ANNOUNCEMENT)
+                .channelType(NotificationJobPayload.ChannelType.APP)
+                .priority(NotificationPriority.MEDIUM)
+                .retryCount(0)
+                .build();
+
+        when(notificationRepository.save(any(Notification.class))).thenAnswer(i -> {
+            Notification n = i.getArgument(0);
+            n.setId(999L);
+            return n;
+        });
+
+        consumer.processMediumNotification(payload);
+
+        verify(notificationRepository, times(1)).save(any(Notification.class));
+        verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/notifications/101"), any(Object.class));
+        verify(emailService, never()).sendAnnouncementEmail(anyString(), anyString(), anyString(), anyString());
+    }
 }

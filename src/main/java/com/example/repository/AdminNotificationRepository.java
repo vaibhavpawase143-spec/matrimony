@@ -30,4 +30,6 @@ public interface AdminNotificationRepository extends JpaRepository<AdminNotifica
     );
 
     boolean existsByAdminAndTitleAndMessage(Admin admin, String title, String message);
+
+    boolean existsByAdminAndReferenceIdAndEventTypeAndDeletedFalse(Admin admin, Long referenceId, String eventType);
 }

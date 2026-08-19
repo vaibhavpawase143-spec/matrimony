@@ -85,4 +85,52 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
             String title
     );
 
+    boolean existsByReceiverIdAndTitleAndDeletedFalse(Long receiverId, String title);
+
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.transaction.annotation.Transactional
+    @Query(value = """
+        INSERT INTO notifications (sender_id, receiver_id, title, message, type, read, deleted, created_at)
+        SELECT NULL, u.id, :title, :message, :type, false, false, :now
+        FROM users u
+        WHERE u.id IN (:userIds)
+          AND NOT EXISTS (
+              SELECT 1 FROM notifications n
+              WHERE n.receiver_id = u.id AND n.title = :title
+          )
+    """, nativeQuery = true)
+    int bulkInsertAppNotifications(
+            @Param("userIds") List<Long> userIds,
+            @Param("title") String title,
+            @Param("message") String message,
+            @Param("type") String type,
+            @Param("now") java.time.LocalDateTime now
+    );
+
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.transaction.annotation.Transactional
+    @Query(value = """
+        INSERT INTO notifications (sender_id, receiver_id, title, message, type, read, deleted, created_at, reference_id, event_type)
+        SELECT NULL, u.id, :title, :message, :type, false, false, :now, :referenceId, :eventType
+        FROM users u
+        WHERE u.id IN (:userIds)
+          AND NOT EXISTS (
+              SELECT 1 FROM notifications n
+              WHERE n.receiver_id = u.id
+                AND (
+                     (:referenceId IS NOT NULL AND n.reference_id = :referenceId AND n.event_type = :eventType)
+                     OR
+                     (:referenceId IS NULL AND n.title = :title)
+                )
+          )
+    """, nativeQuery = true)
+    int bulkInsertAppNotificationsWithMetadata(
+            @Param("userIds") List<Long> userIds,
+            @Param("title") String title,
+            @Param("message") String message,
+            @Param("type") String type,
+            @Param("now") java.time.LocalDateTime now,
+            @Param("referenceId") Long referenceId,
+            @Param("eventType") String eventType
+    );
 }

@@ -32,5 +32,7 @@ public interface AdminNotificationService {
 
     void markAllBroadcastLifecycleAsRead();
 
+    void publishSuccessStoryPublishedNotification(Long storyId, String partnerOneName, String partnerTwoName);
+
     void deleteNotification(Long notificationId);
 }

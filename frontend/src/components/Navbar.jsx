@@ -57,7 +57,22 @@ const user =
 
 const currentUserId =
   user?.profile?.userId || user?.userId || user?.id;
-  const getNotificationMeta = (type) => {
+  const getNotificationMeta = (type, item) => {
+    if (
+      item?.eventType === "SUCCESS_STORY_PUBLISHED" ||
+      item?.title?.includes("Success Story") ||
+      item?.message?.includes("success story")
+    ) {
+      const storyId = item?.referenceId || item?.storyId;
+      return {
+        icon: "❤️",
+        label: "Success Story",
+        route: storyId ? `/success-stories/${storyId}` : "/success-stories",
+        accent: "border-pink-500",
+        iconBg: "bg-pink-100 dark:bg-pink-500/15"
+      };
+    }
+
     const map = {
       REQUEST: {
         icon: "💌",
@@ -83,7 +98,7 @@ const currentUserId =
       MATCH: {
           icon: "🎯",
           label: "Compatible Match",
-          route: "/matches",   // ata temporary theva
+          route: "/matches",
           accent: "border-violet-500",
           iconBg: "bg-violet-100 dark:bg-violet-500/15"
       },
@@ -173,7 +188,14 @@ WARNING: {
         notificationAPI.unreadCount(currentUserId)
       ]);
 
-      setNotifications(Array.isArray(list) ? list : []);
+      const items = Array.isArray(list) ? list : [];
+      const userOnlyItems = items.filter((n) => {
+        const title = n?.title || "";
+        const message = n?.message || "";
+        return !title.includes("Broadcast") && !message.includes("Notification broadcast");
+      });
+
+      setNotifications(userOnlyItems);
       setUnreadCount(Number(count) || 0);
     } catch (err) {
       console.error("Notification refresh failed:", err);
@@ -507,7 +529,20 @@ useEffect(() => {
             <div
               onClick={() => {
                 setLivePopup(null);
-                navigate(meta.route);
+                const storyId = livePopup.referenceId || livePopup.storyId;
+                if (
+                  livePopup.eventType === "SUCCESS_STORY_PUBLISHED" ||
+                  livePopup.title?.includes("Success Story") ||
+                  livePopup.message?.includes("success story")
+                ) {
+                  if (storyId) {
+                    navigate(`/success-stories/${storyId}`);
+                  } else {
+                    navigate("/success-stories");
+                  }
+                } else {
+                  navigate(meta.route);
+                }
               }}
               className={`
                 fixed
@@ -840,6 +875,21 @@ onClick={async () => {
       return;
     }
 
+    // Success Story published check
+    const storyId = item.referenceId || item.storyId;
+    if (
+      item.eventType === "SUCCESS_STORY_PUBLISHED" ||
+      item.title?.includes("Success Story") ||
+      item.message?.includes("success story")
+    ) {
+      if (storyId) {
+        navigate(`/success-stories/${storyId}`);
+      } else {
+        navigate("/success-stories");
+      }
+      return;
+    }
+
     // System/Announcement notifications
     if (
       item.type === "ANNOUNCEMENT" ||
@@ -878,7 +928,7 @@ hover:scale-[1.01]
 
 ${item.read
   ? "bg-slate-950 opacity-60"
-  : `bg-slate-800 border-l-4 ${getNotificationMeta(item.type).accent}`}
+  : `bg-slate-800 border-l-4 ${getNotificationMeta(item.type, item).accent}`}
 
 hover:bg-slate-700
 `}
@@ -888,9 +938,9 @@ hover:bg-slate-700
   <div className="flex gap-3 flex-1">
 
   <div
-    className={`h-10 w-10 shrink-0 rounded-full flex items-center justify-center text-lg ${getNotificationMeta(item.type).iconBg}`}
+    className={`h-10 w-10 shrink-0 rounded-full flex items-center justify-center text-lg ${getNotificationMeta(item.type, item).iconBg}`}
   >
-    {getNotificationMeta(item.type).icon}
+    {getNotificationMeta(item.type, item).icon}
   </div>
 
     <div>

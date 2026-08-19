@@ -22,6 +22,30 @@ public class NotificationProducer {
     private final UserRepository userRepository;
 
     /**
+     * Publish an APP notification batch payload to RabbitMQ.
+     */
+    public void enqueueAppBatch(AppNotificationBatchPayload batchPayload) {
+        if (batchPayload.getBatchId() == null) {
+            batchPayload.setBatchId(UUID.randomUUID().toString());
+        }
+        String routingKey = getRoutingKeyForPriority(
+                batchPayload.getPriority() != null ? batchPayload.getPriority() : NotificationPriority.MEDIUM
+        );
+
+        try {
+            rabbitTemplate.convertAndSend(
+                    RabbitMQConfig.NOTIFICATION_EXCHANGE,
+                    routingKey,
+                    batchPayload
+            );
+        } catch (Exception e) {
+            log.error("[APP BATCH ENQUEUE FAILED] BatchID={} | StoryID={} | Error={}",
+                    batchPayload.getBatchId(), batchPayload.getStoryId(), e.getMessage(), e);
+            throw new RuntimeException("Failed to enqueue APP batch: " + e.getMessage(), e);
+        }
+    }
+
+    /**
      * Publish a bulk email batch payload to RabbitMQ.
      */
     public void enqueueEmailBatch(BulkEmailBatchPayload batchPayload) {

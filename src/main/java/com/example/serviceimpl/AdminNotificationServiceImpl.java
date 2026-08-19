@@ -128,18 +128,7 @@ public class AdminNotificationServiceImpl implements AdminNotificationService {
         List<AdminNotificationResponse> responses =
                 notificationPage.getContent()
                         .stream()
-                        .map(notification ->
-                                AdminNotificationResponse.builder()
-                                        .id(notification.getId())
-                                        .adminId(notification.getAdmin().getId())
-                                        .title(notification.getTitle())
-                                        .message(notification.getMessage())
-                                        .type(notification.getType())
-                                        .read(notification.getRead())
-                                        .deleted(notification.getDeleted())
-                                        .createdAt(notification.getCreatedAt())
-                                        .build()
-                        )
+                        .map(this::mapToResponse)
                         .toList();
 
         return new PageImpl<>(
@@ -171,16 +160,7 @@ public class AdminNotificationServiceImpl implements AdminNotificationService {
         );
 
         List<AdminNotificationResponse> responses = page.getContent().stream()
-                .map(n -> AdminNotificationResponse.builder()
-                        .id(n.getId())
-                        .adminId(n.getAdmin().getId())
-                        .title(n.getTitle())
-                        .message(n.getMessage())
-                        .type(n.getType())
-                        .read(n.getRead())
-                        .deleted(n.getDeleted())
-                        .createdAt(n.getCreatedAt())
-                        .build())
+                .map(this::mapToResponse)
                 .toList();
 
         return new PageImpl<>(responses, pageable, page.getTotalElements());
@@ -252,6 +232,60 @@ public class AdminNotificationServiceImpl implements AdminNotificationService {
                         admin.getId(), broadcastJobId, status, fullTitle);
             }
         }
+    }
+
+    @Override
+    public void publishSuccessStoryPublishedNotification(Long storyId, String partnerOneName, String partnerTwoName) {
+        List<Admin> activeAdmins = adminRepository.findAllActiveAdmins();
+        String title = "Success Story Published ❤️";
+        String message = partnerOneName + " & " + partnerTwoName + " success story was published successfully.";
+        String eventType = "SUCCESS_STORY_PUBLISHED";
+
+        for (Admin admin : activeAdmins) {
+            if (!adminNotificationRepository.existsByAdminAndReferenceIdAndEventTypeAndDeletedFalse(admin, storyId, eventType) &&
+                !adminNotificationRepository.existsByAdminAndTitleAndMessage(admin, title, message)) {
+                AdminNotification notification = AdminNotification.builder()
+                        .admin(admin)
+                        .title(title)
+                        .message(message)
+                        .type(NotificationType.ANNOUNCEMENT)
+                        .referenceId(storyId)
+                        .eventType(eventType)
+                        .read(false)
+                        .deleted(false)
+                        .build();
+
+                AdminNotification saved = adminNotificationRepository.save(notification);
+
+                AdminNotificationResponse response = mapToResponse(saved);
+
+                messagingTemplate.convertAndSend(
+                        "/topic/admin-notifications/" + admin.getId(),
+                        response
+                );
+
+                log.info("[STORY ADMIN NOTIFICATION PERSISTED] AdminId={} | StoryID={} | Title={}",
+                        admin.getId(), storyId, title);
+            }
+        }
+    }
+
+    private AdminNotificationResponse mapToResponse(AdminNotification notification) {
+        if (notification == null) return null;
+        Long sId = notification.getReferenceId();
+        return AdminNotificationResponse.builder()
+                .id(notification.getId())
+                .adminId(notification.getAdmin() != null ? notification.getAdmin().getId() : null)
+                .title(notification.getTitle())
+                .message(notification.getMessage())
+                .type(notification.getType())
+                .read(notification.getRead())
+                .deleted(notification.getDeleted())
+                .referenceId(sId)
+                .eventType(notification.getEventType())
+                .storyId(sId)
+                .createdAt(notification.getCreatedAt())
+                .build();
     }
 
     @Override

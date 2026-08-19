@@ -813,6 +813,16 @@ export const supportAPI = {
   }
 
 };
+
+export const successStoryAPI = {
+  getPublishedStories: async (page = 0, size = 9) => {
+    return await apiClient(`/success-stories?page=${page}&size=${size}`);
+  },
+
+  getStoryById: async (id) => {
+    return await apiClient(`/success-stories/${id}`);
+  },
+};
 export const adminSupportAPI = {
 
   // All tickets
