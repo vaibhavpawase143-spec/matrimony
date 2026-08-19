@@ -28,4 +28,6 @@ public interface AdminNotificationRepository extends JpaRepository<AdminNotifica
             Admin admin,
             Collection<NotificationType> types
     );
+
+    boolean existsByAdminAndTitleAndMessage(Admin admin, String title, String message);
 }

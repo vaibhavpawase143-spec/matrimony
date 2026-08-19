@@ -15,8 +15,9 @@ import {
   FaUserPlus,
 } from "react-icons/fa";
 import {
-  getUnreadCount,
-  getNotificationHistory,
+  getBroadcastLifecycleUnreadCount,
+  getBroadcastLifecycleNotifications,
+  markAllBroadcastLifecycleAsRead,
   markAsRead,
   markAllAsRead,
   deleteNotification,
@@ -105,7 +106,7 @@ const [notificationLoading, setNotificationLoading] = useState(false);
   // ==========================================
 const handleMarkAllRead = async () => {
   try {
-    await markAllAsRead();
+    await markAllBroadcastLifecycleAsRead();
 
     setNotifications((prev) =>
       prev.map((n) => ({
@@ -116,7 +117,7 @@ const handleMarkAllRead = async () => {
 
     setUnreadCount(0);
   } catch (error) {
-    console.error(error);
+    console.error("Failed to mark broadcast notifications as read", error);
   }
 };
 const handleDelete = async (id) => {
@@ -151,14 +152,31 @@ const handleDelete = async (id) => {
 
    loadProfile();
  }, []);
+
 useEffect(() => {
   if (!profile?.id) return;
 
-connectAdminNotifications(profile.id, (notification) => {
-    setNotifications((prev) => [notification, ...prev]);
+  connectAdminNotifications(profile.id, (notification) => {
+    if (!notification) return;
 
-    setUnreadCount((prev) => prev + 1);
-});
+    if (notification.type === "BROADCAST_PROGRESS") {
+      loadNotifications();
+      loadUnreadCount();
+      return;
+    }
+
+    // Only process Admin Broadcast Lifecycle Notifications (ANNOUNCEMENT)
+    if (notification.type === "ANNOUNCEMENT" || notification.title?.includes("Broadcast")) {
+      setNotifications((prev) => {
+        if (prev.some((item) => item.id === notification.id)) {
+          return prev;
+        }
+        return [notification, ...prev];
+      });
+
+      loadUnreadCount();
+    }
+  });
 
   return () => {
     disconnectAdminNotifications();
@@ -168,11 +186,11 @@ const loadNotifications = async () => {
   try {
     setNotificationLoading(true);
 
-    const response = await getNotificationHistory("", 0, 5);
+    const response = await getBroadcastLifecycleNotifications(0, 10);
 
     setNotifications(response.data.content || []);
   } catch (error) {
-    console.error("Failed to load notifications", error);
+    console.error("Failed to load broadcast notifications", error);
   } finally {
     setNotificationLoading(false);
   }
@@ -269,10 +287,10 @@ const handleLogout = () => {
   const profileImage = getImageUrl(profile?.profilePhoto, profile?.name);
 const loadUnreadCount = async () => {
   try {
-    const response = await getUnreadCount();
+    const response = await getBroadcastLifecycleUnreadCount();
     setUnreadCount(response.data || 0);
   } catch (error) {
-    console.error("Failed to load unread notifications", error);
+    console.error("Failed to load unread broadcast notifications", error);
   }
 };
   // ==========================================
@@ -413,47 +431,56 @@ const loadUnreadCount = async () => {
    </div>
  ) : (
 <div className="max-h-[420px] overflow-y-auto p-3 space-y-3">
-     {notifications.map((notification) => (
-    <div
-        key={notification.id}
-        onClick={() => handleNotificationClick(notification)}
-        className={`
-            flex
-            justify-between
-            items-start
-            rounded-xl
-            border
-            p-4
-            cursor-pointer
-            transition-all
-            duration-200
-            hover:shadow-md
-            ${
-                notification.read
-                    ? "bg-white border-gray-200"
-                    : "bg-violet-50 border-violet-300"
-            }
-        `}
-    >
-<p
-    className={`text-sm ${
-        notification.read
-            ? "font-medium text-gray-800"
-            : "font-semibold text-violet-800"
-    }`}
->
-           {notification.title || notification.type}
-         </p>
+     {notifications.map((notification) => {
+       const msg = notification.message || "";
+       let statusBadge = { bg: "bg-amber-100 text-amber-800 border-amber-300", label: "IN PROGRESS", icon: "🟡" };
+       if (msg.includes("completed successfully")) {
+         statusBadge = { bg: "bg-emerald-100 text-emerald-800 border-emerald-300", label: "COMPLETED", icon: "🟢" };
+       } else if (msg.includes("completed with failures")) {
+         statusBadge = { bg: "bg-orange-100 text-orange-800 border-orange-300", label: "COMPLETED WITH FAILURES", icon: "🟠" };
+       } else if (msg.includes("failed")) {
+         statusBadge = { bg: "bg-rose-100 text-rose-800 border-rose-300", label: "FAILED", icon: "🔴" };
+       }
 
-<p className="mt-2 text-sm text-gray-600 leading-6">
-           {notification.message}
-         </p>
+       return (
+         <div
+           key={notification.id}
+           onClick={() => handleNotificationClick(notification)}
+           className={`
+             rounded-xl
+             border
+             p-4
+             cursor-pointer
+             transition-all
+             duration-200
+             hover:shadow-md
+             ${
+               notification.read
+                 ? "bg-white border-gray-200"
+                 : "bg-violet-50 border-violet-300"
+             }
+           `}
+         >
+           <div className="flex items-center justify-between gap-2">
+             <span className="font-semibold text-gray-900 text-sm">
+               {notification.title}
+             </span>
+             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border flex items-center gap-1 ${statusBadge.bg}`}>
+               <span>{statusBadge.icon}</span>
+               <span>{statusBadge.label}</span>
+             </span>
+           </div>
 
-         <p className="mt-3 text-xs text-gray-400">
-           {new Date(notification.createdAt).toLocaleString()}
-         </p>
-       </div>
-     ))}
+           <p className="mt-2 text-sm text-gray-600 leading-relaxed">
+             {notification.message}
+           </p>
+
+           <p className="mt-3 text-xs text-gray-400">
+             {new Date(notification.createdAt).toLocaleString()}
+           </p>
+         </div>
+       );
+     })}
    </div>
  )}
     </div>

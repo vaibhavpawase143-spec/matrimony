@@ -1,8 +1,8 @@
 package com.example.serviceimpl;
 
+import com.example.dto.response.BroadcastJobResponseDTO;
 import com.example.dto.request.AdminNotificationRequestDTO;
 import com.example.dto.response.AdminNotificationResponse;
-import com.example.dto.response.NotificationResponse;
 import com.example.exception.ResourceNotFoundException;
 import com.example.model.*;
 import com.example.repository.AdminNotificationRepository;
@@ -15,6 +15,8 @@ import com.example.service.CurrentAdminService;
 import com.example.queue.NotificationProducer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.*;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
@@ -35,18 +37,9 @@ public class AdminNotificationServiceImpl implements AdminNotificationService {
     private final AdminRepository adminRepository;
     private final AdminNotificationRepository adminNotificationRepository;
     private final NotificationProducer notificationProducer;
-
-    private static final List<NotificationType> ADMIN_NOTIFICATION_TYPES = List.of(
-            NotificationType.ANNOUNCEMENT,
-            NotificationType.SYSTEM,
-            NotificationType.MAINTENANCE,
-            NotificationType.SUBSCRIPTION,
-            NotificationType.WARNING,
-            NotificationType.REPORT,
-            NotificationType.SUPPORT,
-            NotificationType.NEW_USER,
-            NotificationType.ADMIN
-    );
+    @Autowired
+    @Lazy
+    private com.example.service.AdminBroadcastService adminBroadcastService;
 
     @Override
     public void sendNotification(AdminNotificationRequestDTO request) {
@@ -83,52 +76,17 @@ public class AdminNotificationServiceImpl implements AdminNotificationService {
     }
 
     @Override
-    public void broadcastNotification(AdminNotificationRequestDTO request) {
+    public BroadcastJobResponseDTO broadcastNotification(AdminNotificationRequestDTO request) {
 
         Admin currentAdmin = currentAdminService.getCurrentAdmin();
 
-        // 1. Enqueue user broadcast notification jobs asynchronously into Message Queue
-        notificationProducer.enqueueBulkNotifications(
-                null, // null indicates all active users
+        // 1. Initiate scalable chunked broadcast
+        Long jobId = adminBroadcastService.initiateBroadcast(
                 request.getTitle(),
                 request.getMessage(),
-                request.getType()
+                request.getType(),
+                currentAdmin != null ? currentAdmin.getId() : null
         );
-
-        // 2. Broadcast to Admins
-        List<Admin> admins = adminRepository.findAllActiveAdmins();
-
-        for (Admin admin : admins) {
-
-            AdminNotification notification = AdminNotification.builder()
-                    .admin(admin)
-                    .title(request.getTitle())
-                    .message(request.getMessage())
-                    .type(request.getType())
-                    .read(false)
-                    .deleted(false)
-                    .build();
-
-            AdminNotification saved =
-                    adminNotificationRepository.save(notification);
-
-            AdminNotificationResponse response =
-                    AdminNotificationResponse.builder()
-                            .id(saved.getId())
-                            .adminId(admin.getId())
-                            .title(saved.getTitle())
-                            .message(saved.getMessage())
-                            .type(saved.getType())
-                            .read(saved.getRead())
-                            .deleted(saved.getDeleted())
-                            .createdAt(saved.getCreatedAt())
-                            .build();
-
-            messagingTemplate.convertAndSend(
-                    "/topic/admin-notifications/" + admin.getId(),
-                    response
-            );
-        }
 
         adminAuditLogService.log(
                 currentAdmin.getId(),
@@ -136,14 +94,17 @@ public class AdminNotificationServiceImpl implements AdminNotificationService {
                 "NOTIFICATION_BROADCAST",
                 "NOTIFICATION",
                 null,
-                "Admin broadcast notification job queued for all active users",
+                "Admin broadcast notification job queued for all active users. JobID=" + jobId,
                 null,
                 "Title=" + request.getTitle()
                         + ", Type=" + request.getType(),
                 "SYSTEM",
                 "SYSTEM"
         );
+
+        return adminBroadcastService.getActiveBroadcastJob();
     }
+
     @Override
     public Page<AdminNotificationResponse> getNotificationHistory(
             Pageable pageable,
@@ -190,22 +151,113 @@ public class AdminNotificationServiceImpl implements AdminNotificationService {
 
     @Override
     public long getUnreadCount() {
-
         Admin admin = currentAdminService.getCurrentAdmin();
+        return adminNotificationRepository.countByAdminAndReadFalseAndDeletedFalse(admin);
+    }
 
-        return adminNotificationRepository
-                .countByAdminAndReadFalseAndDeletedFalse(admin);
+    @Override
+    public Page<AdminNotificationResponse> getBroadcastLifecycleNotifications(Pageable pageable) {
+        Admin currentAdmin = currentAdminService.getCurrentAdmin();
+        Pageable sortedPageable = PageRequest.of(
+                pageable.getPageNumber(),
+                pageable.getPageSize(),
+                Sort.by(Sort.Direction.DESC, "createdAt")
+        );
+
+        Page<AdminNotification> page = adminNotificationRepository.findByAdminAndTypeInAndDeletedFalse(
+                currentAdmin,
+                List.of(NotificationType.ANNOUNCEMENT),
+                sortedPageable
+        );
+
+        List<AdminNotificationResponse> responses = page.getContent().stream()
+                .map(n -> AdminNotificationResponse.builder()
+                        .id(n.getId())
+                        .adminId(n.getAdmin().getId())
+                        .title(n.getTitle())
+                        .message(n.getMessage())
+                        .type(n.getType())
+                        .read(n.getRead())
+                        .deleted(n.getDeleted())
+                        .createdAt(n.getCreatedAt())
+                        .build())
+                .toList();
+
+        return new PageImpl<>(responses, pageable, page.getTotalElements());
+    }
+
+    @Override
+    public long getBroadcastLifecycleUnreadCount() {
+        Admin admin = currentAdminService.getCurrentAdmin();
+        return adminNotificationRepository.countByAdminAndTypeInAndReadFalseAndDeletedFalse(
+                admin,
+                List.of(NotificationType.ANNOUNCEMENT)
+        );
+    }
+
+    @Override
+    public void publishBroadcastLifecycleNotification(Long broadcastJobId, BroadcastJobStatus status, String title, String summaryMessage) {
+        List<Admin> activeAdmins = adminRepository.findAllActiveAdmins();
+        for (Admin admin : activeAdmins) {
+            String fullTitle = title != null ? title : "Admin Broadcast Notification";
+            String fullMessage = summaryMessage;
+
+            // If reaching a terminal state (COMPLETED, COMPLETED_WITH_FAILURES, FAILED),
+            // mark previous IN_PROGRESS lifecycle notifications for this admin as read to prevent duplicate unread counts.
+            if (status == BroadcastJobStatus.COMPLETED ||
+                status == BroadcastJobStatus.COMPLETED_WITH_FAILURES ||
+                status == BroadcastJobStatus.FAILED) {
+                
+                List<AdminNotification> existingInApp = adminNotificationRepository.findByAdminAndDeletedFalse(admin, Pageable.unpaged())
+                        .getContent().stream()
+                        .filter(n -> n.getType() == NotificationType.ANNOUNCEMENT && !n.getRead())
+                        .filter(n -> "Broadcast In Progress".equalsIgnoreCase(n.getTitle()) || (n.getMessage() != null && n.getMessage().contains("Job #" + broadcastJobId)))
+                        .toList();
+
+                if (!existingInApp.isEmpty()) {
+                    existingInApp.forEach(n -> n.setRead(true));
+                    adminNotificationRepository.saveAll(existingInApp);
+                }
+            }
+
+            if (!adminNotificationRepository.existsByAdminAndTitleAndMessage(admin, fullTitle, fullMessage)) {
+                AdminNotification notification = AdminNotification.builder()
+                        .admin(admin)
+                        .title(fullTitle)
+                        .message(fullMessage)
+                        .type(NotificationType.ANNOUNCEMENT)
+                        .read(false)
+                        .deleted(false)
+                        .build();
+
+                AdminNotification saved = adminNotificationRepository.save(notification);
+
+                AdminNotificationResponse response = AdminNotificationResponse.builder()
+                        .id(saved.getId())
+                        .adminId(admin.getId())
+                        .title(saved.getTitle())
+                        .message(saved.getMessage())
+                        .type(saved.getType())
+                        .read(saved.getRead())
+                        .deleted(saved.getDeleted())
+                        .createdAt(saved.getCreatedAt())
+                        .build();
+
+                messagingTemplate.convertAndSend(
+                        "/topic/admin-notifications/" + admin.getId(),
+                        response
+                );
+
+                log.info("[BROADCAST LIFECYCLE NOTIFICATION] Created for AdminId={} | JobID={} | Status={} | Title={}",
+                        admin.getId(), broadcastJobId, status, fullTitle);
+            }
+        }
     }
 
     @Override
     public void markAsRead(Long notificationId) {
-
-        AdminNotification notification =
-                adminNotificationRepository.findById(notificationId)
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Notification not found with id: " + notificationId
-                                ));
+        AdminNotification notification = adminNotificationRepository.findById(notificationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Notification not found with id: " + notificationId));
 
         if (!notification.getDeleted() && !notification.getRead()) {
             notification.setRead(true);
@@ -215,34 +267,30 @@ public class AdminNotificationServiceImpl implements AdminNotificationService {
 
     @Override
     public void markAllAsRead() {
-
         Admin admin = currentAdminService.getCurrentAdmin();
-
-        List<AdminNotification> notifications =
-                adminNotificationRepository
-                        .findByAdminAndDeletedFalse(
-                                admin,
-                                Pageable.unpaged()
-                        )
-                        .getContent();
-
+        List<AdminNotification> notifications = adminNotificationRepository.findByAdminAndDeletedFalse(admin, Pageable.unpaged()).getContent();
         notifications.forEach(notification -> notification.setRead(true));
+        adminNotificationRepository.saveAll(notifications);
+    }
 
+    @Override
+    public void markAllBroadcastLifecycleAsRead() {
+        Admin admin = currentAdminService.getCurrentAdmin();
+        Page<AdminNotification> page = adminNotificationRepository.findByAdminAndTypeInAndDeletedFalse(
+                admin,
+                List.of(NotificationType.ANNOUNCEMENT),
+                Pageable.unpaged()
+        );
+        List<AdminNotification> notifications = page.getContent();
+        notifications.forEach(notification -> notification.setRead(true));
         adminNotificationRepository.saveAll(notifications);
     }
 
     @Override
     public void deleteNotification(Long notificationId) {
-
-        AdminNotification notification =
-                adminNotificationRepository.findById(notificationId)
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Notification not found with id: " + notificationId
-                                ));
-
+        AdminNotification notification = adminNotificationRepository.findById(notificationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Notification not found with id: " + notificationId));
         notification.setDeleted(true);
-
         adminNotificationRepository.save(notification);
     }
 }

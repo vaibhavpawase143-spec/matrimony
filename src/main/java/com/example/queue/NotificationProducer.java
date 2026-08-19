@@ -1,8 +1,8 @@
 package com.example.queue;
 
 import com.example.config.RabbitMQConfig;
+import com.example.model.NotificationPriority;
 import com.example.model.NotificationType;
-import com.example.model.User;
 import com.example.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,62 +22,109 @@ public class NotificationProducer {
     private final UserRepository userRepository;
 
     /**
-     * Publish a single notification job to RabbitMQ queue.
+     * Publish a bulk email batch payload to RabbitMQ.
+     */
+    public void enqueueEmailBatch(BulkEmailBatchPayload batchPayload) {
+        if (batchPayload.getBatchId() == null) {
+            batchPayload.setBatchId(UUID.randomUUID().toString());
+        }
+        int recipientCount = batchPayload.getRecipients() != null ? batchPayload.getRecipients().size() : 0;
+
+        try {
+            rabbitTemplate.convertAndSend(
+                    RabbitMQConfig.NOTIFICATION_EXCHANGE,
+                    RabbitMQConfig.ROUTING_BULK_EMAIL,
+                    batchPayload
+            );
+        } catch (Exception e) {
+            log.error("[BULK EMAIL BATCH ENQUEUE FAILED] BatchID={} | JobID={} | Error={}",
+                    batchPayload.getBatchId(), batchPayload.getBroadcastJobId(), e.getMessage(), e);
+            throw new RuntimeException("Failed to enqueue bulk email batch: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Publish a notification job payload to the appropriate priority-tiered RabbitMQ queue.
      */
     public void enqueueJob(NotificationJobPayload payload) {
         if (payload.getJobId() == null) {
             payload.setJobId(UUID.randomUUID().toString());
         }
-        log.info("[JOB ENQUEUED] JobID={} | ReceiverID={} | Channel={} | Title={}",
-                payload.getJobId(), payload.getUserId(), payload.getChannelType(), payload.getTitle());
+        if (payload.getIdempotencyKey() == null) {
+            payload.setIdempotencyKey("JOB_" + payload.getJobId());
+        }
+        if (payload.getPriority() == null) {
+            payload.setPriority(NotificationPriority.MEDIUM);
+        }
+
+        String routingKey = getRoutingKeyForPayload(payload);
 
         try {
             rabbitTemplate.convertAndSend(
                     RabbitMQConfig.NOTIFICATION_EXCHANGE,
-                    RabbitMQConfig.NOTIFICATION_ROUTING_KEY,
+                    routingKey,
                     payload
             );
         } catch (Exception e) {
-            log.error("[JOB ENQUEUE FAILED] JobID={} | ReceiverID={} | Error={}",
+            log.error("[JOB ENQUEUE FAILED] JobID={} | UserID={} | Error={}",
                     payload.getJobId(), payload.getUserId(), e.getMessage(), e);
             throw new RuntimeException("Failed to enqueue notification job: " + e.getMessage(), e);
         }
     }
 
     /**
-     * Asynchronously enqueue bulk notifications for selected or all users.
+     * Enqueue targeted notifications for explicit receiver IDs asynchronously.
      */
     @Async
     public void enqueueBulkNotifications(List<Long> receiverIds, String title, String message, NotificationType type) {
-        log.info("[BULK ENQUEUE START] Preparing notification jobs...");
-        
-        List<User> targetUsers;
-        if (receiverIds != null && !receiverIds.isEmpty()) {
-            targetUsers = userRepository.findAllById(receiverIds);
-        } else {
-            targetUsers = userRepository.findByIsActiveTrue();
+        if (receiverIds == null || receiverIds.isEmpty()) {
+            log.warn("[BULK ENQUEUE] No receiver IDs provided.");
+            return;
         }
 
-        log.info("[BULK ENQUEUE] Total recipients to enqueue: {}", targetUsers.size());
-        
-        int enqueuedCount = 0;
-        for (User user : targetUsers) {
-            NotificationJobPayload payload = NotificationJobPayload.builder()
-                    .jobId(UUID.randomUUID().toString())
-                    .userId(user.getId())
-                    .userEmail(user.getEmail())
-                    .userFirstName(user.getFirstName())
-                    .title(title)
-                    .message(message)
-                    .type(type)
-                    .channelType(NotificationJobPayload.ChannelType.BOTH)
-                    .retryCount(0)
-                    .build();
+        log.info("[BULK ENQUEUE START] Enqueueing notification for {} recipients...", receiverIds.size());
 
-            enqueueJob(payload);
-            enqueuedCount++;
+        for (Long userId : receiverIds) {
+            userRepository.findById(userId).ifPresent(user -> {
+                NotificationJobPayload payload = NotificationJobPayload.builder()
+                        .jobId(UUID.randomUUID().toString())
+                        .idempotencyKey("TARGETED_" + System.currentTimeMillis() + "_" + user.getId())
+                        .userId(user.getId())
+                        .userEmail(user.getEmail())
+                        .userFirstName(user.getFirstName())
+                        .title(title)
+                        .message(message)
+                        .type(type)
+                        .channelType(NotificationJobPayload.ChannelType.BOTH)
+                        .priority(NotificationPriority.MEDIUM)
+                        .retryCount(0)
+                        .build();
+
+                enqueueJob(payload);
+            });
         }
 
-        log.info("[BULK ENQUEUE COMPLETE] Successfully enqueued {} notification jobs.", enqueuedCount);
+        log.info("[BULK ENQUEUE COMPLETE] Successfully enqueued notification jobs.");
+    }
+
+    private String getRoutingKeyForPayload(NotificationJobPayload payload) {
+        if (payload.getChannelType() == NotificationJobPayload.ChannelType.EMAIL && payload.getPriority() == NotificationPriority.LOW) {
+            return RabbitMQConfig.ROUTING_BULK_EMAIL;
+        }
+        return getRoutingKeyForPriority(payload.getPriority());
+    }
+
+    private String getRoutingKeyForPriority(NotificationPriority priority) {
+        switch (priority) {
+            case CRITICAL:
+                return RabbitMQConfig.ROUTING_CRITICAL;
+            case HIGH:
+                return RabbitMQConfig.ROUTING_HIGH;
+            case LOW:
+                return RabbitMQConfig.ROUTING_LOW;
+            case MEDIUM:
+            default:
+                return RabbitMQConfig.ROUTING_MEDIUM;
+        }
     }
 }

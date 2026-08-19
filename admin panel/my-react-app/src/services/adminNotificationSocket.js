@@ -97,7 +97,19 @@ export const connectAdminNotifications = (adminId, onMessage) => {
         }
       });
 
-      console.log("ADMIN SUBSCRIBED");
+      newClient.subscribe("/topic/admin/broadcast-progress", (message) => {
+        try {
+          const progressData = JSON.parse(message.body);
+          console.log("📡 BROADCAST PROGRESS EVENT:", progressData);
+          if (typeof onMessage === "function") {
+            onMessage({ type: "BROADCAST_PROGRESS", data: progressData, ...progressData });
+          }
+        } catch (error) {
+          console.error("Broadcast progress parse failed", error, message.body);
+        }
+      });
+
+      console.log("ADMIN SUBSCRIBED TO NOTIFICATIONS & BROADCAST PROGRESS");
     },
 
     onWebSocketClose: (event) => {
