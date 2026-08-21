@@ -41,5 +41,12 @@ public class Notification {
     private boolean deleted = false;
     @Column(name = "subscription_id")
     private Long subscriptionId;
+
+    @Column(name = "reference_id")
+    private Long referenceId;
+
+    @Column(name = "event_type", length = 50)
+    private String eventType;
+
     private LocalDateTime createdAt = LocalDateTime.now();
 }

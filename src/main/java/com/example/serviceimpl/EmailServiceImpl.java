@@ -1,403 +1,186 @@
 package com.example.serviceimpl;
 
+import com.example.provider.EmailProvider;
 import com.example.service.EmailService;
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class EmailServiceImpl implements EmailService {
 
-    private final JavaMailSender mailSender;
+    private final EmailProvider emailProvider;
     private final TemplateEngine templateEngine;
-    // 🔥 ngrok URL from application.properties
 
-    @Value("${spring.mail.from}")
-    private String fromEmail;
     @Value("${app.backend-url}")
     private String backendUrl;
 
     @Value("${app.frontend-url}")
     private String frontendUrl;
+
     /**
-     * 🔹 Send Verification Email
+     * 🔹 Send Verification Email (CRITICAL TRANSACTIONAL)
      */
     @Override
-    @Async("emailTaskExecutor")
+    @Async("criticalEmailExecutor")
     public void sendVerificationEmail(String to, String token) {
-
-        // 🔥 DEBUG START
-        System.out.println("🔥 EMAIL METHOD CALLED");
-        System.out.println("TO: " + to);
-        System.out.println("TOKEN: " + token);
-        // 🔥 DEBUG END
-
         String verificationUrl = backendUrl + "/api/auth/verify?token=" + token;
-
         String subject = "Verify your account";
 
         Context context = new Context();
+        context.setVariable("verificationUrl", verificationUrl);
 
-        context.setVariable(
-                "verificationUrl",
-                verificationUrl
-        );
-
-        String body =
-                templateEngine.process(
-                        "email/verification",
-                        context
-                );
+        String body = templateEngine.process("email/verification", context);
 
         try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true);
-
-            helper.setFrom(fromEmail);
-            helper.setTo(to);
-            helper.setSubject(subject);
-            helper.setText(body, true); // ✅ HTML enabled
-
-            mailSender.send(message);
-
+            emailProvider.sendCriticalEmail(to, subject, body);
             log.info("Verification email sent to {}", to);
-        } catch (MessagingException e) {
-            log.error("❌ EMAIL FAILED");
-            e.printStackTrace();
+        } catch (Exception e) {
+            log.error("❌ Verification email failed to {}", to, e);
         }
     }
 
+    /**
+     * 🔹 Send Welcome Email (CRITICAL TRANSACTIONAL)
+     */
     @Override
-    @Async("emailTaskExecutor")
+    @Async("criticalEmailExecutor")
     public void sendWelcomeEmail(String to, String firstName) {
-
         String subject = "Welcome to Gathbandhan Matrimony!";
 
         Context context = new Context();
-
         context.setVariable("firstName", firstName);
 
-
-        String body = templateEngine.process(
-                "email/welcome",
-                context
-        );
+        String body = templateEngine.process("email/welcome", context);
 
         try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper =
-                    new MimeMessageHelper(message, true, "UTF-8");
-
-            helper.setFrom(fromEmail);
-            helper.setTo(to);
-            helper.setSubject(subject);
-            helper.setText(body, true);
-
-            mailSender.send(message);
+            emailProvider.sendCriticalEmail(to, subject, body);
             log.info("Welcome email sent to {}", to);
-
-        }catch (MessagingException e) {
-
-            log.error(
-                    "Failed to send forgot password email to {}",
-                    to,
-                    e
-            );
-
+        } catch (Exception e) {
+            log.error("Failed to send welcome email to {}", to, e);
         }
-
     }
-    @Override
-    @Async("emailTaskExecutor")
-    public void sendPremiumReminderEmail(
-            String to,
-            String firstName,
-            int daysRemaining
-    ) {
 
+    /**
+     * 🔹 Send Premium Reminder Email (BULK EMAIL EXECUTOR)
+     */
+    @Override
+    @Async("bulkEmailExecutor")
+    public void sendPremiumReminderEmail(String to, String firstName, int daysRemaining) {
         String subject = "Your Premium Membership Expires in " + daysRemaining + " Day(s)";
 
         Context context = new Context();
-
         context.setVariable("firstName", firstName);
         context.setVariable("daysRemaining", daysRemaining);
+        context.setVariable("renewUrl", frontendUrl + "/subscription");
 
-        // Change this to your renewal page if different
-        context.setVariable(
-                "renewUrl",
-                frontendUrl + "/subscription"
-        );
-
-        String body = templateEngine.process(
-                "email/premium-reminder",
-                context
-        );
+        String body = templateEngine.process("email/premium-reminder", context);
 
         try {
-
-            MimeMessage message = mailSender.createMimeMessage();
-
-            MimeMessageHelper helper =
-                    new MimeMessageHelper(
-                            message,
-                            true,
-                            "UTF-8"
-                    );
-
-            helper.setFrom(fromEmail);
-            helper.setTo(to);
-            helper.setSubject(subject);
-            helper.setText(body, true);
-
-            mailSender.send(message);
-
-            log.info(
-                    "Premium reminder email sent to {} ({} day(s) remaining)",
-                    to,
-                    daysRemaining
-            );
-
-        } catch (MessagingException e) {
-
-            log.error(
-                    "Failed to send premium reminder email to {}",
-                    to,
-                    e
-            );
-
+            emailProvider.sendBulkEmail(to, firstName, subject, body);
+            log.info("Premium reminder email sent to {} ({} day(s) remaining)", to, daysRemaining);
+        } catch (Exception e) {
+            log.error("Failed to send premium reminder email to {}", to, e);
         }
     }
-    @Override
-    @Async("emailTaskExecutor")
-    public void sendPremiumExpiredEmail(
-            String to,
-            String firstName
-    ) {
 
+    /**
+     * 🔹 Send Premium Expired Email (BULK EMAIL EXECUTOR)
+     */
+    @Override
+    @Async("bulkEmailExecutor")
+    public void sendPremiumExpiredEmail(String to, String firstName) {
         String subject = "Your Premium Membership Has Expired";
 
         Context context = new Context();
-
         context.setVariable("firstName", firstName);
 
-        String body = templateEngine.process(
-                "email/premium-expired",
-                context
-        );
+        String body = templateEngine.process("email/premium-expired", context);
 
         try {
-
-            MimeMessage message = mailSender.createMimeMessage();
-
-            MimeMessageHelper helper =
-                    new MimeMessageHelper(
-                            message,
-                            true,
-                            "UTF-8"
-                    );
-
-            helper.setFrom(fromEmail);
-            helper.setTo(to);
-            helper.setSubject(subject);
-            helper.setText(body, true);
-
-            mailSender.send(message);
-
+            emailProvider.sendBulkEmail(to, firstName, subject, body);
             log.info("Premium expired email sent to {}", to);
-
-        } catch (MessagingException e) {
-
-            log.error(
-                    "Failed to send premium expired email to {}",
-                    to,
-                    e
-            );
-
+        } catch (Exception e) {
+            log.error("Failed to send premium expired email to {}", to, e);
         }
     }
+
+    /**
+     * 🔹 Send Forgot Password Email (CRITICAL TRANSACTIONAL)
+     */
     @Override
-    @Async("emailTaskExecutor")
-    public void sendForgotPasswordEmail(
-            String to,
-            String token
-    ) {
-
+    @Async("criticalEmailExecutor")
+    public void sendForgotPasswordEmail(String to, String token) {
         String subject = "Reset Your Password";
-
-        String resetUrl =
-                frontendUrl +
-                        "/reset-password?token=" +
-                        token;
+        String resetUrl = frontendUrl + "/reset-password?token=" + token;
 
         Context context = new Context();
+        context.setVariable("resetUrl", resetUrl);
 
-        context.setVariable(
-                "resetUrl",
-                resetUrl
-        );
-
-        String body =
-                templateEngine.process(
-                        "email/forgot-password",
-                        context
-                );
+        String body = templateEngine.process("email/forgot-password", context);
 
         try {
-
-            MimeMessage message =
-                    mailSender.createMimeMessage();
-
-            MimeMessageHelper helper =
-                    new MimeMessageHelper(
-                            message,
-                            true,
-                            "UTF-8"
-                    );
-
-            helper.setFrom(fromEmail);
-            helper.setTo(to);
-            helper.setSubject(subject);
-            helper.setText(body, true);
-
-            mailSender.send(message);
-
-            System.out.println(
-                    "✅ PASSWORD RESET EMAIL SENT TO: "
-                            + to
-            );
-
-        } catch (MessagingException e) {
-
-            e.printStackTrace();
-
+            emailProvider.sendCriticalEmail(to, subject, body);
+            log.info("✅ PASSWORD RESET EMAIL SENT TO: {}", to);
+        } catch (Exception e) {
+            log.error("❌ PASSWORD RESET EMAIL FAILED to {}", to, e);
         }
-
     }
-    @Override
-    @Async("emailTaskExecutor")
-    public void sendPasswordChangedEmail(
-            String to,
-            String firstName
-    ) {
 
+    /**
+     * 🔹 Send Password Changed Email (CRITICAL TRANSACTIONAL)
+     */
+    @Override
+    @Async("criticalEmailExecutor")
+    public void sendPasswordChangedEmail(String to, String firstName) {
         String subject = "Password Changed Successfully";
 
         Context context = new Context();
+        context.setVariable("firstName", firstName);
 
-        context.setVariable(
-                "firstName",
-                firstName
-        );
-
-        String body =
-                templateEngine.process(
-                        "email/password-changed",
-                        context
-                );
+        String body = templateEngine.process("email/password-changed", context);
 
         try {
-
-            MimeMessage message =
-                    mailSender.createMimeMessage();
-
-            MimeMessageHelper helper =
-                    new MimeMessageHelper(
-                            message,
-                            true,
-                            "UTF-8"
-                    );
-
-            helper.setFrom(fromEmail);
-            helper.setTo(to);
-            helper.setSubject(subject);
-            helper.setText(body, true);
-
-            mailSender.send(message);
-
-            System.out.println(
-                    "✅ PASSWORD CHANGED EMAIL SENT TO: "
-                            + to
-            );
-
-        } catch (MessagingException e) {
-
-            System.out.println(
-                    "❌ PASSWORD CHANGED EMAIL FAILED"
-            );
-
-            e.printStackTrace();
-
+            emailProvider.sendCriticalEmail(to, subject, body);
+            log.info("✅ PASSWORD CHANGED EMAIL SENT TO: {}", to);
+        } catch (Exception e) {
+            log.error("❌ PASSWORD CHANGED EMAIL FAILED to {}", to, e);
         }
-
     }
+
+    /**
+     * 🔹 Send Announcement Email (BULK EMAIL EXECUTOR)
+     */
     @Override
-    @Async("emailTaskExecutor")
-    public void sendAnnouncementEmail(
-            String to,
-            String firstName,
-            String title,
-            String message
-    ) {
-
+    @Async("bulkEmailExecutor")
+    public void sendAnnouncementEmail(String to, String firstName, String title, String message) {
         Context context = new Context();
-
         context.setVariable("firstName", firstName);
         context.setVariable("title", title);
         context.setVariable("message", message);
 
-        String body = templateEngine.process(
-                "email/announcement",
-                context
-        );
+        String body = templateEngine.process("email/announcement", context);
 
         try {
-
-            MimeMessage mimeMessage =
-                    mailSender.createMimeMessage();
-
-            MimeMessageHelper helper =
-                    new MimeMessageHelper(
-                            mimeMessage,
-                            true,
-                            "UTF-8"
-                    );
-
-            helper.setFrom(fromEmail);
-            helper.setTo(to);
-            helper.setSubject(title);
-            helper.setText(body, true);
-
-            mailSender.send(mimeMessage);
-
-            System.out.println(
-                    "✅ ANNOUNCEMENT EMAIL SENT TO: " + to
-            );
-
-        } catch (MessagingException e) {
-
-            System.out.println(
-                    "❌ ANNOUNCEMENT EMAIL FAILED"
-            );
-
-            e.printStackTrace();
-
+            emailProvider.sendBulkEmail(to, firstName != null ? firstName : "User", title, body);
+            log.info("✅ ANNOUNCEMENT EMAIL SENT TO: {}", to);
+        } catch (Exception e) {
+            log.error("❌ ANNOUNCEMENT EMAIL FAILED to {}", to, e);
+            throw new RuntimeException("Announcement email dispatch failed: " + e.getMessage(), e);
         }
-
     }
+
     /**
-     * 🔹 Send Real-time OTP Email
+     * 🔹 Send Real-time OTP Email (CRITICAL TRANSACTIONAL)
      */
     @Override
-    @Async("emailTaskExecutor")
+    @Async("criticalEmailExecutor")
     public void sendOTPEmail(String to, String otp, String purpose) {
         String purposeTitle = "Verification Code";
         if ("LOGIN".equalsIgnoreCase(purpose)) {
@@ -414,16 +197,7 @@ public class EmailServiceImpl implements EmailService {
 
         try {
             String body = templateEngine.process("email/otp", context);
-
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-
-            helper.setFrom(fromEmail);
-            helper.setTo(to);
-            helper.setSubject(subject);
-            helper.setText(body, true);
-
-            mailSender.send(message);
+            emailProvider.sendCriticalEmail(to, subject, body);
             log.info("✅ OTP email ({}) sent to {}", purposeTitle, to);
         } catch (Exception e) {
             log.error("❌ Failed to send OTP email to {}", to, e);
@@ -431,28 +205,16 @@ public class EmailServiceImpl implements EmailService {
     }
 
     /**
-     * 🔹 Generic Email (optional)
+     * 🔹 Generic Email (CRITICAL TRANSACTIONAL BY DEFAULT)
      */
     @Override
-    @Async("emailTaskExecutor")
+    @Async("criticalEmailExecutor")
     public void sendEmail(String to, String subject, String body) {
         try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true);
-
-            helper.setFrom(fromEmail);
-            helper.setTo(to);
-            helper.setSubject(subject);
-            helper.setText(body, true);
-
-            mailSender.send(message);
-
-            System.out.println("✅ EMAIL SENT SUCCESSFULLY TO: " + to);
-
+            emailProvider.sendCriticalEmail(to, subject, body);
+            log.info("✅ EMAIL SENT SUCCESSFULLY TO: {}", to);
         } catch (Exception e) {
-            System.out.println("❌ EMAIL FAILED");
-            e.printStackTrace();
+            log.error("❌ EMAIL FAILED to {}", to, e);
         }
     }
 }
-

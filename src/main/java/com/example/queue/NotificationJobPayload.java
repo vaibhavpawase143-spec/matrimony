@@ -1,5 +1,6 @@
 package com.example.queue;
 
+import com.example.model.NotificationPriority;
 import com.example.model.NotificationType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -24,6 +25,8 @@ public class NotificationJobPayload implements Serializable {
     }
 
     private String jobId;
+    private Long broadcastJobId;
+    private String idempotencyKey;
     private Long userId;
     private String userEmail;
     private String userFirstName;
@@ -31,6 +34,11 @@ public class NotificationJobPayload implements Serializable {
     private String message;
     private NotificationType type;
     private ChannelType channelType;
+    
+    @Builder.Default
+    private NotificationPriority priority = NotificationPriority.MEDIUM;
+    
+    private String eventType;
     
     @Builder.Default
     private int retryCount = 0;

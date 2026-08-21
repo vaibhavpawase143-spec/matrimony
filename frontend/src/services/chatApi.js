@@ -178,8 +178,9 @@ export const uploadVideo = async (file) => {
         file
     );
 
-    const response =await fetch(
-                        "https://localhost:9090/api/chat/upload-video",
+    const apiBase = import.meta.env.VITE_API_BASE_URL || "/api";
+    const response = await fetch(
+        `${apiBase}/chat/upload-video`,
         {
 
             method: "POST",

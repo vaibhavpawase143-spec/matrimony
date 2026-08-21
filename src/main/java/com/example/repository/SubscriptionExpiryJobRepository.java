@@ -35,4 +35,10 @@ public interface SubscriptionExpiryJobRepository extends JpaRepository<Subscript
     @EntityGraph(attributePaths = {"subscription", "user"})
     @Query("SELECT j FROM SubscriptionExpiryJob j ORDER BY j.createdAt DESC")
     Page<SubscriptionExpiryJob> findAllWithDetails(Pageable pageable);
+
+    @org.springframework.data.jpa.repository.Modifying
+    @Query("UPDATE SubscriptionExpiryJob j SET j.status = 'PROCESSING', j.startedAt = :now, j.updatedAt = :now " +
+           "WHERE j.id = :id AND (j.status = 'PENDING' OR j.status = 'FAILED')")
+    int claimJobAtomically(@Param("id") Long id, @Param("now") java.time.LocalDateTime now);
 }
+

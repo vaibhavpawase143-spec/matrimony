@@ -158,7 +158,8 @@ client.subscribe(
 
        if (client && client.connected) {
 
-           fetch("https://localhost:9090/api/heartbeat", {
+           const apiBase = import.meta.env.VITE_API_BASE_URL || "/api";
+           fetch(`${apiBase}/heartbeat`, {
                method: "POST",
                headers: {
                    "Authorization": `Bearer ${token}`

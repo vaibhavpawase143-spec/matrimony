@@ -33,8 +33,15 @@ public class SubscriptionExpiryConsumer {
     @RabbitListener(queues = RabbitMQConfig.SUBSCRIPTION_EXPIRY_EMAIL_QUEUE)
     @Transactional
     public void processSubscriptionExpiryJob(SubscriptionExpiryJobPayload payload) {
-        log.info("[SUB EXPIRY CONSUMER] Processing message. JobID={} | SubID={} | Attempt={}",
+        log.info("[SUB EXPIRY CONSUMER] Received message. JobID={} | SubID={} | Attempt={}",
                 payload.getJobId(), payload.getSubscriptionId(), payload.getAttemptCount() + 1);
+
+        // 1. Atomic DB Idempotency Claiming
+        int claimed = jobRepository.claimJobAtomically(payload.getJobId(), LocalDateTime.now());
+        if (claimed == 0) {
+            log.info("[SUB EXPIRY CONSUMER] JobID={} already claimed, completed or processing by another worker. Skipping duplicate execution.", payload.getJobId());
+            return;
+        }
 
         Optional<SubscriptionExpiryJob> jobOptional = jobRepository.findById(payload.getJobId());
         if (jobOptional.isEmpty()) {
@@ -44,26 +51,15 @@ public class SubscriptionExpiryConsumer {
 
         SubscriptionExpiryJob job = jobOptional.get();
 
-        // 1. Idempotency Check: Skip if already COMPLETED
-        if (job.getStatus() == SubscriptionExpiryJobStatus.COMPLETED) {
-            log.info("[SUB EXPIRY CONSUMER] Idempotency check: JobID={} already COMPLETED. Skipping duplicate email execution.", job.getId());
-            return;
-        }
-
-        // 2. Mark PROCESSING
-        job.setStatus(SubscriptionExpiryJobStatus.PROCESSING);
-        job.setStartedAt(LocalDateTime.now());
-        jobRepository.save(job);
-
         try {
-            // 3. Send Expiry Email
+            // 2. Send Expiry Email
             log.info("[SUB EXPIRY CONSUMER] Sending expiry email to {} for SubscriptionID={}", payload.getUserEmail(), payload.getSubscriptionId());
             emailService.sendPremiumExpiredEmail(payload.getUserEmail(), payload.getUserFirstName());
 
-            // 4. Trigger In-App Notification
+            // 3. Trigger In-App Notification
             notificationService.createSubscriptionExpiredNotification(payload.getUserId(), payload.getSubscriptionId());
 
-            // 5. Mark COMPLETED
+            // 4. Mark COMPLETED
             job.setStatus(SubscriptionExpiryJobStatus.COMPLETED);
             job.setCompletedAt(LocalDateTime.now());
             jobRepository.save(job);
@@ -82,11 +78,10 @@ public class SubscriptionExpiryConsumer {
             if (currentAttempts >= maxAttempts || isPermanentError) {
                 log.error("[SUB EXPIRY CONSUMER DLQ] JobID={} failed permanently (Attempts={}/{}, Permanent={}). Moving to DLQ.",
                         job.getId(), currentAttempts, maxAttempts, isPermanentError);
-                
+
                 job.setStatus(SubscriptionExpiryJobStatus.DLQ);
                 jobRepository.save(job);
 
-                // Send to RabbitMQ DLQ
                 payload.setAttemptCount(currentAttempts);
                 rabbitTemplate.convertAndSend(
                         RabbitMQConfig.SUBSCRIPTION_EXPIRY_EMAIL_DLX,
@@ -94,20 +89,11 @@ public class SubscriptionExpiryConsumer {
                         payload
                 );
             } else {
-                log.warn("[SUB EXPIRY CONSUMER RETRY] JobID={} failed attempt {}/{}. Will retry.", job.getId(), currentAttempts, maxAttempts);
-                job.setStatus(SubscriptionExpiryJobStatus.PENDING);
+                log.warn("[SUB EXPIRY CONSUMER RETRY] JobID={} failed attempt {}/{}. Re-enqueueing for retry.", job.getId(), currentAttempts, maxAttempts);
+                job.setStatus(SubscriptionExpiryJobStatus.FAILED);
                 jobRepository.save(job);
-                
-                payload.setAttemptCount(currentAttempts);
-                
-                // Exponential Backoff Delay before retry
-                long backoffMs = (long) Math.pow(2, currentAttempts) * 1000;
-                try {
-                    Thread.sleep(backoffMs);
-                } catch (InterruptedException ie) {
-                    Thread.currentThread().interrupt();
-                }
 
+                payload.setAttemptCount(currentAttempts);
                 rabbitTemplate.convertAndSend(
                         RabbitMQConfig.SUBSCRIPTION_EXPIRY_EXCHANGE,
                         RabbitMQConfig.SUBSCRIPTION_EXPIRY_EMAIL_ROUTING_KEY,
@@ -117,7 +103,7 @@ public class SubscriptionExpiryConsumer {
         }
     }
 
-    @RabbitListener(queues = RabbitMQConfig.SUBSCRIPTION_EXPIRY_EMAIL_DLQ)
+    @RabbitListener(queues = RabbitMQConfig.SUBSCRIPTION_EXPIRY_EMAIL_QUEUE + ".dlq")
     public void processDeadLetterSubscriptionExpiry(SubscriptionExpiryJobPayload payload) {
         log.error("[SUB EXPIRY DLQ RECEIVED] Permanently failed job. JobID={} | SubID={} | UserEmail={}",
                 payload.getJobId(), payload.getSubscriptionId(), payload.getUserEmail());

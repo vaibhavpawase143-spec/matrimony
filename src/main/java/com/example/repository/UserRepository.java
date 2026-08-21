@@ -1,6 +1,7 @@
 package com.example.repository;
 
 import com.example.model.User;
+import com.example.repository.projection.UserBroadcastProjection;
 import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -43,6 +44,12 @@ public interface UserRepository
     // ================= BASIC =================
 
     List<User> findByIsActiveTrue();
+
+    @Query("SELECT u FROM User u WHERE u.isActive = true AND u.isDeleted = false AND u.id > :lastId ORDER BY u.id ASC")
+    List<User> findActiveUsersChunkAfterId(@Param("lastId") Long lastId, Pageable pageable);
+
+    @Query("SELECT u.id AS id, u.email AS email, u.firstName AS firstName FROM User u WHERE u.isActive = true AND u.isDeleted = false AND u.id > :lastId ORDER BY u.id ASC")
+    List<UserBroadcastProjection> findActiveUsersProjectionChunkAfterId(@Param("lastId") Long lastId, Pageable pageable);
 
     Optional<User> findByIdAndIsActiveTrue(Long id);
 

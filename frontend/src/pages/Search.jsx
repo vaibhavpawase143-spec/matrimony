@@ -11,9 +11,14 @@ import { useLanguage } from "@/context/LanguageContext.jsx";
 const getImageUrl = (image) => {
   if (!image) return null;
   if (image.startsWith("http://") || image.startsWith("https://")) return image;
-  if (image.startsWith("/")) return `http://localhost:9090${image}`;
-  if (image.startsWith("uploads/")) return `http://localhost:9090/${image}`;
-  return `http://localhost:9090/uploads/${image}`;
+  const backendBase = (
+    import.meta.env.VITE_BACKEND_URL ||
+    (import.meta.env.VITE_API_BASE_URL ? import.meta.env.VITE_API_BASE_URL.replace(/\/api\/?$/, "") : "") ||
+    "http://localhost:9090"
+  ).replace(/\/$/, "");
+  if (image.startsWith("/")) return `${backendBase}${image}`;
+  if (image.startsWith("uploads/")) return `${backendBase}/${image}`;
+  return `${backendBase}/uploads/${image}`;
 };
 
 const SelectField = ({

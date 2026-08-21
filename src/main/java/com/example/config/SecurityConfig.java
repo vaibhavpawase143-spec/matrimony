@@ -103,7 +103,8 @@ public class SecurityConfig {
                                 "/api/countries/**",
                                 "/uploads/**",
                                 "/api/cms/**",
-                                "/api/faqs/**"
+                                "/api/faqs/**",
+                                "/api/success-stories/**"
                         )
                         .permitAll()
 

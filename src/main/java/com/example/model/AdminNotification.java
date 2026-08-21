@@ -65,6 +65,12 @@ public class AdminNotification {
     @Column(nullable = false)
     private Boolean deleted = false;
 
+    @Column(name = "reference_id")
+    private Long referenceId;
+
+    @Column(name = "event_type", length = 50)
+    private String eventType;
+
     /**
      * Creation Time
      */

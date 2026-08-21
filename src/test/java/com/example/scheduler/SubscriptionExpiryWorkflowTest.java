@@ -130,14 +130,6 @@ class SubscriptionExpiryWorkflowTest {
     @Test
     @DisplayName("5. Duplicate queue message does not duplicate email")
     void testDuplicateQueueMessageDoesNotDuplicateEmail() {
-        SubscriptionExpiryJob completedJob = SubscriptionExpiryJob.builder()
-                .id(1L)
-                .subscription(subscription)
-                .user(user)
-                .status(SubscriptionExpiryJobStatus.COMPLETED)
-                .idempotencyKey("EXPIRY_EMAIL_SUB_501")
-                .build();
-
         SubscriptionExpiryJobPayload payload = SubscriptionExpiryJobPayload.builder()
                 .jobId(1L)
                 .subscriptionId(501L)
@@ -147,7 +139,7 @@ class SubscriptionExpiryWorkflowTest {
                 .attemptCount(0)
                 .build();
 
-        when(jobRepository.findById(1L)).thenReturn(Optional.of(completedJob));
+        when(jobRepository.claimJobAtomically(eq(1L), any())).thenReturn(0);
 
         consumer.processSubscriptionExpiryJob(payload);
 
@@ -175,13 +167,14 @@ class SubscriptionExpiryWorkflowTest {
                 .attemptCount(0)
                 .build();
 
+        when(jobRepository.claimJobAtomically(eq(1L), any())).thenReturn(1);
         when(jobRepository.findById(1L)).thenReturn(Optional.of(pendingJob));
         doThrow(new RuntimeException("SMTP connection timeout"))
                 .when(emailService).sendPremiumExpiredEmail(anyString(), anyString());
 
         consumer.processSubscriptionExpiryJob(payload);
 
-        assertEquals(SubscriptionExpiryJobStatus.PENDING, pendingJob.getStatus());
+        assertEquals(SubscriptionExpiryJobStatus.FAILED, pendingJob.getStatus());
         assertEquals(1, pendingJob.getAttemptCount());
         verify(rabbitTemplate, times(1)).convertAndSend(anyString(), anyString(), any(SubscriptionExpiryJobPayload.class));
     }
@@ -207,6 +200,7 @@ class SubscriptionExpiryWorkflowTest {
                 .attemptCount(2)
                 .build();
 
+        when(jobRepository.claimJobAtomically(eq(1L), any())).thenReturn(1);
         when(jobRepository.findById(1L)).thenReturn(Optional.of(pendingJob));
         doThrow(new RuntimeException("SMTP connection timeout"))
                 .when(emailService).sendPremiumExpiredEmail(anyString(), anyString());
@@ -239,6 +233,7 @@ class SubscriptionExpiryWorkflowTest {
                 .attemptCount(0)
                 .build();
 
+        when(jobRepository.claimJobAtomically(eq(1L), any())).thenReturn(1);
         when(jobRepository.findById(1L)).thenReturn(Optional.of(pendingJob));
         doThrow(new RuntimeException("550 5.1.1 Invalid address"))
                 .when(emailService).sendPremiumExpiredEmail(anyString(), anyString());

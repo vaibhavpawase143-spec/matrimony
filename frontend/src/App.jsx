@@ -41,6 +41,8 @@ const SafetyTips = lazy(() => import("./pages/SafetyTips"));
 const HowItWorks = lazy(() => import("./pages/HowItWorks"));
 const MembershipPlans = lazy(() => import("./pages/MembershipPlans"));
 const CommunityGuidelines = lazy(() => import("./pages/CommunityGuidelines"));
+const SuccessStories = lazy(() => import("./pages/SuccessStories"));
+const SuccessStoryDetails = lazy(() => import("./pages/SuccessStoryDetails"));
 
 const NotFound = lazy(() => import("./pages/NotFound"));
 
@@ -127,6 +129,8 @@ const App = () => {
                         <Route path="/membership-plans" element={<MembershipPlans />} />
                         <Route path="/community-guidelines" element={<CommunityGuidelines />} />
                         <Route path="/email-verified" element={<EmailVerified />} />
+                        <Route path="/success-stories" element={<SuccessStories />} />
+                        <Route path="/success-stories/:id" element={<SuccessStoryDetails />} />
 
                         {/* PROTECTED USER ROUTES */}
                         <Route

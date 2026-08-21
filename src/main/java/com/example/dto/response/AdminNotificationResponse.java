@@ -28,5 +28,11 @@ public class AdminNotificationResponse {
 
     private Boolean deleted;
 
+    private Long referenceId;
+
+    private String eventType;
+
+    private Long storyId;
+
     private LocalDateTime createdAt;
 }

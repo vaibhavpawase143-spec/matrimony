@@ -1,6 +1,6 @@
 import { BACKEND_BASE_URL } from "../utils/imageUtils";
 
-const API_BASE_URL = "/api";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
 export const IMAGE_BASE_URL = BACKEND_BASE_URL;
 
 /**

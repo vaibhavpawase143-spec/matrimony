@@ -21,6 +21,7 @@ import MasterData from "./pages/MasterData";
 import AuditLogs from "./pages/AuditLogs";
 import UserSubscriptionHistory from "./pages/UserSubscriptionHistory";
 import AdminManagement from "./pages/AdminManagement";
+import SuccessStories from "./pages/SuccessStories";
 
 import AdminLayout from "./components/AdminLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -179,6 +180,16 @@ function App() {
             element={
               <ProtectedRoute module="cmsPages">
                 <CMSPages />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Success Stories */}
+          <Route
+            path="/success-stories"
+            element={
+              <ProtectedRoute module="successStories">
+                <SuccessStories />
               </ProtectedRoute>
             }
           />

@@ -17,8 +17,9 @@ export const connectCallSocket = (
         token
     );
 
+    const wsBase = import.meta.env.VITE_WS_URL || "/ws";
     const socket = new SockJS(
-        `https://localhost:9090/ws?token=${token}`
+        `${wsBase}?token=${token}`
     );
 
     client = new Client({

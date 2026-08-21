@@ -13,6 +13,7 @@ target/
 .springBeans
 .sts4-cache
 uploads/
+
 ### IntelliJ IDEA ###
 .idea
 *.iws
@@ -32,7 +33,13 @@ build/
 ### VS Code ###
 .vscode/
 
-# Backend (Java/Spring Boot)
+# Environment Configuration
+.env
+.env.*
+!.env.example
+
+# Dependencies & Builds
+node_modules/
 backend/target/
 backend/.mvn/
 backend/.idea/
@@ -40,7 +47,7 @@ backend/*.iml
 backend/node_modules/
 backend/dist/
 
-# Frontend (React)
+# Frontend (User React)
 frontend/node_modules/
 frontend/build/
 frontend/dist/
@@ -50,14 +57,12 @@ frontend/npm-debug.log*
 frontend/yarn-debug.log*
 frontend/yarn-error.log*
 
-# IDE
-.vscode/
-.idea/
-*.iws
-*.iml
-*.ipr
+# Admin Frontend
+admin panel/my-react-app/node_modules/
+admin panel/my-react-app/dist/
+admin panel/my-react-app/build/
 
-# OS
+# IDE & OS
 .DS_Store
 Thumbs.db
 

@@ -15,8 +15,9 @@ import {
   FaUserPlus,
 } from "react-icons/fa";
 import {
-  getUnreadCount,
-  getNotificationHistory,
+  getBroadcastLifecycleUnreadCount,
+  getBroadcastLifecycleNotifications,
+  markAllBroadcastLifecycleAsRead,
   markAsRead,
   markAllAsRead,
   deleteNotification,
@@ -53,28 +54,28 @@ export default function Navbar({ onMenuToggle, sidebarOpen }) {
     useState(false);
 const [unreadCount, setUnreadCount] = useState(0);
   const menuRef = useRef(null);
-const [notificationOpen, setNotificationOpen] = useState(false);
+  const notificationRef = useRef(null);
+  const [notificationOpen, setNotificationOpen] = useState(false);
   // ==========================================
   // Toggle Dropdown
   // ==========================================
-const [notifications, setNotifications] = useState([]);
-const [notificationLoading, setNotificationLoading] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [notificationLoading, setNotificationLoading] = useState(false);
   const toggleMenu = () => {
     setMenuOpen((prev) => !prev);
   };
 
- const toggleNotification = async () => {
-   const nextState = !notificationOpen;
+  const toggleNotification = async () => {
+    const nextState = !notificationOpen;
+    setNotificationOpen(nextState);
 
-   setNotificationOpen(nextState);
-
-   if (nextState) {
-     await loadNotifications();
-   }
- };
+    if (nextState) {
+      await loadNotifications(notifications.length === 0);
+    }
+  };
 
   // ==========================================
-  // Close Dropdown on Outside Click
+  // Close Dropdowns on Outside Click
   // ==========================================
 
   useEffect(() => {
@@ -100,133 +101,194 @@ const [notificationLoading, setNotificationLoading] = useState(false);
     };
   }, []);
 
+  useEffect(() => {
+    const handleNotificationOutsideClick = (event) => {
+      if (
+        notificationRef.current &&
+        !notificationRef.current.contains(event.target)
+      ) {
+        setNotificationOpen(false);
+      }
+    };
+
+    if (notificationOpen) {
+      document.addEventListener("mousedown", handleNotificationOutsideClick);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleNotificationOutsideClick);
+    };
+  }, [notificationOpen]);
+
   // ==========================================
   // Load Admin Profile
   // ==========================================
-const handleMarkAllRead = async () => {
-  try {
-    await markAllAsRead();
-
-    setNotifications((prev) =>
-      prev.map((n) => ({
-        ...n,
-        read: true,
-      }))
-    );
-
-    setUnreadCount(0);
-  } catch (error) {
-    console.error(error);
-  }
-};
-const handleDelete = async (id) => {
-  try {
-    await deleteNotification(id);
-
-    setNotifications((prev) =>
-      prev.filter((n) => n.id !== id)
-    );
-
-    await loadUnreadCount();
-  } catch (error) {
-    console.error(error);
-  }
-};
-
- useEffect(() => {
-   const loadProfile = async () => {
-     try {
-       const response = await getAdminProfile();
-       const data = response.data || response;
-       setProfile(data);
-       sessionStorage.setItem("admin_profile_cache", JSON.stringify(data));
-
-       await loadUnreadCount();
-     } catch (error) {
-       console.error("Failed to load admin profile", error);
-     } finally {
-       setLoading(false);
-     }
-   };
-
-   loadProfile();
- }, []);
-useEffect(() => {
-  if (!profile?.id) return;
-
-connectAdminNotifications(profile.id, (notification) => {
-    setNotifications((prev) => [notification, ...prev]);
-
-    setUnreadCount((prev) => prev + 1);
-});
-
-  return () => {
-    disconnectAdminNotifications();
-  };
-}, [profile]);
-const loadNotifications = async () => {
-  try {
-    setNotificationLoading(true);
-
-    const response = await getNotificationHistory("", 0, 5);
-
-    setNotifications(response.data.content || []);
-  } catch (error) {
-    console.error("Failed to load notifications", error);
-  } finally {
-    setNotificationLoading(false);
-  }
-};
-const handleNotificationClick = async (notification) => {
-  try {
-    if (!notification.read) {
-      await markAsRead(notification.id);
+  const handleMarkAllRead = async () => {
+    try {
+      await markAllBroadcastLifecycleAsRead();
 
       setNotifications((prev) =>
-        prev.map((item) =>
-          item.id === notification.id
-            ? { ...item, read: true }
-            : item
-        )
+        prev.map((n) => ({
+          ...n,
+          read: true,
+        }))
       );
 
-      setUnreadCount((prev) => Math.max(prev - 1, 0));
+      setUnreadCount(0);
+    } catch (error) {
+      console.error("Failed to mark broadcast notifications as read", error);
     }
+  };
 
-    setNotificationOpen(false);
+  const handleDelete = async (id) => {
+    try {
+      await deleteNotification(id);
 
-    switch (notification.type) {
-      case "NEW_USER":
-        navigate("/users");
-        break;
+      setNotifications((prev) =>
+        prev.filter((n) => n.id !== id)
+      );
 
-      case "REPORT":
-        navigate("/reported-profiles");
-        break;
-
-      case "SUPPORT":
-        navigate("/support-tickets");
-        break;
-
-      case "SUBSCRIPTION":
-        navigate("/subscriptions");
-        break;
-
-      case "WARNING":
-        navigate("/users");
-        break;
-
-      case "SYSTEM":
-      case "ANNOUNCEMENT":
-      case "ADMIN":
-      default:
-        navigate("/notifications");
-        break;
+      await loadUnreadCount();
+    } catch (error) {
+      console.error(error);
     }
-  } catch (error) {
-    console.error("Failed to open notification", error);
-  }
-};
+  };
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const response = await getAdminProfile();
+        const data = response.data || response;
+        setProfile(data);
+        sessionStorage.setItem("admin_profile_cache", JSON.stringify(data));
+
+        await loadUnreadCount();
+      } catch (error) {
+        console.error("Failed to load admin profile", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadProfile();
+  }, []);
+
+  useEffect(() => {
+    if (!profile?.id) return;
+
+    connectAdminNotifications(profile.id, (notification) => {
+      if (!notification) return;
+
+      if (notification.type === "BROADCAST_PROGRESS") {
+        loadUnreadCount();
+        return;
+      }
+
+      // Ignore user-facing "New Success Story ❤️" if accidentally received
+      if (notification.title === "New Success Story ❤️") {
+        return;
+      }
+
+      // Process Admin Announcement and Success Story Notifications
+      if (
+        notification.type === "ANNOUNCEMENT" ||
+        notification.title?.includes("Broadcast") ||
+        notification.title?.includes("Success Story") ||
+        notification.eventType === "SUCCESS_STORY_PUBLISHED"
+      ) {
+        setNotifications((prev) => {
+          if (prev.some((item) => item.id === notification.id)) {
+            return prev;
+          }
+          return [notification, ...prev];
+        });
+
+        loadUnreadCount();
+      }
+    });
+
+    return () => {
+      disconnectAdminNotifications();
+    };
+  }, [profile?.id]);
+
+  const loadNotifications = async (showLoading = true) => {
+    try {
+      if (showLoading) setNotificationLoading(true);
+
+      const response = await getBroadcastLifecycleNotifications(0, 10);
+
+      const items = response.data?.content || [];
+      // Ensure only Admin notifications are displayed (filter out user notifications)
+      const adminOnlyItems = items.filter((n) => n.title !== "New Success Story ❤️");
+
+      setNotifications(adminOnlyItems);
+    } catch (error) {
+      console.error("Failed to load broadcast notifications", error);
+    } finally {
+      if (showLoading) setNotificationLoading(false);
+    }
+  };
+
+  const handleNotificationClick = async (notification) => {
+    try {
+      if (!notification.read) {
+        await markAsRead(notification.id);
+
+        setNotifications((prev) =>
+          prev.map((item) =>
+            item.id === notification.id
+              ? { ...item, read: true }
+              : item
+          )
+        );
+
+        setUnreadCount((prev) => Math.max(prev - 1, 0));
+      }
+
+      setNotificationOpen(false);
+
+      if (
+        notification.eventType === "SUCCESS_STORY_PUBLISHED" ||
+        notification.title?.includes("Success Story") ||
+        notification.message?.includes("success story")
+      ) {
+        navigate("/success-stories");
+        return;
+      }
+
+      switch (notification.type) {
+        case "NEW_USER":
+          navigate("/users");
+          break;
+
+        case "REPORT":
+          navigate("/reported-profiles");
+          break;
+
+        case "SUPPORT":
+          navigate("/support-tickets");
+          break;
+
+        case "SUBSCRIPTION":
+          navigate("/subscriptions");
+          break;
+
+        case "WARNING":
+          navigate("/users");
+          break;
+
+        case "SYSTEM":
+        case "ANNOUNCEMENT":
+        case "ADMIN":
+        default:
+          navigate("/notifications");
+          break;
+      }
+    } catch (error) {
+      console.error("Failed to open notification", error);
+    }
+  };
   // ==========================================
   // Logout
   // ==========================================
@@ -269,10 +331,10 @@ const handleLogout = () => {
   const profileImage = getImageUrl(profile?.profilePhoto, profile?.name);
 const loadUnreadCount = async () => {
   try {
-    const response = await getUnreadCount();
+    const response = await getBroadcastLifecycleUnreadCount();
     setUnreadCount(response.data || 0);
   } catch (error) {
-    console.error("Failed to load unread notifications", error);
+    console.error("Failed to load unread broadcast notifications", error);
   }
 };
   // ==========================================
@@ -322,7 +384,7 @@ const loadUnreadCount = async () => {
         <div className="flex items-center gap-4">
 {/* Notification Bell */}
 
-<div className="relative">
+<div className="relative" ref={notificationRef}>
  <button
    onClick={toggleNotification}
    className="
@@ -413,47 +475,58 @@ const loadUnreadCount = async () => {
    </div>
  ) : (
 <div className="max-h-[420px] overflow-y-auto p-3 space-y-3">
-     {notifications.map((notification) => (
-    <div
-        key={notification.id}
-        onClick={() => handleNotificationClick(notification)}
-        className={`
-            flex
-            justify-between
-            items-start
-            rounded-xl
-            border
-            p-4
-            cursor-pointer
-            transition-all
-            duration-200
-            hover:shadow-md
-            ${
-                notification.read
-                    ? "bg-white border-gray-200"
-                    : "bg-violet-50 border-violet-300"
-            }
-        `}
-    >
-<p
-    className={`text-sm ${
-        notification.read
-            ? "font-medium text-gray-800"
-            : "font-semibold text-violet-800"
-    }`}
->
-           {notification.title || notification.type}
-         </p>
+     {notifications.map((notification) => {
+       const msg = notification.message || "";
+        let statusBadge = { bg: "bg-amber-100 text-amber-800 border-amber-300", label: "IN PROGRESS", icon: "🟡" };
+        if (notification.eventType === "SUCCESS_STORY_PUBLISHED" || notification.title?.includes("Success Story")) {
+          statusBadge = { bg: "bg-emerald-100 text-emerald-800 border-emerald-300", label: "PUBLISHED", icon: "❤️" };
+        } else if (msg.includes("completed successfully")) {
+          statusBadge = { bg: "bg-emerald-100 text-emerald-800 border-emerald-300", label: "COMPLETED", icon: "🟢" };
+        } else if (msg.includes("completed with failures")) {
+          statusBadge = { bg: "bg-orange-100 text-orange-800 border-orange-300", label: "COMPLETED WITH FAILURES", icon: "🟠" };
+        } else if (msg.includes("failed")) {
+          statusBadge = { bg: "bg-rose-100 text-rose-800 border-rose-300", label: "FAILED", icon: "🔴" };
+        }
 
-<p className="mt-2 text-sm text-gray-600 leading-6">
-           {notification.message}
-         </p>
+       return (
+         <div
+           key={notification.id}
+           onClick={() => handleNotificationClick(notification)}
+           className={`
+             rounded-xl
+             border
+             p-4
+             cursor-pointer
+             transition-all
+             duration-200
+             hover:shadow-md
+             ${
+               notification.read
+                 ? "bg-white border-gray-200"
+                 : "bg-violet-50 border-violet-300"
+             }
+           `}
+         >
+           <div className="flex items-center justify-between gap-2">
+             <span className="font-semibold text-gray-900 text-sm">
+               {notification.title}
+             </span>
+             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border flex items-center gap-1 ${statusBadge.bg}`}>
+               <span>{statusBadge.icon}</span>
+               <span>{statusBadge.label}</span>
+             </span>
+           </div>
 
-         <p className="mt-3 text-xs text-gray-400">
-           {new Date(notification.createdAt).toLocaleString()}
-         </p>
-       </div>
-     ))}
+           <p className="mt-2 text-sm text-gray-600 leading-relaxed">
+             {notification.message}
+           </p>
+
+           <p className="mt-3 text-xs text-gray-400">
+             {new Date(notification.createdAt).toLocaleString()}
+           </p>
+         </div>
+       );
+     })}
    </div>
  )}
     </div>

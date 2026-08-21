@@ -29,5 +29,8 @@ public class NotificationResponse {
 
     private String type;
     private String title;
+    private Long referenceId;
+    private String eventType;
+    private Long storyId;
     private LocalDateTime createdAt;
 }
