@@ -116,7 +116,7 @@ public class OccupationController {
 
         return ApiResponse.success(
                 "Occupation list fetched successfully.",
-                masterDataCacheService.getOccupations()
+                occupationService.getAll()
         );
     }
 
@@ -142,7 +142,7 @@ public class OccupationController {
 
         return ApiResponse.success(
                 "Active Occupation list fetched successfully.",
-                masterDataCacheService.getOccupations()
+                occupationService.getActive()
         );
     }
 

@@ -15,6 +15,7 @@ import com.example.service.SubCasteService;
 import com.example.util.AuditHelper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -37,6 +38,7 @@ public class SubCasteServiceImpl implements SubCasteService {
     // =====================================================
 
     @Override
+    @Transactional
     public SubCasteResponseDTO create(SubCasteRequestDTO requestDto) {
 
         Admin admin = adminRepository.findById(requestDto.getAdminId())
@@ -83,8 +85,10 @@ public class SubCasteServiceImpl implements SubCasteService {
     // =====================================================
 
     @Override
-    public SubCasteResponseDTO update(Long id,
-                                      SubCasteRequestDTO requestDto) {
+    @Transactional
+    public SubCasteResponseDTO update(
+            Long id,
+            SubCasteRequestDTO requestDto) {
 
         SubCaste entity = subCasteRepository
                 .findByIdWithRelations(id)
@@ -128,6 +132,10 @@ public class SubCasteServiceImpl implements SubCasteService {
                 entity.getIsActive()
         );
 
+        /*
+         * Since this method is transactional, Admin and Caste
+         * lazy relations remain available while mapping.
+         */
         return mapToResponse(entity);
     }
 
@@ -136,6 +144,7 @@ public class SubCasteServiceImpl implements SubCasteService {
     // =====================================================
 
     @Override
+    @Transactional
     public void softDelete(Long id) {
 
         SubCaste entity = subCasteRepository
@@ -162,12 +171,15 @@ public class SubCasteServiceImpl implements SubCasteService {
     // =====================================================
 
     @Override
+    @Transactional
     public void restore(Long id) {
 
         SubCaste entity = subCasteRepository
                 .findByIdAndDeletedAtIsNotNull(id)
                 .orElseThrow(() ->
-                        new ResourceNotFoundException("Deleted Sub Caste not found."));
+                        new ResourceNotFoundException(
+                                "Deleted Sub Caste not found."
+                        ));
 
         entity.setDeletedAt(null);
         entity.setDeletedBy(null);
@@ -188,11 +200,14 @@ public class SubCasteServiceImpl implements SubCasteService {
     // =====================================================
 
     @Override
+    @Transactional
     public void hardDelete(Long id) {
 
         SubCaste entity = subCasteRepository.findById(id)
                 .orElseThrow(() ->
-                        new ResourceNotFoundException("Sub Caste not found."));
+                        new ResourceNotFoundException(
+                                "Sub Caste not found."
+                        ));
 
         auditHelper.logHardDelete(
                 MODULE,
@@ -204,17 +219,21 @@ public class SubCasteServiceImpl implements SubCasteService {
 
         subCasteRepository.delete(entity);
     }
+
     // =====================================================
     // GET BY ID
     // =====================================================
 
     @Override
+    @Transactional(readOnly = true)
     public SubCasteResponseDTO getById(Long id) {
 
         SubCaste entity = subCasteRepository
                 .findByIdWithRelations(id)
                 .orElseThrow(() ->
-                        new ResourceNotFoundException("Sub Caste not found."));
+                        new ResourceNotFoundException(
+                                "Sub Caste not found."
+                        ));
 
         return mapToResponse(entity);
     }
@@ -224,18 +243,26 @@ public class SubCasteServiceImpl implements SubCasteService {
     // =====================================================
 
     @Override
+    @Transactional(readOnly = true)
     public List<SubCasteResponseDTO> getAll() {
 
-        return subCasteRepository.findAllWithRelations()
+        return subCasteRepository
+                .findAllWithRelations()
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
     }
 
+    // =====================================================
+    // GET DELETED
+    // =====================================================
+
     @Override
+    @Transactional(readOnly = true)
     public List<SubCasteResponseDTO> getDeleted() {
 
-        return subCasteRepository.findByDeletedAtIsNotNull()
+        return subCasteRepository
+                .findByDeletedAtIsNotNull()
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
@@ -246,18 +273,22 @@ public class SubCasteServiceImpl implements SubCasteService {
     // =====================================================
 
     @Override
+    @Transactional(readOnly = true)
     public List<SubCasteResponseDTO> getActive() {
 
-        return subCasteRepository.findActiveWithRelations()
+        return subCasteRepository
+                .findActiveWithRelations()
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<SubCasteResponseDTO> getInactive() {
 
-        return subCasteRepository.findByIsActiveFalseAndDeletedAtIsNull()
+        return subCasteRepository
+                .findByIsActiveFalseAndDeletedAtIsNull()
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
@@ -268,15 +299,18 @@ public class SubCasteServiceImpl implements SubCasteService {
     // =====================================================
 
     @Override
+    @Transactional(readOnly = true)
     public List<SubCasteResponseDTO> getByAdmin(Long adminId) {
 
-        return subCasteRepository.findByAdmin_IdAndDeletedAtIsNull(adminId)
+        return subCasteRepository
+                .findByAdmin_IdAndDeletedAtIsNull(adminId)
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<SubCasteResponseDTO> getActiveByAdmin(Long adminId) {
 
         return subCasteRepository
@@ -287,6 +321,7 @@ public class SubCasteServiceImpl implements SubCasteService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<SubCasteResponseDTO> getInactiveByAdmin(Long adminId) {
 
         return subCasteRepository
@@ -301,33 +336,48 @@ public class SubCasteServiceImpl implements SubCasteService {
     // =====================================================
 
     @Override
-    public List<SubCasteResponseDTO> getByCasteAndAdmin(Long casteId,
-                                                        Long adminId) {
+    @Transactional(readOnly = true)
+    public List<SubCasteResponseDTO> getByCasteAndAdmin(
+            Long casteId,
+            Long adminId) {
 
         return subCasteRepository
-                .findByCasteAndAdminWithRelations(casteId, adminId)
+                .findByCasteAndAdminWithRelations(
+                        casteId,
+                        adminId
+                )
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
     }
 
     @Override
-    public List<SubCasteResponseDTO> getActiveByCasteAndAdmin(Long casteId,
-                                                              Long adminId) {
+    @Transactional(readOnly = true)
+    public List<SubCasteResponseDTO> getActiveByCasteAndAdmin(
+            Long casteId,
+            Long adminId) {
 
         return subCasteRepository
-                .findActiveByCasteAndAdminWithRelations(casteId, adminId)
+                .findActiveByCasteAndAdminWithRelations(
+                        casteId,
+                        adminId
+                )
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
     }
 
     @Override
-    public List<SubCasteResponseDTO> getInactiveByCasteAndAdmin(Long casteId,
-                                                                Long adminId) {
+    @Transactional(readOnly = true)
+    public List<SubCasteResponseDTO> getInactiveByCasteAndAdmin(
+            Long casteId,
+            Long adminId) {
 
         return subCasteRepository
-                .findInactiveByCasteAndAdminWithRelations(casteId, adminId)
+                .findInactiveByCasteAndAdminWithRelations(
+                        casteId,
+                        adminId
+                )
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
@@ -338,18 +388,23 @@ public class SubCasteServiceImpl implements SubCasteService {
     // =====================================================
 
     @Override
+    @Transactional(readOnly = true)
     public List<SubCasteResponseDTO> search(String keyword) {
 
         return subCasteRepository
-                .findByNameContainingIgnoreCaseAndDeletedAtIsNull(keyword)
+                .findByNameContainingIgnoreCaseAndDeletedAtIsNull(
+                        keyword
+                )
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
     }
 
     @Override
-    public List<SubCasteResponseDTO> searchByAdmin(Long adminId,
-                                                   String keyword) {
+    @Transactional(readOnly = true)
+    public List<SubCasteResponseDTO> searchByAdmin(
+            Long adminId,
+            String keyword) {
 
         return subCasteRepository
                 .findByAdmin_IdAndNameContainingIgnoreCaseAndDeletedAtIsNull(
@@ -369,18 +424,31 @@ public class SubCasteServiceImpl implements SubCasteService {
 
         return SubCasteResponseDTO.builder()
                 .id(entity.getId())
-                .adminId(entity.getAdmin() != null
-                        ? entity.getAdmin().getId()
-                        : null)
-                .adminName(entity.getAdmin() != null
-                        ? entity.getAdmin().getName()
-                        : null)
-                .casteId(entity.getCaste() != null
-                        ? entity.getCaste().getId()
-                        : null)
-                .casteName(entity.getCaste() != null
-                        ? entity.getCaste().getName()
-                        : null)
+
+                .adminId(
+                        entity.getAdmin() != null
+                                ? entity.getAdmin().getId()
+                                : null
+                )
+
+                .adminName(
+                        entity.getAdmin() != null
+                                ? entity.getAdmin().getName()
+                                : null
+                )
+
+                .casteId(
+                        entity.getCaste() != null
+                                ? entity.getCaste().getId()
+                                : null
+                )
+
+                .casteName(
+                        entity.getCaste() != null
+                                ? entity.getCaste().getName()
+                                : null
+                )
+
                 .name(entity.getName())
                 .isActive(entity.getIsActive())
                 .createdAt(entity.getCreatedAt())

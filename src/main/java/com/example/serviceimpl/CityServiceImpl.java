@@ -99,16 +99,21 @@ public class CityServiceImpl implements CityService {
                 + ", State=" + city.getState().getName()
                 + ", Active=" + city.getIsActive();
 
+        // Soft delete
         city.setDeletedAt(LocalDateTime.now());
         city.setDeletedBy(deletedBy);
 
-        cityRepository.save(city);
+        // IMPORTANT: mark inactive also
+        city.setIsActive(false);
+        city.setUpdatedAt(LocalDateTime.now());
+
+        City saved = cityRepository.save(city);
 
         auditHelper.logDelete(
                 "MASTER_DATA",
                 "CITY",
-                city.getId(),
-                city.getName(),
+                saved.getId(),
+                saved.getName(),
                 oldValue
         );
     }

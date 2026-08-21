@@ -127,6 +127,7 @@ export default function MasterData() {
       item.label ||
       item.value ||
       item.degreeName ||
+      item.range ||
       item.occupationName ||
       `ID #${item.id}`
     );
@@ -201,6 +202,20 @@ export default function MasterData() {
         isActive: formData.isActive,
       };
 
+      if (activeTab === "Height") {
+        payload.height = formData.name.trim();
+        delete payload.name;
+      }
+
+      if (
+        activeTab === "Weight" ||
+        activeTab === "Smoking" ||
+        activeTab === "Drinking"
+      ) {
+        payload.value = formData.name.trim();
+        delete payload.name;
+      }
+
       if (activeTab === "Caste" && formData.religionId) {
         payload.religionId = Number(formData.religionId);
       } else if (activeTab === "Sub Caste" && formData.casteId) {
@@ -234,10 +249,10 @@ export default function MasterData() {
     const currentlyActive = isItemActive(item);
     const newStatus = !currentlyActive;
 
-    // Optimistically update local item state so it NEVER disappears from table list
+    // Optimistic UI update
     setItems((prevItems) =>
       prevItems.map((i) =>
-        (i.id && i.id === item.id) || (getItemName(i) === getItemName(item))
+        i.id === item.id
           ? {
               ...i,
               isActive: newStatus,
@@ -249,19 +264,106 @@ export default function MasterData() {
     );
 
     try {
-      if (currentlyActive) {
-        await deleteMasterItem(activeTab, item.id);
-        toast.success(`${getItemName(item)} is now Inactive (kept in list).`);
-      } else {
-        await restoreMasterItem(activeTab, item.id);
-        toast.success(`${getItemName(item)} is now Active.`);
+     const adminId = item.adminId || item.admin?.id || 1;
+
+     const payload = {
+       adminId: Number(adminId),
+       isActive: !item.isActive,
+     };
+
+      // ==========================================
+      // MASTER-SPECIFIC VALUE
+      // ==========================================
+
+      if (activeTab === "Income") {
+        payload.range = item.range || item.name;
+      } else if (activeTab === "Height") {
+        payload.height = item.height || item.name;
+      } else if (
+               activeTab === "Weight" ||
+               activeTab === "Smoking" ||
+               activeTab === "Drinking"
+             ) {
+               payload.value = item.value || item.name;
+
+               if (activeTab === "Drinking") {
+                 payload.name = item.name || item.value;
+               }
+             } else {
+        payload.name = getItemName(item);
       }
+
+      // ==========================================
+      // ADMIN ID
+      // ==========================================
+
+      if (adminId) {
+        payload.adminId = Number(adminId);
+      }
+
+      // ==========================================
+      // PARENT IDS
+      // ==========================================
+
+      if (activeTab === "Caste") {
+        const religionId = item.religionId || item.religion?.id;
+
+        if (religionId) {
+          payload.religionId = Number(religionId);
+        }
+      }
+
+      if (activeTab === "Sub Caste") {
+        const casteId = item.casteId || item.caste?.id;
+
+        if (casteId) {
+          payload.casteId = Number(casteId);
+        }
+      }
+
+      if (activeTab === "State") {
+        const countryId = item.countryId || item.country?.id;
+
+        if (countryId) {
+          payload.countryId = Number(countryId);
+        }
+      }
+
+      if (activeTab === "City") {
+        const stateId = item.stateId || item.state?.id;
+
+        if (stateId) {
+          payload.stateId = Number(stateId);
+        }
+      }
+
+      console.log("Updating master status:", {
+        tab: activeTab,
+        id: item.id,
+        payload,
+      });
+
+      await updateMasterItem(activeTab, item.id, payload);
+
+      toast.success(
+        `${getItemName(item)} is now ${
+          newStatus ? "Active" : "Inactive"
+        }.`
+      );
+
+      await fetchTabItems(activeTab);
     } catch (err) {
-      console.error(err);
-      // Revert state if backend call failed
+      console.error("STATUS UPDATE ERROR:", {
+        message: err?.message,
+        serverMessage: err?.serverMessage,
+        status: err?.status,
+        error: err,
+      });
+
+      // Rollback UI
       setItems((prevItems) =>
         prevItems.map((i) =>
-          (i.id && i.id === item.id) || (getItemName(i) === getItemName(item))
+          i.id === item.id
             ? {
                 ...i,
                 isActive: currentlyActive,
@@ -271,7 +373,12 @@ export default function MasterData() {
             : i
         )
       );
-      toast.error(`Failed to update status for ${getItemName(item)}.`);
+
+      toast.error(
+        err?.message ||
+          err?.serverMessage ||
+          `Failed to update status for ${getItemName(item)}.`
+      );
     }
   };
 

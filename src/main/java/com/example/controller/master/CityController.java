@@ -53,14 +53,17 @@ public class CityController {
     @GetMapping
     public ApiResponse<List<CityResponseDTO>> getAll() {
 
+        List<CityResponseDTO> cities = cityService.getAll()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+
         return ApiResponse.<List<CityResponseDTO>>builder()
                 .success(true)
                 .message("Cities retrieved successfully.")
-                .data(masterDataCacheService.getCities())
+                .data(cities)
                 .build();
     }
-
-    // ================= DELETE =================
     // ================= DELETE =================
     @DeleteMapping("/{id}")
     public ApiResponse<String> delete(
@@ -79,10 +82,15 @@ public class CityController {
     @GetMapping("/active")
     public ApiResponse<List<CityResponseDTO>> getActive() {
 
+        List<CityResponseDTO> cities = cityService.getActive()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+
         return ApiResponse.<List<CityResponseDTO>>builder()
                 .success(true)
                 .message("Active cities retrieved successfully.")
-                .data(masterDataCacheService.getCities())
+                .data(cities)
                 .build();
     }
 

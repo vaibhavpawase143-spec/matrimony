@@ -17,8 +17,11 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import jakarta.transaction.Transactional;
+
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class WeightServiceImpl implements WeightService {
 
     private final WeightRepository weightRepository;
@@ -75,8 +78,9 @@ public class WeightServiceImpl implements WeightService {
     // =====================================================
 
     @Override
-    public WeightResponseDTO update(Long id,
-                                    WeightRequestDTO requestDto) {
+    public WeightResponseDTO update(
+            Long id,
+            WeightRequestDTO requestDto) {
 
         Weight entity = weightRepository
                 .findByIdAndDeletedAtIsNull(id)
@@ -101,6 +105,12 @@ public class WeightServiceImpl implements WeightService {
 
         entity.setAdmin(admin);
         entity.setValue(requestDto.getValue().trim());
+
+        /*
+         * Existing status update preserved.
+         * If frontend sends false -> inactive.
+         * If frontend sends true -> active.
+         */
         entity.setIsActive(requestDto.getIsActive());
 
         entity = weightRepository.save(entity);
@@ -132,7 +142,10 @@ public class WeightServiceImpl implements WeightService {
                         new ResourceNotFoundException("Weight not found."));
 
         entity.setDeletedAt(LocalDateTime.now());
-        entity.setDeletedBy(currentAdminService.getCurrentAdmin().getId());
+
+        entity.setDeletedBy(
+                currentAdminService.getCurrentAdmin().getId()
+        );
 
         weightRepository.save(entity);
 
@@ -155,7 +168,9 @@ public class WeightServiceImpl implements WeightService {
         Weight entity = weightRepository
                 .findByIdAndDeletedAtIsNotNull(id)
                 .orElseThrow(() ->
-                        new ResourceNotFoundException("Deleted Weight not found."));
+                        new ResourceNotFoundException(
+                                "Deleted Weight not found."
+                        ));
 
         entity.setDeletedAt(null);
         entity.setDeletedBy(null);
@@ -192,6 +207,7 @@ public class WeightServiceImpl implements WeightService {
 
         weightRepository.delete(entity);
     }
+
     // =====================================================
     // GET BY ID
     // =====================================================
@@ -214,7 +230,11 @@ public class WeightServiceImpl implements WeightService {
     @Override
     public List<WeightResponseDTO> getAll() {
 
-        return weightRepository.findAllByDeletedAtIsNull()
+        /*
+         * Existing functionality preserved.
+         * Use repository method which fetches Admin together.
+         */
+        return weightRepository.findAllWithAdmin()
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
@@ -236,7 +256,7 @@ public class WeightServiceImpl implements WeightService {
     @Override
     public List<WeightResponseDTO> getActive() {
 
-        return weightRepository.findByIsActiveTrueAndDeletedAtIsNull()
+        return weightRepository.findActiveWithAdmin()
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
@@ -258,7 +278,8 @@ public class WeightServiceImpl implements WeightService {
     @Override
     public List<WeightResponseDTO> getByAdmin(Long adminId) {
 
-        return weightRepository.findByAdmin_IdAndDeletedAtIsNull(adminId)
+        return weightRepository
+                .findByAdmin_IdAndDeletedAtIsNull(adminId)
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
@@ -299,8 +320,9 @@ public class WeightServiceImpl implements WeightService {
     }
 
     @Override
-    public List<WeightResponseDTO> searchByAdmin(Long adminId,
-                                                 String keyword) {
+    public List<WeightResponseDTO> searchByAdmin(
+            Long adminId,
+            String keyword) {
 
         return weightRepository
                 .findByAdmin_IdAndValueContainingIgnoreCaseAndDeletedAtIsNull(
@@ -320,12 +342,19 @@ public class WeightServiceImpl implements WeightService {
 
         return WeightResponseDTO.builder()
                 .id(entity.getId())
-                .adminId(entity.getAdmin() != null
-                        ? entity.getAdmin().getId()
-                        : null)
-                .adminName(entity.getAdmin() != null
-                        ? entity.getAdmin().getName()
-                        : null)
+
+                .adminId(
+                        entity.getAdmin() != null
+                                ? entity.getAdmin().getId()
+                                : null
+                )
+
+                .adminName(
+                        entity.getAdmin() != null
+                                ? entity.getAdmin().getName()
+                                : null
+                )
+
                 .name(entity.getValue())
                 .value(entity.getValue())
                 .isActive(entity.getIsActive())

@@ -3,6 +3,7 @@ package com.example.repository;
 import com.example.model.Weight;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -25,6 +26,29 @@ public interface WeightRepository extends JpaRepository<Weight, Long> {
 
     List<Weight> findByDeletedAtIsNotNull();
 
+
+    // =====================================================
+    // FETCH WITH ADMIN
+    // =====================================================
+
+    @Query("""
+        SELECT w
+        FROM Weight w
+        LEFT JOIN FETCH w.admin
+        WHERE w.deletedAt IS NULL
+    """)
+    List<Weight> findAllWithAdmin();
+
+    @Query("""
+        SELECT w
+        FROM Weight w
+        LEFT JOIN FETCH w.admin
+        WHERE w.isActive = true
+        AND w.deletedAt IS NULL
+    """)
+    List<Weight> findActiveWithAdmin();
+
+
     // =====================================================
     // DUPLICATE CHECK
     // =====================================================
@@ -39,6 +63,7 @@ public interface WeightRepository extends JpaRepository<Weight, Long> {
             Long adminId
     );
 
+
     // =====================================================
     // ACTIVE / INACTIVE
     // =====================================================
@@ -46,7 +71,9 @@ public interface WeightRepository extends JpaRepository<Weight, Long> {
     @EntityGraph(attributePaths = "admin")
     List<Weight> findByIsActiveTrueAndDeletedAtIsNull();
 
+    @EntityGraph(attributePaths = "admin")
     List<Weight> findByIsActiveFalseAndDeletedAtIsNull();
+
 
     // =====================================================
     // ADMIN
@@ -56,10 +83,15 @@ public interface WeightRepository extends JpaRepository<Weight, Long> {
     List<Weight> findByAdmin_IdAndDeletedAtIsNull(Long adminId);
 
     @EntityGraph(attributePaths = "admin")
-    List<Weight> findByAdmin_IdAndIsActiveTrueAndDeletedAtIsNull(Long adminId);
+    List<Weight> findByAdmin_IdAndIsActiveTrueAndDeletedAtIsNull(
+            Long adminId
+    );
 
     @EntityGraph(attributePaths = "admin")
-    List<Weight> findByAdmin_IdAndIsActiveFalseAndDeletedAtIsNull(Long adminId);
+    List<Weight> findByAdmin_IdAndIsActiveFalseAndDeletedAtIsNull(
+            Long adminId
+    );
+
 
     // =====================================================
     // SEARCH

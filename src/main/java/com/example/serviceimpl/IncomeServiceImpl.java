@@ -71,52 +71,90 @@ public class IncomeServiceImpl implements IncomeService {
     // =========================
 
     @Override
-    public IncomeResponseDTO update(Long id,
-                                    IncomeRequestDTO requestDto) {
+    @Transactional
+    public IncomeResponseDTO update(
+            Long id,
+            IncomeRequestDTO requestDto) {
 
         Income entity = incomeRepository
                 .findByIdAndDeletedAtIsNull(id)
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Income not found."));
 
-        boolean oldStatus = entity.getIsActive();
+        boolean oldStatus = Boolean.TRUE.equals(entity.getIsActive());
 
-        if (incomeRepository
-                .findByRangeIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
-                        requestDto.getRange(),
-                        requestDto.getAdminId())
-                .filter(i -> !i.getId().equals(id))
-                .isPresent()) {
+        String oldRange = entity.getRange();
 
-            throw new BadRequestException("Income already exists.");
+        // -----------------------------------------
+        // RANGE
+        // -----------------------------------------
+        if (requestDto.getRange() != null) {
+
+            String newRange = requestDto.getRange().trim();
+
+            if (newRange.isBlank()) {
+                throw new BadRequestException("Income range is required.");
+            }
+
+            if (!entity.getRange().equalsIgnoreCase(newRange)) {
+
+                boolean duplicate =
+                        incomeRepository
+                                .findByRangeIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+                                        newRange,
+                                        requestDto.getAdminId()
+                                )
+                                .filter(i -> !i.getId().equals(id))
+                                .isPresent();
+
+                if (duplicate) {
+                    throw new BadRequestException("Income already exists.");
+                }
+            }
+
+            entity.setRange(newRange);
         }
 
-        Admin admin = adminRepository.findById(requestDto.getAdminId())
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Admin not found."));
+        // -----------------------------------------
+        // ADMIN
+        // -----------------------------------------
+        if (requestDto.getAdminId() != null) {
 
-        String oldValue = entity.getRange();
+            Admin admin = adminRepository
+                    .findById(requestDto.getAdminId())
+                    .orElseThrow(() ->
+                            new ResourceNotFoundException("Admin not found."));
 
-        entity.setAdmin(admin);
-        entity.setRange(requestDto.getRange().trim());
-        entity.setIsActive(requestDto.getIsActive());
+            entity.setAdmin(admin);
+        }
+
+        // -----------------------------------------
+        // ACTIVE / INACTIVE
+        // -----------------------------------------
+        if (requestDto.getIsActive() != null) {
+            entity.setIsActive(requestDto.getIsActive());
+        }
 
         Income updated = incomeRepository.save(entity);
+
+        String newValue = updated.getRange();
+
+        boolean newStatus =
+                Boolean.TRUE.equals(updated.getIsActive());
 
         auditHelper.logUpdate(
                 MODULE,
                 ENTITY,
                 updated.getId(),
                 updated.getRange(),
-                oldValue,
-                updated.getRange(),
+                oldRange,
+                newValue,
                 oldStatus,
-                updated.getIsActive()
+                newStatus
         );
 
         return mapToResponse(updated);
     }
-
     // =========================
     // SOFT DELETE
     // =========================

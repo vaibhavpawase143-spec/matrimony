@@ -74,7 +74,7 @@ public class WeightController {
 
         return ApiResponse.success(
                 "Weights fetched successfully.",
-                masterDataCacheService.getWeights()
+                weightService.getAll()
         );
     }
 
@@ -96,12 +96,13 @@ public class WeightController {
     // ACTIVE / INACTIVE
     // =====================================================
 
+
     @GetMapping("/active")
     public ApiResponse<List<WeightResponseDTO>> getActive() {
 
         return ApiResponse.success(
                 "Active weights fetched successfully.",
-                masterDataCacheService.getWeights()
+                weightService.getActive()
         );
     }
 

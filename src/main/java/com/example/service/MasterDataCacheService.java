@@ -241,10 +241,21 @@ public class MasterDataCacheService {
     }
 
     public void evict(String key) {
+        localCache.remove(key);
+
         try {
             redisTemplate.delete(key);
         } catch (Exception e) {
             log.error("Failed to evict key: {}", key, e);
+        }
+    }
+    public void evictReligions() {
+        localCache.remove(RELIGION_KEY);
+
+        try {
+            redisTemplate.delete(RELIGION_KEY);
+        } catch (Exception e) {
+            log.warn("Failed to evict religion Redis cache", e);
         }
     }
 
@@ -291,7 +302,12 @@ public class MasterDataCacheService {
     private List<MaritalStatusResponseDTO> fetchMaritalStatusFromDb() { return maritalStatusRepository.findAllByDeletedAtIsNull().stream().map(this::toMaritalStatusDto).toList(); }
     private List<ProfileTypeResponseDTO> fetchProfileTypesFromDb() { return profileTypeRepository.findAllByDeletedAtIsNull().stream().map(this::toProfileTypeDto).toList(); }
     private List<HeightResponseDTO> fetchHeightsFromDb() { return heightRepository.findAllByDeletedAtIsNull().stream().map(this::toHeightDto).toList(); }
-    private List<WeightResponseDTO> fetchWeightsFromDb() { return weightRepository.findAllByDeletedAtIsNull().stream().map(this::toWeightDto).toList(); }
+    private List<WeightResponseDTO> fetchWeightsFromDb() {
+        return weightRepository.findAllWithAdmin()
+                .stream()
+                .map(this::toWeightDto)
+                .toList();
+    }
     private List<IncomeResponseDTO> fetchIncomeFromDb() { return incomeRepository.findAllByDeletedAtIsNull().stream().map(this::toIncomeDto).toList(); }
     private List<DietResponseDto> fetchDietsFromDb() { return dietRepository.findByDeletedAtIsNull().stream().map(this::toDietDto).toList(); }
     private List<SmokingResponseDTO> fetchSmokingFromDb() { return smokingRepository.findAllByDeletedAtIsNull().stream().map(this::toSmokingDto).toList(); }
@@ -442,13 +458,11 @@ public class MasterDataCacheService {
     private WeightResponseDTO toWeightDto(Weight e) {
         return WeightResponseDTO.builder()
                 .id(e.getId())
-                .adminId(e.getAdmin().getId())
+                .adminId(e.getAdmin() != null ? e.getAdmin().getId() : null)
                 .value(e.getValue())
                 .isActive(e.getIsActive())
                 .createdAt(e.getCreatedAt())
                 .updatedAt(e.getUpdatedAt())
-
-
                 .build();
     }
 

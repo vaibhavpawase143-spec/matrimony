@@ -8,6 +8,7 @@ import com.example.model.Admin;
 import com.example.model.Religion;
 import com.example.repository.ReligionRepository;
 import com.example.service.CurrentAdminService;
+import com.example.service.MasterDataCacheService;
 import com.example.service.ReligionService;
 import com.example.util.AuditHelper;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,7 @@ public class ReligionServiceImpl implements ReligionService {
 
     private final CurrentAdminService currentAdminService;
     private final AuditHelper auditHelper;
+    private final MasterDataCacheService masterDataCacheService;
 
     private static final String MODULE = "Master";
     private static final String ENTITY = "Religion";
@@ -60,6 +62,7 @@ public class ReligionServiceImpl implements ReligionService {
                 .build();
 
         entity = religionRepository.save(entity);
+        masterDataCacheService.evictReligions();
 
         auditHelper.logCreate(
                 MODULE,
@@ -109,6 +112,7 @@ public class ReligionServiceImpl implements ReligionService {
         entity.setIsActive(requestDto.getIsActive());
 
         entity = religionRepository.save(entity);
+        masterDataCacheService.evictReligions();
 
         auditHelper.logUpdate(
                 MODULE,
@@ -149,6 +153,7 @@ public class ReligionServiceImpl implements ReligionService {
         entity.setDeletedBy(currentAdminService.getCurrentAdmin().getId());
 
         religionRepository.save(entity);
+        masterDataCacheService.evictReligions();
 
         auditHelper.logDelete(
                 MODULE,
@@ -182,6 +187,7 @@ public class ReligionServiceImpl implements ReligionService {
         entity.setDeletedBy(null);
 
         religionRepository.save(entity);
+        masterDataCacheService.evictReligions();
 
         auditHelper.logRestore(
                 MODULE,
@@ -220,6 +226,7 @@ public class ReligionServiceImpl implements ReligionService {
         );
 
         religionRepository.delete(entity);
+        masterDataCacheService.evictReligions();
     }
 
     // =====================================================

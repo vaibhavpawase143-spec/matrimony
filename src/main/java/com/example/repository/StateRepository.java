@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.repository.query.Param;
 
 @Repository
 public interface StateRepository extends JpaRepository<State, Long> {
@@ -138,4 +139,15 @@ WHERE s.id = :id
 AND s.deletedAt IS NULL
 """)
     Optional<State> findByIdWithRelations(Long id);
+    @Query("""
+SELECT s
+FROM State s
+LEFT JOIN FETCH s.admin
+LEFT JOIN FETCH s.country
+WHERE s.id = :id
+AND s.deletedAt IS NOT NULL
+""")
+    Optional<State> findDeletedByIdWithRelations(
+            @Param("id") Long id
+    );
 }

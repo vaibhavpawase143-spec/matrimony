@@ -142,19 +142,23 @@ export const deleteMasterItem = async (tabName, id) => {
 
 export const restoreMasterItem = async (tabName, id) => {
   clearMasterCache(tabName);
-  const endpoints = TAB_ENDPOINTS[tabName] || [`/master/${tabName.toLowerCase().replace(/\s+/g, "-")}`];
+
+  const endpoints =
+    TAB_ENDPOINTS[tabName] ||
+    [`/master/${tabName.toLowerCase().replace(/\s+/g, "-")}`];
+
   const endpoint = endpoints[0];
+
   try {
-    return await apiClient(`${endpoint}/${id}/restore`, { method: "PATCH" });
-  } catch {
-    try {
-      return await apiClient(`${endpoint}/restore/${id}`, { method: "PUT" });
-    } catch {
-      return await apiClient(`${endpoint}/${id}`, {
-        method: "PUT",
-        body: JSON.stringify({ isActive: true, active: true, status: "Active" }),
-      });
-    }
+    return await apiClient(`${endpoint}/${id}/restore`, {
+      method: "PUT",
+    });
+  } catch (error) {
+    console.error(
+      `[Restore ${tabName}] Failed for ID ${id}:`,
+      error
+    );
+    throw error;
   }
 };
 

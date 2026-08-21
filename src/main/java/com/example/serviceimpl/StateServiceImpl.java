@@ -15,11 +15,13 @@ import com.example.service.StateService;
 import com.example.util.AuditHelper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class StateServiceImpl implements StateService {
 
     private final StateRepository stateRepository;
@@ -82,8 +84,9 @@ public class StateServiceImpl implements StateService {
     // =====================================================
 
     @Override
-    public StateResponseDTO update(Long id,
-                                   StateRequestDTO requestDto) {
+    public StateResponseDTO update(
+            Long id,
+            StateRequestDTO requestDto) {
 
         State entity = stateRepository
                 .findByIdAndDeletedAtIsNull(id)
@@ -129,6 +132,7 @@ public class StateServiceImpl implements StateService {
 
         return mapToResponse(entity);
     }
+
     // =====================================================
     // SOFT DELETE
     // =====================================================
@@ -141,6 +145,11 @@ public class StateServiceImpl implements StateService {
                 .orElseThrow(() ->
                         new ResourceNotFoundException("State not found."));
 
+        String oldName = entity.getName();
+        Boolean oldActive = entity.getIsActive();
+
+        // Soft delete
+        entity.setIsActive(false);
         entity.setDeletedAt(java.time.LocalDateTime.now());
         entity.setDeletedBy(currentAdminService.getCurrentAdmin().getId());
 
@@ -160,6 +169,7 @@ public class StateServiceImpl implements StateService {
     // =====================================================
 
     @Override
+    @Transactional
     public void restore(Long id) {
 
         State entity = stateRepository
@@ -167,8 +177,12 @@ public class StateServiceImpl implements StateService {
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Deleted State not found."));
 
+        String oldName = entity.getName();
+
+        // Restore
         entity.setDeletedAt(null);
         entity.setDeletedBy(null);
+        entity.setIsActive(true);
 
         stateRepository.save(entity);
 
@@ -208,6 +222,7 @@ public class StateServiceImpl implements StateService {
     // =====================================================
 
     @Override
+    @Transactional(readOnly = true)
     public StateResponseDTO getById(Long id) {
 
         State entity = stateRepository
@@ -223,6 +238,7 @@ public class StateServiceImpl implements StateService {
     // =====================================================
 
     @Override
+    @Transactional(readOnly = true)
     public List<StateResponseDTO> getAll() {
 
         return stateRepository.findAllWithRelations()
@@ -231,7 +247,12 @@ public class StateServiceImpl implements StateService {
                 .toList();
     }
 
+    // =====================================================
+    // GET DELETED
+    // =====================================================
+
     @Override
+    @Transactional(readOnly = true)
     public List<StateResponseDTO> getDeleted() {
 
         return stateRepository.findByDeletedAtIsNotNull()
@@ -245,6 +266,7 @@ public class StateServiceImpl implements StateService {
     // =====================================================
 
     @Override
+    @Transactional(readOnly = true)
     public List<StateResponseDTO> getActive() {
 
         return stateRepository.findActiveWithRelations()
@@ -254,6 +276,7 @@ public class StateServiceImpl implements StateService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<StateResponseDTO> getInactive() {
 
         return stateRepository.findByIsActiveFalseAndDeletedAtIsNull()
@@ -267,6 +290,7 @@ public class StateServiceImpl implements StateService {
     // =====================================================
 
     @Override
+    @Transactional(readOnly = true)
     public List<StateResponseDTO> getByAdmin(Long adminId) {
 
         return stateRepository.findActiveByAdminWithRelations(adminId)
@@ -276,6 +300,7 @@ public class StateServiceImpl implements StateService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<StateResponseDTO> getActiveByAdmin(Long adminId) {
 
         return stateRepository
@@ -286,6 +311,7 @@ public class StateServiceImpl implements StateService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<StateResponseDTO> getInactiveByAdmin(Long adminId) {
 
         return stateRepository
@@ -300,8 +326,10 @@ public class StateServiceImpl implements StateService {
     // =====================================================
 
     @Override
-    public List<StateResponseDTO> getByCountryAndAdmin(Long countryId,
-                                                       Long adminId) {
+    @Transactional(readOnly = true)
+    public List<StateResponseDTO> getByCountryAndAdmin(
+            Long countryId,
+            Long adminId) {
 
         return stateRepository
                 .findByCountryAndAdminWithRelations(
@@ -314,8 +342,10 @@ public class StateServiceImpl implements StateService {
     }
 
     @Override
-    public List<StateResponseDTO> getActiveByCountryAndAdmin(Long countryId,
-                                                             Long adminId) {
+    @Transactional(readOnly = true)
+    public List<StateResponseDTO> getActiveByCountryAndAdmin(
+            Long countryId,
+            Long adminId) {
 
         return stateRepository
                 .findByCountry_IdAndAdmin_IdAndIsActiveTrueAndDeletedAtIsNull(
@@ -328,8 +358,10 @@ public class StateServiceImpl implements StateService {
     }
 
     @Override
-    public List<StateResponseDTO> getInactiveByCountryAndAdmin(Long countryId,
-                                                               Long adminId) {
+    @Transactional(readOnly = true)
+    public List<StateResponseDTO> getInactiveByCountryAndAdmin(
+            Long countryId,
+            Long adminId) {
 
         return stateRepository
                 .findByCountry_IdAndAdmin_IdAndIsActiveFalseAndDeletedAtIsNull(
@@ -346,6 +378,7 @@ public class StateServiceImpl implements StateService {
     // =====================================================
 
     @Override
+    @Transactional(readOnly = true)
     public List<StateResponseDTO> search(String keyword) {
 
         return stateRepository
@@ -356,8 +389,10 @@ public class StateServiceImpl implements StateService {
     }
 
     @Override
-    public List<StateResponseDTO> searchByAdmin(Long adminId,
-                                                String keyword) {
+    @Transactional(readOnly = true)
+    public List<StateResponseDTO> searchByAdmin(
+            Long adminId,
+            String keyword) {
 
         return stateRepository
                 .findByAdmin_IdAndNameContainingIgnoreCaseAndDeletedAtIsNull(
@@ -377,10 +412,31 @@ public class StateServiceImpl implements StateService {
 
         return StateResponseDTO.builder()
                 .id(entity.getId())
-                .adminId(entity.getAdmin() != null ? entity.getAdmin().getId() : null)
-                .adminName(entity.getAdmin() != null ? entity.getAdmin().getName() : null)
-                .countryId(entity.getCountry() != null ? entity.getCountry().getId() : null)
-                .countryName(entity.getCountry() != null ? entity.getCountry().getName() : null)
+
+                .adminId(
+                        entity.getAdmin() != null
+                                ? entity.getAdmin().getId()
+                                : null
+                )
+
+                .adminName(
+                        entity.getAdmin() != null
+                                ? entity.getAdmin().getName()
+                                : null
+                )
+
+                .countryId(
+                        entity.getCountry() != null
+                                ? entity.getCountry().getId()
+                                : null
+                )
+
+                .countryName(
+                        entity.getCountry() != null
+                                ? entity.getCountry().getName()
+                                : null
+                )
+
                 .name(entity.getName())
                 .isActive(entity.getIsActive())
                 .createdAt(entity.getCreatedAt())

@@ -11,6 +11,7 @@ import com.example.repository.SmokingRepository;
 import com.example.service.CurrentAdminService;
 import com.example.service.SmokingService;
 import com.example.util.AuditHelper;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -19,6 +20,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class SmokingServiceImpl implements SmokingService {
 
     private final SmokingRepository smokingRepository;
@@ -40,8 +42,16 @@ public class SmokingServiceImpl implements SmokingService {
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Admin not found."));
 
+        String value = requestDto.getValue() != null
+                ? requestDto.getValue().trim()
+                : null;
+
+        if (value == null || value.isBlank()) {
+            throw new BadRequestException("Smoking value is required.");
+        }
+
         if (smokingRepository.existsByValueIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
-                requestDto.getValue(),
+                value,
                 admin.getId())) {
 
             throw new BadRequestException("Smoking already exists.");
@@ -49,8 +59,12 @@ public class SmokingServiceImpl implements SmokingService {
 
         Smoking entity = Smoking.builder()
                 .admin(admin)
-                .value(requestDto.getValue())
-                .isActive(requestDto.getIsActive())
+                .value(value)
+                .isActive(
+                        requestDto.getIsActive() != null
+                                ? requestDto.getIsActive()
+                                : true
+                )
                 .build();
 
         entity = smokingRepository.save(entity);
@@ -71,18 +85,29 @@ public class SmokingServiceImpl implements SmokingService {
     // =====================================================
 
     @Override
-    public SmokingResponseDTO update(Long id,
-                                     SmokingRequestDTO requestDto) {
+    public SmokingResponseDTO update(
+            Long id,
+            SmokingRequestDTO requestDto) {
 
         Smoking entity = smokingRepository
                 .findByIdAndDeletedAtIsNull(id)
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Smoking not found."));
 
-        if (!entity.getValue().equalsIgnoreCase(requestDto.getValue())
-                && smokingRepository.existsByValueIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
-                requestDto.getValue(),
-                entity.getAdmin().getId())) {
+        String newValue = requestDto.getValue() != null
+                ? requestDto.getValue().trim()
+                : null;
+
+        if (newValue == null || newValue.isBlank()) {
+            throw new BadRequestException("Smoking value is required.");
+        }
+
+        // Duplicate check
+        if (!entity.getValue().equalsIgnoreCase(newValue)
+                && smokingRepository
+                .existsByValueIgnoreCaseAndAdmin_IdAndDeletedAtIsNull(
+                        newValue,
+                        entity.getAdmin().getId())) {
 
             throw new BadRequestException("Smoking already exists.");
         }
@@ -90,8 +115,16 @@ public class SmokingServiceImpl implements SmokingService {
         String oldValue = entity.getValue();
         Boolean oldActive = entity.getIsActive();
 
-        entity.setValue(requestDto.getValue());
-        entity.setIsActive(requestDto.getIsActive());
+        entity.setValue(newValue);
+
+        /*
+         * IMPORTANT:
+         * Frontend कडून isActive null आला तरी existing status
+         * खराब होऊ नये.
+         */
+        if (requestDto.getIsActive() != null) {
+            entity.setIsActive(requestDto.getIsActive());
+        }
 
         entity = smokingRepository.save(entity);
 
@@ -108,6 +141,7 @@ public class SmokingServiceImpl implements SmokingService {
 
         return mapToResponse(entity);
     }
+
     // =====================================================
     // SOFT DELETE
     // =====================================================
@@ -121,7 +155,9 @@ public class SmokingServiceImpl implements SmokingService {
                         new ResourceNotFoundException("Smoking not found."));
 
         entity.setDeletedAt(LocalDateTime.now());
-        entity.setDeletedBy(currentAdminService.getCurrentAdmin().getId());
+        entity.setDeletedBy(
+                currentAdminService.getCurrentAdmin().getId()
+        );
 
         smokingRepository.save(entity);
 
@@ -144,7 +180,9 @@ public class SmokingServiceImpl implements SmokingService {
         Smoking entity = smokingRepository
                 .findByIdAndDeletedAtIsNotNull(id)
                 .orElseThrow(() ->
-                        new ResourceNotFoundException("Deleted Smoking not found."));
+                        new ResourceNotFoundException(
+                                "Deleted Smoking not found."
+                        ));
 
         entity.setDeletedAt(null);
         entity.setDeletedBy(null);
@@ -204,7 +242,8 @@ public class SmokingServiceImpl implements SmokingService {
     @Override
     public List<SmokingResponseDTO> getAll() {
 
-        return smokingRepository.findAllByDeletedAtIsNull()
+        return smokingRepository
+                .findAllByDeletedAtIsNull()
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
@@ -213,7 +252,8 @@ public class SmokingServiceImpl implements SmokingService {
     @Override
     public List<SmokingResponseDTO> getDeleted() {
 
-        return smokingRepository.findByDeletedAtIsNotNull()
+        return smokingRepository
+                .findByDeletedAtIsNotNull()
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
@@ -226,7 +266,8 @@ public class SmokingServiceImpl implements SmokingService {
     @Override
     public List<SmokingResponseDTO> getActive() {
 
-        return smokingRepository.findByIsActiveTrueAndDeletedAtIsNull()
+        return smokingRepository
+                .findByIsActiveTrueAndDeletedAtIsNull()
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
@@ -235,7 +276,8 @@ public class SmokingServiceImpl implements SmokingService {
     @Override
     public List<SmokingResponseDTO> getInactive() {
 
-        return smokingRepository.findByIsActiveFalseAndDeletedAtIsNull()
+        return smokingRepository
+                .findByIsActiveFalseAndDeletedAtIsNull()
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
@@ -248,7 +290,8 @@ public class SmokingServiceImpl implements SmokingService {
     @Override
     public List<SmokingResponseDTO> getByAdmin(Long adminId) {
 
-        return smokingRepository.findByAdmin_IdAndDeletedAtIsNull(adminId)
+        return smokingRepository
+                .findByAdmin_IdAndDeletedAtIsNull(adminId)
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
@@ -289,8 +332,9 @@ public class SmokingServiceImpl implements SmokingService {
     }
 
     @Override
-    public List<SmokingResponseDTO> searchByAdmin(Long adminId,
-                                                  String keyword) {
+    public List<SmokingResponseDTO> searchByAdmin(
+            Long adminId,
+            String keyword) {
 
         return smokingRepository
                 .findByAdmin_IdAndValueContainingIgnoreCaseAndDeletedAtIsNull(
@@ -310,7 +354,11 @@ public class SmokingServiceImpl implements SmokingService {
 
         return SmokingResponseDTO.builder()
                 .id(entity.getId())
-                .adminId(entity.getAdmin() != null ? entity.getAdmin().getId() : null)
+                .adminId(
+                        entity.getAdmin() != null
+                                ? entity.getAdmin().getId()
+                                : null
+                )
                 .adminName(null)
                 .value(entity.getValue())
                 .isActive(entity.getIsActive())
