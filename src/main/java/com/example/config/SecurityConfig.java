@@ -69,6 +69,10 @@ public class SecurityConfig {
                                 "/api/users/resend-verification",
                                 "/api/users/send-otp",
                                 "/api/users/verify-otp",
+
+                                // WEBSITE VISITOR ANALYTICS
+                                "/api/analytics/visitor",
+
                                 "/api/master/religions/**",
                                 "/api/cities/**",
                                 "/api/states/**",

@@ -276,7 +276,11 @@ const SearchableSelect = ({
         onClick={toggleDropdown}
         className={`w-full bg-background border border-border rounded-lg px-3.5 py-2.5 text-sm text-foreground flex items-center justify-between gap-2 cursor-pointer transition-all duration-150 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary ${
           isOpen ? "ring-2 ring-primary/20 border-primary shadow-sm" : "hover:border-primary/50"
-        } ${disabled || loading ? "opacity-60 cursor-not-allowed bg-muted" : ""}`}
+        } ${disabled || loading ? "opacity-60 cursor-not-allowed bg-muted" : ""} ${
+          displayLabel
+            ? "bg-primary/5 border-primary/30"
+            : "bg-background border-border"
+        }`}
       >
         <span
           className={`truncate flex-1 text-left ${

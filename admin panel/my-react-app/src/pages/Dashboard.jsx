@@ -7,6 +7,7 @@ import {
   FaUserTimes,
   FaCrown,
   FaMoneyBillWave,
+  FaGlobe,
   FaClipboardList,
   FaExclamationTriangle,
   FaExchangeAlt,
@@ -203,7 +204,7 @@ export default function Dashboard() {
       {/* OVERVIEW CARDS */}
       {/* ========================================= */}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
+     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
 
         <StatsCard
           title="Total Users"
@@ -238,6 +239,13 @@ export default function Dashboard() {
           value={`₹${dashboard.totalRevenue ?? 0}`}
           icon={<FaMoneyBillWave />}
           type="revenue"
+        />
+
+        <StatsCard
+          title="Profile Hits"
+          value={dashboard.profileHits ?? 0}
+          icon={<FaGlobe />}
+          type="users"
         />
 
 

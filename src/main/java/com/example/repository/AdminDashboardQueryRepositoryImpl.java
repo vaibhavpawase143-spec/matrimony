@@ -79,7 +79,16 @@ public class AdminDashboardQueryRepositoryImpl
 
             (SELECT COUNT(*) FROM payments WHERE status = 'FAILED') AS failed_transactions,
 
-            (SELECT COUNT(*) FROM payments WHERE status = 'PENDING') AS pending_transactions
+            (SELECT COUNT(*) FROM payments WHERE status = 'PENDING') AS pending_transactions,
+
+            /* ================= WEBSITE ANALYTICS ================= */
+
+            COALESCE(
+                (SELECT profile_hits
+                 FROM website_analytics
+                 WHERE id = 1),
+                0
+            ) AS profile_hits
         """;
 
     @Override
@@ -92,8 +101,10 @@ public class AdminDashboardQueryRepositoryImpl
                     AdminDashboardDTO dto = new AdminDashboardDTO();
 
                     // ================= USERS =================
+
                     long totalUsers = rs.getLong("total_users");
                     long activeUsers = rs.getLong("active_users");
+
                     dto.setTotalUsers(totalUsers);
                     dto.setActiveUsers(activeUsers);
                     dto.setInactiveUsers(rs.getLong("inactive_users"));
@@ -101,58 +112,151 @@ public class AdminDashboardQueryRepositoryImpl
                     dto.setVerifiedUsers(rs.getLong("verified_users"));
                     dto.setUnverifiedUsers(rs.getLong("unverified_users"));
 
-                    dto.setNewUsersThisMonth(rs.getLong("new_users_this_month"));
-                    dto.setNewUsersThisWeek(rs.getLong("new_users_this_week"));
-                    dto.setNewUsersToday(rs.getLong("new_users_today"));
+                    dto.setNewUsersThisMonth(
+                            rs.getLong("new_users_this_month")
+                    );
 
-                    long currentMonthUsers = rs.getLong("current_month_users");
-                    long previousMonthUsers = rs.getLong("previous_month_users");
+                    dto.setNewUsersThisWeek(
+                            rs.getLong("new_users_this_week")
+                    );
+
+                    dto.setNewUsersToday(
+                            rs.getLong("new_users_today")
+                    );
+
+                    long currentMonthUsers =
+                            rs.getLong("current_month_users");
+
+                    long previousMonthUsers =
+                            rs.getLong("previous_month_users");
 
                     // ================= REPORTS =================
-                    dto.setTotalReports(rs.getLong("total_reports"));
-                    dto.setPendingReports(rs.getLong("pending_reports"));
-                    dto.setResolvedReports(rs.getLong("resolved_reports"));
-                    dto.setClosedReports(rs.getLong("closed_reports"));
+
+                    dto.setTotalReports(
+                            rs.getLong("total_reports")
+                    );
+
+                    dto.setPendingReports(
+                            rs.getLong("pending_reports")
+                    );
+
+                    dto.setResolvedReports(
+                            rs.getLong("resolved_reports")
+                    );
+
+                    dto.setClosedReports(
+                            rs.getLong("closed_reports")
+                    );
 
                     // ================= SUBSCRIPTIONS =================
-                    dto.setTotalSubscriptions(rs.getLong("total_subscriptions"));
-                    dto.setActiveSubscriptions(rs.getLong("active_subscriptions"));
-                    dto.setExpiredSubscriptions(rs.getLong("expired_subscriptions"));
 
-                    long currentMonthSubscriptions = rs.getLong("current_month_subscriptions");
-                    long previousMonthSubscriptions = rs.getLong("previous_month_subscriptions");
+                    dto.setTotalSubscriptions(
+                            rs.getLong("total_subscriptions")
+                    );
+
+                    dto.setActiveSubscriptions(
+                            rs.getLong("active_subscriptions")
+                    );
+
+                    dto.setExpiredSubscriptions(
+                            rs.getLong("expired_subscriptions")
+                    );
+
+                    long currentMonthSubscriptions =
+                            rs.getLong("current_month_subscriptions");
+
+                    long previousMonthSubscriptions =
+                            rs.getLong("previous_month_subscriptions");
 
                     // ================= PAYMENTS =================
-                    BigDecimal totalRevenue = rs.getBigDecimal("total_revenue");
-                    BigDecimal currentMonthRevenue = rs.getBigDecimal("current_month_revenue");
-                    BigDecimal previousMonthRevenue = rs.getBigDecimal("previous_month_revenue");
+
+                    BigDecimal totalRevenue =
+                            rs.getBigDecimal("total_revenue");
+
+                    BigDecimal currentMonthRevenue =
+                            rs.getBigDecimal("current_month_revenue");
+
+                    BigDecimal previousMonthRevenue =
+                            rs.getBigDecimal("previous_month_revenue");
 
                     dto.setTotalRevenue(totalRevenue);
-                    dto.setRevenueThisMonth(currentMonthRevenue);
 
-                    dto.setTotalTransactions(rs.getLong("total_transactions"));
-                    dto.setSuccessfulTransactions(rs.getLong("successful_transactions"));
-                    dto.setFailedTransactions(rs.getLong("failed_transactions"));
-                    dto.setPendingTransactions(rs.getLong("pending_transactions"));
+                    dto.setRevenueThisMonth(
+                            currentMonthRevenue
+                    );
+
+                    dto.setTotalTransactions(
+                            rs.getLong("total_transactions")
+                    );
+
+                    dto.setSuccessfulTransactions(
+                            rs.getLong("successful_transactions")
+                    );
+
+                    dto.setFailedTransactions(
+                            rs.getLong("failed_transactions")
+                    );
+
+                    dto.setPendingTransactions(
+                            rs.getLong("pending_transactions")
+                    );
+
+                    // ================= WEBSITE ANALYTICS =================
+
+                    dto.setProfileHits(
+                            rs.getLong("profile_hits")
+                    );
 
                     // ================= GROWTH PERCENTAGES =================
-                    dto.setUserGrowthPercentage(calculateGrowth(currentMonthUsers, previousMonthUsers));
-                    dto.setRevenueGrowthPercentage(calculateGrowth(currentMonthRevenue, previousMonthRevenue));
-                    dto.setSubscriptionGrowthPercentage(calculateGrowth(currentMonthSubscriptions, previousMonthSubscriptions));
+
+                    dto.setUserGrowthPercentage(
+                            calculateGrowth(
+                                    currentMonthUsers,
+                                    previousMonthUsers
+                            )
+                    );
+
+                    dto.setRevenueGrowthPercentage(
+                            calculateGrowth(
+                                    currentMonthRevenue,
+                                    previousMonthRevenue
+                            )
+                    );
+
+                    dto.setSubscriptionGrowthPercentage(
+                            calculateGrowth(
+                                    currentMonthSubscriptions,
+                                    previousMonthSubscriptions
+                            )
+                    );
 
                     return dto;
                 }
         );
     }
 
-    private Double calculateGrowth(Number current, Number previous) {
-        double currentValue = current != null ? current.doubleValue() : 0.0;
-        double previousValue = previous != null ? previous.doubleValue() : 0.0;
+    private Double calculateGrowth(
+            Number current,
+            Number previous
+    ) {
+
+        double currentValue =
+                current != null
+                        ? current.doubleValue()
+                        : 0.0;
+
+        double previousValue =
+                previous != null
+                        ? previous.doubleValue()
+                        : 0.0;
 
         if (previousValue == 0) {
             return currentValue > 0 ? 100.0 : 0.0;
         }
 
-        return ((currentValue - previousValue) / previousValue) * 100.0;
+        return (
+                (currentValue - previousValue)
+                        / previousValue
+        ) * 100.0;
     }
 }

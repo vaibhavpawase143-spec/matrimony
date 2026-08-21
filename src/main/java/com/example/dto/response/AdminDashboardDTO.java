@@ -39,6 +39,7 @@ public class AdminDashboardDTO implements Serializable {
     private BigDecimal totalRevenue;
     private BigDecimal revenueThisMonth;
     private BigDecimal revenueThisWeek;
+    private Long profileHits;
 
     private Long totalTransactions;
     private Long successfulTransactions;

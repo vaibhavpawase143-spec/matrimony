@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ProfileSearchRequestDTO {
+
     @Builder.Default
     private Integer page = 0;
 
@@ -34,6 +35,10 @@ public class ProfileSearchRequestDTO {
     private Long educationLevelId;
 
     private Long occupationId;
+
+    // NEW: Employment Status filter
+    private Long employmentStatusId;
+
     private Long incomeId;
 
     private Long heightId;

@@ -120,6 +120,7 @@ const SearchPage = () => {
     city_id: '',
     education_level_id: '',
     occupation_id: '',
+    employment_status_id: '',
     height_id: '',
     weight_id: '',
     marital_status_id: '',
@@ -135,6 +136,7 @@ const SearchPage = () => {
     cities: [],
     educationLevels: [],
     occupations: [],
+    employmentStatuses: [],
     heights: [],
     weights: [],
     maritalStatuses: []
@@ -225,6 +227,9 @@ useEffect(() => {
         cities: Array.isArray(bulkData?.cities) ? bulkData.cities : [],
         educationLevels: Array.isArray(bulkData?.educationLevels) ? bulkData.educationLevels : [],
         occupations: Array.isArray(bulkData?.occupations) ? bulkData.occupations : [],
+        employmentStatuses: Array.isArray(bulkData?.employmentStatuses)
+          ? bulkData.employmentStatuses
+          : [],
         maritalStatuses: Array.isArray(bulkData?.maritalStatuses) ? bulkData.maritalStatuses : [],
         subCastes: [],
         heights: Array.isArray(bulkData?.heights) ? bulkData.heights : [],
@@ -309,6 +314,9 @@ const performSearch = async (pageToFetch = 0, sizeToFetch = pageSize, isAppend =
       cityId: activeFilters.city_id ? Number(activeFilters.city_id) : null,
       educationLevelId: activeFilters.education_level_id ? Number(activeFilters.education_level_id) : null,
       occupationId: activeFilters.occupation_id ? Number(activeFilters.occupation_id) : null,
+      employmentStatusId: activeFilters.employment_status_id
+        ? Number(activeFilters.employment_status_id)
+        : null,
       maritalStatusId: activeFilters.marital_status_id ? Number(activeFilters.marital_status_id) : null,
       ageFrom: activeFilters.min_age ? Number(activeFilters.min_age) : null,
       ageTo: activeFilters.max_age ? Number(activeFilters.max_age) : null,
@@ -389,6 +397,7 @@ const handlePageSizeChange = (newSize) => {
       city_id: '',
       education_level_id: '',
       occupation_id: '',
+      employment_status_id: '',
       height_id: '',
       weight_id: '',
       marital_status_id: '',
@@ -402,8 +411,8 @@ const handlePageSizeChange = (newSize) => {
   return (
     <div className="min-h-screen bg-muted/30 pb-16">
       {/* Sleek Gradient Header */}
-      <div 
-        className="py-10 px-4 text-center text-white relative overflow-hidden shadow-md" 
+      <div
+        className="py-10 px-4 text-center text-white relative overflow-hidden shadow-md"
         style={{ background: "linear-gradient(135deg, hsl(270 65% 35%), hsl(290 60% 45%), hsl(270 55% 55%))" }}
       >
         <div className="max-w-3xl mx-auto relative z-10">
@@ -429,8 +438,8 @@ const handlePageSizeChange = (newSize) => {
               <button
                 onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
-                  showAdvancedFilters 
-                    ? 'bg-primary/10 text-primary border border-primary/30' 
+                  showAdvancedFilters
+                    ? 'bg-primary/10 text-primary border border-primary/30'
                     : 'bg-muted hover:bg-muted/80 text-muted-foreground'
                 }`}
               >
@@ -454,43 +463,43 @@ const handlePageSizeChange = (newSize) => {
             <div>
               <label className="text-xs font-medium text-foreground mb-1 block">Age Range</label>
               <div className="grid grid-cols-2 gap-2">
-                <input 
-                  type="number" 
-                  placeholder="Min Age" 
+                <input
+                  type="number"
+                  placeholder="Min Age"
                   value={filters.min_age}
                   onChange={(e) => handleFilterChange('min_age', e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && performSearch(0, pageSize)}
-                  className="w-full bg-background border border-border rounded-xl px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" 
+                  className="w-full bg-background border border-border rounded-xl px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                 />
-                <input 
-                  type="number" 
-                  placeholder="Max Age" 
+                <input
+                  type="number"
+                  placeholder="Max Age"
                   value={filters.max_age}
                   onChange={(e) => handleFilterChange('max_age', e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && performSearch(0, pageSize)}
-                  className="w-full bg-background border border-border rounded-xl px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" 
+                  className="w-full bg-background border border-border rounded-xl px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                 />
               </div>
             </div>
 
-            <SelectField 
-              label="Religion" 
+            <SelectField
+              label="Religion"
               options={masterData.religions}
               value={filters.religion_id}
               onChange={(value) => handleFilterChange('religion_id', value)}
               placeholder="All Religions"
             />
 
-            <SelectField 
-              label="Caste" 
+            <SelectField
+              label="Caste"
               options={masterData.castes}
               value={filters.caste_id}
               onChange={(value) => handleFilterChange('caste_id', value)}
               placeholder="All Castes"
             />
 
-            <SelectField 
-              label="City / Location" 
+            <SelectField
+              label="City / Location"
               options={masterData.cities}
               value={filters.city_id}
               onChange={(value) => handleFilterChange('city_id', value)}
@@ -501,20 +510,28 @@ const handlePageSizeChange = (newSize) => {
           {/* Collapsible Advanced Filters Drawer */}
           {showAdvancedFilters && (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 pt-4 mt-4 border-t border-border/50 animate-in fade-in duration-200">
-              <SelectField 
-                label="Education Level" 
+              <SelectField
+                label="Education Level"
                 options={masterData.educationLevels}
                 value={filters.education_level_id}
                 onChange={(value) => handleFilterChange('education_level_id', value)}
                 placeholder="All Education Levels"
               />
 
-              <SelectField 
-                label="Profession / Occupation" 
+              <SelectField
+                label="Profession / Occupation"
                 options={masterData.occupations}
                 value={filters.occupation_id}
                 onChange={(value) => handleFilterChange('occupation_id', value)}
                 placeholder="All Occupations"
+              />
+
+              <SelectField
+                label="Employment Status"
+                options={masterData.employmentStatuses}
+                value={filters.employment_status_id}
+                onChange={(value) => handleFilterChange('employment_status_id', value)}
+                placeholder="All Employment Statuses"
               />
 
               <SelectField 

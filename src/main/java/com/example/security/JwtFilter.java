@@ -26,6 +26,7 @@ public class JwtFilter extends OncePerRequestFilter {
     private final UserRepository userRepository;
     private final AdminRepository adminRepository;
     private final SecurityUserDetailsService securityUserDetailsService;
+
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
 
@@ -36,6 +37,10 @@ public class JwtFilter extends OncePerRequestFilter {
                 || path.startsWith("/api/users/register")
                 || path.startsWith("/api/admins/login")
                 || path.startsWith("/api/admins/refresh")
+
+                // WEBSITE VISITOR ANALYTICS
+                || path.equals("/api/analytics/visitor")
+
                 || path.startsWith("/api/image/")
                 || path.equals("/api/admins/logout")
                 || path.startsWith("/api/kundli/")
@@ -46,10 +51,11 @@ public class JwtFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain)
-            throws ServletException, IOException {
+    protected void doFilterInternal(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            FilterChain filterChain
+    ) throws ServletException, IOException {
 
         String authHeader = request.getHeader("Authorization");
 
@@ -68,19 +74,23 @@ public class JwtFilter extends OncePerRequestFilter {
                     SecurityContextHolder.getContext().getAuthentication() == null) {
 
                 if (!jwtUtil.isValid(token, username)) {
-                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid token");
+                    response.sendError(
+                            HttpServletResponse.SC_UNAUTHORIZED,
+                            "Invalid token"
+                    );
                     return;
                 }
 
                 long jwtStart = System.currentTimeMillis();
+
                 UserDetails userDetails =
                         securityUserDetailsService.loadUserByUsername(username);
+
                 System.out.println(
                         "JWT FILTER = "
                                 + (System.currentTimeMillis() - jwtStart)
                                 + " ms"
                 );
-
 
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(
@@ -90,10 +100,13 @@ public class JwtFilter extends OncePerRequestFilter {
                         );
 
                 authentication.setDetails(
-                        new WebAuthenticationDetailsSource().buildDetails(request)
+                        new WebAuthenticationDetailsSource()
+                                .buildDetails(request)
                 );
 
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+                SecurityContextHolder
+                        .getContext()
+                        .setAuthentication(authentication);
             }
 
         } catch (Exception e) {
@@ -103,7 +116,9 @@ public class JwtFilter extends OncePerRequestFilter {
                     "Invalid or expired token"
             );
 
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+            response.sendError(
+                    HttpServletResponse.SC_UNAUTHORIZED
+            );
 
             return;
         }

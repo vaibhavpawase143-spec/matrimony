@@ -1001,10 +1001,10 @@ const SettingsPage = () => {
     if (!files.length) return;
 
     const currentCount = galleryPhotos.length;
-    if (currentCount + files.length > 8) {
-      error("Maximum 8 photos allowed. Please delete a photo first.");
-      return;
-    }
+   if (currentCount + files.length > 4) {
+     error("Maximum 4 photos allowed. Please delete a photo first.");
+     return;
+   }
 
     try {
       const photoFormData = new FormData();
@@ -1389,6 +1389,12 @@ const SettingsPage = () => {
     }
   };
 
+  const isFieldFilled = (value) => {
+    if (value === null || value === undefined) return false;
+    if (typeof value === "string") return value.trim() !== "";
+    return value !== "";
+  };
+
   const renderField = (field) => {
     const { label, placeholder, type = "text", key, options, readOnly = false } = field;
 
@@ -1478,7 +1484,11 @@ const SettingsPage = () => {
           onChange={(e) => handleInputChange(key, e.target.value)}
           placeholder={placeholder}
           readOnly={readOnly}
-          className={`w-full bg-background border border-border rounded-lg px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary ${
+          className={`w-full border rounded-lg px-4 py-2.5 text-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary ${
+            isFieldFilled(formData[key])
+              ? "bg-primary/5 border-primary/40 text-foreground font-medium shadow-sm"
+              : "bg-background border-border text-foreground placeholder:text-muted-foreground"
+          } ${
             readOnly ? "bg-muted cursor-not-allowed" : ""
           }`}
         />
@@ -1882,7 +1892,11 @@ const SettingsPage = () => {
                       handleInputChange("aboutMe", e.target.value)
                     }
                     placeholder="Tell us about yourself, your interests, personality and what you are looking for..."
-                    className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none"
+                    className={`w-full border rounded-lg px-4 py-2.5 text-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none ${
+                      isFieldFilled(formData.aboutMe)
+                        ? "bg-primary/5 border-primary/40 text-foreground font-medium shadow-sm"
+                        : "bg-background border-border text-foreground placeholder:text-muted-foreground"
+                    }`}
                   />
                 </div>
               </SettingsSection>
@@ -1908,7 +1922,11 @@ const SettingsPage = () => {
                         </label>
                         <input
                           type="number"
-                          className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                          className={`w-full border rounded-lg px-4 py-2.5 text-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary ${
+                            isFieldFilled(partnerPreference.minAge)
+                              ? "bg-primary/5 border-primary/40 text-foreground font-medium shadow-sm"
+                              : "bg-background border-border text-foreground placeholder:text-muted-foreground"
+                          }`}
                           value={partnerPreference.minAge ?? ""}
                           onChange={(e) =>
                             handlePartnerPreferenceChange(
@@ -1925,7 +1943,11 @@ const SettingsPage = () => {
                         </label>
                         <input
                           type="number"
-                          className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                          className={`w-full border rounded-lg px-4 py-2.5 text-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary ${
+                            isFieldFilled(partnerPreference.maxAge)
+                              ? "bg-primary/5 border-primary/40 text-foreground font-medium shadow-sm"
+                              : "bg-background border-border text-foreground placeholder:text-muted-foreground"
+                          }`}
                           value={partnerPreference.maxAge ?? ""}
                           onChange={(e) =>
                             handlePartnerPreferenceChange(
@@ -2176,7 +2198,11 @@ const SettingsPage = () => {
                         )
                       }
                       placeholder="Any other expectations..."
-                      className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none"
+                      className={`w-full border rounded-lg px-4 py-2.5 text-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none ${
+                        isFieldFilled(partnerPreference.otherExpectations)
+                          ? "bg-primary/5 border-primary/40 text-foreground font-medium shadow-sm"
+                          : "bg-background border-border text-foreground placeholder:text-muted-foreground"
+                      }`}
                     />
                   </div>
                 </div>
@@ -2193,10 +2219,10 @@ const SettingsPage = () => {
                 <div>
                   <div className="flex justify-between items-center mb-3">
                     <span className="text-xs text-muted-foreground">
-                      {galleryPhotos.length}/8 photos uploaded
+                      {galleryPhotos.length}/4 photos uploaded
                     </span>
                     <span className="text-destructive text-xs">
-                      Minimum 4 photos required
+                      Minimum 2 photos required
                     </span>
                   </div>
 

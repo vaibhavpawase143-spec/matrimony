@@ -36,6 +36,7 @@ public class ProfileSearchSpecification {
                 root.fetch("state", JoinType.LEFT);
                 root.fetch("occupation", JoinType.LEFT);
                 root.fetch("educationLevel", JoinType.LEFT);
+                root.fetch("employed", JoinType.LEFT);
                 root.fetch("religion", JoinType.LEFT);
                 root.fetch("caste", JoinType.LEFT);
                 root.fetch("gender", JoinType.LEFT);
@@ -196,8 +197,49 @@ public class ProfileSearchSpecification {
             if (req.getDrinkingId() != null) {
                 predicates.add(cb.equal(root.get("drinking").get("id"), req.getDrinkingId()));
             }
+            // 12. Education Level, Occupation, Employment Status, Income
+            Long educationId = req.getEducationLevelId() != null
+                    ? req.getEducationLevelId()
+                    : req.getEducationId();
 
-            // 12. Manglik Status & Profile Type
+            if (eduId != null) {
+                predicates.add(
+                        cb.equal(
+                                educationJoin.get("id"),
+                                eduId
+                        )
+                );
+            }
+
+            if (req.getOccupationId() != null) {
+                predicates.add(
+                        cb.equal(
+                                occupationJoin.get("id"),
+                                req.getOccupationId()
+                        )
+                );
+            }
+
+// NEW: EMPLOYMENT STATUS FILTER
+            if (req.getEmploymentStatusId() != null) {
+                predicates.add(
+                        cb.equal(
+                                root.get("employed").get("id"),
+                                req.getEmploymentStatusId()
+                        )
+                );
+            }
+
+            if (req.getIncomeId() != null) {
+                predicates.add(
+                        cb.equal(
+                                root.get("income").get("id"),
+                                req.getIncomeId()
+                        )
+                );
+            }
+
+            // 13. Manglik Status & Profile Type
             if (req.getManglikStatusId() != null) {
                 predicates.add(cb.equal(root.get("manglikStatus").get("id"), req.getManglikStatusId()));
             }

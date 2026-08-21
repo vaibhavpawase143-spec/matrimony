@@ -57,14 +57,21 @@ const Login = () => {
     }
 
     if (!password.trim()) {
-      errs.password = t?.login?.errors?.passwordRequired || "Password is required";
+      errs.password =
+        t?.login?.errors?.passwordRequired || "Password is required";
     } else if (password.length < 6) {
-      errs.password = t?.login?.errors?.passwordMin || "Password must be at least 6 characters";
+      errs.password =
+        t?.login?.errors?.passwordMin ||
+        "Password must be at least 6 characters";
     }
 
     setErrors(errs);
+
     if (Object.keys(errs).length > 0) {
-      error(t?.login?.messages?.fixErrorsFirst || "Please fix the errors first");
+      error(
+        t?.login?.messages?.fixErrorsFirst ||
+          "Please fix the errors first"
+      );
       return;
     }
 
@@ -78,6 +85,7 @@ const Login = () => {
       }
 
       const recaptchaToken = await executeRecaptcha("login");
+
       const response = await authAPI.login(
         {
           email: email.trim(),
@@ -104,7 +112,10 @@ const Login = () => {
         localStorage.removeItem("rememberedEmail");
       }
 
-      success(t?.login?.messages?.loginSuccess || "Login successful");
+      success(
+        t?.login?.messages?.loginSuccess || "Login successful"
+      );
+
       stopLoading();
 
       if (redirectTo) {
@@ -116,13 +127,18 @@ const Login = () => {
       }
     } catch (err) {
       stopLoading();
-      const errorMessage = err.message || t?.login?.messages?.loginFailed || "Login failed";
+      const errorMessage =
+        err.message ||
+        t?.login?.messages?.loginFailed ||
+        "Login failed";
+
       error(errorMessage);
     }
   };
 
   const handleSendLoginOTP = async (e) => {
     e.preventDefault();
+
     if (!otpTarget.trim()) {
       error("Please enter your Phone number or Email address");
       return;
@@ -133,6 +149,7 @@ const Login = () => {
 
     try {
       const response = await otpAPI.sendLoginOTP(otpTarget.trim());
+
       stopLoading();
       setOtpLoading(false);
 
@@ -147,14 +164,23 @@ const Login = () => {
     } catch (err) {
       stopLoading();
       setOtpLoading(false);
-      error(err.message || "Failed to send OTP code. Please check your phone/email.");
+
+      error(
+        err.message ||
+          "Failed to send OTP code. Please check your phone/email."
+      );
     }
   };
 
   const handleVerifyLoginOTP = async (otpCode) => {
     setOtpLoading(true);
+
     try {
-      const response = await otpAPI.loginWithOTP(otpTarget.trim(), otpCode);
+      const response = await otpAPI.loginWithOTP(
+        otpTarget.trim(),
+        otpCode
+      );
+
       setShowOtpModal(false);
       setOtpLoading(false);
 
@@ -182,9 +208,11 @@ const Login = () => {
 
   const handleResendLoginOTP = async () => {
     const response = await otpAPI.sendLoginOTP(otpTarget.trim());
+
     if (response?.data?.devOtp) {
       setDevOtp(response.data.devOtp);
     }
+
     success("New OTP code resent!");
   };
 
@@ -192,20 +220,27 @@ const Login = () => {
     <div
       className="min-h-screen flex items-center justify-center relative overflow-hidden p-4"
       style={{
-        background: "linear-gradient(135deg, hsl(270 60% 35%), hsl(290 55% 45%), hsl(270 50% 55%))",
+        background:
+          "linear-gradient(135deg, hsl(270 60% 35%), hsl(290 55% 45%), hsl(270 50% 55%))",
       }}
     >
       <Heart className="absolute top-12 left-[10%] h-5 w-5 text-pink-soft fill-pink-soft opacity-40 animate-float-heart" />
+
       <Heart className="absolute top-24 right-[20%] h-4 w-4 text-pink-soft fill-pink-soft opacity-30 animate-float-heart [animation-delay:1s]" />
 
       <div className="bg-card rounded-3xl shadow-2xl p-6 sm:p-8 w-full max-w-md relative z-10 border border-white/20">
         <div className="text-center mb-6">
           <div className="flex items-center justify-center gap-2 mb-2">
             <Heart className="h-8 w-8 text-primary fill-primary animate-pulse" />
-            <span className="text-2xl font-display font-bold text-foreground">Gathbandhan</span>
+
+            <span className="text-2xl font-display font-bold text-foreground">
+              Gathbandhan
+            </span>
           </div>
+
           <p className="text-muted-foreground text-xs sm:text-sm">
-            {t?.login?.subtitle || "Find your life partner with confidence"}
+            {t?.login?.subtitle ||
+              "Find your life partner with confidence"}
           </p>
         </div>
 
@@ -221,8 +256,10 @@ const Login = () => {
             }`}
           >
             <Key className="w-3.5 h-3.5" />
+
             <span>Password Login</span>
           </button>
+
           <button
             type="button"
             onClick={() => setLoginMethod("OTP")}
@@ -233,41 +270,81 @@ const Login = () => {
             }`}
           >
             <Sparkles className="w-3.5 h-3.5 text-pink-500" />
+
             <span>Real-Time OTP Login</span>
           </button>
         </div>
 
         {/* PASSWORD LOGIN FORM */}
         {loginMethod === "PASSWORD" ? (
-          <form className="space-y-4" onSubmit={handlePasswordLogin} autoComplete="off">
+          <form
+            className="space-y-4"
+            onSubmit={handlePasswordLogin}
+            autoComplete="on"
+          >
             <div>
-              <label className="text-xs font-medium mb-1 block">{t?.login?.emailLabel || "Email Address"}</label>
+              <label className="text-xs font-medium mb-1 block">
+                {t?.login?.emailLabel || "Email Address"}
+              </label>
+
               <input
                 type="email"
+                name="email"
+                id="login-email"
                 value={email}
+                autoComplete="email"
+                inputMode="email"
                 onChange={(e) => {
                   setEmail(e.target.value);
-                  if (errors.email) setErrors((prev) => ({ ...prev, email: "" }));
+
+                  if (errors.email) {
+                    setErrors((prev) => ({
+                      ...prev,
+                      email: "",
+                    }));
+                  }
                 }}
                 className="w-full border rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
                 placeholder="Enter your email address"
               />
-              {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email}</p>}
+
+              {errors.email && (
+                <p className="text-xs text-red-500 mt-1">
+                  {errors.email}
+                </p>
+              )}
             </div>
 
             <div>
-              <label className="text-xs font-medium mb-1 block">{t?.login?.passwordLabel || "Password"}</label>
+              <label className="text-xs font-medium mb-1 block">
+                {t?.login?.passwordLabel || "Password"}
+              </label>
+
               <input
                 type="password"
+                name="password"
+                id="login-password"
                 value={password}
+                autoComplete="new-password"
                 onChange={(e) => {
                   setPassword(e.target.value);
-                  if (errors.password) setErrors((prev) => ({ ...prev, password: "" }));
+
+                  if (errors.password) {
+                    setErrors((prev) => ({
+                      ...prev,
+                      password: "",
+                    }));
+                  }
                 }}
                 className="w-full border rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
                 placeholder="Enter your password"
               />
-              {errors.password && <p className="text-xs text-red-500 mt-1">{errors.password}</p>}
+
+              {errors.password && (
+                <p className="text-xs text-red-500 mt-1">
+                  {errors.password}
+                </p>
+              )}
             </div>
 
             <div className="flex items-center justify-between">
@@ -275,12 +352,21 @@ const Login = () => {
                 <input
                   type="checkbox"
                   checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
+                  onChange={(e) =>
+                    setRememberMe(e.target.checked)
+                  }
                   className="rounded text-primary focus:ring-primary"
                 />
-                <span className="text-xs text-muted-foreground">{t?.login?.rememberMe || "Remember me"}</span>
+
+                <span className="text-xs text-muted-foreground">
+                  {t?.login?.rememberMe || "Remember me"}
+                </span>
               </div>
-              <Link to="/forgot-password" className="text-xs text-pink-600 hover:text-pink-700 font-medium">
+
+              <Link
+                to="/forgot-password"
+                className="text-xs text-pink-600 hover:text-pink-700 font-medium"
+              >
                 Forgot Password?
               </Link>
             </div>
@@ -294,21 +380,31 @@ const Login = () => {
           </form>
         ) : (
           /* REAL-TIME OTP LOGIN FORM */
-          <form className="space-y-4" onSubmit={handleSendLoginOTP}>
+          <form
+            className="space-y-4"
+            onSubmit={handleSendLoginOTP}
+          >
             <div>
-              <label className="text-xs font-medium mb-1 block">Phone Number or Email</label>
+              <label className="text-xs font-medium mb-1 block">
+                Phone Number or Email
+              </label>
+
               <div className="relative">
                 <input
                   type="text"
                   value={otpTarget}
-                  onChange={(e) => setOtpTarget(e.target.value)}
+                  onChange={(e) =>
+                    setOtpTarget(e.target.value)
+                  }
                   className="w-full border rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
                   placeholder="Enter phone (e.g. 9876543210) or email"
                   required
                 />
               </div>
+
               <p className="text-[11px] text-muted-foreground mt-1">
-                We will send an instant 6-digit OTP code to verify your identity.
+                We will send an instant 6-digit OTP code to verify
+                your identity.
               </p>
             </div>
 
@@ -318,6 +414,7 @@ const Login = () => {
               className="w-full bg-gradient-to-r from-pink-600 to-purple-600 text-white py-3 rounded-xl hover:opacity-95 transition font-semibold text-sm shadow-md flex items-center justify-center gap-2"
             >
               <Sparkles className="w-4 h-4" />
+
               <span>Get Real-Time OTP Code</span>
             </button>
           </form>
@@ -325,7 +422,11 @@ const Login = () => {
 
         <div className="mt-6 pt-4 border-t border-gray-100 text-center text-xs text-muted-foreground">
           {t?.login?.noAccount || "Don't have an account?"}{" "}
-          <Link to="/register" className="text-primary font-semibold hover:underline">
+
+          <Link
+            to="/register"
+            className="text-primary font-semibold hover:underline"
+          >
             {t?.login?.registerLink || "Create an account"}
           </Link>
         </div>

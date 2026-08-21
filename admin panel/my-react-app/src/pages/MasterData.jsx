@@ -52,6 +52,9 @@ export default function MasterData() {
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
 
+  // Bulk Selection State (keeps existing row/status/action logic unchanged)
+  const [selectedIds, setSelectedIds] = useState([]);
+
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
@@ -383,6 +386,123 @@ export default function MasterData() {
   };
 
   // =========================================================
+  // BULK SELECTION / BULK STATUS ACTIONS
+  // =========================================================
+
+  const toggleRowSelection = (id) => {
+    setSelectedIds((prev) =>
+      prev.includes(id)
+        ? prev.filter((selectedId) => selectedId !== id)
+        : [...prev, id]
+    );
+  };
+
+  const clearSelectedRows = () => {
+    setSelectedIds([]);
+  };
+
+  const handleBulkStatusUpdate = async (newStatus) => {
+    if (selectedIds.length === 0) {
+      return;
+    }
+
+    const selectedItems = items.filter((item) =>
+      selectedIds.includes(item.id)
+    );
+
+    if (selectedItems.length === 0) {
+      setSelectedIds([]);
+      return;
+    }
+
+    const actionText = newStatus ? "activated" : "deactivated";
+
+    try {
+      setLoading(true);
+
+      await Promise.all(
+        selectedItems.map(async (item) => {
+          const adminId = item.adminId || item.admin?.id || 1;
+
+          const payload = {
+            adminId: Number(adminId),
+            isActive: newStatus,
+          };
+
+          if (activeTab === "Income") {
+            payload.range = item.range || item.name;
+          } else if (activeTab === "Height") {
+            payload.height = item.height || item.name;
+          } else if (
+            activeTab === "Weight" ||
+            activeTab === "Smoking" ||
+            activeTab === "Drinking"
+          ) {
+            payload.value = item.value || item.name;
+
+            if (activeTab === "Drinking") {
+              payload.name = item.name || item.value;
+            }
+          } else {
+            payload.name = getItemName(item);
+          }
+
+          if (activeTab === "Caste") {
+            const religionId = item.religionId || item.religion?.id;
+            if (religionId) {
+              payload.religionId = Number(religionId);
+            }
+          }
+
+          if (activeTab === "Sub Caste") {
+            const casteId = item.casteId || item.caste?.id;
+            if (casteId) {
+              payload.casteId = Number(casteId);
+            }
+          }
+
+          if (activeTab === "State") {
+            const countryId = item.countryId || item.country?.id;
+            if (countryId) {
+              payload.countryId = Number(countryId);
+            }
+          }
+
+          if (activeTab === "City") {
+            const stateId = item.stateId || item.state?.id;
+            if (stateId) {
+              payload.stateId = Number(stateId);
+            }
+          }
+
+          return updateMasterItem(activeTab, item.id, payload);
+        })
+      );
+
+      toast.success(
+        `${selectedItems.length} ${activeTab} record${
+          selectedItems.length > 1 ? "s" : ""
+        } ${actionText} successfully.`
+      );
+
+      setSelectedIds([]);
+      await fetchTabItems(activeTab);
+    } catch (err) {
+      console.error("BULK STATUS UPDATE ERROR:", err);
+
+      toast.error(
+        err?.message ||
+          err?.serverMessage ||
+          `Failed to ${newStatus ? "activate" : "deactivate"} selected ${activeTab} records.`
+      );
+
+      await fetchTabItems(activeTab);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // =========================================================
   // FILTERED DATA (Admin sees ALL items: active + inactive)
   // =========================================================
 
@@ -422,6 +542,7 @@ export default function MasterData() {
             onClick={() => {
               setActiveTab(tab);
               setSearch("");
+              setSelectedIds([]);
             }}
             className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition cursor-pointer ${
               activeTab === tab
@@ -445,6 +566,51 @@ export default function MasterData() {
         />
       </div>
 
+      {/* ================= BULK ACTION BAR ================= */}
+      {selectedIds.length > 0 && (
+        <div className="mb-4 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2 text-sm font-semibold text-blue-800">
+              <span className="inline-flex items-center justify-center min-w-8 h-8 px-2 rounded-full bg-blue-600 text-white">
+                {selectedIds.length}
+              </span>
+              <span>
+                {selectedIds.length === 1 ? "Record" : "Records"} Selected
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => handleBulkStatusUpdate(true)}
+                disabled={loading}
+                className="px-4 py-2 rounded-lg text-sm font-semibold bg-green-600 text-white hover:bg-green-700 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Activate
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleBulkStatusUpdate(false)}
+                disabled={loading}
+                className="px-4 py-2 rounded-lg text-sm font-semibold bg-amber-500 text-white hover:bg-amber-600 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Deactivate
+              </button>
+
+              <button
+                type="button"
+                onClick={clearSelectedRows}
+                disabled={loading}
+                className="px-4 py-2 rounded-lg text-sm font-semibold bg-gray-600 text-white hover:bg-gray-700 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Table */}
       <div className="bg-white rounded-2xl shadow-md overflow-hidden border border-purple-100">
         <table className="w-full">
@@ -457,13 +623,34 @@ export default function MasterData() {
               )}
               <th className="p-4 text-center text-sm font-semibold">Status</th>
               <th className="p-4 text-center text-sm font-semibold">Actions</th>
+              <th className="p-4 text-center text-sm font-semibold">
+                  <input
+                    type="checkbox"
+                    checked={
+                      filteredItems.length > 0 &&
+                      filteredItems.every((item) => selectedIds.includes(item.id))
+                    }
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedIds(filteredItems.map((item) => item.id));
+                      } else {
+                        setSelectedIds([]);
+                      }
+                    }}
+                    className="w-4 h-4 accent-purple-600 cursor-pointer"
+                    title="Select all"
+                  />
+                </th>
             </tr>
           </thead>
 
           <tbody className="divide-y divide-gray-200">
             {loading ? (
               <tr>
-                <td colSpan="5" className="text-center py-12 text-gray-500">
+                <td
+                  colSpan={["Caste", "Sub Caste", "State", "City"].includes(activeTab) ? 7 : 6}
+                  className="text-center py-12 text-gray-500"
+                >
                   <div className="flex items-center justify-center gap-3 text-purple-600 font-medium">
                     <FaSpinner className="animate-spin text-xl" />
                     Loading {activeTab} data...
@@ -472,7 +659,10 @@ export default function MasterData() {
               </tr>
             ) : filteredItems.length === 0 ? (
               <tr>
-                <td colSpan="5" className="text-center py-12 text-gray-500">
+                <td
+                  colSpan={["Caste", "Sub Caste", "State", "City"].includes(activeTab) ? 7 : 6}
+                  className="text-center py-12 text-gray-500"
+                >
                   No {activeTab} records found.
                 </td>
               </tr>
@@ -542,6 +732,17 @@ export default function MasterData() {
                           )}
                         </button>
                       </div>
+                    </td>
+
+                    {/* Last Column: Row Selection Checkbox */}
+                    <td className="p-4 text-center">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.includes(item.id)}
+                        onChange={() => toggleRowSelection(item.id)}
+                        className="w-5 h-5 accent-blue-600 cursor-pointer"
+                        aria-label={`Select ${getItemName(item)}`}
+                      />
                     </td>
                   </tr>
                 );
