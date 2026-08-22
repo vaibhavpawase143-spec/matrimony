@@ -62,6 +62,12 @@ public interface UserPhotoRepository extends JpaRepository<UserPhoto, Long> {
     Optional<UserPhoto> findFirstByUserIdOrderByCreatedAtAsc(
             Long userId
     );
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"user"})
+    Optional<UserPhoto> findFirstByPhotoUrlContaining(String fileName);
+
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"user"})
+    Optional<UserPhoto> findFirstByPhotoUrlEndingWith(String suffix);
+
     @Modifying
     @Query("""
            update UserPhoto p

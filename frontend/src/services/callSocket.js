@@ -10,7 +10,7 @@ export const connectCallSocket = (
 ) => {
 
     const token =
-    localStorage.getItem("token");
+    sessionStorage.getItem("token") || localStorage.getItem("token");
 
     console.log(
         "CALL TOKEN =",

@@ -16,7 +16,7 @@ import SockJS from "sockjs-client";
   export const connectNotifications = (userId, onMessage) => {
     console.log("CONNECTING TO WS:", userId);
 
-    const token = localStorage.getItem("token");
+    const token = sessionStorage.getItem("token") || localStorage.getItem("token");
 
     if (!token || !userId) {
       console.warn(
@@ -78,7 +78,7 @@ import SockJS from "sockjs-client";
             console.log("🔥 LIVE NOTIFICATION OBJECT:", notification);
 
             const currentUser = JSON.parse(
-              localStorage.getItem("user") || "{}"
+              sessionStorage.getItem("user") || localStorage.getItem("user") || "{}"
             );
 
             const currentUserId = Number(

@@ -5,9 +5,11 @@ import com.example.dto.response.PartnerPreferenceResponseDTO;
 import com.example.model.PartnerPreference;
 import com.example.model.User;
 import com.example.repository.*;
+import com.example.security.SecurityUtils;
 import com.example.service.PartnerPreferenceService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Optional;
@@ -17,125 +19,93 @@ import java.util.Optional;
 public class PartnerPreferenceController {
 
     private final PartnerPreferenceService preferenceService;
-
     private final UserRepository userRepository;
-
     private final ReligionRepository religionRepository;
-
     private final CasteRepository casteRepository;
-
     private final CityRepository cityRepository;
-
     private final EducationLevelRepository educationLevelRepository;
-
     private final OccupationRepository occupationRepository;
-
     private final MaritalStatusRepository maritalStatusRepository;
-
     private final SmokingRepository smokingRepository;
-
     private final DrinkingRepository drinkingRepository;
-
     private final DietRepository dietRepository;
 
-
     public PartnerPreferenceController(
-
             PartnerPreferenceService preferenceService,
-
             UserRepository userRepository,
-
             ReligionRepository religionRepository,
-
             CasteRepository casteRepository,
-
             CityRepository cityRepository,
-
             EducationLevelRepository educationLevelRepository,
-
             OccupationRepository occupationRepository,
-
             MaritalStatusRepository maritalStatusRepository,
-
             SmokingRepository smokingRepository,
-
             DrinkingRepository drinkingRepository,
-
             DietRepository dietRepository
-
     ) {
-
         this.preferenceService = preferenceService;
         this.userRepository = userRepository;
         this.religionRepository = religionRepository;
         this.casteRepository = casteRepository;
         this.cityRepository = cityRepository;
-
-        this.educationLevelRepository =
-                educationLevelRepository;
-
-        this.occupationRepository =
-                occupationRepository;
-
-        this.maritalStatusRepository =
-                maritalStatusRepository;
-
-        this.smokingRepository =
-                smokingRepository;
-
-        this.drinkingRepository =
-                drinkingRepository;
-
-        this.dietRepository =
-                dietRepository;
-
+        this.educationLevelRepository = educationLevelRepository;
+        this.occupationRepository = occupationRepository;
+        this.maritalStatusRepository = maritalStatusRepository;
+        this.smokingRepository = smokingRepository;
+        this.drinkingRepository = drinkingRepository;
+        this.dietRepository = dietRepository;
     }
 
+    private User getAuthenticatedUser() {
+        String email = SecurityUtils.getCurrentUsername();
+        if (email == null) {
+            throw new AccessDeniedException("User not authenticated");
+        }
+        return userRepository.findByEmailWithRoles(email)
+                .orElseThrow(() -> new AccessDeniedException("User not found: " + email));
+    }
+
+    private boolean isUserAuthorized(User currentUser, Long targetUserId) {
+        boolean isAdmin = currentUser.getRoles().stream()
+                .anyMatch(r -> r.getName().contains("ADMIN"));
+        return isAdmin || (currentUser.getId() != null && currentUser.getId().equals(targetUserId));
+    }
 
     @PostMapping
     public ResponseEntity<PartnerPreferenceResponseDTO> create(
             @Valid @RequestBody PartnerPreferenceRequestDTO dto
     ){
+        User currentUser = getAuthenticatedUser();
+        Long targetUserId = (dto.getUserId() != null) ? dto.getUserId() : currentUser.getId();
 
-        User user=
-                userRepository.findById(
-                        dto.getUserId()
-                ).orElseThrow(
-                        ()->new RuntimeException(
-                                "User not found"
-                        )
-                );
+        if (!isUserAuthorized(currentUser, targetUserId)) {
+            throw new AccessDeniedException("Access denied: You cannot create partner preferences for another user");
+        }
 
-        PartnerPreference preference=
-                new PartnerPreference();
+        User user = userRepository.findById(targetUserId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        PartnerPreference preference = preferenceService.getByUserId(targetUserId)
+                .orElseGet(PartnerPreference::new);
 
         preference.setUser(user);
+        applyFields(preference, dto);
+        preference.setOtherExpectations(dto.getOtherExpectations());
 
-        applyFields(
-                preference,
-                dto
-        );
-        preference.setOtherExpectations(
-                dto.getOtherExpectations()
-        );
-        PartnerPreference saved=
-                preferenceService.savePreference(
-                        preference
-                );
-
-        return ResponseEntity.ok(
-                mapToResponse(saved)
-        );
-
-
+        PartnerPreference saved = preferenceService.savePreference(preference);
+        return ResponseEntity.ok(mapToResponse(saved));
     }
-
 
     @PutMapping("/{userId}")
     public ResponseEntity<PartnerPreferenceResponseDTO> update(
             @PathVariable Long userId,
             @RequestBody PartnerPreferenceRequestDTO dto
     ){
+        User currentUser = getAuthenticatedUser();
+        if (!isUserAuthorized(currentUser, userId)) {
+            throw new AccessDeniedException("Access denied: You cannot update partner preferences for another user");
+        }
+
         PartnerPreference preference = preferenceService
                 .getByUserId(userId)
                 .orElseGet(() -> {

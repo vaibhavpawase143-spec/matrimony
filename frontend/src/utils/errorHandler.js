@@ -77,9 +77,17 @@ class ErrorHandler {
     
     // Clear auth data and redirect to login
     if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('token');
+      sessionStorage.removeItem('user');
+      sessionStorage.removeItem('role');
+      sessionStorage.removeItem('isAdmin');
+      sessionStorage.removeItem('refreshToken');
+
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       localStorage.removeItem('role');
+      localStorage.removeItem('isAdmin');
+      localStorage.removeItem('refreshToken');
       
       // Only redirect if not already on login/register page
       const currentPath = window.location.pathname;

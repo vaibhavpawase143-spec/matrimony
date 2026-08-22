@@ -1,15 +1,45 @@
 package com.example.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.util.StringUtils;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 @Configuration
 public class CorsConfig {
+
+    @Value("${app.cors.allowed-origins:}")
+    private String configuredOrigins;
+
+    /**
+     * Returns the list of permitted origins/patterns for CORS and WebSocket connections.
+     * Keeps local development origins safe while reading production origins from environment.
+     */
+    public List<String> getAllowedOrigins() {
+        List<String> origins = new ArrayList<>(Arrays.asList(
+                "http://localhost:3000",
+                "http://127.0.0.1:3000",
+                "http://localhost:5173",
+                "http://127.0.0.1:5173"
+        ));
+
+        if (StringUtils.hasText(configuredOrigins)) {
+            for (String origin : configuredOrigins.split(",")) {
+                String trimmed = origin.trim();
+                if (!trimmed.isEmpty() && !origins.contains(trimmed)) {
+                    origins.add(trimmed);
+                }
+            }
+        }
+        return origins;
+    }
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
@@ -17,29 +47,13 @@ public class CorsConfig {
         CorsConfiguration configuration = new CorsConfiguration();
 
         // =====================================================
-        // ALLOWED ORIGINS
+        // ALLOWED ORIGINS (Configurable + Localhost Dev)
         // =====================================================
-
-        configuration.setAllowedOriginPatterns(Arrays.asList(
-                "http://localhost:3000",
-                "http://127.0.0.1:3000",
-                "http://localhost:5173",
-
-                // LAN Access (Current)
-                "http://192.168.75.1:3000",
-
-                // Any local LAN IP (Development)
-                "http://192.168.*:*",
-
-                // Production
-                "https://yourdomain.com",
-                "https://www.yourdomain.com"
-        ));
+        configuration.setAllowedOriginPatterns(getAllowedOrigins());
 
         // =====================================================
         // ALLOWED METHODS
         // =====================================================
-
         configuration.setAllowedMethods(Arrays.asList(
                 "GET",
                 "POST",
@@ -52,13 +66,11 @@ public class CorsConfig {
         // =====================================================
         // ALLOWED HEADERS
         // =====================================================
-
         configuration.setAllowedHeaders(Arrays.asList("*"));
 
         // =====================================================
         // EXPOSED HEADERS
         // =====================================================
-
         configuration.setExposedHeaders(Arrays.asList(
                 "Authorization",
                 "Content-Disposition"
@@ -67,19 +79,16 @@ public class CorsConfig {
         // =====================================================
         // CREDENTIALS
         // =====================================================
-
         configuration.setAllowCredentials(true);
 
         // =====================================================
         // PREFLIGHT CACHE
         // =====================================================
-
         configuration.setMaxAge(3600L);
 
         // =====================================================
         // REGISTER CONFIGURATION
         // =====================================================
-
         UrlBasedCorsConfigurationSource source =
                 new UrlBasedCorsConfigurationSource();
 

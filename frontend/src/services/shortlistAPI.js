@@ -1,8 +1,8 @@
-// Simple shortlist API client (uses token from localStorage)
+// Simple shortlist API client (uses tab-isolated token)
 const API_BASE = '/api/shortlists';
 
 const getHeaders = () => {
-  const token = localStorage.getItem('token');
+  const token = sessionStorage.getItem('token') || localStorage.getItem('token');
   return {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),

@@ -26,10 +26,27 @@ public class UserController {
 
     private final UserService service;
     private final EmailService emailService;
+    private final com.example.security.ratelimit.RateLimitService rateLimitService;
+    private final com.example.security.ratelimit.ClientIpResolver clientIpResolver;
+    private final com.example.config.RateLimitProperties rateLimitProperties;
 
     // ================= REGISTER =================
     @PostMapping("/register")
-    public ApiResponse<UserResponseDTO> register(@RequestBody UserRegisterRequestDTO dto) {
+    public ApiResponse<UserResponseDTO> register(
+            jakarta.servlet.http.HttpServletRequest httpRequest,
+            @RequestBody UserRegisterRequestDTO dto) {
+
+        String clientIp = clientIpResolver.resolveClientIp(httpRequest);
+        var policy = rateLimitProperties.getRegistration();
+
+        var ipCheck = rateLimitService.tryAcquire("reg:ip:" + clientIp, policy.getMaxAttempts(), policy.getWindowSeconds());
+        if (!ipCheck.isAllowed()) {
+            throw new com.example.exception.RateLimitExceededException(
+                    "Too many registration requests from this IP. Please try again in " + ipCheck.getRetryAfterSeconds() + " seconds.",
+                    ipCheck.getRetryAfterSeconds(),
+                    "REGISTRATION"
+            );
+        }
 
         User savedUser = service.register(dto);
 
@@ -53,12 +70,48 @@ public class UserController {
 
     // ================= LOGIN =================
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request) {
+    public ResponseEntity<AuthResponse> login(
+            jakarta.servlet.http.HttpServletRequest httpRequest,
+            @RequestBody LoginRequest request) {
 
-        String token = service.loginAndGenerateToken(
-                request.getEmail(),
-                request.getPassword()
-        );
+        String normalizedEmail = request.getEmail() != null ? request.getEmail().trim().toLowerCase() : "";
+        String clientIp = clientIpResolver.resolveClientIp(httpRequest);
+        String ipKey = "user_login:ip:" + clientIp;
+        String accountKey = "user_login:account:" + normalizedEmail;
+
+        var policy = rateLimitProperties.getUserLogin();
+
+        var ipCheck = rateLimitService.checkFailedAttempts(ipKey, policy.getMaxAttempts(), policy.getWindowSeconds());
+        if (!ipCheck.isAllowed()) {
+            throw new com.example.exception.RateLimitExceededException(
+                    "Too many failed login attempts from this IP. Please try again in " + ipCheck.getRetryAfterSeconds() + " seconds.",
+                    ipCheck.getRetryAfterSeconds(),
+                    "USER_LOGIN"
+            );
+        }
+
+        var accountCheck = rateLimitService.checkFailedAttempts(accountKey, policy.getMaxAttempts(), policy.getWindowSeconds());
+        if (!accountCheck.isAllowed()) {
+            throw new com.example.exception.RateLimitExceededException(
+                    "Too many failed login attempts for this account. Please try again in " + accountCheck.getRetryAfterSeconds() + " seconds.",
+                    accountCheck.getRetryAfterSeconds(),
+                    "USER_LOGIN"
+            );
+        }
+
+        String token;
+        try {
+            token = service.loginAndGenerateToken(
+                    request.getEmail(),
+                    request.getPassword()
+            );
+            rateLimitService.reset(ipKey);
+            rateLimitService.reset(accountKey);
+        } catch (RuntimeException e) {
+            rateLimitService.recordFailedAttempt(ipKey, policy.getWindowSeconds());
+            rateLimitService.recordFailedAttempt(accountKey, policy.getWindowSeconds());
+            throw e;
+        }
 
         return ResponseEntity.ok(new AuthResponse(token));
     }

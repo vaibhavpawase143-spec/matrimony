@@ -25,11 +25,11 @@ import java.time.Duration;
 @EnableCaching
 public class RedisConfig implements CachingConfigurer {
 
-    // Connection Factory with strict fast timeouts (100ms) to eliminate network lag
+    // Connection Factory with robust timeouts
     @Bean
     public RedisConnectionFactory redisConnectionFactory() {
         SocketOptions socketOptions = SocketOptions.builder()
-                .connectTimeout(Duration.ofMillis(100))
+                .connectTimeout(Duration.ofSeconds(2))
                 .build();
 
         ClientOptions clientOptions = ClientOptions.builder()
@@ -37,13 +37,19 @@ public class RedisConfig implements CachingConfigurer {
                 .build();
 
         LettuceClientConfiguration clientConfig = LettuceClientConfiguration.builder()
-                .commandTimeout(Duration.ofMillis(100))
-                .shutdownTimeout(Duration.ofMillis(100))
+                .commandTimeout(Duration.ofSeconds(2))
+                .shutdownTimeout(Duration.ofSeconds(2))
                 .clientOptions(clientOptions)
                 .build();
 
         RedisStandaloneConfiguration serverConfig = new RedisStandaloneConfiguration("localhost", 6379);
         return new LettuceConnectionFactory(serverConfig, clientConfig);
+    }
+
+    // String Redis Template for Rate Limiting & Fast Atomic Counters
+    @Bean
+    public org.springframework.data.redis.core.StringRedisTemplate stringRedisTemplate(RedisConnectionFactory connectionFactory) {
+        return new org.springframework.data.redis.core.StringRedisTemplate(connectionFactory);
     }
 
     // Redis Template

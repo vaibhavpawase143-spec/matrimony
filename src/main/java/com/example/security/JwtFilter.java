@@ -1,7 +1,5 @@
 package com.example.security;
 
-import com.example.model.Admin;
-import com.example.model.User;
 import com.example.repository.AdminRepository;
 import com.example.repository.UserRepository;
 import jakarta.servlet.FilterChain;
@@ -26,21 +24,25 @@ public class JwtFilter extends OncePerRequestFilter {
     private final UserRepository userRepository;
     private final AdminRepository adminRepository;
     private final SecurityUserDetailsService securityUserDetailsService;
+    private final TokenRevocationService tokenRevocationService;
+
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
 
         String path = request.getServletPath();
 
-        return path.startsWith("/api/auth/")
+        return path.startsWith("/api/auth/login")
+                || path.startsWith("/api/auth/register")
+                || path.startsWith("/api/auth/refresh")
+                || path.startsWith("/api/auth/verify")
+                || path.startsWith("/api/auth/send-otp")
+                || path.startsWith("/api/auth/verify-otp")
                 || path.startsWith("/api/users/login")
                 || path.startsWith("/api/users/register")
                 || path.startsWith("/api/admins/login")
                 || path.startsWith("/api/admins/refresh")
                 || path.startsWith("/api/image/")
-                || path.equals("/api/admins/logout")
                 || path.startsWith("/api/kundli/")
-                || path.startsWith("/v3/api-docs")
-                || path.startsWith("/swagger-ui")
                 || path.startsWith("/images/")
                 || path.startsWith("/ws");
     }
@@ -61,26 +63,49 @@ public class JwtFilter extends OncePerRequestFilter {
         try {
 
             String token = authHeader.substring(7);
+
+            // 1. Check Redis-backed access token revocation
+            if (tokenRevocationService.isRevoked(token)) {
+                SecurityContextHolder.clearContext();
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token has been revoked");
+                return;
+            }
+
             String username = jwtUtil.extractUsername(token);
-            String accountType = jwtUtil.extractAccountType(token);
 
             if (username != null &&
                     SecurityContextHolder.getContext().getAuthentication() == null) {
 
                 if (!jwtUtil.isValid(token, username)) {
-                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid token");
+                    SecurityContextHolder.clearContext();
+                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid or expired token");
                     return;
                 }
 
-                long jwtStart = System.currentTimeMillis();
                 UserDetails userDetails =
                         securityUserDetailsService.loadUserByUsername(username);
-                System.out.println(
-                        "JWT FILTER = "
-                                + (System.currentTimeMillis() - jwtStart)
-                                + " ms"
-                );
 
+                if (!userDetails.isEnabled()) {
+                    SecurityContextHolder.clearContext();
+                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Account disabled or deleted");
+                    return;
+                }
+
+                // 2. Validate server-side session for Admin accounts
+                String accountType = jwtUtil.extractAccountType(token);
+                String tokenSessionId = jwtUtil.extractSessionId(token);
+
+                if ("ADMIN".equalsIgnoreCase(accountType) || userDetails.getAuthorities().stream().anyMatch(a -> a.getAuthority().startsWith("ROLE_ADMIN"))) {
+                    com.example.model.Admin admin = adminRepository.findByEmailIgnoreCase(username).orElse(null);
+                    if (admin != null) {
+                        String currentSessionId = admin.getSessionId();
+                        if (currentSessionId == null || !currentSessionId.equals(tokenSessionId)) {
+                            SecurityContextHolder.clearContext();
+                            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Admin session expired or invalid");
+                            return;
+                        }
+                    }
+                }
 
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(
@@ -97,14 +122,13 @@ public class JwtFilter extends OncePerRequestFilter {
             }
 
         } catch (Exception e) {
-
+            SecurityContextHolder.clearContext();
             request.setAttribute(
                     "AUTH_ERROR",
                     "Invalid or expired token"
             );
 
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
-
             return;
         }
 

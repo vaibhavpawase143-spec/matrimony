@@ -323,7 +323,7 @@ useEffect(() => {
 }, []);
 useEffect(() => {
 
-    const storedUser = localStorage.getItem("user");
+    const storedUser = sessionStorage.getItem("user") || localStorage.getItem("user");
 
     if (!storedUser) {
         console.log("No user found in localStorage");

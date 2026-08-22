@@ -7,6 +7,7 @@ import com.example.security.CustomAuthenticationEntryPoint;
 import com.example.security.JwtFilter;
 import com.example.security.JwtUtil;
 import com.example.security.SecurityUserDetailsService;
+import com.example.security.TokenRevocationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,6 +20,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
 import org.springframework.web.cors.CorsConfigurationSource;
 
 @Configuration
@@ -33,6 +35,7 @@ public class SecurityConfig {
     private final CorsConfigurationSource corsConfigurationSource;
     private final UserRepository userRepository;
     private final AdminRepository adminRepository;
+    private final TokenRevocationService tokenRevocationService;
 
     @Bean
     public AuthenticationManager authenticationManager(
@@ -47,7 +50,8 @@ public class SecurityConfig {
                 jwtUtil,
                 userRepository,
                 adminRepository,
-                securityUserDetailsService
+                securityUserDetailsService,
+                tokenRevocationService
         );
     }
 
@@ -58,18 +62,56 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
 
+                // =====================================================
+                // SECURITY HEADERS (CSP, Referrer, Permissions, HSTS, Frame)
+                // =====================================================
+                .headers(headers -> headers
+                        .frameOptions(frame -> frame.deny())
+                        .contentTypeOptions(contentType -> {})
+                        .httpStrictTransportSecurity(hsts -> hsts
+                                .includeSubDomains(true)
+                                .maxAgeInSeconds(31536000)
+                        )
+                        .contentSecurityPolicy(csp -> csp
+                                .policyDirectives("default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' ws: wss: http: https:; frame-ancestors 'self';")
+                        )
+                        .referrerPolicy(referrer -> referrer
+                                .policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)
+                        )
+                        .permissionsPolicy(permissions -> permissions
+                                .policy("camera=(), microphone=(), geolocation=()")
+                        )
+                )
+
                 .authorizeHttpRequests(auth -> auth
 
-                        // PUBLIC
+                        // PUBLIC AUTH & MONITORING
                         .requestMatchers(
-                                "/api/auth/**",
+                                "/api/auth/login",
+                                "/api/auth/register",
+                                "/api/auth/refresh",
+                                "/api/auth/verify",
+                                "/api/auth/resend-verification",
+                                "/api/auth/send-verification",
+                                "/api/auth/forgot-password",
+                                "/api/auth/reset-password",
+                                "/api/auth/send-otp",
+                                "/api/auth/verify-otp",
+                                "/api/auth/otp/**",
                                 "/api/users/login",
                                 "/api/users/register",
                                 "/api/users/verify",
                                 "/api/users/resend-verification",
                                 "/api/users/send-otp",
                                 "/api/users/verify-otp",
-                                "/api/master/religions/**",
+                                "/api/admins/login",
+                                "/api/admins/refresh",
+                                "/actuator/health"
+                        ).permitAll()
+
+                        // PUBLIC READ-ONLY MASTER DATA & ASSETS
+                        .requestMatchers(org.springframework.http.HttpMethod.GET,
+                                "/api/master/**",
                                 "/api/cities/**",
                                 "/api/states/**",
                                 "/api/occupations/**",
@@ -84,46 +126,43 @@ public class SecurityConfig {
                                 "/api/employed/**",
                                 "/api/incomes/**",
                                 "/api/manglik-statuses/**",
-                                "/api/interests/**",
-                                "/api/image/**",
-                                "/images/**",
-                                "/ws/**",
-                                "/api/users/init-photo-directory",
-                                "/api/user-photos/**",
-                                "/api/reports/**",
-                                "/api/support-categories/**",
-                                "/api/blocks/**",
                                 "/api/fields-of-study/**",
-                                "/api/subscription-plans/**",
-                                "/swagger-ui/**",
-                                "/v3/api-docs/**",
                                 "/api/complexions/**",
                                 "/api/body-types/**",
                                 "/api/genders/**",
                                 "/api/countries/**",
-                                "/uploads/**",
+                                "/api/subscription-plans/**",
+                                "/api/support-categories/**",
                                 "/api/cms/**",
                                 "/api/faqs/**",
-                                "/api/success-stories/**"
-                        )
-                        .permitAll()
+                                "/api/success-stories/**",
+                                "/api/image/**",
+                                "/images/**",
+                                "/uploads/**"
+                        ).permitAll()
 
-                        // ADMIN LOGIN
+                        // WEBSOCKET
+                        .requestMatchers("/ws/**").permitAll()
+
+                        // SWAGGER & ACTUATOR (ADMIN ONLY IN PRODUCTION)
                         .requestMatchers(
-                                "/api/admins/login",
-                                "/api/admins/refresh",
-                                "/api/master/**",
-                                "/api/admins/*/castes/**"
-                        )
-                        .permitAll()
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**",
+                                "/actuator/**"
+                        ).hasAnyRole("ADMIN", "SUPER_ADMIN")
 
-                        // ADMIN
+                        // ADMIN ONLY
                         .requestMatchers("/api/admin/**", "/api/admins/**")
                         .hasAnyRole("ADMIN", "SUPER_ADMIN")
 
-                        // USER + ADMIN
-                        .requestMatchers("/api/users/**")
-                        .hasAnyRole("USER", "ADMIN")
+                        // USER + ADMIN PROTECTED ACTIONS
+                        .requestMatchers(
+                                "/api/users/**",
+                                "/api/photos/**",
+                                "/api/reports/**",
+                                "/api/blocks/**",
+                                "/api/interests/**"
+                        ).hasAnyRole("USER", "ADMIN")
 
                         .anyRequest()
                         .authenticated()

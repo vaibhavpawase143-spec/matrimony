@@ -16,7 +16,7 @@ export class AdminApiError extends Error {
 }
 
 export const apiClient = async (endpoint, options = {}) => {
-  const adminToken = localStorage.getItem("adminToken");
+  const adminToken = sessionStorage.getItem("adminToken") || localStorage.getItem("adminToken");
   const isFormData = options.body instanceof FormData;
 
   const defaultOptions = {

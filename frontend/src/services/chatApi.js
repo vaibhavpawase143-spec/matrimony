@@ -2,6 +2,8 @@ import { apiClient as api } from "./api";
 
 const API_BASE = "/api/chat";
 
+const getToken = () => sessionStorage.getItem("token") || localStorage.getItem("token");
+
 export const getMyChats = async () => {
 
     const response = await fetch(
@@ -14,7 +16,7 @@ export const getMyChats = async () => {
 
                 Authorization:
 
-                    `Bearer ${localStorage.getItem("token")}`
+                    `Bearer ${getToken()}`
 
             }
 
@@ -67,7 +69,7 @@ export const sendMessage = async (data) => {
                 "Content-Type": "application/json",
 
                 Authorization:
-                    `Bearer ${localStorage.getItem("token")}`
+                    `Bearer ${getToken()}`
 
             },
 
@@ -117,7 +119,7 @@ export const uploadImage = async (file) => {
 
                 Authorization:
 
-                `Bearer ${localStorage.getItem("token")}`
+                `Bearer ${getToken()}`
 
             },
 
@@ -150,7 +152,7 @@ export const uploadAudio = async (file) => {
             headers:{
 
                 Authorization:
-                `Bearer ${localStorage.getItem("token")}`
+                `Bearer ${getToken()}`
 
             },
 
@@ -182,7 +184,7 @@ export const uploadVideo = async (file) => {
             headers: {
 
                 Authorization:
-                `Bearer ${localStorage.getItem("token")}`
+                `Bearer ${getToken()}`
 
             },
 
@@ -217,7 +219,7 @@ method:"POST",
 
 headers:{
 Authorization:
-`Bearer ${localStorage.getItem("token")}`
+`Bearer ${getToken()}`
 },
 
 body:formData

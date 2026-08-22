@@ -21,9 +21,13 @@ if (!result.success) {
 
 const data = result.data;
 
-  localStorage.setItem("adminToken", data.accessToken);
-  localStorage.setItem("adminRefreshToken", data.refreshToken);
-  localStorage.setItem("admin", JSON.stringify(data.admin));
+  sessionStorage.setItem("adminToken", data.accessToken);
+  sessionStorage.setItem("adminRefreshToken", data.refreshToken);
+  sessionStorage.setItem("admin", JSON.stringify(data.admin));
+
+  localStorage.removeItem("adminToken");
+  localStorage.removeItem("adminRefreshToken");
+  localStorage.removeItem("admin");
 
   return {
     token: data.accessToken,
@@ -33,16 +37,20 @@ const data = result.data;
 }
 
 export function logoutAdmin() {
+  sessionStorage.removeItem("adminToken");
+  sessionStorage.removeItem("adminRefreshToken");
+  sessionStorage.removeItem("admin");
+
   localStorage.removeItem("adminToken");
   localStorage.removeItem("adminRefreshToken");
   localStorage.removeItem("admin");
 }
 
 export function getAdmin() {
-  const admin = localStorage.getItem("admin");
+  const admin = sessionStorage.getItem("admin") || localStorage.getItem("admin");
   return admin ? JSON.parse(admin) : null;
 }
 
 export function isAuthenticated() {
-  return !!localStorage.getItem("adminToken");
+  return !!(sessionStorage.getItem("adminToken") || localStorage.getItem("adminToken"));
 }
