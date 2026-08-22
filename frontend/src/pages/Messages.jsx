@@ -746,7 +746,7 @@ const loadChat = async (chat) => {
     }
 
 };
-const storedUser = localStorage.getItem("user");
+const storedUser = sessionStorage.getItem("user") || localStorage.getItem("user");
 
 const user = storedUser
     ? JSON.parse(storedUser)

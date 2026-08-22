@@ -182,8 +182,10 @@ public class DatabaseSecurityIntegrityBaselineTest extends BaseIntegrationTest {
     @Test
     @DisplayName("Category A: DB enforces Unique Constraint on interests (sender_id, receiver_id)")
     void testInterestSenderReceiverUniqueConstraint() {
-        User sender = createTestUser("sender_" + UUID.randomUUID() + "@example.com", "7" + (System.currentTimeMillis() % 1000000000L));
-        User receiver = createTestUser("recv_" + UUID.randomUUID() + "@example.com", "6" + (System.currentTimeMillis() % 1000000000L));
+        User sender = createTestUser("sender_" + UUID.randomUUID() + "@example.com",
+                "7" + (System.currentTimeMillis() % 1000000000L));
+        User receiver = createTestUser("recv_" + UUID.randomUUID() + "@example.com",
+                "6" + (System.currentTimeMillis() % 1000000000L));
 
         Interest interest1 = new Interest();
         interest1.setSender(sender);
@@ -208,7 +210,8 @@ public class DatabaseSecurityIntegrityBaselineTest extends BaseIntegrationTest {
     @Test
     @DisplayName("Category A: DB enforces Check Constraint on interests (sender_id <> receiver_id)")
     void testInterestSelfCheckConstraint() {
-        User user = createTestUser("self_int_" + UUID.randomUUID() + "@example.com", "5" + (System.currentTimeMillis() % 1000000000L));
+        User user = createTestUser("self_int_" + UUID.randomUUID() + "@example.com",
+                "5" + (System.currentTimeMillis() % 1000000000L));
 
         Interest selfInterest = new Interest();
         selfInterest.setSender(user);
@@ -225,8 +228,10 @@ public class DatabaseSecurityIntegrityBaselineTest extends BaseIntegrationTest {
     @Test
     @DisplayName("Category A: DB enforces Unique Constraint on shortlists (user_id, profile_id)")
     void testShortlistUserAndProfileUniqueConstraint() {
-        User user = createTestUser("short_u_" + UUID.randomUUID() + "@example.com", "4" + (System.currentTimeMillis() % 1000000000L));
-        User target = createTestUser("short_t_" + UUID.randomUUID() + "@example.com", "3" + (System.currentTimeMillis() % 1000000000L));
+        User user = createTestUser("short_u_" + UUID.randomUUID() + "@example.com",
+                "4" + (System.currentTimeMillis() % 1000000000L));
+        User target = createTestUser("short_t_" + UUID.randomUUID() + "@example.com",
+                "3" + (System.currentTimeMillis() % 1000000000L));
 
         Profile targetProfile = new Profile();
         targetProfile.setUser(target);
@@ -256,7 +261,8 @@ public class DatabaseSecurityIntegrityBaselineTest extends BaseIntegrationTest {
     @Test
     @DisplayName("Category A: DB enforces Unique Constraint on payments.transaction_id")
     void testPaymentTransactionUniqueConstraint() {
-        User user = createTestUser("pay_u_" + UUID.randomUUID() + "@example.com", "2" + (System.currentTimeMillis() % 1000000000L));
+        User user = createTestUser("pay_u_" + UUID.randomUUID() + "@example.com",
+                "2" + (System.currentTimeMillis() % 1000000000L));
         String txnId = "TXN_" + UUID.randomUUID();
 
         Payment payment1 = new Payment();
@@ -343,8 +349,10 @@ public class DatabaseSecurityIntegrityBaselineTest extends BaseIntegrationTest {
     @Test
     @DisplayName("Category C: Password reset token enforces uniqueness and user FK")
     void testPasswordResetTokenUniquenessAndExpiry() {
-        User user1 = createTestUser("reset1_" + UUID.randomUUID() + "@example.com", "98" + (System.currentTimeMillis() % 100000000L));
-        User user2 = createTestUser("reset2_" + UUID.randomUUID() + "@example.com", "97" + (System.currentTimeMillis() % 100000000L));
+        User user1 = createTestUser("reset1_" + UUID.randomUUID() + "@example.com",
+                "98" + (System.currentTimeMillis() % 100000000L));
+        User user2 = createTestUser("reset2_" + UUID.randomUUID() + "@example.com",
+                "97" + (System.currentTimeMillis() % 100000000L));
 
         String token = "PRT_" + UUID.randomUUID();
         PasswordResetToken prt1 = new PasswordResetToken();
@@ -371,8 +379,10 @@ public class DatabaseSecurityIntegrityBaselineTest extends BaseIntegrationTest {
     @DisplayName("Category D: Shortlist lifecycle operates deterministically within transactional boundaries")
     @Transactional
     void testShortlistToggleAtomicity() {
-        User user = createTestUser("sl_u_" + UUID.randomUUID() + "@example.com", "96" + (System.currentTimeMillis() % 100000000L));
-        User target = createTestUser("sl_t_" + UUID.randomUUID() + "@example.com", "95" + (System.currentTimeMillis() % 100000000L));
+        User user = createTestUser("sl_u_" + UUID.randomUUID() + "@example.com",
+                "96" + (System.currentTimeMillis() % 100000000L));
+        User target = createTestUser("sl_t_" + UUID.randomUUID() + "@example.com",
+                "95" + (System.currentTimeMillis() % 100000000L));
 
         Profile targetProfile = new Profile();
         targetProfile.setUser(target);
@@ -405,8 +415,10 @@ public class DatabaseSecurityIntegrityBaselineTest extends BaseIntegrationTest {
     @Test
     @DisplayName("Category F: Soft-deleted users are properly excluded from active user counts")
     void testSoftDeletedUserExcludedFromActiveQueries() {
-        User activeUser = createTestUser("active_" + UUID.randomUUID() + "@example.com", "94" + (System.currentTimeMillis() % 100000000L));
-        User deletedUser = createTestUser("deleted_" + UUID.randomUUID() + "@example.com", "93" + (System.currentTimeMillis() % 100000000L));
+        User activeUser = createTestUser("active_" + UUID.randomUUID() + "@example.com",
+                "94" + (System.currentTimeMillis() % 100000000L));
+        User deletedUser = createTestUser("deleted_" + UUID.randomUUID() + "@example.com",
+                "93" + (System.currentTimeMillis() % 100000000L));
 
         deletedUser.setIsDeleted(true);
         deletedUser.setDeletedAt(LocalDateTime.now());
@@ -414,10 +426,12 @@ public class DatabaseSecurityIntegrityBaselineTest extends BaseIntegrationTest {
         userRepository.saveAndFlush(deletedUser);
 
         Optional<User> queriedActive = userRepository.findById(activeUser.getId());
-        assertTrue(queriedActive.isPresent() && !queriedActive.get().getIsDeleted(), "Active user should not be marked deleted");
+        assertTrue(queriedActive.isPresent() && !queriedActive.get().getIsDeleted(),
+                "Active user should not be marked deleted");
 
         Optional<User> queriedDeleted = userRepository.findById(deletedUser.getId());
-        assertTrue(queriedDeleted.isPresent() && queriedDeleted.get().getIsDeleted(), "Deleted user must have isDeleted=true");
+        assertTrue(queriedDeleted.isPresent() && queriedDeleted.get().getIsDeleted(),
+                "Deleted user must have isDeleted=true");
     }
 
     // =========================================================================
@@ -427,7 +441,8 @@ public class DatabaseSecurityIntegrityBaselineTest extends BaseIntegrationTest {
     @Test
     @DisplayName("Category G: Check constraint rejects subscription where end_date < start_date")
     void testSubscriptionDateCheckConstraint() {
-        User user = createTestUser("sub_u_" + UUID.randomUUID() + "@example.com", "92" + (System.currentTimeMillis() % 100000000L));
+        User user = createTestUser("sub_u_" + UUID.randomUUID() + "@example.com",
+                "92" + (System.currentTimeMillis() % 100000000L));
         SubscriptionPlan plan = getOrCreateTestPlan();
 
         UserSubscription sub = new UserSubscription();
@@ -447,7 +462,8 @@ public class DatabaseSecurityIntegrityBaselineTest extends BaseIntegrationTest {
     @Test
     @DisplayName("Category G: Check constraint rejects payment with non-positive amount (amount <= 0)")
     void testPaymentAmountCheckConstraint() {
-        User user = createTestUser("pay_bad_" + UUID.randomUUID() + "@example.com", "91" + (System.currentTimeMillis() % 100000000L));
+        User user = createTestUser("pay_bad_" + UUID.randomUUID() + "@example.com",
+                "91" + (System.currentTimeMillis() % 100000000L));
 
         Payment badPayment = new Payment();
         badPayment.setUser(user);
@@ -464,7 +480,8 @@ public class DatabaseSecurityIntegrityBaselineTest extends BaseIntegrationTest {
     @Test
     @DisplayName("Category G: Check constraint rejects invalid payment status value")
     void testPaymentStatusCheckConstraint() {
-        User user = createTestUser("pay_stat_" + UUID.randomUUID() + "@example.com", "90" + (System.currentTimeMillis() % 100000000L));
+        User user = createTestUser("pay_stat_" + UUID.randomUUID() + "@example.com",
+                "90" + (System.currentTimeMillis() % 100000000L));
 
         Payment badStatusPayment = new Payment();
         badStatusPayment.setUser(user);
@@ -506,7 +523,8 @@ public class DatabaseSecurityIntegrityBaselineTest extends BaseIntegrationTest {
     void testSpecificationParameterizedSearchSafety() {
         String sqlInjectionPayload = "test' OR '1'='1' -- ";
         Optional<User> result = userRepository.findByEmail(sqlInjectionPayload);
-        assertTrue(result.isEmpty(), "Parameterized search must safely treat SQL injection payloads as literal strings");
+        assertTrue(result.isEmpty(),
+                "Parameterized search must safely treat SQL injection payloads as literal strings");
     }
 
     // =========================================================================
@@ -516,7 +534,8 @@ public class DatabaseSecurityIntegrityBaselineTest extends BaseIntegrationTest {
     @Test
     @DisplayName("Category K: Hibernate DDL auto is set to validate, preventing runtime schema mutations")
     void testHibernateDdlAutoIsValidate() {
-        assertEquals("validate", ddlAuto, "JPA ddl-auto must be 'validate' to prevent automated production/test schema alteration");
+        assertEquals("validate", ddlAuto,
+                "JPA ddl-auto must be 'validate' to prevent automated production/test schema alteration");
     }
 
     // =========================================================================

@@ -2,7 +2,7 @@ import { useEffect } from "react";
 
 const OnlineHeartbeat = () => {
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const token = sessionStorage.getItem("token") || localStorage.getItem("token");
 
     if (!token) return;
 

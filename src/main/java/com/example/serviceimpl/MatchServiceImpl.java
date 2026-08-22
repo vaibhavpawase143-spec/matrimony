@@ -432,16 +432,8 @@ public class MatchServiceImpl implements MatchService {
         // VALIDATE PROFILE / GENDER
         // =========================================================
 
-        if (currentUser.getProfile() == null) {
-            throw new RuntimeException(
-                    "Current user profile not found"
-            );
-        }
-
-        if (currentUser.getProfile().getGender() == null) {
-            throw new RuntimeException(
-                    "Current user gender not found"
-            );
+        if (currentUser.getProfile() == null || currentUser.getProfile().getGender() == null) {
+            return List.of();
         }
 
 

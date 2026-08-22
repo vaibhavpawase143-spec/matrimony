@@ -514,11 +514,10 @@ useEffect(() => {
 
                    message.senderId ===
 
-                   JSON.parse(
-
-                   localStorage.getItem("user")
-
-                   ).id
+                    JSON.parse(
+                    sessionStorage.getItem("user") ||
+                    localStorage.getItem("user") || "{}"
+                    )?.id
 
                    &&
 

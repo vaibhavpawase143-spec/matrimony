@@ -18,7 +18,7 @@ const MatchDetails = () => {
 
   const loadDetails = async () => {
     try {
-      const currentUser = JSON.parse(localStorage.getItem("user"));
+      const currentUser = JSON.parse(sessionStorage.getItem("user") || localStorage.getItem("user") || "{}");
       const userId = currentUser?.userId ||
 currentUser?.id ||
 currentUser?.profile?.userId;

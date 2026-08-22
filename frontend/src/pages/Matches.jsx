@@ -25,7 +25,7 @@ const Matches = () => {
      setLoading(true);
 
      const currentUser = JSON.parse(
-       localStorage.getItem("user")
+       sessionStorage.getItem("user") || localStorage.getItem("user") || "{}"
      );
 
      const userId = Number(

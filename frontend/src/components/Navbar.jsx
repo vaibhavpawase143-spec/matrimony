@@ -52,7 +52,7 @@ const notificationAudio = useRef(
 );
 const user =
   JSON.parse(
-    localStorage.getItem("user")
+    sessionStorage.getItem("user") || localStorage.getItem("user") || "{}"
   );
 
 const currentUserId =
@@ -334,7 +334,7 @@ useEffect(() => {
 
   const user =
     JSON.parse(
-      localStorage.getItem("user")
+      sessionStorage.getItem("user") || localStorage.getItem("user") || "{}"
     );
 
   if (
@@ -366,7 +366,7 @@ useEffect(() => {
       return;
   }
 const loggedInUser = JSON.parse(
-  localStorage.getItem("user") || "{}"
+  sessionStorage.getItem("user") || localStorage.getItem("user") || "{}"
 );
 
 const loggedInUserId = Number(
