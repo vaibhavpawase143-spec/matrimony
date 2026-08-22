@@ -210,6 +210,10 @@ public class InterestServiceImpl implements InterestService {
             }
         }
 
+        if (!"PENDING".equalsIgnoreCase(existing.getStatus())) {
+            throw new IllegalStateException("Cannot update status of interest that is already " + existing.getStatus());
+        }
+
         existing.setStatus(status);
         existing.setIsActive(false);
 

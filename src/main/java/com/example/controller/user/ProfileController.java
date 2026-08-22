@@ -183,8 +183,9 @@ public class ProfileController {
     public ResponseEntity<List<ProfileResponseDTO>> discoverProfiles() {
         return ResponseEntity.ok(service.getDiscoverProfiles());
     }
-    // ================= PREMIUM ACTIVATE =================
+    // ================= PREMIUM ACTIVATE (ADMIN ONLY) =================
     @PostMapping("/premium/activate")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     public ResponseEntity<String> activatePremium(
 
             @RequestParam Long userId,

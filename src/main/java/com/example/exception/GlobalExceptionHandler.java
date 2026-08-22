@@ -438,12 +438,19 @@ public class GlobalExceptionHandler {
         String errorCode = "DUPLICATE_RESOURCE";
 
         if (ex.getMessage() != null) {
-            if (ex.getMessage().contains("phone") && ex.getMessage().contains("already exists")) {
+            String msg = ex.getMessage().toLowerCase();
+            if (msg.contains("phone") && msg.contains("already exists")) {
                 message = "This phone number is already registered. Please log in or use another phone number.";
                 errorCode = "DUPLICATE_RESOURCE";
-            } else if (ex.getMessage().contains("email") && ex.getMessage().contains("already exists")) {
+            } else if (msg.contains("email") && msg.contains("already exists")) {
                 message = "This email is already registered. Please log in or use another email address.";
                 errorCode = "DUPLICATE_RESOURCE";
+            } else if (msg.contains("uq_active_user_subscription")) {
+                message = "An active subscription already exists for this account.";
+                errorCode = "ACTIVE_SUBSCRIPTION_EXISTS";
+            } else if (msg.contains("uq_primary_user_photo")) {
+                message = "A primary photo already exists for this profile.";
+                errorCode = "PRIMARY_PHOTO_EXISTS";
             }
         }
 

@@ -27,4 +27,18 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long
             nativeQuery = true
     )
     void deleteByEmail(@Param("email") String email);
+
+    @Transactional
+    @Modifying
+    @Query(value = "DELETE FROM refresh_token WHERE expiry_date < CURRENT_TIMESTAMP", nativeQuery = true)
+    int deleteExpiredTokens();
+
+    @Transactional
+    @Modifying
+    @Query(value = """
+            DELETE FROM refresh_token
+            WHERE email NOT IN (SELECT email FROM users WHERE is_deleted = false)
+              AND email NOT IN (SELECT email FROM admins WHERE is_active = true)
+            """, nativeQuery = true)
+    int purgeOrphanTokens();
 }

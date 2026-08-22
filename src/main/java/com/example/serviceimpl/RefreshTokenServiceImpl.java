@@ -135,9 +135,18 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     @Override
     @Transactional
     public void deleteByEmail(String email) {
-
         repository.findByEmail(email)
                 .ifPresent(repository::delete);
+    }
 
+    // =====================================================
+    // PURGE ORPHAN & EXPIRED REFRESH TOKENS
+    // =====================================================
+    @Override
+    @Transactional
+    public int purgeOrphanAndExpiredTokens() {
+        int expired = repository.deleteExpiredTokens();
+        int orphans = repository.purgeOrphanTokens();
+        return expired + orphans;
     }
 }

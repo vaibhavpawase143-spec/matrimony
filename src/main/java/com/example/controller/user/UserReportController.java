@@ -47,24 +47,28 @@ public class UserReportController {
     }
     // ✅ ADMIN: GET ALL REPORTS
     @GetMapping("/all")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     public ResponseEntity<List<UserReport>> getAllReports() {
         return ResponseEntity.ok(userReportService.getAllReports());
     }
 
     // ✅ ADMIN: GET PENDING REPORTS
     @GetMapping("/pending")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     public ResponseEntity<List<UserReport>> getPendingReports() {
         return ResponseEntity.ok(userReportService.getPendingReports());
     }
 
     // ✅ ADMIN: MARK REVIEWED
     @PutMapping("/review/{id}")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     public ResponseEntity<String> markReviewed(@PathVariable Long id) {
         return ResponseEntity.ok(userReportService.markAsReviewed(id));
     }
 
     // ✅ ADMIN: UNBLOCK USER
     @PutMapping("/unblock/{userId}")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     public ResponseEntity<String> unblockUser(@PathVariable Long userId) {
         return ResponseEntity.ok(userReportService.unblockUser(userId));
     }

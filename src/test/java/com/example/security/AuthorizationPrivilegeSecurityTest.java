@@ -506,6 +506,12 @@ class AuthorizationPrivilegeSecurityTest extends BaseIntegrationTest {
             return subscriptionPlanRepository.saveAndFlush(p);
         });
 
+        userSubscriptionRepository.findByUserIdAndIsActiveTrue(userB.getId()).ifPresent(old -> {
+            old.setIsActive(false);
+            old.setStatus("CANCELLED");
+            userSubscriptionRepository.saveAndFlush(old);
+        });
+
         UserSubscription subB = new UserSubscription();
         subB.setUser(userB);
         subB.setSubscriptionPlan(plan);
@@ -751,6 +757,12 @@ class AuthorizationPrivilegeSecurityTest extends BaseIntegrationTest {
             p.setDuration(30);
             p.setIsActive(true);
             return subscriptionPlanRepository.saveAndFlush(p);
+        });
+
+        userSubscriptionRepository.findByUserIdAndIsActiveTrue(userB.getId()).ifPresent(old -> {
+            old.setIsActive(false);
+            old.setStatus("CANCELLED");
+            userSubscriptionRepository.saveAndFlush(old);
         });
 
         UserSubscription subB = new UserSubscription();

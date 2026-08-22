@@ -208,7 +208,17 @@ public class RazorpayPaymentService {
         try {
             Payment payment = paymentRepository.findByTransactionId(orderId)
                     .orElseThrow(() -> new RuntimeException("Payment not found"));
+
+            User currentUser = getCurrentUser();
+            boolean isAdmin = currentUser.getRoles() != null && currentUser.getRoles().stream()
+                    .anyMatch(r -> r.getName().contains("ADMIN"));
+            if (!isAdmin && (payment.getUser() == null || !currentUser.getId().equals(payment.getUser().getId()))) {
+                throw new org.springframework.security.access.AccessDeniedException("Access denied: You cannot view status of another user's order");
+            }
+
             return payment.getStatus();
+        } catch (org.springframework.security.access.AccessDeniedException ade) {
+            throw ade;
         } catch (Exception e) {
             log.error(
                     "Unable to fetch payment status",

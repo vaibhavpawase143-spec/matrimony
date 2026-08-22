@@ -71,8 +71,9 @@ public class NotificationController {
         return "Notification deleted";
     }
 
-    // 🧪 TEST API (optional)
+    // 🧪 TEST API (admin only)
     @PostMapping("/test")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     public String testCreate() {
         service.create(1L, 2L, NotificationType.REQUEST);
         return "Test notification created";

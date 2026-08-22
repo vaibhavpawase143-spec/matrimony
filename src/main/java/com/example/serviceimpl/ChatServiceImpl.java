@@ -448,12 +448,48 @@ public class ChatServiceImpl implements ChatService {
 
         return page;
     }
+
+    private User getAuthenticatedUser() {
+        String email = com.example.security.SecurityUtils.getCurrentUsername();
+        if (email == null) {
+            return null;
+        }
+        return userRepository.findByEmailWithRoles(email).orElse(null);
+    }
+
+    private void validateMessageParticipant(Message message, String actionDescription) {
+        User currentUser = getAuthenticatedUser();
+        if (currentUser == null) {
+            return;
+        }
+        boolean isAdmin = currentUser.getRoles() != null && currentUser.getRoles().stream()
+                .anyMatch(r -> r.getName().contains("ADMIN"));
+        boolean isParticipant = (message.getSender() != null && currentUser.getId().equals(message.getSender().getId())) ||
+                                (message.getReceiver() != null && currentUser.getId().equals(message.getReceiver().getId()));
+        if (!isAdmin && !isParticipant) {
+            throw new org.springframework.security.access.AccessDeniedException("Access denied: " + actionDescription);
+        }
+    }
+
+    private void validateMessageSender(Message message, String actionDescription) {
+        User currentUser = getAuthenticatedUser();
+        if (currentUser == null) {
+            return;
+        }
+        boolean isAdmin = currentUser.getRoles() != null && currentUser.getRoles().stream()
+                .anyMatch(r -> r.getName().contains("ADMIN"));
+        if (!isAdmin && (message.getSender() == null || !currentUser.getId().equals(message.getSender().getId()))) {
+            throw new org.springframework.security.access.AccessDeniedException("Access denied: " + actionDescription);
+        }
+    }
+
     // ================= REACTION =================
 
     @Override
     public void reactToMessage(Long id, String reaction) {
         Message m = messageRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Not found"));
+                .orElseThrow(() -> new RuntimeException("Message not found"));
+        validateMessageParticipant(m, "You can only react to messages in your conversations");
         m.setReaction(reaction);
         messageRepository.save(m);
     }
@@ -468,6 +504,7 @@ public class ChatServiceImpl implements ChatService {
         Message message = messageRepository.findById(messageId)
                 .orElseThrow(() ->
                         new RuntimeException("Message not found"));
+        validateMessageParticipant(message, "You can only pin messages in your conversations");
 
         message.setPinned(true);
 
@@ -481,6 +518,7 @@ public class ChatServiceImpl implements ChatService {
         Message message = messageRepository.findById(messageId)
                 .orElseThrow(() ->
                         new RuntimeException("Message not found"));
+        validateMessageParticipant(message, "You can only unpin messages in your conversations");
 
         message.setPinned(false);
 
@@ -493,6 +531,7 @@ public class ChatServiceImpl implements ChatService {
         Message message = messageRepository.findById(messageId)
                 .orElseThrow(() ->
                         new RuntimeException("Message not found"));
+        validateMessageParticipant(message, "You can only star messages in your conversations");
 
         message.setStarred(true);
 
@@ -506,6 +545,7 @@ public class ChatServiceImpl implements ChatService {
         Message message = messageRepository.findById(messageId)
                 .orElseThrow(() ->
                         new RuntimeException("Message not found"));
+        validateMessageParticipant(message, "You can only unstar messages in your conversations");
 
         message.setStarred(false);
 
@@ -583,6 +623,9 @@ public class ChatServiceImpl implements ChatService {
 
     @Override
     public void deleteMessage(Long id) {
+        Message message = messageRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Message not found"));
+        validateMessageParticipant(message, "You can only delete messages in your conversations");
         messageRepository.softDeleteMessage(id);
     }
 
@@ -598,6 +641,8 @@ public class ChatServiceImpl implements ChatService {
                 messageRepository
                         .findById(messageId)
                         .orElseThrow();
+
+        validateMessageParticipant(message, "You can only delete messages in your conversations");
 
         String users =
                 message.getDeletedForUsers();
@@ -637,6 +682,8 @@ public class ChatServiceImpl implements ChatService {
             );
         }
 
+        validateMessageSender(message, "Only sender can delete for everyone");
+
         message.setDeletedForEveryone(true);
         message.setDeletedAt(LocalDateTime.now());
 
@@ -648,7 +695,9 @@ public class ChatServiceImpl implements ChatService {
     @Override
     public void editMessage(Long id, String content) {
         Message m = messageRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Not found"));
+                .orElseThrow(() -> new RuntimeException("Message not found"));
+
+        validateMessageSender(m, "Only the message sender can edit this message");
 
         m.setContent(encrypt(content));
         messageRepository.save(m);
