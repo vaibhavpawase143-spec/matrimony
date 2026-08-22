@@ -57,7 +57,12 @@ export const apiClient = async (endpoint, options = {}) => {
     switch (response.status) {
       case 401:
         adminMessage = serverMsg || "Admin Session Expired: Security token is invalid or expired. Please log in again.";
+        sessionStorage.removeItem("adminToken");
+        sessionStorage.removeItem("adminRefreshToken");
+        sessionStorage.removeItem("admin");
         localStorage.removeItem("adminToken");
+        localStorage.removeItem("adminRefreshToken");
+        localStorage.removeItem("admin");
         break;
       case 403:
         adminMessage = serverMsg || "Access Denied: You do not have privilege to perform this admin action.";

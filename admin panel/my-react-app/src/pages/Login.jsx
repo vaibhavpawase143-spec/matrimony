@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import Input from "../components/Input";
 import Button from "../components/Button";
 import Loader from "../components/Loader";
-import { loginAdmin } from "../services/authService";
+import { loginAdmin, isAuthenticated } from "../services/authService";
 import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
 import { trackEvent } from "../utils/analytics";
 
@@ -17,6 +17,12 @@ function Login() {
   const [rememberMe, setRememberMe] = useState(false);
   const navigate = useNavigate();
   const { executeRecaptcha } = useGoogleReCaptcha();
+
+  useEffect(() => {
+    if (isAuthenticated()) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [navigate]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();

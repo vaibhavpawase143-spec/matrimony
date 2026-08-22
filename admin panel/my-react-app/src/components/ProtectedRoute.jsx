@@ -1,8 +1,9 @@
 import { Navigate } from "react-router-dom";
 import { ADMIN_PERMISSIONS } from "../config/adminPermissions";
+import { getAdmin } from "../services/authService";
 
 const ProtectedRoute = ({ module, children }) => {
-  const admin = JSON.parse(localStorage.getItem("admin"));
+  const admin = getAdmin();
 
   if (!admin) {
     return <Navigate to="/" replace />;
