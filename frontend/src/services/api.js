@@ -1375,9 +1375,10 @@ return await apiClient(
    verifyPayment: async (data) => {
 
      return await apiClient(
-       `/razorpay/verify-payment?orderId=${data.orderId}&paymentId=${data.paymentId}&signature=${data.signature}`,
+       "/razorpay/verify-payment",
        {
-         method: "POST"
+         method: "POST",
+         body: JSON.stringify(data)
        }
      );
 

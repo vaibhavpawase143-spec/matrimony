@@ -1,12 +1,27 @@
 import React, { useEffect, useState } from "react";
-import { subscriptionAPI } from "../services/api";
+import { subscriptionAPI } from "@/services/api";
 import { useNavigate } from "react-router-dom";
+import { 
+  Crown, 
+  Calendar, 
+  Clock, 
+  ShieldCheck, 
+  ArrowRight, 
+  RefreshCw, 
+  Sparkles,
+  History,
+  AlertCircle
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { motion } from "framer-motion";
+
 const SubscriptionHistory = () => {
   const [currentSubscription, setCurrentSubscription] = useState(null);
   const [subscriptionHistory, setSubscriptionHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-const navigate = useNavigate();
+  const navigate = useNavigate();
+
   useEffect(() => {
     loadSubscriptionData();
   }, []);
@@ -16,16 +31,16 @@ const navigate = useNavigate();
       setLoading(true);
       setError("");
 
-    const [currentPlan, history] = await Promise.all([
-      subscriptionAPI.getMySubscription(),
-      subscriptionAPI.getHistory(),
-    ]);
+      const [currentPlan, history] = await Promise.all([
+        subscriptionAPI.getMySubscription(),
+        subscriptionAPI.getHistory()
+      ]);
 
       setCurrentSubscription(currentPlan || null);
       setSubscriptionHistory(Array.isArray(history) ? history : []);
     } catch (err) {
       console.error("Error loading subscription data:", err);
-      setError("Failed to load subscription details.");
+      setError("Failed to load subscription details. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -33,359 +48,260 @@ const navigate = useNavigate();
 
   const formatDate = (date) => {
     if (!date) return "-";
-
     return new Date(date).toLocaleDateString("en-IN", {
       day: "2-digit",
       month: "short",
-      year: "numeric",
+      year: "numeric"
     });
   };
 
   const calculateDaysRemaining = (endDate) => {
     if (!endDate) return 0;
-
     const today = new Date();
     const expiry = new Date(endDate);
-
     const diff = expiry - today;
-
     const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
-
     return days > 0 ? days : 0;
   };
 
   const getStatusBadge = (status) => {
     switch (status) {
       case "ACTIVE":
-        return "bg-green-100 text-green-700";
-
+        return "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800";
       case "CANCELLED":
-        return "bg-orange-100 text-orange-700";
-
+        return "bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-800";
       case "EXPIRED":
-        return "bg-red-100 text-red-700";
-
+        return "bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 border border-rose-300 dark:border-rose-800";
       case "REFUNDED":
-        return "bg-purple-100 text-purple-700";
-
+        return "bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-400 border border-purple-300 dark:border-purple-800";
       default:
-        return "bg-gray-100 text-gray-700";
+        return "bg-muted text-muted-foreground border border-border";
     }
   };
 
- if (loading) {
-   return (
-     <div className="max-w-7xl mx-auto p-6 space-y-6">
+  if (loading) {
+    return (
+      <div className="max-w-7xl mx-auto p-6 space-y-6">
+        <div className="h-10 w-64 bg-muted rounded-xl animate-pulse"></div>
+        <div className="bg-card rounded-2xl border border-border p-8 space-y-4">
+          <div className="h-6 w-48 bg-muted rounded-lg animate-pulse"></div>
+          <div className="grid md:grid-cols-4 gap-6 pt-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-16 bg-muted rounded-xl animate-pulse"></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-       <div className="h-10 w-64 bg-gray-200 rounded animate-pulse"></div>
+  const isUserPremium = currentSubscription && currentSubscription.status === "ACTIVE" && Boolean(currentSubscription.isActive);
+  const daysRemaining = isUserPremium ? calculateDaysRemaining(currentSubscription.endDate) : 0;
 
-       <div className="bg-white rounded-xl shadow-md border p-6">
-
-         <div className="h-6 w-56 bg-gray-200 rounded animate-pulse mb-6"></div>
-
-         <div className="grid md:grid-cols-4 gap-6">
-
-           {[1, 2, 3, 4].map((item) => (
-             <div key={item}>
-               <div className="h-4 w-20 bg-gray-200 rounded animate-pulse mb-2"></div>
-               <div className="h-5 w-32 bg-gray-200 rounded animate-pulse"></div>
-             </div>
-           ))}
-
-         </div>
-
-       </div>
-
-       <div className="bg-white rounded-xl shadow-md border p-6">
-
-         <div className="h-6 w-48 bg-gray-200 rounded animate-pulse mb-6"></div>
-
-         {[1, 2, 3].map((row) => (
-           <div
-             key={row}
-             className="grid grid-cols-6 gap-4 py-4 border-b"
-           >
-             {[1, 2, 3, 4, 5, 6].map((col) => (
-               <div
-                 key={col}
-                 className="h-4 bg-gray-200 rounded animate-pulse"
-               />
-             ))}
-           </div>
-         ))}
-
-       </div>
-
-     </div>
-   );
- }
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-
-   <div className="flex items-center justify-between mb-8">
-
-     <div>
-
-       <h1 className="text-3xl font-bold text-gray-800">
-         My Subscription
-       </h1>
-
-       <p className="text-gray-500 mt-1">
-         View your current plan and subscription history.
-       </p>
-
-     </div>
-
-   </div>
-
-      {error && (
-        <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
-          {error}
-        </div>
-      )}
-
-      {currentSubscription ? (
-        <div className="bg-white rounded-xl shadow-md border p-6 mb-8">
-
-          <div className="flex justify-between items-start flex-wrap gap-4">
-
-            <div>
-
-              <h2 className="text-xl font-bold text-gray-800">
-              <div className="flex items-center gap-3">
-
-                <div className="text-4xl">
-                  👑
-                </div>
-
-                <div>
-
-                  <h2 className="text-2xl font-bold text-gray-800">
-                    {currentSubscription.planName}
-                  </h2>
-
-                  <p className="text-gray-500">
-                    Premium Membership
-                  </p>
-
-                </div>
-
-              </div>
-              </h2>
-
-              <span
-                className={`inline-block mt-3 px-3 py-1 rounded-full text-sm font-semibold ${getStatusBadge(
-                  currentSubscription.status
-                )}`}
-              >
-                {currentSubscription.status}
-              </span>
-
-            </div>
-
-          {currentSubscription &&
-           currentSubscription.status !== "ACTIVE" && (
-            <button
-              onClick={() => navigate("/upgrade")}
-              className="px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition"
-            >
-              Renew Plan
-            </button>
-          )}
-          </div>
-
-          <div className="grid md:grid-cols-4 gap-6 mt-6">
-
-            <div>
-              <p className="text-gray-500 text-sm">Start Date</p>
-              <h3 className="font-semibold">
-                {formatDate(currentSubscription.startDate)}
-              </h3>
-            </div>
-
-            <div>
-              <p className="text-gray-500 text-sm">End Date</p>
-              <h3 className="font-semibold">
-                {formatDate(currentSubscription.endDate)}
-              </h3>
-            </div>
-
-            <div>
-              <p className="text-gray-500 text-sm">Days Remaining</p>
- <h3
-   className={`font-semibold ${
-     calculateDaysRemaining(currentSubscription.endDate) <= 7
-       ? "text-red-600"
-       : "text-green-600"
-   }`}
- >
-                {calculateDaysRemaining(currentSubscription.endDate)} Days
-              </h3>
-            </div>
-
+    <div className="min-h-screen bg-muted/30 py-10 px-4 sm:px-6 lg:px-8 font-sans">
+      <div className="max-w-6xl mx-auto space-y-8">
+        
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <p className="text-gray-500 text-sm">Plan Status</p>
-            <h3 className="font-semibold">
-              {currentSubscription.status}
-            </h3>
+            <h1 className="text-3xl font-extrabold text-foreground tracking-tight flex items-center gap-3">
+              <Crown className="h-8 w-8 text-amber-500 fill-amber-500" />
+              Membership & Billing
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Manage your premium plan, billing history, and membership privileges.
+            </p>
           </div>
 
+          <Button
+            onClick={() => navigate("/upgrade")}
+            className="cursor-pointer bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl shadow-md flex items-center gap-2"
+          >
+            <Sparkles className="h-4 w-4" />
+            <span>{isUserPremium ? "Upgrade / Extend Plan" : "Upgrade to Premium"}</span>
+            <ArrowRight className="h-4 w-4" />
+          </Button>
+        </div>
+
+        {error && (
+          <div className="rounded-2xl border border-rose-200 bg-rose-50 dark:bg-rose-950/40 p-4 text-rose-700 dark:text-rose-300 flex items-center gap-3 text-sm">
+            <AlertCircle className="h-5 w-5 shrink-0" />
+            <span>{error}</span>
           </div>
+        )}
 
-        </div>
-      ) : (
-        <div className="bg-white rounded-xl shadow-md border p-8 text-center">
+        {/* Current Active Plan Card */}
+        {isUserPremium ? (
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-card rounded-3xl border-2 border-amber-500/30 p-8 shadow-xl relative overflow-hidden"
+          >
+            <div className="absolute top-0 right-0 w-48 h-48 bg-amber-500/5 rounded-full blur-2xl -mr-16 -mt-16 pointer-events-none"></div>
 
-       <div className="bg-white rounded-xl shadow-md border p-10 text-center">
-
-         <div className="text-6xl mb-4">
-           💎
-         </div>
-
-         <h2 className="text-2xl font-bold mb-3">
-           No Active Subscription
-         </h2>
-
-         <p className="text-gray-500 mb-6">
-           Upgrade to Premium and unlock all exclusive features.
-         </p>
-
-        <button
-          onClick={() => navigate("/upgrade")}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors"
-        >
-          Upgrade Now
-        </button>
-
-       </div>
-
-
-        </div>
-      )}
-
-      {/* Subscription History Table will be added in Part 2 */}
-<div className="bg-white rounded-xl shadow-md border">
-
-  <div className="px-6 py-5 border-b">
-    <h2 className="text-xl font-bold text-gray-800">
-      Subscription History
-    </h2>
-  </div>
-
-  {subscriptionHistory.length === 0 ? (
-
-    <div className="p-8 text-center text-gray-500">
-      No subscription history found.
-    </div>
-
-  ) : (
-
-    <div className="overflow-x-auto">
-
-      <table className="min-w-full">
-
-        <thead className="bg-gray-50">
-
-          <tr>
-
-            <th className="px-6 py-3 text-left text-xs font-semibold uppercase text-gray-600">
-              Plan
-            </th>
-
-            <th className="px-6 py-3 text-left text-xs font-semibold uppercase text-gray-600">
-              Start Date
-            </th>
-
-            <th className="px-6 py-3 text-left text-xs font-semibold uppercase text-gray-600">
-              End Date
-            </th>
-
-            <th className="px-6 py-3 text-left text-xs font-semibold uppercase text-gray-600">
-              Status
-            </th>
-
-            <th className="px-6 py-3 text-left text-xs font-semibold uppercase text-gray-600">
-              Active
-            </th>
-
-            <th className="px-6 py-3 text-left text-xs font-semibold uppercase text-gray-600">
-              Remaining
-            </th>
-
-          </tr>
-
-        </thead>
-
-        <tbody className="divide-y divide-gray-200">
-
-          {subscriptionHistory.map((subscription) => (
-
-            <tr
-              key={subscription.id}
-className="hover:bg-blue-50 transition duration-200"
-            >
-
-              <td className="px-6 py-4">
-                <div className="font-semibold text-gray-800">
-                  {subscription.planName}
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pb-6 border-b border-border">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center shrink-0 shadow-inner">
+                  <Crown className="h-9 w-9 fill-amber-500" />
                 </div>
-              </td>
+                <div>
+                  <div className="flex items-center gap-3">
+                    <h2 className="text-2xl font-bold text-foreground">{currentSubscription.planName}</h2>
+                    <span className="px-3 py-0.5 rounded-full text-xs font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-300">
+                      ACTIVE
+                    </span>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-0.5">
+                    Premium Matrimonial Privileges Enabled
+                  </p>
+                </div>
+              </div>
 
-              <td className="px-6 py-4 text-gray-600">
-                {formatDate(subscription.startDate)}
-              </td>
+              <Button
+                onClick={() => navigate("/upgrade")}
+                variant="outline"
+                className="cursor-pointer border-amber-500/50 hover:bg-amber-50 dark:hover:bg-amber-950/40 font-semibold text-amber-700 dark:text-amber-300"
+              >
+                Renew / Change Plan
+              </Button>
+            </div>
 
-              <td className="px-6 py-4 text-gray-600">
-                {formatDate(subscription.endDate)}
-              </td>
-
-              <td className="px-6 py-4">
-
-                <span
-                  className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusBadge(
-                    subscription.status
-                  )}`}
-                >
-                  {subscription.status}
+            {/* Metrics */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 pt-6 text-left">
+              <div>
+                <span className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
+                  <Calendar className="h-3.5 w-3.5" /> Start Date
                 </span>
+                <p className="text-base font-bold text-foreground mt-1">
+                  {formatDate(currentSubscription.startDate)}
+                </p>
+              </div>
 
-              </td>
+              <div>
+                <span className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
+                  <Calendar className="h-3.5 w-3.5" /> Valid Till
+                </span>
+                <p className="text-base font-bold text-foreground mt-1">
+                  {formatDate(currentSubscription.endDate)}
+                </p>
+              </div>
 
-              <td className="px-6 py-4">
+              <div>
+                <span className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
+                  <Clock className="h-3.5 w-3.5" /> Days Remaining
+                </span>
+                <p className={`text-base font-bold mt-1 ${daysRemaining <= 7 ? "text-rose-600 font-extrabold" : "text-emerald-600"}`}>
+                  {daysRemaining} Day{daysRemaining !== 1 ? "s" : ""}
+                </p>
+              </div>
 
-                {subscription.isActive ? (
-                  <span className="text-green-600 font-semibold">
-                    Yes
-                  </span>
-                ) : (
-                  <span className="text-red-500 font-semibold">
-                    No
-                  </span>
-                )}
+              <div>
+                <span className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
+                  <ShieldCheck className="h-3.5 w-3.5" /> Status
+                </span>
+                <p className="text-base font-bold text-emerald-600 dark:text-emerald-400 mt-1">
+                  Active Member
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        ) : (
+          <div className="bg-card rounded-3xl border border-border p-10 text-center shadow-md space-y-4">
+            <div className="w-16 h-16 bg-rose-100 dark:bg-rose-950/60 text-rose-600 rounded-2xl flex items-center justify-center mx-auto shadow-inner">
+              <Crown className="h-8 w-8" />
+            </div>
+            <h2 className="text-2xl font-bold text-foreground">No Active Premium Plan</h2>
+            <p className="text-sm text-muted-foreground max-w-md mx-auto">
+              Upgrade to Premium to contact verified profiles directly, send unlimited messages, and boost your matchmaking success.
+            </p>
+            <div className="pt-2">
+              <Button
+                onClick={() => navigate("/upgrade")}
+                className="bg-rose-600 hover:bg-rose-700 text-white font-bold px-8 py-6 rounded-2xl cursor-pointer shadow-md"
+              >
+                <Sparkles className="h-4 w-4 mr-2" />
+                View Premium Plans
+              </Button>
+            </div>
+          </div>
+        )}
 
-              </td>
+        {/* History Table */}
+        <div className="bg-card rounded-3xl border border-border shadow-md overflow-hidden">
+          <div className="px-6 py-5 border-b border-border flex items-center justify-between">
+            <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+              <History className="h-5 w-5 text-muted-foreground" />
+              Subscription & Billing History
+            </h2>
+            <span className="text-xs text-muted-foreground">
+              {subscriptionHistory.length} Record{subscriptionHistory.length !== 1 ? "s" : ""}
+            </span>
+          </div>
 
-              <td className="px-6 py-4 text-gray-600">
+          {subscriptionHistory.length === 0 ? (
+            <div className="p-12 text-center text-muted-foreground text-sm">
+              No historical subscription records found.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-muted/50 text-xs font-bold uppercase tracking-wider text-muted-foreground border-b border-border">
+                  <tr>
+                    <th className="px-6 py-3.5">Plan Name</th>
+                    <th className="px-6 py-3.5">Start Date</th>
+                    <th className="px-6 py-3.5">End Date</th>
+                    <th className="px-6 py-3.5">Status</th>
+                    <th className="px-6 py-3.5">Active</th>
+                    <th className="px-6 py-3.5 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {subscriptionHistory.map((sub) => {
+                    const isSubActive = Boolean(sub.isActive) && sub.status === "ACTIVE";
+                    return (
+                      <tr key={sub.id} className="hover:bg-muted/30 transition-colors">
+                        <td className="px-6 py-4 font-bold text-foreground">
+                          {sub.planName || "Premium Plan"}
+                        </td>
+                        <td className="px-6 py-4 text-muted-foreground">
+                          {formatDate(sub.startDate)}
+                        </td>
+                        <td className="px-6 py-4 text-muted-foreground">
+                          {formatDate(sub.endDate)}
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${getStatusBadge(sub.status)}`}>
+                            {sub.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 font-semibold">
+                          {isSubActive ? (
+                            <span className="text-emerald-600">Yes</span>
+                          ) : (
+                            <span className="text-muted-foreground">No</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => navigate("/upgrade")}
+                            className="cursor-pointer text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40"
+                          >
+                            Renew
+                          </Button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
 
-                {subscription.isActive
-                  ? `${calculateDaysRemaining(subscription.endDate)} Days`
-                  : "-"}
-
-              </td>
-
-            </tr>
-
-          ))}
-
-        </tbody>
-
-      </table>
-
-    </div>
-
-  )}
-
-</div>
+      </div>
     </div>
   );
 };

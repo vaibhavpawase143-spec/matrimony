@@ -201,6 +201,9 @@ class SubscriptionSecurityAndDataIntegrityTest {
         verify(profileRepository, times(1)).save(profile);
     }
 
+    @Mock
+    private org.springframework.core.env.Environment environment;
+
     @Test
     @DisplayName("ISSUE-4: RazorpayPaymentService rejects order creation for inactive or deleted plans")
     void testRazorpayRejectsInactivePlan() {
@@ -224,11 +227,75 @@ class SubscriptionSecurityAndDataIntegrityTest {
                 subscriptionService,
                 notificationService,
                 emailService,
-                razorpayClient
+                razorpayClient,
+                environment
         );
 
         assertThrows(BadRequestException.class, () -> {
             razorpayService.createOrder(10L);
         });
+    }
+
+    @Test
+    @DisplayName("AUDIT-1: Mock/Sandbox is strictly prohibited in production environments")
+    void testSandboxProhibitedInProductionEnvironment() {
+        when(environment.getActiveProfiles()).thenReturn(new String[]{"prod"});
+
+        RazorpayPaymentService razorpayService = new RazorpayPaymentService(
+                userRepository,
+                paymentRepository,
+                planRepository,
+                subscriptionService,
+                notificationService,
+                emailService,
+                razorpayClient,
+                environment
+        );
+
+        Payment payment = new Payment();
+        payment.setUser(testUser);
+        payment.setAmount(BigDecimal.valueOf(999));
+        payment.setTransactionId("order_test_12345");
+        payment.setStatus("PENDING");
+
+        when(paymentRepository.findByTransactionId("order_test_12345")).thenReturn(Optional.of(payment));
+
+        // In production profile, signature verification will execute real verification and fail for dummy signature
+        assertFalse(razorpayService.verifyPayment("order_test_12345", "pay_test_999", "dummy_sig"));
+    }
+
+    @Test
+    @DisplayName("AUDIT-2: Payment verification is strictly idempotent on duplicate callbacks")
+    void testVerifyPaymentIdempotency() {
+        mockSecurityContext("rahul@example.com");
+        when(userRepository.findByEmailIgnoreCase("rahul@example.com")).thenReturn(Optional.of(testUser));
+
+        Payment payment = new Payment();
+        payment.setUser(testUser);
+        payment.setAmount(BigDecimal.valueOf(999));
+        payment.setTransactionId("order_LVn395nxjsa8");
+        payment.setStatus("SUCCESS"); // Already marked success previously
+
+        when(paymentRepository.findByTransactionId("order_LVn395nxjsa8")).thenReturn(Optional.of(payment));
+
+        SubscriptionService mockSubService = mock(SubscriptionService.class);
+
+        RazorpayPaymentService razorpayService = new RazorpayPaymentService(
+                userRepository,
+                paymentRepository,
+                planRepository,
+                mockSubService,
+                notificationService,
+                emailService,
+                razorpayClient,
+                environment
+        );
+
+        // Verification returns true idempotently without reactivating subscription or sending duplicate notifications
+        boolean result = razorpayService.verifyPayment("order_LVn395nxjsa8", "pay_8888", "valid_sig");
+
+        assertTrue(result);
+        verify(mockSubService, never()).activateSubscription(any(), any());
+        verify(notificationService, never()).createAdminNotification(any(), any(), any());
     }
 }

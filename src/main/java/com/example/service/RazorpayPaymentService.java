@@ -38,11 +38,33 @@ public class RazorpayPaymentService {
     private final NotificationService notificationService;
     private final EmailService emailService;
     private final RazorpayClient razorpayClient;
+    private final org.springframework.core.env.Environment environment;
+
     @Value("${razorpay.api.key}")
     private String razorpayKey;
 
     @Value("${razorpay.api.secret}")
     private String razorpayKeySecret;
+
+    private boolean isProductionEnvironment() {
+        if (environment == null) return false;
+        String[] activeProfiles = environment.getActiveProfiles();
+        for (String profile : activeProfiles) {
+            if ("prod".equalsIgnoreCase(profile) || "production".equalsIgnoreCase(profile)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean isSandboxPermitted() {
+        // Strict guard: In production profile, mock/sandbox mode is 100% prohibited
+        if (isProductionEnvironment()) {
+            return false;
+        }
+        return (razorpayKey != null && razorpayKey.contains("xxxx")) ||
+               (razorpayKeySecret != null && razorpayKeySecret.contains("xxxx"));
+    }
 
     /**
      * Create Razorpay order for subscription purchase
@@ -78,7 +100,7 @@ public class RazorpayPaymentService {
             Order order = razorpayClient.orders.create(options);
             orderId = order.get("id");
         } catch (RazorpayException e) {
-            if (razorpayKey != null && razorpayKey.contains("xxxx")) {
+            if (isSandboxPermitted()) {
                 orderId = "order_test_" + System.currentTimeMillis() + "_" + user.getId();
                 log.info("[RAZORPAY TEST MODE] Created mock test order ID: {}", orderId);
             } else {
@@ -117,13 +139,35 @@ public class RazorpayPaymentService {
             String paymentId,
             String signature
     ) {
+        if (orderId == null || paymentId == null || signature == null) {
+            return false;
+        }
 
         Payment payment = null;
 
         try {
+            payment = paymentRepository
+                    .findByTransactionId(orderId)
+                    .orElseThrow(() ->
+                            new com.example.exception.ResourceNotFoundException("Payment not found"));
+
+            User currentUser = getCurrentUser();
+
+            if (!payment.getUser().getId().equals(currentUser.getId())) {
+                throw new org.springframework.security.access.AccessDeniedException(
+                        "Unauthorized payment verification"
+                );
+            }
+
+            // 1. Idempotency Check: Prevent duplicate activation if payment was already verified
+            if ("SUCCESS".equals(payment.getStatus())) {
+                return true;
+            }
+
+            // 2. Cryptographic Signature Verification
             boolean verified;
-            if (razorpayKeySecret != null && razorpayKeySecret.contains("xxxx") && orderId != null && orderId.startsWith("order_test_")) {
-                verified = signature != null && !signature.isBlank();
+            if (isSandboxPermitted() && orderId.startsWith("order_test_")) {
+                verified = !signature.isBlank();
                 log.info("[RAZORPAY TEST MODE] Verified sandbox signature for order {}", orderId);
             } else {
                 JSONObject options = new JSONObject();
@@ -134,28 +178,10 @@ public class RazorpayPaymentService {
                 verified = Utils.verifyPaymentSignature(options, razorpayKeySecret);
             }
 
-            payment = paymentRepository
-                    .findByTransactionId(orderId)
-                    .orElseThrow(() ->
-                            new com.example.exception.ResourceNotFoundException("Payment not found"));
-
             if (!verified) {
                 payment.setStatus("FAILED");
                 paymentRepository.save(payment);
                 return false;
-            }
-
-            User currentUser = getCurrentUser();
-
-            if (!payment.getUser().getId().equals(currentUser.getId())) {
-                throw new org.springframework.security.access.AccessDeniedException(
-                        "Unauthorized payment verification"
-                );
-            }
-
-            // Prevent duplicate activation
-            if ("SUCCESS".equals(payment.getStatus())) {
-                return true;
             }
 
             payment.setStatus("SUCCESS");
