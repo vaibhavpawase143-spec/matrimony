@@ -231,6 +231,7 @@ const SettingsPage = () => {
     motherTongueId: null,
     maritalStatusId: null,
     educationLevelId: null,
+    educationOther: "",
     occupationId: null,
     heightId: null,
     genderId: null,
@@ -249,6 +250,16 @@ const SettingsPage = () => {
     motherName: "",
     motherOccupation: "",
     siblingsCount: "",
+    aunt: "",
+    sistersCount: "",
+    brothersCount: "",
+    nanihalDetails: "",
+    bestFriend: "",
+    unclesCount: "",
+    uncle1Name: "",
+    uncle2Name: "",
+    uncle3Name: "",
+    uncle4Name: "",
     companyName: "",
     address: "",
     aboutMe: "",
@@ -258,6 +269,7 @@ const SettingsPage = () => {
     familyStatusId: null,
     familyValueId: null,
     qualificationId: null,
+    qualificationOther: "",
     fieldOfStudyId: null,
     employedId: null,
     disabilityStatusId: null,
@@ -468,6 +480,7 @@ const SettingsPage = () => {
         aboutMe: savedProfileData.aboutMe || savedProfileData.about || savedProfileData.about_me || "",
         about: savedProfileData.about || "",
         educationLevelId: savedProfileData.educationLevelId ? Number(savedProfileData.educationLevelId) : null,
+        educationOther: savedProfileData.educationOther || "",
         occupationId: savedProfileData.occupationId ? Number(savedProfileData.occupationId) : null,
         incomeId: savedProfileData.incomeId ? Number(savedProfileData.incomeId) : null,
         companyName: savedProfileData.companyName || "",
@@ -477,6 +490,7 @@ const SettingsPage = () => {
         familyStatusId: savedProfileData.familyStatusId ? Number(savedProfileData.familyStatusId) : null,
         familyValueId: savedProfileData.familyValueId ? Number(savedProfileData.familyValueId) : null,
         qualificationId: savedProfileData.qualificationId ? Number(savedProfileData.qualificationId) : null,
+        qualificationOther: savedProfileData.qualificationOther || "",
         fieldOfStudyId: savedProfileData.fieldOfStudyId ? Number(savedProfileData.fieldOfStudyId) : null,
         employedId: savedProfileData.employedStatusId
           ? Number(savedProfileData.employedStatusId)
@@ -510,6 +524,16 @@ const SettingsPage = () => {
         motherName: savedProfileData.motherName || "",
         motherOccupation: savedProfileData.motherOccupation || "",
         siblingsCount: savedProfileData.siblingsCount || savedProfileData.siblings || "",
+        aunt: savedProfileData.aunt || "",
+        sistersCount: savedProfileData.sistersCount ?? "",
+        brothersCount: savedProfileData.brothersCount ?? "",
+        nanihalDetails: savedProfileData.nanihalDetails || "",
+        bestFriend: savedProfileData.bestFriend || "",
+        unclesCount: savedProfileData.unclesCount ?? "",
+        uncle1Name: savedProfileData.uncle1Name || "",
+        uncle2Name: savedProfileData.uncle2Name || "",
+        uncle3Name: savedProfileData.uncle3Name || "",
+        uncle4Name: savedProfileData.uncle4Name || "",
         dietId: savedProfileData.dietId
           ? Number(savedProfileData.dietId)
           : savedProfileData.diet?.id
@@ -854,6 +878,21 @@ const SettingsPage = () => {
         dateOfBirth: value,
         age: calculatedAge,
       }));
+    } else if (field === "unclesCount") {
+      // Keep the complete form state intact. Only update the uncle count.
+      // The UI dynamically renders 0-4 normal text fields from this value.
+      const parsedValue = value === "" ? "" : Number.parseInt(value, 10);
+      const numericValue =
+        value === ""
+          ? ""
+          : Number.isFinite(parsedValue)
+          ? Math.min(4, Math.max(0, parsedValue))
+          : 0;
+
+      setFormData((prev) => ({
+        ...prev,
+        unclesCount: numericValue,
+      }));
     } else {
       const idFields = [
         "religionId",
@@ -1129,6 +1168,44 @@ const SettingsPage = () => {
     return true;
   };
 
+  // Additional support for custom qualification when Highest Education is "Other".
+  // Existing qualification dropdown and all existing behavior remain unchanged.
+  // Show custom text inputs only when the corresponding dropdown itself
+  // has the "Other" option selected. Existing dropdown behavior is unchanged.
+  const isOtherEducationSelected = () => {
+    const selectedEducation = (masterOptions.educationLevels || []).find(
+      (option) => String(option?.id) === String(formData.educationLevelId)
+    );
+
+    const selectedEducationName = String(
+      selectedEducation?.name ??
+      selectedEducation?.label ??
+      selectedEducation?.value ??
+      selectedEducation?.educationLevelName ??
+      selectedEducation?.educationName ??
+      (typeof formData.educationLevelId === "string" ? formData.educationLevelId : "")
+    ).trim().toLowerCase();
+
+    return selectedEducationName === "other";
+  };
+
+  const isOtherQualificationSelected = () => {
+    const selectedQualification = (masterOptions.qualifications || []).find(
+      (option) => String(option?.id) === String(formData.qualificationId)
+    );
+
+    const selectedQualificationName = String(
+      selectedQualification?.name ??
+      selectedQualification?.label ??
+      selectedQualification?.value ??
+      selectedQualification?.qualificationName ??
+      selectedQualification?.qualification ??
+      (typeof formData.qualificationId === "string" ? formData.qualificationId : "")
+    ).trim().toLowerCase();
+
+    return selectedQualificationName === "other";
+  };
+
   const handleProfileUpdate = async () => {
     if (profileSaving) return;
     if (!validateProfileForm()) return;
@@ -1202,6 +1279,7 @@ const SettingsPage = () => {
         complexionId: formData.complexionId,
         bodyTypeId: formData.bodyTypeId,
         educationLevelId: formData.educationLevelId,
+        educationOther: formData.educationOther,
         occupationId: formData.occupationId,
         incomeId: formData.incomeId,
         companyName: formData.companyName,
@@ -1211,6 +1289,7 @@ const SettingsPage = () => {
         familyStatusId: formData.familyStatusId,
         familyValueId: formData.familyValueId,
         qualificationId: formData.qualificationId,
+        qualificationOther: formData.qualificationOther,
         fieldOfStudyId: formData.fieldOfStudyId,
         employedId: formData.employedId,
         disabilityStatusId: formData.disabilityStatusId,
@@ -1227,6 +1306,16 @@ const SettingsPage = () => {
         motherName: formData.motherName,
         motherOccupation: formData.motherOccupation,
         siblingsCount: formData.siblingsCount,
+        aunt: formData.aunt,
+        sistersCount: formData.sistersCount,
+        brothersCount: formData.brothersCount,
+        nanihalDetails: formData.nanihalDetails,
+        bestFriend: formData.bestFriend,
+        unclesCount: formData.unclesCount,
+        uncle1Name: formData.uncle1Name,
+        uncle2Name: formData.uncle2Name,
+        uncle3Name: formData.uncle3Name,
+        uncle4Name: formData.uncle4Name,
       };
 
       // 2. Handle Gallery Uploads if new files are present
@@ -1396,7 +1485,7 @@ const SettingsPage = () => {
   };
 
   const renderField = (field) => {
-    const { label, placeholder, type = "text", key, options, readOnly = false } = field;
+    const { label, placeholder, type = "text", key, options, readOnly = false, min, max } = field;
 
     if (type === "select") {
       let fieldOptions = [];
@@ -1469,6 +1558,24 @@ const SettingsPage = () => {
               if (key === "stateId") {
                 handleInputChange("cityId", "");
               }
+              if (key === "educationLevelId") {
+                const selectedEducation = masterOptions.educationLevels?.find(
+                  (option) => String(option?.id) === String(value)
+                );
+                const isOther = getDisplayName(selectedEducation).trim().toLowerCase() === "other";
+                if (!isOther) {
+                  handleInputChange("educationOther", "");
+                }
+              }
+              if (key === "qualificationId") {
+                const selectedQualification = masterOptions.qualifications?.find(
+                  (option) => String(option?.id) === String(value)
+                );
+                const isOther = getDisplayName(selectedQualification).trim().toLowerCase() === "other";
+                if (!isOther) {
+                  handleInputChange("qualificationOther", "");
+                }
+              }
             }}
           />
         </div>
@@ -1484,6 +1591,8 @@ const SettingsPage = () => {
           onChange={(e) => handleInputChange(key, e.target.value)}
           placeholder={placeholder}
           readOnly={readOnly}
+          min={min}
+          max={max}
           className={`w-full border rounded-lg px-4 py-2.5 text-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary ${
             isFieldFilled(formData[key])
               ? "bg-primary/5 border-primary/40 text-foreground font-medium shadow-sm"
@@ -1729,11 +1838,25 @@ const SettingsPage = () => {
                     key: "educationLevelId",
                     type: "select",
                   })}
+                  {isOtherEducationSelected() ? (
+                    renderField({
+                      label: "Other Education",
+                      key: "educationOther",
+                      placeholder: "Enter your education",
+                    })
+                  ) : null}
                   {renderField({
                     label: "Qualification",
                     key: "qualificationId",
                     type: "select",
                   })}
+                  {isOtherQualificationSelected() ? (
+                    renderField({
+                      label: "Other Qualification",
+                      key: "qualificationOther",
+                      placeholder: "Enter your qualification",
+                    })
+                  ) : null}
                   {renderField({
                     label: "Field Of Study",
                     key: "fieldOfStudyId",
@@ -1869,6 +1992,60 @@ const SettingsPage = () => {
                     label: "Family Value",
                     key: "familyValueId",
                     type: "select",
+                  })}
+
+                  {/* Additional Family Details - kept below existing family fields */}
+                  {renderField({
+                    label: "Aunt",
+                    key: "aunt",
+                    placeholder: "Enter aunt details",
+                  })}
+                  {renderField({
+                    label: "Nanihal Details",
+                    key: "nanihalDetails",
+                    placeholder: "Enter nanihal details",
+                  })}
+                  {renderField({
+                    label: "Number of Brothers",
+                    key: "brothersCount",
+                    type: "number",
+                    placeholder: "Enter number of brothers",
+                  })}
+                  {renderField({
+                    label: "Number of Sisters",
+                    key: "sistersCount",
+                    type: "number",
+                    placeholder: "Enter number of sisters",
+                  })}
+                  {renderField({
+                    label: "Best Friend",
+                    key: "bestFriend",
+                    placeholder: "Enter best friend's name",
+                  })}
+                  {renderField({
+                    label: "Number of Uncles",
+                    key: "unclesCount",
+                    type: "number",
+                    placeholder: "Enter number of uncles",
+                    min: 0,
+                    max: 4,
+                  })}
+
+                  {/* Uncle Names - dynamically shown as normal fields (maximum 4) */}
+                  {Array.from({
+                    length: Math.min(
+                      4,
+                      Math.max(0, Number.parseInt(formData.unclesCount, 10) || 0)
+                    ),
+                  }).map((_, index) => {
+                    const uncleNumber = index + 1;
+                    const key = `uncle${uncleNumber}Name`;
+
+                    return renderField({
+                      label: `Uncle ${uncleNumber} Name`,
+                      key,
+                      placeholder: `Enter uncle ${uncleNumber} name`,
+                    });
                   })}
                 </div>
               </SettingsSection>

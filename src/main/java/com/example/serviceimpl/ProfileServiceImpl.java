@@ -141,7 +141,7 @@ public class ProfileServiceImpl implements ProfileService {
         Profile saved = repository.save(profile);
 
         // Refresh cache
-       // safeRedis(user.getId());
+        // safeRedis(user.getId());
 
         return mapToDTO(saved);
     }
@@ -550,6 +550,18 @@ public class ProfileServiceImpl implements ProfileService {
         p.setMotherOccupation(dto.getMotherOccupation());
         p.setSiblingsCount(dto.getSiblingsCount());
 
+        // Extended Family Details
+        p.setAunt(dto.getAunt());
+        p.setSistersCount(dto.getSistersCount());
+        p.setBrothersCount(dto.getBrothersCount());
+        p.setNanihalDetails(dto.getNanihalDetails());
+        p.setBestFriend(dto.getBestFriend());
+        p.setUnclesCount(dto.getUnclesCount());
+        p.setUncle1Name(dto.getUncle1Name());
+        p.setUncle2Name(dto.getUncle2Name());
+        p.setUncle3Name(dto.getUncle3Name());
+        p.setUncle4Name(dto.getUncle4Name());
+
         // =====================================================
         // UPDATE USER
         // =====================================================
@@ -778,6 +790,10 @@ public class ProfileServiceImpl implements ProfileService {
             );
         }
 
+        // Custom values when master selection is Other
+        p.setEducationOther(dto.getEducationOther());
+        p.setQualificationOther(dto.getQualificationOther());
+
         // =====================================================
         // OCCUPATION
         // =====================================================
@@ -959,6 +975,18 @@ public class ProfileServiceImpl implements ProfileService {
 
         request.setSiblingsCount(dto.getSiblingsCount());
 
+        // Extended Family Details
+        request.setAunt(dto.getAunt());
+        request.setSistersCount(dto.getSistersCount());
+        request.setBrothersCount(dto.getBrothersCount());
+        request.setNanihalDetails(dto.getNanihalDetails());
+        request.setBestFriend(dto.getBestFriend());
+        request.setUnclesCount(dto.getUnclesCount());
+        request.setUncle1Name(dto.getUncle1Name());
+        request.setUncle2Name(dto.getUncle2Name());
+        request.setUncle3Name(dto.getUncle3Name());
+        request.setUncle4Name(dto.getUncle4Name());
+
         // =====================================================
         // MASTER IDS
         // =====================================================
@@ -990,6 +1018,10 @@ public class ProfileServiceImpl implements ProfileService {
 
         request.setEducationLevelId(
                 dto.getEducationLevelId()
+        );
+
+        request.setEducationOther(
+                dto.getEducationOther()
         );
 
         request.setOccupationId(
@@ -1034,6 +1066,10 @@ public class ProfileServiceImpl implements ProfileService {
 
         request.setQualificationId(
                 dto.getQualificationId()
+        );
+
+        request.setQualificationOther(
+                dto.getQualificationOther()
         );
 
         request.setFieldOfStudyId(
@@ -1238,6 +1274,10 @@ public class ProfileServiceImpl implements ProfileService {
                     profile.getEducationLevel().getName()
             );
         }
+
+        dto.setEducationOther(
+                profile.getEducationOther()
+        );
 
         // =====================================================
         // OCCUPATION
@@ -1526,6 +1566,10 @@ public class ProfileServiceImpl implements ProfileService {
             );
         }
 
+        dto.setQualificationOther(
+                profile.getQualificationOther()
+        );
+
         // =====================================================
         // FIELD OF STUDY
         // =====================================================
@@ -1620,6 +1664,47 @@ public class ProfileServiceImpl implements ProfileService {
 
         dto.setSiblingsCount(
                 profile.getSiblingsCount()
+        );
+
+        // Extended Family Details
+        dto.setAunt(
+                profile.getAunt()
+        );
+
+        dto.setSistersCount(
+                profile.getSistersCount()
+        );
+
+        dto.setBrothersCount(
+                profile.getBrothersCount()
+        );
+
+        dto.setNanihalDetails(
+                profile.getNanihalDetails()
+        );
+
+        dto.setBestFriend(
+                profile.getBestFriend()
+        );
+
+        dto.setUnclesCount(
+                profile.getUnclesCount()
+        );
+
+        dto.setUncle1Name(
+                profile.getUncle1Name()
+        );
+
+        dto.setUncle2Name(
+                profile.getUncle2Name()
+        );
+
+        dto.setUncle3Name(
+                profile.getUncle3Name()
+        );
+
+        dto.setUncle4Name(
+                profile.getUncle4Name()
         );
 
         // =====================================================
@@ -1771,6 +1856,8 @@ public class ProfileServiceImpl implements ProfileService {
     private void updateProfileCompletion(Profile profile) {
 
         int completedFields = 0;
+
+        // Existing profile fields
         int totalFields = 25;
 
         if (profile.getDateOfBirth() != null) completedFields++;
@@ -1805,14 +1892,72 @@ public class ProfileServiceImpl implements ProfileService {
         if (profile.getImageUrl() != null && !profile.getImageUrl().isBlank())
             completedFields++;
 
-        int percentage = (completedFields * 100) / totalFields;
+        // =====================================================
+        // EXTENDED FAMILY DETAILS
+        // =====================================================
+        totalFields += 6;
 
-        // Only full profile is marked completed
+        if (profile.getAunt() != null && !profile.getAunt().isBlank())
+            completedFields++;
+
+        if (profile.getSistersCount() != null)
+            completedFields++;
+
+        if (profile.getBrothersCount() != null)
+            completedFields++;
+
+        if (profile.getNanihalDetails() != null && !profile.getNanihalDetails().isBlank())
+            completedFields++;
+
+        if (profile.getBestFriend() != null && !profile.getBestFriend().isBlank())
+            completedFields++;
+
+        if (profile.getUnclesCount() != null)
+            completedFields++;
+
+        // Uncle names depend on the selected uncle count (maximum 4).
+        int uncleCount = profile.getUnclesCount() == null
+                ? 0
+                : Math.min(Math.max(profile.getUnclesCount(), 0), 4);
+
+        totalFields += uncleCount;
+
+        if (uncleCount >= 1
+                && profile.getUncle1Name() != null
+                && !profile.getUncle1Name().isBlank()) {
+            completedFields++;
+        }
+
+        if (uncleCount >= 2
+                && profile.getUncle2Name() != null
+                && !profile.getUncle2Name().isBlank()) {
+            completedFields++;
+        }
+
+        if (uncleCount >= 3
+                && profile.getUncle3Name() != null
+                && !profile.getUncle3Name().isBlank()) {
+            completedFields++;
+        }
+
+        if (uncleCount >= 4
+                && profile.getUncle4Name() != null
+                && !profile.getUncle4Name().isBlank()) {
+            completedFields++;
+        }
+
+        int percentage = totalFields == 0
+                ? 0
+                : (completedFields * 100) / totalFields;
+
         profile.setProfileCompleted(percentage == 100);
     }
+
     private Integer calculateProfileCompletion(Profile profile) {
 
         int completedFields = 0;
+
+        // Existing profile fields
         int totalFields = 25;
 
         if (profile.getDateOfBirth() != null) completedFields++;
@@ -1847,12 +1992,64 @@ public class ProfileServiceImpl implements ProfileService {
         if (profile.getImageUrl() != null && !profile.getImageUrl().isBlank())
             completedFields++;
 
-        return (completedFields * 100) / totalFields;
-    }
+        // =====================================================
+        // EXTENDED FAMILY DETAILS
+        // =====================================================
+        totalFields += 6;
 
-    // =====================================================
-    // SAFE STRING
-    // =====================================================
+        if (profile.getAunt() != null && !profile.getAunt().isBlank())
+            completedFields++;
+
+        if (profile.getSistersCount() != null)
+            completedFields++;
+
+        if (profile.getBrothersCount() != null)
+            completedFields++;
+
+        if (profile.getNanihalDetails() != null && !profile.getNanihalDetails().isBlank())
+            completedFields++;
+
+        if (profile.getBestFriend() != null && !profile.getBestFriend().isBlank())
+            completedFields++;
+
+        if (profile.getUnclesCount() != null)
+            completedFields++;
+
+        // Uncle names depend on the selected uncle count (maximum 4).
+        int uncleCount = profile.getUnclesCount() == null
+                ? 0
+                : Math.min(Math.max(profile.getUnclesCount(), 0), 4);
+
+        totalFields += uncleCount;
+
+        if (uncleCount >= 1
+                && profile.getUncle1Name() != null
+                && !profile.getUncle1Name().isBlank()) {
+            completedFields++;
+        }
+
+        if (uncleCount >= 2
+                && profile.getUncle2Name() != null
+                && !profile.getUncle2Name().isBlank()) {
+            completedFields++;
+        }
+
+        if (uncleCount >= 3
+                && profile.getUncle3Name() != null
+                && !profile.getUncle3Name().isBlank()) {
+            completedFields++;
+        }
+
+        if (uncleCount >= 4
+                && profile.getUncle4Name() != null
+                && !profile.getUncle4Name().isBlank()) {
+            completedFields++;
+        }
+
+        return totalFields == 0
+                ? 0
+                : (completedFields * 100) / totalFields;
+    }
 
     private String safeString(String value) {
         return value == null ? "" : value;

@@ -57,6 +57,9 @@ public class ProfileRequestDTO {
     // Education
     private Long educationLevelId;
 
+    // Custom Education when Education Level = Other
+    private String educationOther;
+
     // Occupation
     private Long occupationId;
 
@@ -120,6 +123,10 @@ public class ProfileRequestDTO {
     private Long familyStatusId;
     private Long familyValueId;
     private Long qualificationId;
+
+    // Custom Qualification when Qualification = Other
+    private String qualificationOther;
+
     private Long fieldOfStudyId;
     private Long employedId;
     private Long disabilityStatusId;
@@ -144,4 +151,28 @@ public class ProfileRequestDTO {
     private String motherOccupation;
 
     private Integer siblingsCount;
-   }
+
+    // =====================================================
+// EXTENDED FAMILY DETAILS
+// =====================================================
+
+    private String aunt;
+
+    private Integer sistersCount;
+
+    private Integer brothersCount;
+
+    private String nanihalDetails;
+
+    private String bestFriend;
+
+    private Integer unclesCount;
+
+    private String uncle1Name;
+
+    private String uncle2Name;
+
+    private String uncle3Name;
+
+    private String uncle4Name;
+}

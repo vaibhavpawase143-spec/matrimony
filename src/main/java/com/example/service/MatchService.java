@@ -18,6 +18,10 @@ public interface MatchService {
             int page,
             int size
     );
+    long countRecommendedMatches(
+            Long userId,
+            int minimumScore
+    );
 
     MatchExplanationResponseDTO getMatchExplanation(Long userId, Long profileId);
 

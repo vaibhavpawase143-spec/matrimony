@@ -164,6 +164,16 @@ public class Profile extends Auditable {
     private String imageUrl;
 
     // =====================================================
+    // EDUCATION - OTHER
+    // =====================================================
+
+    @Column(name = "education_other", length = 255)
+    private String educationOther;
+
+    @Column(name = "qualification_other", length = 255)
+    private String qualificationOther;
+
+    // =====================================================
     // CAREER
     // =====================================================
 
@@ -217,6 +227,40 @@ public class Profile extends Auditable {
     private Integer siblingsCount;
 
     // =====================================================
+    // EXTENDED FAMILY DETAILS
+    // =====================================================
+
+    @Column(name = "aunt", length = 200)
+    private String aunt;
+
+    @Column(name = "sisters_count")
+    private Integer sistersCount;
+
+    @Column(name = "brothers_count")
+    private Integer brothersCount;
+
+    @Column(name = "nanihal_details", length = 1000)
+    private String nanihalDetails;
+
+    @Column(name = "best_friend", length = 200)
+    private String bestFriend;
+
+    @Column(name = "uncles_count")
+    private Integer unclesCount;
+
+    @Column(name = "uncle_1_name", length = 200)
+    private String uncle1Name;
+
+    @Column(name = "uncle_2_name", length = 200)
+    private String uncle2Name;
+
+    @Column(name = "uncle_3_name", length = 200)
+    private String uncle3Name;
+
+    @Column(name = "uncle_4_name", length = 200)
+    private String uncle4Name;
+
+    // =====================================================
     // SYSTEM
     // =====================================================
 
@@ -251,33 +295,34 @@ public class Profile extends Auditable {
     @Builder.Default
     private Integer boostScore = 0;
 
-// =====================================================
-// LIFECYCLE
-// =====================================================
-@PrePersist
-protected void onCreate() {
-    super.onCreate();
+    // =====================================================
+    // LIFECYCLE
+    // =====================================================
 
-    if (this.isActive == null) {
-        this.isActive = true;
-    }
+    @PrePersist
+    protected void onCreate() {
+        super.onCreate();
 
-    if (this.profileCompleted == null) {
-        this.profileCompleted = false;
-    }
+        if (this.isActive == null) {
+            this.isActive = true;
+        }
 
-    if (this.currentStep == null) {
-        this.currentStep = 1;
-    }
+        if (this.profileCompleted == null) {
+            this.profileCompleted = false;
+        }
 
-    if (this.isPremium == null) {
-        this.isPremium = false;
-    }
+        if (this.currentStep == null) {
+            this.currentStep = 1;
+        }
 
-    if (this.boostScore == null) {
-        this.boostScore = 0;
+        if (this.isPremium == null) {
+            this.isPremium = false;
+        }
+
+        if (this.boostScore == null) {
+            this.boostScore = 0;
+        }
     }
-}
 
     @PreUpdate
     protected void onUpdate() {

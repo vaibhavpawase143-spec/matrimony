@@ -31,9 +31,7 @@ public class DashboardServiceImpl implements DashboardService {
 
         return DashboardSummaryDTO.builder()
 
-                .totalMatches(
-                        matchRepository.countMatches(userId)
-                )
+                .totalMatches(0)
 
                 .interestsSent(
                         interestRepository.countBySender_IdAndIsActiveTrue(userId)

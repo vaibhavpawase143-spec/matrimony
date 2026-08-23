@@ -1051,7 +1051,7 @@ hover:bg-slate-700
           }
 
           </div>
-          <button 
+          <button
             onClick={toggleDarkMode}
             className="text-foreground hover:text-primary transition-all duration-300 ease-in-out p-2 rounded-lg hover:bg-muted/50 hover:scale-105 hover:shadow-md"
           >
@@ -1060,7 +1060,7 @@ hover:bg-slate-700
           {isLoggedIn && (
             <>
 
-              <motion.button 
+              <motion.button
                 onClick={() => navigate("/upgrade")}
                 className="text-sm font-medium bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-lg transition-all duration-300 ease-in-out flex items-center gap-2 hover:scale-105"
                 whileHover={{ scale: 1.05 }}
@@ -1069,8 +1069,8 @@ hover:bg-slate-700
                 <Crown className="h-4 w-4" />
                 {t.navbar.upgrade}
               </motion.button>
-              <motion.button 
-                onClick={handleLogout} 
+              <motion.button
+                onClick={handleLogout}
                 className="text-sm font-medium text-muted-foreground hover:text-destructive transition-all duration-300 ease-in-out flex items-center gap-1.5 hover:scale-105 hover:shadow-md"
                 whileHover={{ scale: 1.05 }}
                 transition={{ duration: 0.2 }}
@@ -1078,8 +1078,8 @@ hover:bg-slate-700
                 <LogOut className="h-4 w-4" />
                 {t.navbar.logout}
               </motion.button>
-              <motion.button 
-                onClick={() => navigate("/account")} 
+              <motion.button
+                onClick={() => navigate("/account")}
                 className="h-8 w-8 rounded-full bg-primary/20 hover:bg-primary/30 flex items-center justify-center text-primary font-bold text-sm cursor-pointer transition-all duration-300"
                 whileHover={{ scale: 1.1 }}
                 transition={{ duration: 0.2 }}
@@ -1091,7 +1091,7 @@ hover:bg-slate-700
           )}
         </div>
                <motion.button
-          className="md:hidden text-foreground transition-all duration-300 ease-in-out hover:scale-110" 
+          className="md:hidden text-foreground transition-all duration-300 ease-in-out hover:scale-110"
           onClick={() => setMobileOpen(!mobileOpen)}
           whileHover={{ scale: 1.1 }}
           transition={{ duration: 0.2 }}
@@ -1101,7 +1101,7 @@ hover:bg-slate-700
       </div>
 
       {mobileOpen && (
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: "auto" }}
           exit={{ opacity: 0, height: 0 }}
@@ -1110,10 +1110,10 @@ hover:bg-slate-700
         >
           {links.map((l) => (
             <motion.div key={l.label} whileHover={{ x: 5 }} transition={{ duration: 0.2 }}>
-              <Link 
-                key={l.label} 
-                to={l.to} 
-                onClick={() => setMobileOpen(false)} 
+              <Link
+                key={l.label}
+                to={l.to}
+                onClick={() => setMobileOpen(false)}
                 className="block text-sm font-medium text-foreground hover:text-primary py-2 transition-all duration-300 ease-in-out"
               >
                 {l.label}
@@ -1122,7 +1122,7 @@ hover:bg-slate-700
           ))}
           {isLoggedIn && (
             <>
-              <motion.button 
+              <motion.button
                 onClick={() => { navigate("/upgrade"); setMobileOpen(false); }}
                 className="block text-sm font-medium bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-lg transition-all duration-300 ease-in-out hover:scale-105"
                 whileHover={{ x: 5 }}
@@ -1131,8 +1131,8 @@ hover:bg-slate-700
                 <Crown className="h-4 w-4 inline mr-2" />
                 {t.navbar.upgrade}
               </motion.button>
-              <motion.button 
-                onClick={() => { handleLogout(); setMobileOpen(false); }} 
+              <motion.button
+                onClick={() => { handleLogout(); setMobileOpen(false); }}
                 className="block text-sm font-medium text-destructive py-2 transition-all duration-300 ease-in-out hover:scale-105"
                 whileHover={{ x: 5 }}
                 transition={{ duration: 0.2 }}
@@ -1142,7 +1142,7 @@ hover:bg-slate-700
             </>
           )}
           <div className="border-t border-border pt-3 flex justify-center">
-            <button 
+            <button
               onClick={cycleLanguage}
               className="text-foreground hover:text-primary transition-all duration-300 ease-in-out p-2 rounded-lg hover:bg-muted/50 hover:scale-105 hover:shadow-md"
               title={t.navbar?.languageLabel || "Language"}

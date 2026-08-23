@@ -1,21 +1,25 @@
 import {
-Heart,
-Send,
-MessageSquare,
-Bookmark,
-Eye,
-Users
-} from 'lucide-react';
+  Heart,
+  Send,
+  MessageSquare,
+  Bookmark,
+  Eye,
+  Users
+} from "lucide-react";
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { subscriptionAPI } from "@/services/api";
 import PremiumUpgradeModal from "@/components/PremiumUpgradeModal";
+
 const DashboardStats = ({ stats = {} }) => {
 
-const navigate = useNavigate();
-const [showUpgradePopup, setShowUpgradePopup] = useState(false);
-const [premiumFeature, setPremiumFeature] = useState("Messages");
-const defaultStats = stats || {
+  const navigate = useNavigate();
+
+  const [showUpgradePopup, setShowUpgradePopup] = useState(false);
+  const [premiumFeature, setPremiumFeature] = useState("Messages");
+
+  const defaultStats = stats || {
     totalMatches: "...",
     interestsSent: "...",
     interestsReceived: "...",
@@ -23,253 +27,232 @@ const defaultStats = stats || {
     profileViews: "...",
     likesReceived: "...",
     messages: "..."
-};
-const statItems = [
+  };
 
-{
-  label: 'Total Matches',
+  const statItems = [
 
-  value: defaultStats.totalMatches,
+    {
+      label: "Total Matches",
+      value: "View Matches",
+      icon: Users,
 
-  icon: Users,
+      // Card background
+      color: "bg-blue-100 dark:bg-blue-900/30",
 
-  color: 'bg-blue-100 dark:bg-blue-900/30',
+      textColor: "text-indigo-600 dark:text-indigo-400",
 
-  textColor: 'text-blue-600 dark:text-blue-400',
+      route: "/matches",
 
-  route: '/matches'
-},
+      isMatchButton: true
+    },
 
-{
+    {
+      label: "Interests Sent",
+      value: defaultStats.interestsSent,
+      icon: Send,
+      color: "bg-purple-100 dark:bg-purple-900/30",
+      textColor: "text-purple-600 dark:text-purple-400",
+      route: "/sent-interests"
+    },
 
-label:'Interests Sent',
+    {
+      label: "Interests Received",
+      route: "/received-interests",
+      value: defaultStats.interestsReceived,
+      icon: Heart,
+      color: "bg-red-100 dark:bg-red-900/30",
+      textColor: "text-red-600 dark:text-red-400"
+    },
 
-value:
-defaultStats.interestsSent,
+    {
+      label: "Shortlists",
+      value: defaultStats.shortlists,
+      icon: Bookmark,
+      color: "bg-amber-100 dark:bg-amber-900/30",
+      textColor: "text-amber-600 dark:text-amber-400",
+      route: "/shortlists"
+    },
 
-icon:Send,
+    {
+      label: "Profile Visitors",
+      value: defaultStats.profileViews,
+      icon: Eye,
+      color: "bg-green-100 dark:bg-green-900/30",
+      textColor: "text-green-600 dark:text-green-400",
+      route: "/profile-visitors"
+    },
 
-color:
-'bg-purple-100 dark:bg-purple-900/30',
+    {
+      label: "Likes Received",
+      value: defaultStats.likesReceived || 0,
+      icon: Heart,
+      color: "bg-pink-100 dark:bg-pink-900/30",
+      textColor: "text-pink-600 dark:text-pink-400",
+      route: "/likes"
+    },
 
-textColor:
-'text-purple-600 dark:text-purple-400',
+    {
+      label: "Messages",
+      value: defaultStats.messages,
+      icon: MessageSquare,
+      color: "bg-cyan-100 dark:bg-cyan-900/30",
+      textColor: "text-cyan-600 dark:text-cyan-400",
+      route: "/messages"
+    }
 
-route:'/sent-interests'
+  ];
 
-},
-
-
-
-{
-
-label:'Interests Received',
-
-route:'/received-interests',
-
-value:
-defaultStats.interestsReceived,
-
-icon:Heart,
-
-color:
-'bg-red-100 dark:bg-red-900/30',
-
-textColor:
-'text-red-600 dark:text-red-400'
-
-},
-{
-
-label:'Shortlists',
-
-value:
-defaultStats.shortlists,
-
-icon:Bookmark,
-
-color:
-'bg-amber-100 dark:bg-amber-900/30',
-
-textColor:
-'text-amber-600 dark:text-amber-400',
-
-route:'/shortlists'
-
-},
-{
-label:'Profile Visitors',
-
-value:
-defaultStats.profileViews,
-
-icon:Eye,
-
-color:
-'bg-green-100 dark:bg-green-900/30',
-
-textColor:
-'text-green-600 dark:text-green-400',
-
-route:'/profile-visitors'
-},
-{
-label:'Likes Received',
-
-value: defaultStats.likesReceived || 0,
-
-icon: Heart,
-
-color:'bg-pink-100 dark:bg-pink-900/30',
-
-textColor:'text-pink-600 dark:text-pink-400',
-
-route:'/likes'
-},
-{
-
-label:'Messages',
-
-value:
-defaultStats.messages,
-
-icon:MessageSquare,
-
-color:
-'bg-cyan-100 dark:bg-cyan-900/30',
-
-textColor:
-'text-cyan-600 dark:text-cyan-400',
- route: '/messages'
-}
-
-];
-
-return(
-<>
-<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-
-{
-
-statItems.map((stat,index)=>{
-
-const Icon = stat.icon;
-
-return(
-
-<div
-
-key={index}
-
-onClick={async () => {
+  const handleNavigation = async (stat) => {
 
     if (!stat.route) return;
 
+    // Only Messages and Matches are Premium
     if (
-        stat.route === "/messages" ||
-        stat.route === "/matches"
+      stat.route === "/messages" ||
+      stat.route === "/matches"
     ) {
 
-        try {
+      try {
 
-            const subscription =
-                await subscriptionAPI.getMySubscription();
+        const subscription =
+          await subscriptionAPI.getMySubscription();
 
-            if (subscription?.isActive) {
+        if (subscription?.isActive) {
 
-                navigate(stat.route);
+          navigate(stat.route);
 
-            } else {
+        } else {
 
-                setPremiumFeature(stat.label);
-                setShowUpgradePopup(true);
+          setPremiumFeature(stat.label);
+          setShowUpgradePopup(true);
 
-            }
+        }
 
-           }catch {
+      } catch (err) {
 
-                setPremiumFeature(stat.label);
-                setShowUpgradePopup(true);
+        setPremiumFeature(stat.label);
+        setShowUpgradePopup(true);
 
-            }
-        return;
+      }
 
+      return;
     }
 
     navigate(stat.route);
+  };
 
-}}
-className={`
+  return (
+    <>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
 
-${stat.color}
+        {statItems.map((stat, index) => {
 
-rounded-lg
+          const Icon = stat.icon;
 
-p-4
+          return (
 
-border
+            <div
+              key={index}
 
-border-transparent
+              onClick={() => handleNavigation(stat)}
 
-hover:border-primary/20
+              className={`
+                ${stat.color}
+                rounded-lg
+                p-4
+                border
+                border-transparent
+                hover:border-primary/20
+                transition-all
+                duration-200
+                ${stat.route
+                  ? "cursor-pointer hover:scale-[1.02]"
+                  : ""
+                }
+              `}
+            >
 
-transition-all
+              <div className="flex items-center justify-between mb-2">
 
-duration-200
+                <p className="text-sm font-medium text-muted-foreground">
+                  {stat.label}
+                </p>
 
-${
+                <Icon
+                  className={`h-5 w-5 ${stat.textColor}`}
+                />
 
-stat.route
+              </div>
 
-?
 
-'cursor-pointer hover:scale-[1.02]'
+              {/* TOTAL MATCHES SPECIAL BUTTON */}
+              {stat.isMatchButton ? (
 
-:
+                <div
+                  className="
+                    flex
+                    items-center
+                    justify-between
+                    px-4
+                    py-2.5
+                    rounded-lg
+                    border
+                    border-indigo-500
+                    bg-white/40
+                    dark:bg-black/10
+                    text-indigo-700
+                    dark:text-indigo-300
+                    font-semibold
+                    text-lg
+                    hover:bg-indigo-100/70
+                    dark:hover:bg-indigo-900/40
+                    transition-colors
+                  "
+                >
 
-''
+                  <div className="flex items-center gap-2">
 
-}
+                    <Users className="h-5 w-5" />
 
-`}
+                    <span>
+                      View Matches
+                    </span>
 
->
+                  </div>
 
-<div className="flex items-center justify-between mb-2">
+                  <span className="text-2xl font-light">
+                    ›
+                  </span>
 
-<p className="text-sm font-medium text-muted-foreground">
+                </div>
 
-{stat.label}
+              ) : (
 
-</p>
+                <p
+                  className={`text-3xl font-bold ${stat.textColor}`}
+                >
+                  {stat.value}
+                </p>
 
-<Icon className={`h-5 w-5 ${stat.textColor}`}/>
+              )}
 
-</div>
+            </div>
 
-<p className={`text-3xl font-bold ${stat.textColor}`}>
+          );
 
-{stat.value}
+        })}
 
-</p>
+      </div>
 
-</div>
 
-);
+      <PremiumUpgradeModal
+        open={showUpgradePopup}
+        onClose={() => setShowUpgradePopup(false)}
+        feature={premiumFeature}
+      />
 
-})
-
-}
-
-</div>
-
-<PremiumUpgradeModal
-    open={showUpgradePopup}
-    onClose={() => setShowUpgradePopup(false)}
-    feature={premiumFeature}
-/>
-</>
-);
+    </>
+  );
 
 };
 

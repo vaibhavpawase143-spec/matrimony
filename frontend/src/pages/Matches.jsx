@@ -1,7 +1,7 @@
 import { Heart, MessageSquare, X } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 
 import { useLanguage } from "@/context/LanguageContext";
 import { useToast } from "@/components/Toast";
@@ -12,137 +12,483 @@ const Matches = () => {
   const { t } = useLanguage();
   const { success, error } = useToast();
   const navigate = useNavigate();
+
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
 
-  // Load matches on component mount
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+
+  const observer = useRef();
+
+  // =========================================================
+  // LOAD MATCHES
+  // =========================================================
+  const loadMatches = useCallback(
+    async (pageNumber = 0, append = false) => {
+      try {
+        if (pageNumber === 0) {
+          setLoading(true);
+        } else {
+          setLoadingMore(true);
+        }
+
+        const currentUser = JSON.parse(
+          localStorage.getItem("user")
+        );
+
+        const userId = Number(
+          currentUser?.userId ||
+          currentUser?.id ||
+          currentUser?.profile?.userId
+        );
+
+        if (!userId) {
+          throw new Error("User ID not found");
+        }
+
+        console.log(
+          "LOADING MATCH PAGE:",
+          pageNumber
+        );
+
+        // Backend ला existing call
+        // 20 candidates per page
+        const response = await matchAPI.getTopMatches(
+          userId,
+          pageNumber,
+          20
+        );
+
+        // Safe response handling
+        const matchList = Array.isArray(response)
+          ? response
+          : Array.isArray(response?.data)
+            ? response.data
+            : Array.isArray(response?.content)
+              ? response.content
+              : [];
+
+        console.log(
+          "RAW MATCHES:",
+          matchList.length
+        );
+
+        // ONLY 75%+ ON FRONTEND
+        const filteredMatches = matchList.filter(
+          (match) =>
+            Number(match.matchScore) >= 75
+        );
+
+        console.log(
+          "75%+ MATCHES:",
+          filteredMatches.length
+        );
+
+        if (append) {
+          setMatches((previousMatches) => {
+            // Prevent duplicate profiles
+            const existingIds = new Set(
+              previousMatches.map(
+                (match) =>
+                  match.userId ||
+                  match.profileId ||
+                  match.id
+              )
+            );
+
+            const newMatches =
+              filteredMatches.filter(
+                (match) =>
+                  !existingIds.has(
+                    match.userId ||
+                    match.profileId ||
+                    match.id
+                  )
+              );
+
+            return [
+              ...previousMatches,
+              ...newMatches
+            ];
+          });
+        } else {
+          setMatches(filteredMatches);
+        }
+
+        /*
+          IMPORTANT:
+
+          Backend page मध्ये 20 पेक्षा कमी records आले
+          म्हणजे पुढचे candidates नाहीत.
+
+          पण 20 candidates आले आणि त्यातून
+          0 profiles 75%+ असले तरी
+          hasMore TRUE राहील.
+        */
+        if (matchList.length < 20) {
+          setHasMore(false);
+        } else {
+          setHasMore(true);
+        }
+
+      } catch (err) {
+        console.error(
+          "Failed to load matches:",
+          err
+        );
+
+        if (pageNumber === 0) {
+          error(
+            "Failed to load matches. Please try again."
+          );
+          setMatches([]);
+        }
+
+      } finally {
+        setLoading(false);
+        setLoadingMore(false);
+      }
+    },
+    [error]
+  );
+
+
+  // =========================================================
+  // INITIAL LOAD
+  // =========================================================
   useEffect(() => {
-    loadMatches();
-  }, []);
+    loadMatches(0, false);
+  }, [loadMatches]);
 
- const loadMatches = async () => {
-   try {
-     setLoading(true);
 
-     const currentUser = JSON.parse(
-       localStorage.getItem("user")
-     );
+  // =========================================================
+  // INFINITE SCROLL OBSERVER
+  // =========================================================
+  const lastMatchRef = useCallback(
+    (node) => {
 
-     const userId = Number(
-       currentUser?.userId ||
-       currentUser?.id ||
-       currentUser?.profile?.userId
-     );
+      if (loading || loadingMore) {
+        return;
+      }
 
-     if (!userId) {
-       throw new Error("User ID not found");
-     }
+      if (observer.current) {
+        observer.current.disconnect();
+      }
 
-     // Backend maximum page size = 20
-     const response = await matchAPI.getTopMatches(userId, 0, 20);
+      observer.current =
+        new IntersectionObserver(
+          (entries) => {
 
-     const filteredMatches = response.filter(
-       (match) => Number(match.matchScore) >= 75
-     );
+            if (
+              entries[0].isIntersecting &&
+              hasMore
+            ) {
 
-     setMatches(filteredMatches);
+              const nextPage = page + 1;
 
-   } catch (err) {
-     console.error("Failed to load matches:", err);
-     error("Failed to load matches. Please try again.");
-     setMatches([]);
-   } finally {
-     setLoading(false);
-   }
- };
+              console.log(
+                "LOADING NEXT PAGE:",
+                nextPage
+              );
+
+              setPage(nextPage);
+
+              loadMatches(
+                nextPage,
+                true
+              );
+            }
+          },
+          {
+            rootMargin: "300px"
+          }
+        );
+
+      if (node) {
+        observer.current.observe(node);
+      }
+
+    },
+    [
+      loading,
+      loadingMore,
+      hasMore,
+      page,
+      loadMatches
+    ]
+  );
+
+
   return (
     <div className="min-h-screen bg-muted/30">
 
+      {/* HEADER */}
 
-      <div className="py-8 text-center" style={{ background: "linear-gradient(135deg, hsl(270 60% 35%), hsl(290 55% 45%), hsl(270 50% 55%))" }}>
+      <div
+        className="py-8 text-center"
+        style={{
+          background:
+            "linear-gradient(135deg, hsl(270 60% 35%), hsl(290 55% 45%), hsl(270 50% 55%))"
+        }}
+      >
+
         <Heart className="inline-block h-8 w-8 text-pink-soft fill-pink-soft mb-2" />
-        <h1 className="text-3xl md:text-4xl font-display font-bold text-primary-foreground mb-2">{t.matches.title}</h1>
-        <p className="text-primary-foreground/70 text-sm">{t.matches.subtitle}</p>
+
+        <h1 className="text-3xl md:text-4xl font-display font-bold text-primary-foreground mb-2">
+          {t.matches.title}
+        </h1>
+
+        <p className="text-primary-foreground/70 text-sm">
+          {t.matches.subtitle}
+        </p>
+
       </div>
 
-    <div className="container mx-auto px-4 py-8">
-      {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-sm text-muted-foreground">Loading matches...</p>
+
+      <div className="container mx-auto px-4 py-8">
+
+        {/* INITIAL LOADING */}
+
+        {loading ? (
+
+          <div className="flex items-center justify-center py-12">
+
+            <div className="text-center">
+
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+
+              <p className="text-sm text-muted-foreground">
+                Loading matches...
+              </p>
+
+            </div>
+
           </div>
-        </div>
-      ) : matches.length === 0 ? (
-        <div className="text-center py-12">
-          <div className="text-muted-foreground mb-4">
-            <Heart className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <h3 className="text-lg font-semibold text-foreground mb-2">No matches found</h3>
-            <p className="text-sm">We couldn't find any matches for you yet. Complete your profile to get better matches!</p>
-          </div>
-          <button 
-            onClick={() => window.location.href = '/settings'}
-            className="mt-4 bg-primary text-primary-foreground px-6 py-2 rounded-lg hover:opacity-90 transition"
-          >
-            Complete Profile
-          </button>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
-          {matches.map((m, i) => (
-            <motion.div
-              key={m.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.1 }}
-              className="bg-card rounded-xl border border-border overflow-hidden hover:shadow-lg transition-shadow group"
+
+        ) : matches.length === 0 && !hasMore ? (
+
+          /* NO MATCHES */
+
+          <div className="text-center py-12">
+
+            <div className="text-muted-foreground mb-4">
+
+              <Heart className="h-12 w-12 mx-auto mb-4 opacity-50" />
+
+              <h3 className="text-lg font-semibold text-foreground mb-2">
+                No matches found
+              </h3>
+
+              <p className="text-sm">
+                We couldn't find any matches for you yet.
+                Complete your profile to get better matches!
+              </p>
+
+            </div>
+
+            <button
+              onClick={() =>
+                window.location.href = "/settings"
+              }
+              className="mt-4 bg-primary text-primary-foreground px-6 py-2 rounded-lg hover:opacity-90 transition"
             >
-              <div className="h-40 overflow-hidden relative">
-                <img 
-                  src={m.profilePhotoUrl || m.imageUrl || profile1} 
-                  alt={m.fullName || m.name} 
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  onError={(e) => {
-                    e.target.src = profile1; // Fallback to default image
-                  }}
-                />
-                <div className="absolute top-3 right-3 bg-emerald-badge text-primary-foreground text-xs font-bold px-2.5 py-1 rounded-full">
-                 {Math.round(Number(m.matchScore))}% Match
-                </div>
-              </div>
-              <div className="p-3">
-                <h3 className="text-base font-semibold text-foreground">
-                  {m.fullName || m.name}, <span className="text-primary">{m.age || '?'}</span>
-                </h3>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {m.profession || m.occupation || 'Profession not specified'} · {m.city || 'Location not specified'}
-                </p>
+              Complete Profile
+            </button>
 
-                <div className="flex gap-2 mt-4">
-                  <Link
-                    to={`/profile/${m.profileId || m.id}`}
-                    className="flex-1 flex items-center justify-center gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold py-1.5 rounded-lg transition-colors text-center"
+          </div>
+
+        ) : (
+
+          <>
+
+            {/* MATCH GRID */}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
+
+              {matches.map((m, i) => {
+
+                const isLastMatch =
+                  i === matches.length - 1;
+
+                return (
+
+                  <motion.div
+                    ref={
+                      isLastMatch
+                        ? lastMatchRef
+                        : null
+                    }
+
+                    key={
+                      m.userId ||
+                      m.profileId ||
+                      m.id
+                    }
+
+                    initial={{
+                      opacity: 0,
+                      y: 20
+                    }}
+
+                    animate={{
+                      opacity: 1,
+                      y: 0
+                    }}
+
+                    transition={{
+                      delay: Math.min(
+                        i * 0.05,
+                        0.5
+                      )
+                    }}
+
+                    className="bg-card rounded-xl border border-border overflow-hidden hover:shadow-lg transition-shadow group"
                   >
-                     View Profile
-                  </Link>
-                  <button
-                      onClick={() =>
-                          navigate(`/match-details/${m.userId}`)
-                      }
-                      className="flex-1 flex items-center justify-center gap-1.5 bg-accent/10 text-accent text-xs font-semibold py-1.5 rounded-lg hover:bg-accent/20 transition-colors"
-                  >
 
-                      View Match Details
-                  </button>
+                    <div className="h-40 overflow-hidden relative">
+
+                      <img
+                        src={
+                          m.profilePhotoUrl ||
+                          m.imageUrl ||
+                          profile1
+                        }
+
+                        alt={
+                          m.fullName ||
+                          m.name
+                        }
+
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+
+                        onError={(e) => {
+                          e.target.src = profile1;
+                        }}
+                      />
+
+                      <div className="absolute top-3 right-3 bg-emerald-badge text-primary-foreground text-xs font-bold px-2.5 py-1 rounded-full">
+
+                        {Math.round(
+                          Number(
+                            m.matchScore
+                          )
+                        )}% Match
+
+                      </div>
+
+                    </div>
+
+
+                    <div className="p-3">
+
+                      <h3 className="text-base font-semibold text-foreground">
+
+                        {m.fullName || m.name},
+
+                        <span className="text-primary">
+                          {" "}
+                          {m.age || "?"}
+                        </span>
+
+                      </h3>
+
+
+                      <p className="text-xs text-muted-foreground mt-0.5">
+
+                        {m.profession ||
+                          m.occupation ||
+                          "Profession not specified"}
+
+                        {" · "}
+
+                        {m.city ||
+                          "Location not specified"}
+
+                      </p>
+
+
+                      <div className="flex gap-2 mt-4">
+
+                        <Link
+                          to={`/profile/${
+                            m.profileId ||
+                            m.id
+                          }`}
+
+                          className="flex-1 flex items-center justify-center gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold py-1.5 rounded-lg transition-colors text-center"
+                        >
+                          View Profile
+                        </Link>
+
+
+                        <button
+                          onClick={() =>
+                            navigate(
+                              `/match-details/${m.userId}`
+                            )
+                          }
+
+                          className="flex-1 flex items-center justify-center gap-1.5 bg-accent/10 text-accent text-xs font-semibold py-1.5 rounded-lg hover:bg-accent/20 transition-colors"
+                        >
+                          View Match Details
+                        </button>
+
+                      </div>
+
+                    </div>
+
+                  </motion.div>
+                );
+              })}
+
+            </div>
+
+
+            {/* LOAD MORE SPINNER */}
+
+            {loadingMore && (
+
+              <div className="flex justify-center py-8">
+
+                <div className="text-center">
+
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-3"></div>
+
+                  <p className="text-sm text-muted-foreground">
+                    Loading more matches...
+                  </p>
 
                 </div>
+
               </div>
-            </motion.div>
-          ))}
-        </div>
-      )}
+
+            )}
+
+
+            {/* END MESSAGE */}
+
+            {!hasMore &&
+              matches.length > 0 && (
+
+                <div className="text-center py-8">
+
+                  <p className="text-sm text-muted-foreground">
+                    You've seen all available matches.
+                  </p>
+
+                </div>
+
+              )}
+
+          </>
+
+        )}
+
+      </div>
+
     </div>
-  </div>
   );
 };
 

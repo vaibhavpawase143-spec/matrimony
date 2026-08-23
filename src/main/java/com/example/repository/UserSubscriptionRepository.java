@@ -12,6 +12,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -57,15 +58,32 @@ AND us.endDate > CURRENT_TIMESTAMP
     // ==========================================
 
     @Query("""
-        SELECT us
-        FROM UserSubscription us
-        JOIN FETCH us.user
-        JOIN FETCH us.subscriptionPlan
-        WHERE us.user.id = :userId
-        AND us.isActive = true
-    """)
-    Optional<UserSubscription> findByUserIdAndIsActiveTrue(
+    SELECT us
+    FROM UserSubscription us
+    JOIN FETCH us.user
+    JOIN FETCH us.subscriptionPlan
+    WHERE us.user.id = :userId
+      AND us.isActive = true
+      AND us.status = 'ACTIVE'
+      AND us.endDate > CURRENT_TIMESTAMP
+""")
+    Optional<UserSubscription> findActiveSubscriptionByUserId(
             @Param("userId") Long userId
+    );
+    @Query("""
+    SELECT us
+    FROM UserSubscription us
+    JOIN FETCH us.user
+    JOIN FETCH us.subscriptionPlan
+    WHERE us.user.id = :userId
+      AND us.isActive = true
+      AND us.status = 'ACTIVE'
+      AND us.endDate > :now
+    ORDER BY us.createdAt DESC
+""")
+    Optional<UserSubscription> findActiveSubscriptionWithDetails(
+            @Param("userId") Long userId,
+            @Param("now") LocalDateTime now
     );
 
     @Query("""
@@ -99,6 +117,13 @@ AND us.endDate > CURRENT_TIMESTAMP
     // ==========================================
 
     List<UserSubscription> findByIsActiveFalse();
+
+    Optional<UserSubscription> findByUserIdAndIsActiveTrue(Long userId);
+
+    boolean existsByUserIdAndIsActiveTrueAndEndDateAfter(
+            Long userId,
+            LocalDateTime dateTime
+    );
 
     List<UserSubscription> findByUserIdAndIsActiveFalse(Long userId);
     Optional<UserSubscription> findFirstByUser_IdAndIsActiveTrueAndStatusAndEndDateAfter(
@@ -149,6 +174,7 @@ AND created_at < DATE_TRUNC('month', CURRENT_DATE)
     List<UserSubscription> findByIsActiveTrueAndEndDateBefore(
             java.time.LocalDateTime dateTime
     );
+
 
     @Query("""
         SELECT us

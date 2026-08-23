@@ -144,6 +144,22 @@ public interface UserRepository
             @Param("isOnline") Boolean isOnline,
             @Param("lastSeen") LocalDateTime lastSeen
     );
+    @Query("""
+SELECT u
+FROM User u
+JOIN u.profile p
+WHERE u.id <> :userId
+AND u.isActive = true
+AND u.isDeleted = false
+AND u.isBlocked = false
+AND p.profileCompleted = true
+AND p.isActive = true
+AND p.gender.id = :genderId
+""")
+    List<User> findAllCandidateUsersForMatching(
+            @Param("userId") Long userId,
+            @Param("genderId") Long genderId
+    );
 
     @Transactional
     @Modifying
@@ -538,6 +554,17 @@ WHERE u.isActive = true
 AND u.isDeleted = false
 """)
     List<User> findActiveUsersWithProfile();
+    @Query("""
+    SELECT u
+    FROM User u
+    JOIN u.profile p
+    WHERE u.isActive = true
+      AND u.isDeleted = false
+      AND u.isBlocked = false
+      AND p.profileCompleted = true
+      AND p.isActive = true
+""")
+    List<User> findAllCandidateUsersForMatching();
 
     @Query("""
 SELECT DISTINCT u

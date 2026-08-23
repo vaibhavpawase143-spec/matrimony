@@ -217,7 +217,12 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
     @Override
     public boolean hasActiveSubscription(Long userId) {
-        return subscriptionRepository.existsByUserIdAndIsActiveTrue(userId);
+
+        return subscriptionRepository
+                .existsByUserIdAndIsActiveTrueAndEndDateAfter(
+                        userId,
+                        LocalDateTime.now()
+                );
     }
 
     @Override
@@ -283,8 +288,10 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         User currentUser = getCurrentUser();
 
         return subscriptionRepository
-                .findByUserIdAndIsActiveTrue(currentUser.getId())
-                .isPresent();
+                .existsByUserIdAndIsActiveTrueAndEndDateAfter(
+                        currentUser.getId(),
+                        LocalDateTime.now()
+                );
     }
 
     @Override
@@ -293,14 +300,21 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public UserSubscription getMySubscription() {
 
         User currentUser = getCurrentUser();
 
         return subscriptionRepository
-                .findByUserIdAndIsActiveTrue(currentUser.getId())
+                .findActiveSubscriptionWithDetails(
+                        currentUser.getId(),
+                        LocalDateTime.now()
+                )
                 .orElseThrow(() ->
-                        new RuntimeException("No active subscription found"));
+                        new RuntimeException(
+                                "No active subscription found"
+                        )
+                );
     }
 
     // =====================================================

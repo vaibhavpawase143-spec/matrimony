@@ -21,7 +21,7 @@ import { useLoading } from "@/hooks/useLoading";
 
 
 
-import ThemeToggle from "@/components/ThemeToggle";
+//import ThemeToggle from "@/components/ThemeToggle";
 
 import ProfileCompletionBar from "@/components/ProfileCompletionBar";
 
@@ -777,8 +777,8 @@ return (
             { icon: <Heart className="h-4 w-4" />, label: "Matches", to: "/matches" },
             { icon: <Search className="h-4 w-4" />, label: "Search", to: "/search" },
             { icon: <MessageSquare className="h-4 w-4" />, label: "Messages", to: "/messages" },
-            { icon: <Star className="h-4 w-4" />, label: "Kundli", to: "/kundli" },
             { icon: <Settings className="h-4 w-4" />, label: "Settings", to: "/settings" },
+            {/* { icon: <Star className="h-4 w-4" />, label: "Kundli", to: "/kundli" }, */}
           ].map((item) => (
             <Link
               key={item.label}
@@ -892,7 +892,7 @@ return (
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <ThemeToggle />
+          {/* <ThemeToggle /> */}
 
             <button
               onClick={() => navigate("/account")}

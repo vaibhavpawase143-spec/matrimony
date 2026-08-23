@@ -143,6 +143,66 @@ public class MatchServiceImpl implements MatchService {
             }
         }
     }
+    @Override
+    @Transactional(readOnly = true)
+    public long countRecommendedMatches(
+            Long userId,
+            int minimumScore
+    ) {
+
+        // 1. Current user
+        User currentUser = userRepository.findByIdForMatching(userId)
+                .orElseThrow(() ->
+                        new RuntimeException("User not found")
+                );
+
+        if (currentUser.getProfile() == null ||
+                currentUser.getProfile().getGender() == null) {
+
+            return 0;
+        }
+
+        // 2. Opposite gender
+        Long currentGenderId =
+                currentUser.getProfile()
+                        .getGender()
+                        .getId();
+
+        Long oppositeGenderId =
+                currentGenderId.equals(1L)
+                        ? 2L
+                        : 1L;
+
+        // 3. Existing blocked users logic
+        Set<Long> blockedIds = new HashSet<>(
+                userBlockRepository.findBlockedUserIds(userId)
+        );
+
+        // 4. Load ALL eligible opposite gender profiles
+        List<User> candidates =
+                userRepository.findAllCandidateUsersForMatching(
+                        userId,
+                        oppositeGenderId
+                );
+
+        // 5. Same score calculation + only 75%+
+        return candidates.stream()
+
+                .filter(Objects::nonNull)
+
+                .filter(candidate ->
+                        !blockedIds.contains(candidate.getId())
+                )
+
+                .filter(candidate ->
+                        calculateMatchScore(
+                                currentUser,
+                                candidate
+                        ) >= minimumScore
+                )
+
+                .count();
+    }
 
     // ================= GET MATCHES =================
 

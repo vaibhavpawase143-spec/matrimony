@@ -13,83 +13,47 @@ public class UpdateProfileRequestDTO {
     // =====================================================
 
     private String firstName;
-
     private String lastName;
-
     private String middleName;
-
     private LocalDate dateOfBirth;
-
     private String email;
-
     private String phone;
-
     private String imageUrl;
 
     // =====================================================
     // MASTER TABLE IDS
     // =====================================================
 
-    // Religion
     private Long religionId;
-
-    // Caste
     private Long casteId;
-
-    // Sub Caste
     private Long subCasteId;
-
-    // Mother Tongue
     private Long motherTongueId;
-
-    // Marital Status
     private Long maritalStatusId;
-    // Profile Type
     private Long profileTypeId;
-    // Gender
     private Long genderId;
 
     // Education
     private Long educationLevelId;
+    private String educationOther;
 
     // Occupation
     private Long occupationId;
 
-    // Height
     private Long heightId;
-
-    // Weight
     private Long weightId;
-
-    // Body Type
     private Long bodyTypeId;
-
-    // Complexion
     private Long complexionId;
-
-    // Country
     private Long countryId;
-
-    // State
     private Long stateId;
-
-    // City
     private Long cityId;
 
     // =====================================================
     // NEW MASTER TABLE IDS
     // =====================================================
 
-    // Income
     private Long incomeId;
-
-    // Diet
     private Long dietId;
-
-    // Smoking
     private Long smokingId;
-
-    // Drinking
     private Long drinkingId;
 
     // =====================================================
@@ -109,6 +73,7 @@ public class UpdateProfileRequestDTO {
     // =====================================================
 
     private String companyName;
+    private String qualificationOther;
 
     // =====================================================
     // LOCATION
@@ -121,32 +86,41 @@ public class UpdateProfileRequestDTO {
     // =====================================================
 
     private String fatherName;
-
     private String fatherOccupation;
-
     private String motherName;
-
     private String motherOccupation;
-
     private Integer siblingsCount;
+    // =====================================================
+    // EXTENDED FAMILY DETAILS
+    // =====================================================
 
+    private String aunt;
 
+    private Integer sistersCount;
+
+    private Integer brothersCount;
+
+    private String nanihalDetails;
+
+    private String bestFriend;
+
+    private Integer unclesCount;
+
+    private String uncle1Name;
+
+    private String uncle2Name;
+
+    private String uncle3Name;
+
+    private String uncle4Name;
 
     private Long manglikStatusId;
-
     private Long familyTypeId;
     private Long qualificationId;
-
     private Long fieldOfStudyId;
-
     private Long employedId;
-
     private Long disabilityStatusId;
-
     private Long bloodGroupId;
-
-
     private Long familyStatusId;
-
     private Long familyValueId;
 }
