@@ -27,4 +27,12 @@ public interface EmailService {
             String to,
             String firstName
     );
+
+    void sendSubscriptionPurchasedEmail(
+            String to,
+            String firstName,
+            String planName,
+            java.math.BigDecimal amount,
+            java.time.LocalDateTime endDate
+    );
 }

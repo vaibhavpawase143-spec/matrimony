@@ -112,6 +112,36 @@ public class EmailServiceImpl implements EmailService {
     }
 
     /**
+     * 🔹 Send Premium Purchased Confirmation Email (CRITICAL TRANSACTIONAL)
+     */
+    @Override
+    @Async("criticalEmailExecutor")
+    public void sendSubscriptionPurchasedEmail(
+            String to,
+            String firstName,
+            String planName,
+            java.math.BigDecimal amount,
+            java.time.LocalDateTime endDate
+    ) {
+        String subject = "Your Premium Membership is Active - Gathbandhan Matrimony";
+
+        Context context = new Context();
+        context.setVariable("firstName", firstName != null ? firstName : "User");
+        context.setVariable("planName", planName);
+        context.setVariable("amount", amount != null ? amount.toString() : "0.00");
+        context.setVariable("formattedEndDate", endDate != null ? endDate.toLocalDate().toString() : "-");
+        context.setVariable("dashboardUrl", frontendUrl + "/home");
+
+        try {
+            String body = templateEngine.process("email/premium-purchased", context);
+            emailProvider.sendCriticalEmail(to, subject, body);
+            log.info("✅ Premium purchase confirmation email sent to {}", to);
+        } catch (Exception e) {
+            log.error("❌ Failed to send premium purchase email to {}", to, e);
+        }
+    }
+
+    /**
      * 🔹 Send Forgot Password Email (CRITICAL TRANSACTIONAL)
      */
     @Override
