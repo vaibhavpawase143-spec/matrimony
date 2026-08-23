@@ -1,7 +1,7 @@
 const API_BASE = "/api/swipes";
 
 const getHeaders = () => {
-  const token = localStorage.getItem("token");
+  const token = sessionStorage.getItem("token") || localStorage.getItem("token");
 
   return {
     Authorization: `Bearer ${token}`,

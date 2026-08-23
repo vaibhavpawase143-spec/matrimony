@@ -15,20 +15,12 @@ const AuthenticatedLayout = ({ children }) => {
   // Authentication Check
   useEffect(() => {
     console.log("AuthenticatedLayout: Checking authentication");
-    console.log("AuthenticatedLayout: isAuthenticated():", isAuthenticated());
-    console.log(
-      "AuthenticatedLayout: token:",
-      localStorage.getItem("token")
-    );
+    const token = sessionStorage.getItem("token") || localStorage.getItem("token");
 
     const timer = setTimeout(() => {
       setIsChecking(false);
 
-if (!isAuthenticated) {
-        console.log(
-          "AuthenticatedLayout: Not authenticated, redirecting to login"
-        );
-
+      if (!isAuthenticated()) {
         navigate("/login", { replace: true });
       }
     }, 100);

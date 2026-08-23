@@ -23,11 +23,7 @@ client.deactivate();
 
 }
 
-const token = localStorage.getItem(
-
-"token"
-
-);
+const token = sessionStorage.getItem("token") || localStorage.getItem("token");
 
 const socket = new SockJS(
 

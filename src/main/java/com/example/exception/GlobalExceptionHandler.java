@@ -25,10 +25,33 @@ import java.util.Map;
 public class GlobalExceptionHandler {
 
     // =========================
+    // 🔴 RATE LIMIT EXCEEDED (429)
+    // =========================
+    @ExceptionHandler(RateLimitExceededException.class)
+    public ResponseEntity<ErrorResponse> handleRateLimitExceeded(RateLimitExceededException ex, HttpServletRequest request) {
+        log.warn("Rate limit exceeded at {} (Action: {}): {}", request.getRequestURI(), ex.getAction(), ex.getMessage());
+
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header("Retry-After", String.valueOf(ex.getRetryAfterSeconds()))
+                .body(
+                        ErrorResponse.builder()
+                                .success(false)
+                                .timestamp(LocalDateTime.now())
+                                .status(429)
+                                .error("TOO_MANY_REQUESTS")
+                                .errorCode("RATE_LIMIT_EXCEEDED")
+                                .code("RATE_LIMIT_EXCEEDED")
+                                .message(ex.getMessage() != null ? ex.getMessage() : "Too many requests. Please try again later.")
+                                .path(request.getRequestURI())
+                                .build()
+                );
+    }
+
+    // =========================
     // 🔴 RESOURCE NOT FOUND (404)
     // =========================
-    @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleNotFound(ResourceNotFoundException ex, HttpServletRequest request) {
+    @ExceptionHandler({ResourceNotFoundException.class, org.springframework.web.servlet.resource.NoResourceFoundException.class})
+    public ResponseEntity<ErrorResponse> handleNotFound(Exception ex, HttpServletRequest request) {
         log.warn("Resource not found at {}: {}", request.getRequestURI(), ex.getMessage());
 
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
@@ -96,6 +119,90 @@ public class GlobalExceptionHandler {
                         .code("VALIDATION_ERROR")
                         .message("Validation failed for request parameter(s).")
                         .fieldErrors(fieldErrors)
+                        .path(request.getRequestURI())
+                        .build()
+        );
+    }
+
+    // =========================
+    // 🔴 MALFORMED JSON / NOT READABLE (400)
+    // =========================
+    @ExceptionHandler(org.springframework.http.converter.HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleMessageNotReadable(org.springframework.http.converter.HttpMessageNotReadableException ex, HttpServletRequest request) {
+        log.warn("Malformed JSON request body at {}: {}", request.getRequestURI(), ex.getMessage());
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                ErrorResponse.builder()
+                        .success(false)
+                        .timestamp(LocalDateTime.now())
+                        .status(400)
+                        .error("MALFORMED_REQUEST")
+                        .errorCode("MALFORMED_JSON")
+                        .code("MALFORMED_JSON")
+                        .message("Malformed JSON request body or invalid field format.")
+                        .path(request.getRequestURI())
+                        .build()
+        );
+    }
+
+    // =========================
+    // 🔴 UNSUPPORTED MEDIA TYPE (415)
+    // =========================
+    @ExceptionHandler(org.springframework.web.HttpMediaTypeNotSupportedException.class)
+    public ResponseEntity<ErrorResponse> handleMediaTypeNotSupported(org.springframework.web.HttpMediaTypeNotSupportedException ex, HttpServletRequest request) {
+        log.warn("Unsupported media type at {}: {}", request.getRequestURI(), ex.getMessage());
+
+        return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE).body(
+                ErrorResponse.builder()
+                        .success(false)
+                        .timestamp(LocalDateTime.now())
+                        .status(415)
+                        .error("UNSUPPORTED_MEDIA_TYPE")
+                        .errorCode("UNSUPPORTED_MEDIA_TYPE")
+                        .code("UNSUPPORTED_MEDIA_TYPE")
+                        .message("The requested content type is not supported.")
+                        .path(request.getRequestURI())
+                        .build()
+        );
+    }
+
+    // =========================
+    // 🔴 METHOD NOT ALLOWED (405)
+    // =========================
+    @ExceptionHandler(org.springframework.web.HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ErrorResponse> handleMethodNotSupported(org.springframework.web.HttpRequestMethodNotSupportedException ex, HttpServletRequest request) {
+        log.warn("HTTP method not supported at {}: {}", request.getRequestURI(), ex.getMessage());
+
+        return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body(
+                ErrorResponse.builder()
+                        .success(false)
+                        .timestamp(LocalDateTime.now())
+                        .status(405)
+                        .error("METHOD_NOT_ALLOWED")
+                        .errorCode("METHOD_NOT_ALLOWED")
+                        .code("METHOD_NOT_ALLOWED")
+                        .message("HTTP method " + request.getMethod() + " is not supported for this endpoint.")
+                        .path(request.getRequestURI())
+                        .build()
+        );
+    }
+
+    // =========================
+    // 🔴 TYPE MISMATCH / INVALID ID (400)
+    // =========================
+    @ExceptionHandler(org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleTypeMismatch(org.springframework.web.method.annotation.MethodArgumentTypeMismatchException ex, HttpServletRequest request) {
+        log.warn("Parameter type mismatch at {}: parameter={}, value={}", request.getRequestURI(), ex.getName(), ex.getValue());
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                ErrorResponse.builder()
+                        .success(false)
+                        .timestamp(LocalDateTime.now())
+                        .status(400)
+                        .error("INVALID_PARAMETER")
+                        .errorCode("TYPE_MISMATCH")
+                        .code("TYPE_MISMATCH")
+                        .message("Invalid parameter format for '" + ex.getName() + "'.")
                         .path(request.getRequestURI())
                         .build()
         );
@@ -331,12 +438,19 @@ public class GlobalExceptionHandler {
         String errorCode = "DUPLICATE_RESOURCE";
 
         if (ex.getMessage() != null) {
-            if (ex.getMessage().contains("phone") && ex.getMessage().contains("already exists")) {
+            String msg = ex.getMessage().toLowerCase();
+            if (msg.contains("phone") && msg.contains("already exists")) {
                 message = "This phone number is already registered. Please log in or use another phone number.";
                 errorCode = "DUPLICATE_RESOURCE";
-            } else if (ex.getMessage().contains("email") && ex.getMessage().contains("already exists")) {
+            } else if (msg.contains("email") && msg.contains("already exists")) {
                 message = "This email is already registered. Please log in or use another email address.";
                 errorCode = "DUPLICATE_RESOURCE";
+            } else if (msg.contains("uq_active_user_subscription")) {
+                message = "An active subscription already exists for this account.";
+                errorCode = "ACTIVE_SUBSCRIPTION_EXISTS";
+            } else if (msg.contains("uq_primary_user_photo")) {
+                message = "A primary photo already exists for this profile.";
+                errorCode = "PRIMARY_PHOTO_EXISTS";
             }
         }
 

@@ -17,6 +17,7 @@ export const connectAdminNotifications = (adminId, onMessage) => {
   console.log("CONNECTING ADMIN WS:", adminId);
 
   const token =
+    sessionStorage.getItem("adminToken") ||
     localStorage.getItem("adminToken") ||
     localStorage.getItem("authToken");
 

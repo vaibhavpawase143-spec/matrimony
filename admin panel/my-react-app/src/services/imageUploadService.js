@@ -1,7 +1,7 @@
 const API_BASE_URL = "/api";
 
 export async function uploadImage(file) {
-  const token = localStorage.getItem("adminToken");
+  const token = sessionStorage.getItem("adminToken") || localStorage.getItem("adminToken");
 
   const formData = new FormData();
   formData.append("file", file);

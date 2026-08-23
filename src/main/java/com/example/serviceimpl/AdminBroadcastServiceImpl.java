@@ -165,6 +165,9 @@ public class AdminBroadcastServiceImpl implements AdminBroadcastService {
 
     @Scheduled(fixedDelay = 60000)
     public void processPendingBroadcasts() {
+        if (testMode) {
+            return;
+        }
         List<BroadcastJob> pending = broadcastJobRepository.findByStatusIn(List.of(BroadcastJobStatus.PENDING, BroadcastJobStatus.IN_PROGRESS));
 
         for (BroadcastJob job : pending) {

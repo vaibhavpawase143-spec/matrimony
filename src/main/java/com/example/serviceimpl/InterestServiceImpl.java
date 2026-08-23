@@ -9,12 +9,14 @@ import com.example.model.User;
 import com.example.repository.InterestRepository;
 import com.example.repository.MatchRepository;
 import com.example.repository.UserRepository;
+import com.example.security.SecurityUtils;
 import com.example.service.InterestService;
 import com.example.service.NotificationService;
 import com.example.service.SubscriptionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.cache.annotation.Cacheable;
@@ -32,6 +34,27 @@ public class InterestServiceImpl implements InterestService {
     private final MatchRepository matchRepository;
     private final NotificationService notificationService;
     private final SubscriptionService subscriptionService;
+
+    private User getAuthenticatedUser() {
+        String email = SecurityUtils.getCurrentUsername();
+        if (email == null) {
+            return null;
+        }
+        return userRepository.findByEmailWithRoles(email).orElse(null);
+    }
+
+    private void validateUserAccess(Long targetUserId, String actionDescription) {
+        User currentUser = getAuthenticatedUser();
+        if (currentUser == null) {
+            return;
+        }
+        boolean isAdmin = currentUser.getRoles() != null && currentUser.getRoles().stream()
+                .anyMatch(r -> r.getName().contains("ADMIN"));
+        if (!isAdmin && (currentUser.getId() == null || !currentUser.getId().equals(targetUserId))) {
+            throw new AccessDeniedException("Access denied: " + actionDescription);
+        }
+    }
+
     // ✅ Send Interest
     @Override
     @CacheEvict(
@@ -46,6 +69,8 @@ public class InterestServiceImpl implements InterestService {
 
         Long senderId = request.getSenderId();
         Long receiverId = request.getReceiverId();
+
+        validateUserAccess(senderId, "You cannot send interests on behalf of another user");
 
         if (senderId.equals(receiverId)) {
             throw new RuntimeException("You cannot send interest to yourself");
@@ -176,6 +201,19 @@ public class InterestServiceImpl implements InterestService {
         Interest existing = interestRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Interest not found"));
 
+        User currentUser = getAuthenticatedUser();
+        if (currentUser != null) {
+            boolean isAdmin = currentUser.getRoles() != null && currentUser.getRoles().stream()
+                    .anyMatch(r -> r.getName().contains("ADMIN"));
+            if (!isAdmin && (existing.getReceiver() == null || !currentUser.getId().equals(existing.getReceiver().getId()))) {
+                throw new AccessDeniedException("Access denied: Only the receiver can accept or reject this interest");
+            }
+        }
+
+        if (!"PENDING".equalsIgnoreCase(existing.getStatus())) {
+            throw new IllegalStateException("Cannot update status of interest that is already " + existing.getStatus());
+        }
+
         existing.setStatus(status);
         existing.setIsActive(false);
 
@@ -258,6 +296,17 @@ public class InterestServiceImpl implements InterestService {
                                 )
                         );
 
+        User currentUser = getAuthenticatedUser();
+        if (currentUser != null) {
+            boolean isAdmin = currentUser.getRoles() != null && currentUser.getRoles().stream()
+                    .anyMatch(r -> r.getName().contains("ADMIN"));
+            boolean isParticipant = (existing.getSender() != null && currentUser.getId().equals(existing.getSender().getId())) ||
+                                    (existing.getReceiver() != null && currentUser.getId().equals(existing.getReceiver().getId()));
+            if (!isAdmin && !isParticipant) {
+                throw new AccessDeniedException("Access denied: You do not have permission to delete this interest");
+            }
+        }
+
         existing.setStatus(
                 "DELETED"
         );
@@ -274,15 +323,26 @@ public class InterestServiceImpl implements InterestService {
     // 📥 Get By ID
     @Override
     public InterestResponseDTO getById(Long id) {
-        return interestRepository.findById(id)
-                .map(this::mapToDTO)
+        Interest existing = interestRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Interest not found"));
+        User currentUser = getAuthenticatedUser();
+        if (currentUser != null) {
+            boolean isAdmin = currentUser.getRoles() != null && currentUser.getRoles().stream()
+                    .anyMatch(r -> r.getName().contains("ADMIN"));
+            boolean isParticipant = (existing.getSender() != null && currentUser.getId().equals(existing.getSender().getId())) ||
+                                    (existing.getReceiver() != null && currentUser.getId().equals(existing.getReceiver().getId()));
+            if (!isAdmin && !isParticipant) {
+                throw new AccessDeniedException("Access denied: You do not have permission to view this interest");
+            }
+        }
+        return mapToDTO(existing);
     }
 
     // 📤 Get By Sender
     @Override
     @Cacheable(value = "user:interest:sent", key = "#senderId")
     public List<InterestResponseDTO> getBySender(Long senderId) {
+        validateUserAccess(senderId, "You can only view your own sent interests");
         return interestRepository.findBySender_Id(senderId)
                 .stream()
                 .map(this::mapToDTO)
@@ -291,6 +351,7 @@ public class InterestServiceImpl implements InterestService {
 
     @Override
     public List<InterestResponseDTO> getBySenderAndStatus(Long senderId, String status) {
+        validateUserAccess(senderId, "You can only view your own sent interests");
         return interestRepository.findBySender_IdAndStatusIgnoreCase(senderId, status)
                 .stream()
                 .map(this::mapToDTO)
@@ -301,6 +362,7 @@ public class InterestServiceImpl implements InterestService {
     @Override
     @Cacheable(value = "user:interest:received", key = "#receiverId")
     public List<InterestResponseDTO> getByReceiver(Long receiverId) {
+        validateUserAccess(receiverId, "You can only view your own received interests");
         return interestRepository.findByReceiver_Id(receiverId)
                 .stream()
                 .map(this::mapToDTO)
@@ -309,6 +371,7 @@ public class InterestServiceImpl implements InterestService {
 
     @Override
     public List<InterestResponseDTO> getByReceiverAndStatus(Long receiverId, String status) {
+        validateUserAccess(receiverId, "You can only view your own received interests");
         return interestRepository.findByReceiver_IdAndStatusIgnoreCase(receiverId, status)
                 .stream()
                 .map(this::mapToDTO)
@@ -318,6 +381,15 @@ public class InterestServiceImpl implements InterestService {
     // 🔍 Sender + Receiver
     @Override
     public InterestResponseDTO getBySenderAndReceiver(Long senderId, Long receiverId) {
+        User currentUser = getAuthenticatedUser();
+        if (currentUser != null) {
+            boolean isAdmin = currentUser.getRoles() != null && currentUser.getRoles().stream()
+                    .anyMatch(r -> r.getName().contains("ADMIN"));
+            boolean isParticipant = currentUser.getId().equals(senderId) || currentUser.getId().equals(receiverId);
+            if (!isAdmin && !isParticipant) {
+                throw new AccessDeniedException("Access denied: You can only view your own interest interactions");
+            }
+        }
         return interestRepository.findBySender_IdAndReceiver_Id(senderId, receiverId)
                 .map(this::mapToDTO)
                 .orElseThrow(() -> new RuntimeException("Interest not found"));
@@ -341,6 +413,7 @@ public class InterestServiceImpl implements InterestService {
             Long senderId,
             Pageable pageable
     ) {
+        validateUserAccess(senderId, "You can only view your own sent interests");
         return interestRepository
                 .findBySender_Id(senderId, pageable)
                 .map(this::mapToDTO);
@@ -351,6 +424,7 @@ public class InterestServiceImpl implements InterestService {
             Long receiverId,
             Pageable pageable
     ) {
+        validateUserAccess(receiverId, "You can only view your own received interests");
         return interestRepository
                 .findByReceiver_Id(receiverId, pageable)
                 .map(this::mapToDTO);
@@ -362,6 +436,7 @@ public class InterestServiceImpl implements InterestService {
             String status,
             Pageable pageable
     ) {
+        validateUserAccess(senderId, "You can only view your own sent interests");
         return interestRepository
                 .findBySender_IdAndStatusIgnoreCase(
                         senderId,
@@ -377,6 +452,7 @@ public class InterestServiceImpl implements InterestService {
             String status,
             Pageable pageable
     ) {
+        validateUserAccess(receiverId, "You can only view your own received interests");
         return interestRepository
                 .findByReceiver_IdAndStatusIgnoreCase(
                         receiverId,

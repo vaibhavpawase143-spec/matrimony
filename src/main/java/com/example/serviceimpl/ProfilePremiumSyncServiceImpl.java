@@ -1,6 +1,5 @@
 package com.example.serviceimpl;
 
-import com.example.exception.ResourceNotFoundException;
 import com.example.model.PremiumPlan;
 import com.example.model.Profile;
 import com.example.model.User;
@@ -8,9 +7,13 @@ import com.example.model.UserSubscription;
 import com.example.repository.ProfileRepository;
 import com.example.service.ProfilePremiumSyncService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
+
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -22,86 +25,65 @@ public class ProfilePremiumSyncServiceImpl
     @Override
     public void sync(User user, UserSubscription subscription) {
 
-        System.out.println("========================================");
-        System.out.println("PROFILE SYNC STARTED");
-        System.out.println("User ID : " + user.getId());
-
-        if (subscription == null) {
-            System.out.println("Subscription : NULL");
-        } else {
-            System.out.println("Subscription ID : " + subscription.getId());
-            System.out.println("Subscription Active : " + subscription.getIsActive());
-            System.out.println("Subscription Plan : " + subscription.getSubscriptionPlan().getName());
-            System.out.println("Duration : " + subscription.getSubscriptionPlan().getDuration());
+        if (user == null || user.getId() == null) {
+            log.warn("[PROFILE SYNC] User or User ID is null. Skipping sync.");
+            return;
         }
 
-        Profile profile = profileRepository.findByUserId(user.getId())
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Profile not found"));
+        log.debug("[PROFILE SYNC] Starting profile sync for User ID: {}", user.getId());
 
-        System.out.println("Profile Found : " + profile.getId());
+        Optional<Profile> profileOpt = profileRepository.findByUserId(user.getId());
+        if (profileOpt.isEmpty()) {
+            log.info("[PROFILE SYNC] Profile not yet created for User ID: {}. Skipping sync without error.", user.getId());
+            return;
+        }
+
+        Profile profile = profileOpt.get();
 
         // =====================================================
-        // NO ACTIVE SUBSCRIPTION
+        // NO ACTIVE SUBSCRIPTION -> RESET TO FREE
         // =====================================================
-
         if (subscription == null
-                || !Boolean.TRUE.equals(subscription.getIsActive())) {
+                || !Boolean.TRUE.equals(subscription.getIsActive())
+                || !"ACTIVE".equalsIgnoreCase(subscription.getStatus())) {
 
-            System.out.println("Updating Profile -> FREE");
+            log.debug("[PROFILE SYNC] Updating User ID: {} profile -> FREE", user.getId());
 
             profile.setIsPremium(false);
             profile.setPremiumPlan(PremiumPlan.FREE);
             profile.setPremiumStartDate(null);
             profile.setPremiumEndDate(null);
 
-            System.out.println("Saving Profile...");
             profileRepository.save(profile);
-
-            System.out.println("Profile Saved Successfully");
-            System.out.println("========================================");
+            log.debug("[PROFILE SYNC] Profile successfully set to FREE for User ID: {}", user.getId());
             return;
         }
 
         // =====================================================
-        // ACTIVE SUBSCRIPTION
+        // ACTIVE SUBSCRIPTION -> SYNC TO PREMIUM
         // =====================================================
-
-        System.out.println("Updating Profile -> PREMIUM");
+        log.debug("[PROFILE SYNC] Updating User ID: {} profile -> PREMIUM (Plan: {})",
+                user.getId(), subscription.getSubscriptionPlan() != null ? subscription.getSubscriptionPlan().getName() : "N/A");
 
         profile.setIsPremium(true);
         profile.setPremiumStartDate(subscription.getStartDate());
         profile.setPremiumEndDate(subscription.getEndDate());
 
-        int duration = subscription.getSubscriptionPlan().getDuration();
+        int duration = subscription.getSubscriptionPlan() != null && subscription.getSubscriptionPlan().getDuration() != null
+                ? subscription.getSubscriptionPlan().getDuration()
+                : 30;
 
-        switch (duration) {
-
-            case 30 ->
-                    profile.setPremiumPlan(PremiumPlan.ONE_MONTH);
-
-            case 90 ->
-                    profile.setPremiumPlan(PremiumPlan.THREE_MONTHS);
-
-            case 180 ->
-                    profile.setPremiumPlan(PremiumPlan.SIX_MONTHS);
-
-            case 365 ->
-                    profile.setPremiumPlan(PremiumPlan.TWELVE_MONTHS);
-
-            default ->
-                    profile.setPremiumPlan(PremiumPlan.FREE);
+        if (duration <= 45) {
+            profile.setPremiumPlan(PremiumPlan.ONE_MONTH);
+        } else if (duration <= 120) {
+            profile.setPremiumPlan(PremiumPlan.THREE_MONTHS);
+        } else if (duration <= 240) {
+            profile.setPremiumPlan(PremiumPlan.SIX_MONTHS);
+        } else {
+            profile.setPremiumPlan(PremiumPlan.TWELVE_MONTHS);
         }
 
-        System.out.println("Premium : " + profile.getIsPremium());
-        System.out.println("Premium Plan : " + profile.getPremiumPlan());
-        System.out.println("Premium Start : " + profile.getPremiumStartDate());
-        System.out.println("Premium End : " + profile.getPremiumEndDate());
-
-        System.out.println("Saving Profile...");
         profileRepository.save(profile);
-
-        System.out.println("Profile Saved Successfully");
-        System.out.println("========================================");
+        log.debug("[PROFILE SYNC] Profile successfully synced to PREMIUM for User ID: {}", user.getId());
     }
 }

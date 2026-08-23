@@ -2,6 +2,8 @@ import { apiClient as api } from "./api";
 
 const API_BASE = "/api/chat";
 
+const getToken = () => sessionStorage.getItem("token") || localStorage.getItem("token");
+
 export const getMyChats = async () => {
 
     const response = await fetch(
@@ -14,7 +16,7 @@ export const getMyChats = async () => {
 
                 Authorization:
 
-                    `Bearer ${localStorage.getItem("token")}`
+                    `Bearer ${getToken()}`
 
             }
 
@@ -55,36 +57,30 @@ export const getMessages = (
 export const sendMessage = async (data) => {
 
     const response = await fetch(
+
         `${API_BASE}/send`,
+
         {
+
             method: "POST",
 
             headers: {
+
                 "Content-Type": "application/json",
+
                 Authorization:
-                    `Bearer ${localStorage.getItem("token")}`
+                    `Bearer ${getToken()}`
+
             },
 
             body: JSON.stringify(data)
+
         }
+
     );
 
-    const result = await response.json();
+    return await response.json();
 
-    console.log("SEND API STATUS =", response.status);
-    console.log("SEND API RESULT =", result);
-
-    // Backend error -> throw -> Messages.jsx catch मध्ये जाईल
-    if (!response.ok) {
-
-        throw new Error(
-            result?.message ||
-            result?.error ||
-            "Message could not be sent"
-        );
-    }
-
-    return result;
 };
 
 export const markSeen = (conversationId) => {
@@ -123,7 +119,7 @@ export const uploadImage = async (file) => {
 
                 Authorization:
 
-                `Bearer ${localStorage.getItem("token")}`
+                `Bearer ${getToken()}`
 
             },
 
@@ -156,7 +152,7 @@ export const uploadAudio = async (file) => {
             headers:{
 
                 Authorization:
-                `Bearer ${localStorage.getItem("token")}`
+                `Bearer ${getToken()}`
 
             },
 
@@ -188,7 +184,7 @@ export const uploadVideo = async (file) => {
             headers: {
 
                 Authorization:
-                `Bearer ${localStorage.getItem("token")}`
+                `Bearer ${getToken()}`
 
             },
 
@@ -223,7 +219,7 @@ method:"POST",
 
 headers:{
 Authorization:
-`Bearer ${localStorage.getItem("token")}`
+`Bearer ${getToken()}`
 },
 
 body:formData

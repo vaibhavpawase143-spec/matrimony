@@ -21,7 +21,9 @@ public interface UserSubscriptionRepository extends
         JpaRepository<UserSubscription, Long>,
         JpaSpecificationExecutor<UserSubscription> {
 
-    UserSubscription findByUser(User user);
+    Optional<UserSubscription> findFirstByUserOrderByCreatedAtDesc(User user);
+
+    Optional<UserSubscription> findFirstByUserAndIsActiveTrueOrderByCreatedAtDesc(User user);
 
 
     // ==========================================

@@ -116,17 +116,19 @@ const [activityLoading, setActivityLoading] = useState(true);
 const loadRecentActivity = useCallback(async () => {
     try {
         setActivityLoading(true);
-        const currentUserStr = localStorage.getItem("user");
-        if (!currentUserStr) {
+        const currentUserStr = sessionStorage.getItem("user") || localStorage.getItem("user");
+        if (!currentUserStr && !profileData?.userId && !profileData?.id) {
             setActivityLoading(false);
             return;
         }
 
-        const currentUser = JSON.parse(currentUserStr);
+        const currentUser = currentUserStr ? JSON.parse(currentUserStr) : null;
         const userId = Number(
             currentUser?.userId ||
             currentUser?.id ||
-            currentUser?.profile?.userId
+            currentUser?.profile?.userId ||
+            profileData?.userId ||
+            profileData?.id
         );
 
         if (!userId) {
@@ -308,13 +310,16 @@ const loadProfiles = useCallback(
         try {
 
             const currentUser = JSON.parse(
+                sessionStorage.getItem("user") ||
                 localStorage.getItem("user") || "{}"
             );
 
             const userId = Number(
                 currentUser?.profile?.userId ||
                 currentUser?.userId ||
-                currentUser?.id
+                currentUser?.id ||
+                profileData?.userId ||
+                profileData?.id
             );
 
             if (!userId) {
@@ -449,6 +454,7 @@ const loadProfiles = useCallback(
     },
     [
         blockedUsers,
+        profileData,
         startLoading,
         stopLoading
     ]
@@ -480,6 +486,12 @@ useEffect(() => {
     setInitialized(true);
     loadInitialData();
 }, [initialized, loadInitialData]);
+
+useEffect(() => {
+    if (profileData?.userId && profiles.length === 0 && !loadingProfiles) {
+        loadProfiles(0, false);
+    }
+}, [profileData?.userId, profiles.length, loadingProfiles, loadProfiles]);
 
 useEffect(() => {
 
@@ -562,13 +574,16 @@ async(profile)=>{
 try{
 
 const currentUser = JSON.parse(
+    sessionStorage.getItem("user") ||
     localStorage.getItem("user") || "{}"
 );
 
 const senderId = Number(
     currentUser?.userId ||
     currentUser?.id ||
-    currentUser?.profile?.userId
+    currentUser?.profile?.userId ||
+    profileData?.userId ||
+    profileData?.id
 );
 
 if (!senderId) {
@@ -1416,13 +1431,16 @@ showLabel={false}
 
     try {
       const currentUser = JSON.parse(
+        sessionStorage.getItem("user") ||
         localStorage.getItem("user") || "{}"
       );
 
       const blockerId = Number(
         currentUser?.profile?.userId ||
         currentUser?.userId ||
-        currentUser?.id
+        currentUser?.id ||
+        profileData?.userId ||
+        profileData?.id
       );
 
       const blockedId = Number(profile.userId);

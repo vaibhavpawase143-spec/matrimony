@@ -8,6 +8,7 @@ import com.example.repository.AdminNotificationRepository;
 import com.example.repository.AdminRepository;
 import com.example.repository.NotificationRepository;
 import com.example.repository.UserRepository;
+import com.example.security.SecurityUtils;
 import com.example.queue.NotificationProducer;
 import com.example.service.EmailService;
 import com.example.service.NotificationService;
@@ -15,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,6 +34,26 @@ public class NotificationServiceImpl implements NotificationService {
     private final AdminNotificationRepository adminNotificationRepository;
     private final EmailService emailService;
     private final NotificationProducer notificationProducer;
+
+    private User getAuthenticatedUser() {
+        String email = SecurityUtils.getCurrentUsername();
+        if (email == null) {
+            return null;
+        }
+        return userRepository.findByEmailWithRoles(email).orElse(null);
+    }
+
+    private void validateNotificationAccess(Long targetUserId, String actionDescription) {
+        User currentUser = getAuthenticatedUser();
+        if (currentUser == null) {
+            return;
+        }
+        boolean isAdmin = currentUser.getRoles() != null && currentUser.getRoles().stream()
+                .anyMatch(r -> r.getName().contains("ADMIN"));
+        if (!isAdmin && (currentUser.getId() == null || !currentUser.getId().equals(targetUserId))) {
+            throw new AccessDeniedException("Access denied: " + actionDescription);
+        }
+    }
     // ✅ CREATE + REAL-TIME PUSH
     @Override
     public void create(Long senderId, Long receiverId, NotificationType type) {
@@ -167,6 +189,9 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     @Transactional(readOnly = true)
     public List<Notification> getAll(Long userId) {
+        if (userId != null) {
+            validateNotificationAccess(userId, "You can only view your own notifications");
+        }
         return repo.findByReceiverIdAndDeletedFalseOrderByCreatedAtDesc(userId);
     }
 
@@ -174,6 +199,9 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     @Transactional(readOnly = true)
     public long unreadCount(Long userId) {
+        if (userId != null) {
+            validateNotificationAccess(userId, "You can only view your own unread count");
+        }
         return repo.countByReceiverIdAndReadFalseAndDeletedFalse(userId);
     }
 
@@ -183,12 +211,19 @@ public class NotificationServiceImpl implements NotificationService {
         Notification n = repo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Notification not found"));
 
+        if (n.getReceiverId() != null) {
+            validateNotificationAccess(n.getReceiverId(), "You cannot modify another user's notification");
+        }
+
         n.setRead(true);
         repo.save(n);
     }
 
     @Override
     public void markAllRead(Long userId) {
+        if (userId != null) {
+            validateNotificationAccess(userId, "You cannot modify another user's notifications");
+        }
 
         List<Notification> notifications =
                 repo.findByReceiverIdAndReadFalseAndDeletedFalse(userId);
@@ -203,6 +238,10 @@ public class NotificationServiceImpl implements NotificationService {
     public void delete(Long id) {
         Notification n = repo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Notification not found"));
+
+        if (n.getReceiverId() != null) {
+            validateNotificationAccess(n.getReceiverId(), "You cannot delete another user's notification");
+        }
 
         n.setDeleted(true);
         repo.save(n);
@@ -463,9 +502,21 @@ public class NotificationServiceImpl implements NotificationService {
     }
     @Override
     public Notification getById(Long id) {
-
-        return repo.findById(id)
+        Notification n = repo.findById(id)
                 .orElseThrow(() ->
                         new RuntimeException("Notification not found"));
+
+        User currentUser = getAuthenticatedUser();
+        if (currentUser != null) {
+            boolean isAdmin = currentUser.getRoles() != null && currentUser.getRoles().stream()
+                    .anyMatch(r -> r.getName().contains("ADMIN"));
+            boolean isParticipant = (n.getReceiverId() != null && currentUser.getId().equals(n.getReceiverId())) ||
+                                    (n.getSenderId() != null && currentUser.getId().equals(n.getSenderId()));
+            if (!isAdmin && !isParticipant) {
+                throw new AccessDeniedException("Access denied: You cannot view another user's notification");
+            }
+        }
+
+        return n;
     }
 }

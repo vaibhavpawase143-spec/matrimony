@@ -29,14 +29,14 @@ public class SubscriptionController {
     }
 
     // =====================================================
-    // GET ALL PLANS
+    // GET ALL ACTIVE PLANS (PUBLIC / USER FACING)
     // =====================================================
 
     @GetMapping("/plans")
     public ResponseEntity<List<SubscriptionPlanResponseDTO>> getAllPlans() {
 
         return ResponseEntity.ok(
-                subscriptionPlanService.getAll()
+                subscriptionPlanService.getActive()
         );
     }
 
@@ -50,6 +50,10 @@ public class SubscriptionController {
 
         SubscriptionPlanResponseDTO plan =
                 subscriptionPlanService.getById(id);
+
+        if (plan == null || Boolean.FALSE.equals(plan.getIsActive())) {
+            return ResponseEntity.notFound().build();
+        }
 
         return ResponseEntity.ok(plan);
     }

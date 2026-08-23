@@ -8,6 +8,8 @@ import com.example.repository.AdminAuditLogRepository;
 import com.example.repository.AdminRepository;
 import com.example.service.AdminAuditLogService;
 import com.example.specification.AdminAuditLogSpecification;
+import com.example.util.LogSanitizer;
+import com.example.security.ratelimit.ClientIpResolver;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -28,6 +30,7 @@ public class AdminAuditLogServiceImpl implements AdminAuditLogService {
     private final AdminAuditLogRepository auditLogRepository;
     private final AdminRepository adminRepository;
     private final HttpServletRequest request;
+    private final ClientIpResolver clientIpResolver;
 
     @Override
     public void log(
@@ -50,17 +53,20 @@ public class AdminAuditLogServiceImpl implements AdminAuditLogService {
         AdminAuditLog auditLog = new AdminAuditLog();
 
         auditLog.setAdmin(admin);
-        auditLog.setModule(module);
-        auditLog.setAction(action);
-        auditLog.setEntityType(entityType);
+        auditLog.setModule(LogSanitizer.sanitizeAndTruncate(module, 100));
+        auditLog.setAction(LogSanitizer.sanitizeAndTruncate(action, 100));
+        auditLog.setEntityType(LogSanitizer.sanitizeAndTruncate(entityType, 100));
         auditLog.setEntityId(entityId);
-        auditLog.setDescription(description);
-        auditLog.setOldValue(oldValue);
-        auditLog.setNewValue(newValue);
+        auditLog.setDescription(LogSanitizer.sanitize(description));
+        auditLog.setOldValue(LogSanitizer.sanitize(oldValue));
+        auditLog.setNewValue(LogSanitizer.sanitize(newValue));
 
         // Capture actual request details
-        auditLog.setIpAddress(getClientIp());
-        auditLog.setUserAgent(getUserAgent());
+        String resolvedIp = (ipAddress != null && !ipAddress.isBlank()) ? ipAddress : getClientIp();
+        String resolvedUserAgent = (userAgent != null && !userAgent.isBlank()) ? userAgent : getUserAgent();
+
+        auditLog.setIpAddress(LogSanitizer.sanitizeAndTruncate(resolvedIp, 45));
+        auditLog.setUserAgent(LogSanitizer.sanitizeAndTruncate(resolvedUserAgent, 1000));
 
         auditLogRepository.save(auditLog);
     }
@@ -100,23 +106,12 @@ public class AdminAuditLogServiceImpl implements AdminAuditLogService {
     }
 
     private String getClientIp() {
-
-        String forwarded = request.getHeader("X-Forwarded-For");
-
-        if (forwarded != null && !forwarded.isBlank()) {
-            return forwarded.split(",")[0].trim();
-        }
-
-        return request.getRemoteAddr();
+        return clientIpResolver != null ? clientIpResolver.resolveClientIp(request) : request.getRemoteAddr();
     }
 
     private String getUserAgent() {
-
         String userAgent = request.getHeader("User-Agent");
-
-        return (userAgent == null || userAgent.isBlank())
-                ? "UNKNOWN"
-                : userAgent;
+        return (userAgent == null || userAgent.isBlank()) ? "UNKNOWN" : userAgent;
     }
 
     private AdminAuditLogResponseDTO convertToDTO(AdminAuditLog log) {

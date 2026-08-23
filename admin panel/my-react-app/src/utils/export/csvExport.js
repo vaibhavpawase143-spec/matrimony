@@ -1,6 +1,16 @@
 /**
- * Generic CSV Export Utility
+ * Generic CSV Export Utility with CSV Formula Injection (CWE-1236) Protection
  */
+
+export const sanitizeSpreadsheetCell = (val) => {
+  if (val === null || val === undefined) return "";
+  const str = String(val);
+  // Escape formula characters if cell starts with =, +, -, @, tab, CR, pipe
+  if (/^[=+\-@\t\r|]/.test(str)) {
+    return `'${str}`;
+  }
+  return str;
+};
 
 export const exportToCSV = ({
   data = [],
@@ -12,17 +22,13 @@ export const exportToCSV = ({
     return;
   }
 
-  const headers = columns.map((column) => column.label);
+  const headers = columns.map((column) => `"${String(column.label).replace(/"/g, '""')}"`);
 
   const rows = data.map((item) =>
     columns.map((column) => {
-      const value = column.value(item);
-
-      if (value === null || value === undefined) {
-        return "";
-      }
-
-      return `"${String(value).replace(/"/g, '""')}"`;
+      const rawValue = column.value(item);
+      const safeValue = sanitizeSpreadsheetCell(rawValue);
+      return `"${safeValue.replace(/"/g, '""')}"`;
     })
   );
 
@@ -35,14 +41,12 @@ export const exportToCSV = ({
   });
 
   const link = document.createElement("a");
-
-  link.href = URL.createObjectURL(blob);
-
+  const blobUrl = URL.createObjectURL(blob);
+  link.href = blobUrl;
   link.download = `${fileName}.csv`;
 
   document.body.appendChild(link);
-
   link.click();
-
   document.body.removeChild(link);
+  URL.revokeObjectURL(blobUrl);
 };

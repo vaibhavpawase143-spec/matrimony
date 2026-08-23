@@ -18,6 +18,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     private final JwtUtil jwtUtil;
     private final WebSocketUserInterceptor webSocketUserInterceptor;
+    private final CorsConfig corsConfig;
 
     @Bean
     public ThreadPoolTaskScheduler websocketTaskScheduler() {
@@ -74,7 +75,9 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                         )
                 )
 
-                .setAllowedOriginPatterns("*")
+                .setAllowedOriginPatterns(
+                        corsConfig.getAllowedOrigins().toArray(new String[0])
+                )
 
                 .withSockJS()
 

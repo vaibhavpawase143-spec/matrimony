@@ -36,7 +36,7 @@ try{
 
 const currentUser =
 JSON.parse(
-localStorage.getItem("user")
+sessionStorage.getItem("user") || localStorage.getItem("user")
 );
 
 const senderId =
@@ -139,9 +139,7 @@ mb-6
 
 onClick={()=>{
 
-window.location.href =
-
-"/home";
+navigate("/home");
 
 }}
 

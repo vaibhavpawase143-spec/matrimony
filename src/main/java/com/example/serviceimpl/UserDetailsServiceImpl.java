@@ -41,11 +41,13 @@ public class UserDetailsServiceImpl implements UserDetailsService {
             family = familyRepo.findByProfileAndDeletedAtIsNull(profile);
         }
 
-        PartnerPreference pref = prefRepo.findByUser(user);
+        PartnerPreference pref = prefRepo.findByUserId(user.getId()).orElse(null);
 
-        UserSubscription sub = subRepo.findByUser(user);
+        UserSubscription sub = subRepo.findFirstByUserAndIsActiveTrueOrderByCreatedAtDesc(user)
+                .orElseGet(() -> subRepo.findFirstByUserOrderByCreatedAtDesc(user).orElse(null));
 
-        Payment payment = paymentRepo.findByUser(user);
+        Payment payment = paymentRepo.findFirstByUserOrderByCreatedAtDesc(user)
+                .orElse(null);
         UserDetails dto = new UserDetails();
 
         // ===== USER =====

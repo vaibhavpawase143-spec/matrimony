@@ -21,7 +21,9 @@ import java.util.Optional;
 public interface PaymentRepository extends
         JpaRepository<Payment, Long>,
         JpaSpecificationExecutor<Payment> {
-    Payment findByUser(User user);
+    Optional<Payment> findFirstByUserOrderByCreatedAtDesc(User user);
+
+    Optional<Payment> findFirstByUserAndStatusOrderByCreatedAtDesc(User user, String status);
 
     boolean existsByTransactionId(String transactionId);
 

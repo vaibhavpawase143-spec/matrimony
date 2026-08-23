@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
                 @Index(name = "idx_payment_status_created", columnList = "status, created_at")
         }
 )
+@com.fasterxml.jackson.annotation.JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Payment {
 
     @Id
@@ -24,6 +25,7 @@ public class Payment {
     // 🔥 Who made payment - Changed to LAZY to prevent N+1 queries
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "password", "tokens", "roles", "subscriptions"})
     private User user;
 
     // 🔥 Use BigDecimal for money
@@ -39,6 +41,7 @@ public class Payment {
     // Plan ID for subscription payments
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "plan_id")
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "admin"})
     private SubscriptionPlan subscriptionPlan;
 
     // 🔥 Correct field: STATUS (not isActive)
@@ -76,6 +79,7 @@ public class Payment {
         return id;
     }
 
+    @com.fasterxml.jackson.annotation.JsonIgnore
     public User getUser() {
         return user;
     }
@@ -126,6 +130,7 @@ public class Payment {
         this.status = status;
     }
 
+    @com.fasterxml.jackson.annotation.JsonIgnore
     public SubscriptionPlan getSubscriptionPlan() {
         return subscriptionPlan;
     }

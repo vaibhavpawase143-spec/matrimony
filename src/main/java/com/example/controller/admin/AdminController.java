@@ -11,6 +11,7 @@ import com.example.dto.response.ApiResponse;
 import com.example.model.Admin;
 import com.example.model.RefreshToken;
 import com.example.security.JwtUtil;
+import com.example.security.TokenRevocationService;
 import com.example.service.AdminAuditLogService;
 import com.example.service.AdminService;
 import com.example.service.RecaptchaService;
@@ -23,6 +24,10 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import com.example.config.RateLimitProperties;
+import com.example.exception.RateLimitExceededException;
+import com.example.security.ratelimit.ClientIpResolver;
+import com.example.security.ratelimit.RateLimitService;
 
 import java.util.List;
 import java.util.Map;
@@ -30,7 +35,6 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/admins")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:5173")
 public class AdminController {
 
     private final @org.springframework.context.annotation.Lazy AdminService adminService;
@@ -38,6 +42,11 @@ public class AdminController {
     private final RefreshTokenService refreshTokenService;
     private final @org.springframework.context.annotation.Lazy AdminAuditLogService adminAuditLogService;
     private final RecaptchaService recaptchaService;
+    private final RateLimitService rateLimitService;
+    private final ClientIpResolver clientIpResolver;
+    private final RateLimitProperties rateLimitProperties;
+    private final TokenRevocationService tokenRevocationService;
+
     // ================= CREATE ADMIN =================
     @PostMapping
     @PreAuthorize("hasAuthority('ADMIN_CREATE')")
@@ -75,12 +84,51 @@ public class AdminController {
 
     // ================= LOGIN =================
     @PostMapping("/login")
-    public ApiResponse<Object> login(@Valid @RequestBody AdminLoginDTO dto) {
+    public ApiResponse<Object> login(
+            jakarta.servlet.http.HttpServletRequest httpRequest,
+            @Valid @RequestBody AdminLoginDTO dto) {
+
+        String normalizedEmail = dto.getEmail() != null ? dto.getEmail().trim().toLowerCase() : "";
+        String clientIp = clientIpResolver.resolveClientIp(httpRequest);
+        String ipKey = "admin_login:ip:" + clientIp;
+        String accountKey = "admin_login:account:" + normalizedEmail;
+
+        RateLimitProperties.Policy policy = rateLimitProperties.getAdminLogin();
+
+        var ipCheck = rateLimitService.checkFailedAttempts(ipKey, policy.getMaxAttempts(), policy.getWindowSeconds());
+        if (!ipCheck.isAllowed()) {
+            throw new RateLimitExceededException(
+                    "Too many failed login attempts from this IP. Please try again in " + ipCheck.getRetryAfterSeconds() + " seconds.",
+                    ipCheck.getRetryAfterSeconds(),
+                    "ADMIN_LOGIN"
+            );
+        }
+
+        var accountCheck = rateLimitService.checkFailedAttempts(accountKey, policy.getMaxAttempts(), policy.getWindowSeconds());
+        if (!accountCheck.isAllowed()) {
+            throw new RateLimitExceededException(
+                    "Too many failed login attempts for this admin account. Please try again in " + accountCheck.getRetryAfterSeconds() + " seconds.",
+                    accountCheck.getRetryAfterSeconds(),
+                    "ADMIN_LOGIN"
+            );
+        }
+
         recaptchaService.verify(
                 dto.getRecaptchaToken(),
                 "login"
         );
-        Admin admin = adminService.login(dto.getEmail(), dto.getPassword());
+
+        Admin admin;
+        try {
+            admin = adminService.login(dto.getEmail(), dto.getPassword());
+            // Reset counters on successful login
+            rateLimitService.reset(ipKey);
+            rateLimitService.reset(accountKey);
+        } catch (RuntimeException e) {
+            rateLimitService.recordFailedAttempt(ipKey, policy.getWindowSeconds());
+            rateLimitService.recordFailedAttempt(accountKey, policy.getWindowSeconds());
+            throw e;
+        }
 
         // or adminRepository.save(admin)
 
@@ -237,28 +285,36 @@ public class AdminController {
     }
     // ================= LOGOUT =================
     @PostMapping("/logout")
-    public ApiResponse<String> logout(
-            @RequestBody Map<String, String> request) {
+    public ApiResponse<String> logout(jakarta.servlet.http.HttpServletRequest httpRequest) {
 
-        String email = request.get("email");
+        String email = getLoggedInEmail();
+
+        if (httpRequest != null) {
+            String authHeader = httpRequest.getHeader("Authorization");
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                tokenRevocationService.revokeToken(authHeader.substring(7));
+            }
+        }
 
         Admin admin = adminService.findByEmail(email);
-        admin.setSessionId(null);
-        adminService.save(admin);   // or adminRepository.save(admin)
-        refreshTokenService.deleteByEmail(email);
+        if (admin != null) {
+            admin.setSessionId(null);
+            adminService.save(admin);
+            refreshTokenService.deleteByEmail(email);
 
-        adminAuditLogService.log(
-                admin.getId(),
-                "AUTHENTICATION",
-                "ADMIN_LOGOUT",
-                "ADMIN",
-                admin.getId(),
-                "Admin logged out: " + admin.getEmail(),
-                null,
-                null,
-                "SYSTEM",
-                "SYSTEM"
-        );
+            adminAuditLogService.log(
+                    admin.getId(),
+                    "AUTHENTICATION",
+                    "ADMIN_LOGOUT",
+                    "ADMIN",
+                    admin.getId(),
+                    "Admin logged out: " + admin.getEmail(),
+                    null,
+                    null,
+                    "SYSTEM",
+                    "SYSTEM"
+            );
+        }
 
         return new ApiResponse<>(
                 true,
@@ -272,9 +328,9 @@ public class AdminController {
 
         String token = request.get("refreshToken");
 
-        RefreshToken refreshToken = refreshTokenService.verifyToken(token);
+        RefreshToken newRefreshToken = refreshTokenService.rotateToken(token);
 
-        Admin admin = adminService.findByEmail(refreshToken.getEmail());
+        Admin admin = adminService.findByEmail(newRefreshToken.getEmail());
 
         String newAccessToken = jwtUtil.generateToken(
                 admin.getEmail(),
@@ -282,6 +338,7 @@ public class AdminController {
                 admin.getSessionId(),
                 "ADMIN"
         );
+
         return new ApiResponse<>(true, "Token refreshed", newAccessToken);
     }
 
@@ -423,8 +480,8 @@ public class AdminController {
                 "ADMIN",
                 id,
                 "Password reset for admin: " + adminToReset.getEmail(),
-                "Old Password",
-                "New Password",
+                "Password Reset Requested",
+                "Password Reset Completed",
                 "SYSTEM",
                 "SYSTEM"
         );

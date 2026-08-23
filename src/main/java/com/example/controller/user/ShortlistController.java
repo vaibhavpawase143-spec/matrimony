@@ -6,6 +6,7 @@ import com.example.security.SecurityUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
 import jakarta.validation.Valid;
 import com.example.model.Shortlist;
 import com.example.model.User;
@@ -36,6 +37,24 @@ public class ShortlistController {
         this.profileRepository = profileRepository;
     }
 
+    private User getAuthenticatedUser() {
+        String email = SecurityUtils.getCurrentUsername();
+        if (email == null) {
+            throw new AccessDeniedException("User not authenticated");
+        }
+        return userRepository.findByEmailWithRoles(email)
+                .orElseThrow(() -> new AccessDeniedException("User not found: " + email));
+    }
+
+    private void validateUserOwnership(Long targetUserId, String actionDescription) {
+        User currentUser = getAuthenticatedUser();
+        boolean isAdmin = currentUser.getRoles() != null && currentUser.getRoles().stream()
+                .anyMatch(r -> r.getName().contains("ADMIN"));
+        if (!isAdmin && (currentUser.getId() == null || !currentUser.getId().equals(targetUserId))) {
+            throw new AccessDeniedException("Access denied: " + actionDescription);
+        }
+    }
+
     // 🔥 COMMON MAPPER METHOD
     private ShortlistResponseDTO mapToDTO(Shortlist s) {
         return ShortlistResponseDTO.builder()
@@ -55,11 +74,17 @@ public class ShortlistController {
             @PathVariable Long userId,
             @PathVariable Long profileId) {
 
+        validateUserOwnership(userId, "You cannot shortlist profiles on behalf of another user");
+
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         Profile profile = profileRepository.findById(profileId)
                 .orElseThrow(() -> new RuntimeException("Profile not found"));
+
+        if (profile.getUser() != null && profile.getUser().getId().equals(userId)) {
+            throw new IllegalArgumentException("You cannot shortlist yourself");
+        }
 
         Shortlist shortlist = new Shortlist();
         shortlist.setUser(user);
@@ -186,6 +211,7 @@ public class ShortlistController {
             @PathVariable Long userId,
             @PathVariable Long profileId) {
 
+        validateUserOwnership(userId, "You cannot remove shortlist items for another user");
         shortlistService.removeFromShortlist(userId, profileId);
         return ResponseEntity.noContent().build();
     }
@@ -195,6 +221,7 @@ public class ShortlistController {
     public ResponseEntity<List<ShortlistResponseDTO>> getUserShortlist(
             @PathVariable Long userId) {
 
+        validateUserOwnership(userId, "You cannot view another user's shortlist");
         List<ShortlistResponseDTO> list = shortlistService.getByUser(userId)
                 .stream()
                 .map(this::mapToDTO)
@@ -209,6 +236,7 @@ public class ShortlistController {
             @PathVariable Long userId,
             @PathVariable Long profileId) {
 
+        validateUserOwnership(userId, "You cannot check shortlist status for another user");
         boolean exists = shortlistService
                 .getByUserAndProfile(userId, profileId)
                 .isPresent();
@@ -216,10 +244,20 @@ public class ShortlistController {
         return ResponseEntity.ok(exists);
     }
 
-    // ✅ Get who shortlisted a profile
+    // ✅ Get who shortlisted a profile (Owner or Admin only)
     @GetMapping("/profile/{profileId}")
     public ResponseEntity<List<ShortlistResponseDTO>> getByProfile(
             @PathVariable Long profileId) {
+
+        Profile profile = profileRepository.findById(profileId)
+                .orElseThrow(() -> new RuntimeException("Profile not found"));
+
+        User currentUser = getAuthenticatedUser();
+        boolean isAdmin = currentUser.getRoles() != null && currentUser.getRoles().stream()
+                .anyMatch(r -> r.getName().contains("ADMIN"));
+        if (!isAdmin && (profile.getUser() == null || !currentUser.getId().equals(profile.getUser().getId()))) {
+            throw new AccessDeniedException("Access denied: You can only view who shortlisted your own profile");
+        }
 
         List<ShortlistResponseDTO> list = shortlistService.getByProfile(profileId)
                 .stream()
@@ -229,8 +267,9 @@ public class ShortlistController {
         return ResponseEntity.ok(list);
     }
 
-    // ✅ Get all
+    // ✅ Get all (Admin only)
     @GetMapping
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     public ResponseEntity<List<ShortlistResponseDTO>> getAll() {
 
         List<ShortlistResponseDTO> list = shortlistService.getAll()

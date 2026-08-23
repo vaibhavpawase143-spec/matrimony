@@ -2,6 +2,7 @@ import { Heart, Bookmark, User } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useState } from "react";
+import { isSafeUrl } from "@/utils/urlSecurity";
 
 // Default fallback image
 import defaultProfile from "@/assets/profile1.jpg";
@@ -38,17 +39,22 @@ const ProfileCard = ({ profile, onSendInterest, onSave, isSaved = false, isInter
 
     const image = profile.imageUrl || profile.profilePhotoUrl;
 
-    if (!image) return defaultProfile;
+    if (!image || !isSafeUrl(image)) return defaultProfile;
 
-    // Already a complete URL
-    if (image.startsWith("http")) {
+    // Already a complete URL, blob, or safe data image
+    if (
+      image.startsWith("http://") ||
+      image.startsWith("https://") ||
+      image.startsWith("blob:") ||
+      image.startsWith("data:image/")
+    ) {
       return image;
     }
 
     const backendBase = (
       import.meta.env.VITE_BACKEND_URL ||
       (import.meta.env.VITE_API_BASE_URL ? import.meta.env.VITE_API_BASE_URL.replace(/\/api\/?$/, "") : "") ||
-      "http://localhost:9090"
+      ""
     ).replace(/\/$/, "");
 
     // Starts with /uploads/
@@ -64,9 +70,15 @@ const ProfileCard = ({ profile, onSendInterest, onSave, isSaved = false, isInter
     // Only filename like user2.jpg
     return `${backendBase}/uploads/${image}`;
   };
+
   // Get city name with fallback
   const getCityName = () => {
     return profile.cityName || profile.city || "City not available";
+  };
+
+  // Get display name
+  const getDisplayName = () => {
+    return profile.fullName || profile.name || "User";
   };
 
   // Get profession/education
@@ -91,9 +103,7 @@ const ProfileCard = ({ profile, onSendInterest, onSave, isSaved = false, isInter
       if (onSendInterest) onSendInterest(profile);
     }
   };
-console.log("PROFILE =", profile);
-console.log("imageUrl =", profile.imageUrl);
-console.log("Final URL =", getImageUrl());
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -102,7 +112,6 @@ console.log("Final URL =", getImageUrl());
       className="bg-white rounded-2xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 h-full flex flex-col"
     >
       {/* Profile Image */}
-      <h1 style={{ color: "red" }}>PROFILE CARD TEST</h1>
       <div className="aspect-[4/5] overflow-hidden relative bg-muted">
         <img
           src={getImageUrl()}

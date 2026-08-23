@@ -50,10 +50,25 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     @Transactional
     public SubscriptionResponseDto subscribeUser(UserSubscriptionRequestDTO requestDto) {
 
-        User user = getCurrentUser();
+        if (requestDto == null || requestDto.getPlanId() == null) {
+            throw new com.example.exception.BadRequestException("Plan ID is required");
+        }
 
-        SubscriptionPlan plan = planRepository.findById(requestDto.getPlanId())
-                .orElseThrow(() -> new RuntimeException("Plan not found"));
+        SubscriptionPlan plan = planRepository.findByIdAndDeletedAtIsNull(requestDto.getPlanId())
+                .orElseThrow(() -> new com.example.exception.ResourceNotFoundException("Subscription plan not found"));
+
+        if (!Boolean.TRUE.equals(plan.getIsActive())) {
+            throw new com.example.exception.BadRequestException("Selected subscription plan is currently inactive");
+        }
+
+        // Security validation: Direct activation without payment is only allowed for free tier (price == 0)
+        if (plan.getPrice() != null && plan.getPrice().compareTo(java.math.BigDecimal.ZERO) > 0) {
+            throw new com.example.exception.BadRequestException(
+                    "Direct activation is not permitted for paid plans. Please initiate purchase via payment gateway (/api/razorpay/create-order)."
+            );
+        }
+
+        User user = getCurrentUser();
 
         // Deactivate old subscription
         subscriptionRepository.findByUserIdAndIsActiveTrue(user.getId())

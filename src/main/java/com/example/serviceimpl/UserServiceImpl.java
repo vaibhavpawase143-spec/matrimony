@@ -539,6 +539,9 @@ public class UserServiceImpl implements UserService {
         user.setLastHeartbeat(null);
         userRepository.saveAndFlush(user);
 
+        // ================= PURGE REFRESH TOKEN =================
+        refreshTokenService.deleteByEmail(email);
+
         System.out.println(
                 "🔴 USER LOGOUT -> "
                         + user.getEmail()

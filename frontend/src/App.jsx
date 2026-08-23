@@ -12,8 +12,8 @@ import LoadingSpinner from "./components/LoadingSpinner";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import AuthenticatedLayout from "@/components/AuthenticatedLayout";
 import AnalyticsTracker from "@/components/AnalyticsTracker";
+import ErrorBoundary from "@/components/common/ErrorBoundary";
 import { Suspense, lazy } from "react";
-import WebsiteVisitorTracker from "./components/WebsiteVisitorTracker";
 
 // ==========================================
 // CODE SPLITTING: LAZY LOAD ALL USER PAGES
@@ -101,84 +101,40 @@ const App = () => {
                 <Toaster />
                 <Sonner />
                 <AuthProvider>
-                  <BrowserRouter>
-
-                    {/* Existing analytics tracking */}
-                    <AnalyticsTracker />
-
-                    {/* Website visitor/profile hit tracking */}
-                    <WebsiteVisitorTracker />
-
-                    <MobileBottomNav />
+                  <ErrorBoundary>
+                    <BrowserRouter>
+                      <AnalyticsTracker />
+                      <MobileBottomNav />
 
                     <Suspense fallback={<LoadingSpinner />}>
                       <Routes>
-
                         {/* PUBLIC ROUTES */}
-
                         <Route path="/" element={<Index />} />
                         <Route path="/login" element={<Login />} />
                         <Route path="/register" element={<Register />} />
                         <Route path="/verify-email" element={<VerifyEmail />} />
-                        <Route
-                          path="/request-verification"
-                          element={<RequestVerification />}
-                        />
-                        <Route
-                          path="/forgot-password"
-                          element={<ForgotPassword />}
-                        />
-                        <Route
-                          path="/reset-password"
-                          element={<ResetPassword />}
-                        />
+                        <Route path="/request-verification" element={<RequestVerification />} />
+                        <Route path="/forgot-password" element={<ForgotPassword />} />
+                        <Route path="/reset-password" element={<ResetPassword />} />
 
                         <Route path="/about" element={<About />} />
                         <Route path="/contact" element={<Contact />} />
-                        <Route
-                          path="/privacy-policy"
-                          element={<PrivacyPolicy />}
-                        />
+                        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                         <Route path="/terms" element={<TermsConditions />} />
                         <Route path="/faq" element={<FAQ />} />
                         <Route path="/help" element={<HelpSupport />} />
-                        <Route
-                          path="/refund-policy"
-                          element={<RefundPolicy />}
-                        />
+                        <Route path="/refund-policy" element={<RefundPolicy />} />
 
-                        <Route
-                          path="/cookie-policy"
-                          element={<CookiePolicy />}
-                        />
+                        <Route path="/cookie-policy" element={<CookiePolicy />} />
                         <Route path="/safety-tips" element={<SafetyTips />} />
-                        <Route
-                          path="/how-it-works"
-                          element={<HowItWorks />}
-                        />
-                        <Route
-                          path="/membership-plans"
-                          element={<MembershipPlans />}
-                        />
-                        <Route
-                          path="/community-guidelines"
-                          element={<CommunityGuidelines />}
-                        />
-                        <Route
-                          path="/email-verified"
-                          element={<EmailVerified />}
-                        />
-                        <Route
-                          path="/success-stories"
-                          element={<SuccessStories />}
-                        />
-                        <Route
-                          path="/success-stories/:id"
-                          element={<SuccessStoryDetails />}
-                        />
+                        <Route path="/how-it-works" element={<HowItWorks />} />
+                        <Route path="/membership-plans" element={<MembershipPlans />} />
+                        <Route path="/community-guidelines" element={<CommunityGuidelines />} />
+                        <Route path="/email-verified" element={<EmailVerified />} />
+                        <Route path="/success-stories" element={<SuccessStories />} />
+                        <Route path="/success-stories/:id" element={<SuccessStoryDetails />} />
 
                         {/* PROTECTED USER ROUTES */}
-
                         <Route
                           path="/home"
                           element={
@@ -253,7 +209,11 @@ const App = () => {
 
                         <Route
                           path="/chat/:conversationId/:receiverId"
-                          element={<ChatPage />}
+                          element={
+                            <AuthenticatedLayout>
+                              <ChatPage />
+                            </AuthenticatedLayout>
+                          }
                         />
 
                         <Route
@@ -347,7 +307,6 @@ const App = () => {
                         />
 
                         {/* SUPPORT ROUTES */}
-
                         <Route
                           path="/support/tickets"
                           element={
@@ -367,14 +326,12 @@ const App = () => {
                         />
 
                         {/* NOT FOUND */}
-
                         <Route path="*" element={<NotFound />} />
-
                       </Routes>
                     </Suspense>
-
                   </BrowserRouter>
-                </AuthProvider>
+                </ErrorBoundary>
+              </AuthProvider>
               </TooltipProvider>
             </ToastProvider>
           </LoadingProvider>

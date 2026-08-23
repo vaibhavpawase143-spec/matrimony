@@ -4,15 +4,20 @@ import EmailVerified from "@/pages/EmailVerified";
 
 const API_BASE_URL = '/api'; // Will be proxied to backend
 
+// Tab-isolated Token Retrieval Helper
+export const getAuthToken = () => {
+  return sessionStorage.getItem('token') || localStorage.getItem('token');
+};
+
 // Token validation helper
 const validateToken = () => {
-  const token = localStorage.getItem('token');
+  const token = getAuthToken();
   if (!token) {
     throw new Error('No authentication token found');
   }
 
   try {
-    // Basic JWT token validation (you can enhance this)
+    // Basic JWT token validation
     const payload = JSON.parse(atob(token.split('.')[1]));
     const now = Date.now() / 1000;
     if (payload.exp && payload.exp < now) {
@@ -20,6 +25,7 @@ const validateToken = () => {
     }
     return token;
   } catch (e) {
+    sessionStorage.removeItem('token');
     localStorage.removeItem('token');
     throw new Error('Invalid or expired token');
   }
@@ -28,7 +34,7 @@ const validateToken = () => {
 // Centralized API client with proper auth and error handling
 export const apiClient = async (endpoint, options = {}) => {
   try {
-    const token = localStorage.getItem('token');
+    const token = getAuthToken();
 
     // Don't attach Authorization header for public auth endpoints
     const isPublicAuthEndpoint = endpoint.startsWith('/auth/') ||
@@ -128,7 +134,7 @@ export const photoAPI = {
       `${API_BASE_URL}/photos/me`,
       {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`
+          Authorization: `Bearer ${getAuthToken()}`
         }
       }
     );
@@ -145,7 +151,7 @@ export const photoAPI = {
       `${API_BASE_URL}/photos/user/${userId}`,
       {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`
+          Authorization: `Bearer ${getAuthToken()}`
         }
       }
     );
@@ -167,7 +173,7 @@ export const photoAPI = {
       {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`
+          Authorization: `Bearer ${getAuthToken()}`
         },
         body: formData
       }
@@ -191,7 +197,7 @@ export const photoAPI = {
       {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`
+          Authorization: `Bearer ${getAuthToken()}`
         },
         body: formData
       }
@@ -215,7 +221,7 @@ export const photoAPI = {
       {
         method: "PUT",
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`
+          Authorization: `Bearer ${getAuthToken()}`
         }
       }
     );
@@ -238,7 +244,7 @@ export const photoAPI = {
       {
         method: "DELETE",
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`
+          Authorization: `Bearer ${getAuthToken()}`
         }
       }
     );
@@ -334,13 +340,19 @@ console.log(result);
      : (result.data?.profile || result.profile || result.user || result.data || result);
 
       if (token) {
-        localStorage.setItem('token', token);
-        localStorage.setItem('isAdmin', isAdmin);
+        sessionStorage.setItem('token', token);
+        sessionStorage.setItem('isAdmin', isAdmin);
 
         // Store user data for immediate access
         if (userData) {
-          localStorage.setItem('user', JSON.stringify(userData));
+          sessionStorage.setItem('user', JSON.stringify(userData));
         }
+
+        // Clean legacy global auth keys to prevent multi-tab collision
+        localStorage.removeItem('token');
+        localStorage.removeItem('isAdmin');
+        localStorage.removeItem('user');
+        localStorage.removeItem('role');
       }
 
     return {
@@ -385,7 +397,7 @@ console.log(result);
   logout: async () => {
     try {
       // Call backend logout endpoint if available
-      if (localStorage.getItem('token')) {
+      if (getAuthToken()) {
         await apiClient('/users/logout', { method: 'POST' }).catch(() => {
           // Ignore errors on logout - just clear local storage
         });
@@ -393,23 +405,30 @@ console.log(result);
     } catch (error) {
       // Ignore logout errors and proceed with cleanup
     } finally {
-      // Always clear local storage
+      // Clear tab-isolated and local storage
+      sessionStorage.removeItem('token');
+      sessionStorage.removeItem('user');
+      sessionStorage.removeItem('role');
+      sessionStorage.removeItem('isAdmin');
+      sessionStorage.removeItem('refreshToken');
+
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       localStorage.removeItem('role');
       localStorage.removeItem('isAdmin');
+      localStorage.removeItem('refreshToken');
     }
   },
 
 getCurrentUser: async () => {
 
     const isAdmin =
-        localStorage.getItem("isAdmin") === "true";
+        (sessionStorage.getItem("isAdmin") || localStorage.getItem("isAdmin")) === "true";
 
     if (isAdmin) {
 
         const admin =
-            localStorage.getItem("user");
+            sessionStorage.getItem("user") || localStorage.getItem("user");
 
         return admin
             ? JSON.parse(admin)
@@ -517,11 +536,16 @@ export const otpAPI = {
     const userData = result.data?.profile || result.profile || result.user || result.data || result;
 
     if (token) {
-      localStorage.setItem("token", token);
-      localStorage.setItem("isAdmin", "false");
+      sessionStorage.setItem("token", token);
+      sessionStorage.setItem("isAdmin", "false");
       if (userData) {
-        localStorage.setItem("user", JSON.stringify(userData));
+        sessionStorage.setItem("user", JSON.stringify(userData));
       }
+
+      localStorage.removeItem("token");
+      localStorage.removeItem("isAdmin");
+      localStorage.removeItem("user");
+      localStorage.removeItem("role");
     }
 
     return {
@@ -1351,9 +1375,10 @@ return await apiClient(
    verifyPayment: async (data) => {
 
      return await apiClient(
-       `/razorpay/verify-payment?orderId=${data.orderId}&paymentId=${data.paymentId}&signature=${data.signature}`,
+       "/razorpay/verify-payment",
        {
-         method: "POST"
+         method: "POST",
+         body: JSON.stringify(data)
        }
      );
 

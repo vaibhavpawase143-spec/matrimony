@@ -14,6 +14,10 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long
 
     Optional<RefreshToken> findByToken(String token);
 
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT r FROM RefreshToken r WHERE r.token = :token")
+    Optional<RefreshToken> findByTokenForUpdate(@Param("token") String token);
+
     Optional<RefreshToken> findByEmail(String email);
 
     @Transactional
@@ -23,4 +27,18 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long
             nativeQuery = true
     )
     void deleteByEmail(@Param("email") String email);
+
+    @Transactional
+    @Modifying
+    @Query(value = "DELETE FROM refresh_token WHERE expiry_date < CURRENT_TIMESTAMP", nativeQuery = true)
+    int deleteExpiredTokens();
+
+    @Transactional
+    @Modifying
+    @Query(value = """
+            DELETE FROM refresh_token
+            WHERE email NOT IN (SELECT email FROM users WHERE is_deleted = false)
+              AND email NOT IN (SELECT email FROM admins WHERE is_active = true)
+            """, nativeQuery = true)
+    int purgeOrphanTokens();
 }

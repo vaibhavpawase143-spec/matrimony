@@ -159,7 +159,7 @@ const ProfileDetails = () => {
         console.log("PROFILE RESPONSE =", data);
         console.log("==================================");
 
-        const currentUser = JSON.parse(localStorage.getItem("user"));
+        const currentUser = JSON.parse(sessionStorage.getItem("user") || localStorage.getItem("user") || "{}");
         const currentUserId = Number(
           currentUser?.userId || currentUser?.id || currentUser?.profile?.userId
         );
@@ -223,7 +223,7 @@ const ProfileDetails = () => {
 
   const handleSendInterest = async () => {
     try {
-      const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
+      const currentUser = JSON.parse(sessionStorage.getItem("user") || localStorage.getItem("user") || "{}");
 
       if (!profile) {
         toast.error("User not found");

@@ -325,7 +325,7 @@ useEffect(() => {
 }, []);
 useEffect(() => {
 
-    const storedUser = localStorage.getItem("user");
+    const storedUser = sessionStorage.getItem("user") || localStorage.getItem("user");
 
     if (!storedUser) {
         console.log("No user found in localStorage");
@@ -821,7 +821,7 @@ const loadChat = async (chat) => {
         setMessages([]);
     }
 };
-const storedUser = localStorage.getItem("user");
+const storedUser = sessionStorage.getItem("user") || localStorage.getItem("user");
 
 const user = storedUser
     ? JSON.parse(storedUser)
@@ -2110,7 +2110,7 @@ message.deletedForEveryone ? (
             <a
                 href={`https://localhost:9090${message.mediaUrl}`}
                 target="_blank"
-                rel="noreferrer"
+                rel="noopener noreferrer"
                 className="
                 flex
                 items-center
@@ -2146,7 +2146,7 @@ message.deletedForEveryone ? (
             <a
                 href={`https://localhost:9090${message.mediaUrl}`}
                 target="_blank"
-                rel="noreferrer"
+                rel="noopener noreferrer"
                 className="
                 flex
                 items-center

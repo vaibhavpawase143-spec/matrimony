@@ -10,12 +10,7 @@ export const connectCallSocket = (
 ) => {
 
     const token =
-    localStorage.getItem("token");
-
-    console.log(
-        "CALL TOKEN =",
-        token
-    );
+    sessionStorage.getItem("token") || localStorage.getItem("token");
 
     const wsBase = import.meta.env.VITE_WS_URL || "/ws";
     const socket = new SockJS(
