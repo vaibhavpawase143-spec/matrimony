@@ -26,7 +26,7 @@ const VerifyEmail = () => {
     startLoading("Verifying email...");
     
     // Call backend to verify email
-    fetch(`/api/auth/verify?token=${token}`)
+    fetch(`/api/auth/verify?token=${encodeURIComponent(token)}`)
       .then((response) => {
         if (response.ok) {
           return response.json();

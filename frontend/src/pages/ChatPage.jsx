@@ -42,40 +42,23 @@ function ChatPage() {
 
     const [userInfo, setUserInfo] = useState(null);
 
-    const markSeen = async()=>{
-
-    try{
-
-    await fetch(
-
-    `https://localhost:9090/api/chat/seen/${conversationId}`,
-
-    {
-
-    method:"PUT",
-
-    headers:{
-
-    Authorization:
-
-    `Bearer ${
-    localStorage.getItem("token")
-    }`
-
-    }
-
-    }
-
-    );
-
-    }
-
-    catch(err){
-
-    console.log(err);
-
-    }
-
+    const markSeen = async () => {
+      try {
+        const token = sessionStorage.getItem("token") || localStorage.getItem("token");
+        await fetch(
+          `/api/chat/seen/${conversationId}`,
+          {
+            method: "PUT",
+            headers: {
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+          }
+        );
+      } catch (err) {
+        if (import.meta.env.DEV) {
+          console.error(err);
+        }
+      }
     };
 
     const loadMessages = async () => {
@@ -235,13 +218,6 @@ useEffect(() => {
                   margin: "0 auto"
               }}
           >
-            style={{
-                padding: "20px",
-                maxWidth: "1000px",
-                margin: "0 auto"
-            }}
-
-
             <div
 
             style={{

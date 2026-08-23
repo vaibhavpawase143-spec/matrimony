@@ -12,6 +12,7 @@ import LoadingSpinner from "./components/LoadingSpinner";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import AuthenticatedLayout from "@/components/AuthenticatedLayout";
 import AnalyticsTracker from "@/components/AnalyticsTracker";
+import ErrorBoundary from "@/components/common/ErrorBoundary";
 import { Suspense, lazy } from "react";
 
 // ==========================================
@@ -100,9 +101,10 @@ const App = () => {
                 <Toaster />
                 <Sonner />
                 <AuthProvider>
-                  <BrowserRouter>
-                    <AnalyticsTracker />
-                    <MobileBottomNav />
+                  <ErrorBoundary>
+                    <BrowserRouter>
+                      <AnalyticsTracker />
+                      <MobileBottomNav />
 
                     <Suspense fallback={<LoadingSpinner />}>
                       <Routes>
@@ -205,7 +207,14 @@ const App = () => {
                           }
                         />
 
-                        <Route path="/chat/:conversationId/:receiverId" element={<ChatPage />} />
+                        <Route
+                          path="/chat/:conversationId/:receiverId"
+                          element={
+                            <AuthenticatedLayout>
+                              <ChatPage />
+                            </AuthenticatedLayout>
+                          }
+                        />
 
                         <Route
                           path="/notifications/:id"
@@ -321,7 +330,8 @@ const App = () => {
                       </Routes>
                     </Suspense>
                   </BrowserRouter>
-                </AuthProvider>
+                </ErrorBoundary>
+              </AuthProvider>
               </TooltipProvider>
             </ToastProvider>
           </LoadingProvider>

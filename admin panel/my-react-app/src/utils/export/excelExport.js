@@ -1,7 +1,8 @@
 import * as XLSX from "xlsx";
+import { sanitizeSpreadsheetCell } from "./csvExport";
 
 /**
- * Generic Excel Export Utility
+ * Generic Excel Export Utility with Formula Injection Protection
  */
 
 export const exportToExcel = ({
@@ -18,14 +19,17 @@ export const exportToExcel = ({
     const row = {};
 
     columns.forEach((column) => {
-      row[column.label] = column.value(item);
+      const rawVal = column.value(item);
+      row[column.label] =
+        typeof rawVal === "number" || typeof rawVal === "boolean"
+          ? rawVal
+          : sanitizeSpreadsheetCell(rawVal);
     });
 
     return row;
   });
 
   const worksheet = XLSX.utils.json_to_sheet(excelData);
-
   const workbook = XLSX.utils.book_new();
 
   XLSX.utils.book_append_sheet(workbook, worksheet, "Report");

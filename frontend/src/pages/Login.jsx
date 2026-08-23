@@ -9,12 +9,14 @@ import { authAPI, otpAPI } from "@/services/api";
 import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
 import { trackEvent } from "@/utils/analytics";
 import OTPModal from "@/components/auth/OTPModal";
+import { validateSafeRedirect } from "@/utils/urlSecurity";
 
 const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const redirectTo = new URLSearchParams(location.search).get("redirect");
+  const rawRedirect = new URLSearchParams(location.search).get("redirect");
+  const redirectTo = validateSafeRedirect(rawRedirect, null);
   const { login } = useAuth();
   const { success, error } = useToast();
 

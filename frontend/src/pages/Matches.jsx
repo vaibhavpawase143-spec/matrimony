@@ -81,7 +81,7 @@ const Matches = () => {
             <p className="text-sm">We couldn't find any matches for you yet. Complete your profile to get better matches!</p>
           </div>
           <button 
-            onClick={() => window.location.href = '/settings'}
+            onClick={() => navigate('/settings')}
             className="mt-4 bg-primary text-primary-foreground px-6 py-2 rounded-lg hover:opacity-90 transition"
           >
             Complete Profile

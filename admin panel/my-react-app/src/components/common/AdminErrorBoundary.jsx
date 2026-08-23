@@ -13,7 +13,9 @@ export default class AdminErrorBoundary extends React.Component {
 
   componentDidCatch(error, errorInfo) {
     this.setState({ errorInfo });
-    console.error("[Admin System Uncaught Exception]:", error, errorInfo);
+    if (import.meta.env.DEV) {
+      console.error("[Admin System Uncaught Exception]:", error, errorInfo);
+    }
   }
 
   handleReset = () => {

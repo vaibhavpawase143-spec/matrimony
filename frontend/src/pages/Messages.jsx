@@ -2011,7 +2011,7 @@ message.deletedForEveryone ? (
             <a
                 href={`https://localhost:9090${message.mediaUrl}`}
                 target="_blank"
-                rel="noreferrer"
+                rel="noopener noreferrer"
                 className="
                 flex
                 items-center
@@ -2047,7 +2047,7 @@ message.deletedForEveryone ? (
             <a
                 href={`https://localhost:9090${message.mediaUrl}`}
                 target="_blank"
-                rel="noreferrer"
+                rel="noopener noreferrer"
                 className="
                 flex
                 items-center

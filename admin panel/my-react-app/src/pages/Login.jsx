@@ -7,6 +7,7 @@ import Loader from "../components/Loader";
 import { loginAdmin, isAuthenticated } from "../services/authService";
 import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
 import { trackEvent } from "../utils/analytics";
+import { validateSafeRedirect } from "../utils/urlSecurity";
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -18,11 +19,14 @@ function Login() {
   const navigate = useNavigate();
   const { executeRecaptcha } = useGoogleReCaptcha();
 
+  const rawRedirect = new URLSearchParams(window.location.search).get("redirect");
+  const redirectTo = validateSafeRedirect(rawRedirect, "/dashboard");
+
   useEffect(() => {
     if (isAuthenticated()) {
-      navigate("/dashboard", { replace: true });
+      navigate(redirectTo, { replace: true });
     }
-  }, [navigate]);
+  }, [navigate, redirectTo]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -60,7 +64,7 @@ function Login() {
         role: user.role,
       });
 
-      navigate("/dashboard");
+      navigate(redirectTo);
     } catch (err) {
       console.error(err);
 

@@ -1,3 +1,5 @@
+import { isSafeUrl, sanitizeUrl } from "./urlSecurity";
+
 /**
  * Utility for resolving backend-hosted profile images and avatars safely.
  * 
@@ -28,17 +30,18 @@ export const getDefaultAvatar = (name = "User") => {
  * Resolves raw image path/URL to fully-qualified web URL or default avatar fallback.
  */
 export const getImageUrl = (url, fallbackName = "User") => {
-  if (!url || typeof url !== "string" || !url.trim()) {
+  if (!url || typeof url !== "string" || !url.trim() || !isSafeUrl(url)) {
     return getDefaultAvatar(fallbackName);
   }
 
   const cleanUrl = url.trim();
 
-  // If already absolute URL or data URL
+  // If already absolute URL, blob, or safe data image URL
   if (
     cleanUrl.startsWith("http://") ||
     cleanUrl.startsWith("https://") ||
-    cleanUrl.startsWith("data:")
+    cleanUrl.startsWith("blob:") ||
+    cleanUrl.startsWith("data:image/")
   ) {
     return cleanUrl;
   }

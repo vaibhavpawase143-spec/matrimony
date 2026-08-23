@@ -1,6 +1,7 @@
 import { Cookie } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import CMSContent from "@/components/cms/CMSContent";
 import { useEffect, useState } from "react";
 import { cmsAPI } from "@/services/api";
 
@@ -44,14 +45,7 @@ const CookiePolicy = () => {
       </div>
 
       {/* CMS Content */}
-      <div className="container mx-auto px-4 py-12">
-        <div
-          className="cms-content max-w-5xl mx-auto bg-card border rounded-xl shadow-sm p-8"
-          dangerouslySetInnerHTML={{
-            __html: page?.content || "",
-          }}
-        />
-      </div>
+      <CMSContent html={page?.content} />
 
       <Footer />
     </div>

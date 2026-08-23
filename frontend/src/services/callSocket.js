@@ -12,11 +12,6 @@ export const connectCallSocket = (
     const token =
     sessionStorage.getItem("token") || localStorage.getItem("token");
 
-    console.log(
-        "CALL TOKEN =",
-        token
-    );
-
     const wsBase = import.meta.env.VITE_WS_URL || "/ws";
     const socket = new SockJS(
         `${wsBase}?token=${token}`

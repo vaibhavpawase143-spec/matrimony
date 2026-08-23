@@ -1,11 +1,11 @@
 import { Navigate } from "react-router-dom";
 import { ADMIN_PERMISSIONS } from "../config/adminPermissions";
-import { getAdmin } from "../services/authService";
+import { getAdmin, isAuthenticated } from "../services/authService";
 
 const ProtectedRoute = ({ module, children }) => {
   const admin = getAdmin();
 
-  if (!admin) {
+  if (!admin || !isAuthenticated()) {
     return <Navigate to="/" replace />;
   }
 

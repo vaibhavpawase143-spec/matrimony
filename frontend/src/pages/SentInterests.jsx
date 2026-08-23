@@ -139,9 +139,7 @@ mb-6
 
 onClick={()=>{
 
-window.location.href =
-
-"/home";
+navigate("/home");
 
 }}
 

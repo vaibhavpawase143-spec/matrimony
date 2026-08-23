@@ -5,16 +5,16 @@ import { useState, useEffect, useRef } from "react";
 import { useLoading } from "@/hooks/useLoading";
 import { useToast } from "@/components/Toast";
 import { searchAPI, masterDataAPI,  blockAPI } from "@/services/api";
-import { useMatrimonyOptions } from "@/hooks/useMatrimonyOptions";
 import { useLanguage } from "@/context/LanguageContext.jsx";
+import { isSafeUrl } from "@/utils/urlSecurity";
 
 const getImageUrl = (image) => {
-  if (!image) return null;
-  if (image.startsWith("http://") || image.startsWith("https://")) return image;
+  if (!image || !isSafeUrl(image)) return null;
+  if (image.startsWith("http://") || image.startsWith("https://") || image.startsWith("blob:") || image.startsWith("data:image/")) return image;
   const backendBase = (
     import.meta.env.VITE_BACKEND_URL ||
     (import.meta.env.VITE_API_BASE_URL ? import.meta.env.VITE_API_BASE_URL.replace(/\/api\/?$/, "") : "") ||
-    "http://localhost:9090"
+    ""
   ).replace(/\/$/, "");
   if (image.startsWith("/")) return `${backendBase}${image}`;
   if (image.startsWith("uploads/")) return `${backendBase}/${image}`;
