@@ -17,18 +17,14 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(
-        name = "profiles",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"user_id"}),
-        indexes = {
-                @Index(name = "idx_profile_user", columnList = "user_id"),
-                @Index(name = "idx_profile_city", columnList = "city_id"),
-                @Index(name = "idx_profile_caste", columnList = "caste_id"),
-                @Index(name = "idx_profile_religion", columnList = "religion_id"),
-                @Index(name = "idx_profile_dob", columnList = "date_of_birth"),
-                @Index(name = "idx_profile_active", columnList = "is_active")
-        }
-)
+@Table(name = "profiles", uniqueConstraints = @UniqueConstraint(columnNames = { "user_id" }), indexes = {
+        @Index(name = "idx_profile_user", columnList = "user_id"),
+        @Index(name = "idx_profile_city", columnList = "city_id"),
+        @Index(name = "idx_profile_caste", columnList = "caste_id"),
+        @Index(name = "idx_profile_religion", columnList = "religion_id"),
+        @Index(name = "idx_profile_dob", columnList = "date_of_birth"),
+        @Index(name = "idx_profile_active", columnList = "is_active")
+})
 public class Profile extends Auditable {
 
     @Id
@@ -153,6 +149,13 @@ public class Profile extends Auditable {
 
     @Column(name = "date_of_birth")
     private LocalDate dateOfBirth;
+
+    public Integer getAge() {
+        if (this.dateOfBirth == null) {
+            return null;
+        }
+        return java.time.Period.between(this.dateOfBirth, LocalDate.now()).getYears();
+    }
 
     @Column(length = 1000)
     private String about;

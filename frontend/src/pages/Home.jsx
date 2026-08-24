@@ -11,9 +11,9 @@ import { swipeAPI } from "@/services/swipeAPI";
 import { getConversations } from "@/services/chatApi";
 import { motion } from "framer-motion";
 import ReportModal from "../components/ReportModal";
-import { useState, useEffect,useCallback,useMemo ,useRef  } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import profile1 from "@/assets/profile1.jpg";
-
+import { resolveImageUrl } from "@/utils/urlSecurity";
 
 import { useAuth } from "@/hooks/useAuth";
 
@@ -69,6 +69,7 @@ const {
 } = useLikes();
 const [page, setPage] = useState(0);
 const [dashboardRefreshing, setDashboardRefreshing] = useState(false);
+const dashboardRefreshingRef = useRef(false);
 const [hasMore, setHasMore] = useState(true);
 
 const [loadingMore, setLoadingMore] = useState(false);
@@ -79,32 +80,28 @@ const [selectedProfile, setSelectedProfile] = useState(null);
 const [selectedReason, setSelectedReason] = useState("");
 const [customReason, setCustomReason] = useState("");
 const [blockedUsers, setBlockedUsers] = useState([]);
+const blockedUsersRef = useRef([]);
 const [showUpgradePopup, setShowUpgradePopup] = useState(false);
 const [premiumFeature, setPremiumFeature] = useState("Chat");
 const { userName, logout } = useAuth();
 const loadMoreRef = useRef(null);
 const loadingMoreRef = useRef(false);
 const currentPageRef = useRef(0);
-const loadingStartedAtRef = useRef(0);
-const hideLoaderAfterAppendRef = useRef(false);
+const initialLoadRanRef = useRef(false);
+const activityLoadingRef = useRef(false);
 
-const { startLoading, stopLoading } =
-useLoading();
-
-
+const { startLoading, stopLoading } = useLoading();
 
 const { t } = useLanguage();
 
 const {
-profileData,
-isLoading: profileLoading
+  profileData,
+  isLoading: profileLoading
 } = useProfileData();
 
-const [isSidebarOpen,setIsSidebarOpen] =
-useState(true);
+const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
-const [profiles,setProfiles] =
-useState([]);
+const [profiles, setProfiles] = useState([]);
 const [dashboardStats, setDashboardStats] = useState(null);
 
 const [visitors, setVisitors] = useState([]);
@@ -114,117 +111,108 @@ const [sentInterests, setSentInterests] = useState([]);
 const [activityLoading, setActivityLoading] = useState(true);
 
 const loadRecentActivity = useCallback(async () => {
-    try {
-        setActivityLoading(true);
-        const currentUserStr = sessionStorage.getItem("user") || localStorage.getItem("user");
-        if (!currentUserStr && !profileData?.userId && !profileData?.id) {
-            setActivityLoading(false);
-            return;
-        }
+  if (activityLoadingRef.current) return;
+  activityLoadingRef.current = true;
+  setActivityLoading(true);
 
-        const currentUser = currentUserStr ? JSON.parse(currentUserStr) : null;
-        const userId = Number(
-            currentUser?.userId ||
-            currentUser?.id ||
-            currentUser?.profile?.userId ||
-            profileData?.userId ||
-            profileData?.id
-        );
+  try {
+    const currentUserStr = sessionStorage.getItem("user") || localStorage.getItem("user");
+    const currentUser = currentUserStr ? JSON.parse(currentUserStr) : null;
+    const userId = Number(
+      currentUser?.userId ||
+      currentUser?.id ||
+      currentUser?.profile?.userId
+    );
 
-        if (!userId) {
-            setActivityLoading(false);
-            return;
-        }
-
-        const [visitorsRes, receivedRes, sentRes, shortlistsRes] = await Promise.allSettled([
-            profileVisitorAPI.getMyVisitors(),
-            interestAPI.getReceivedInterests(userId),
-            interestAPI.getSentInterests(userId),
-            shortlistAPI.getMyShortlists(0, 10)
-        ]);
-
-        if (visitorsRes.status === "fulfilled" && visitorsRes.value) {
-            const raw = Array.isArray(visitorsRes.value)
-                ? visitorsRes.value
-                : visitorsRes.value?.data || [];
-            setVisitors(raw);
-        }
-
-        if (receivedRes.status === "fulfilled" && receivedRes.value) {
-            const raw = Array.isArray(receivedRes.value)
-                ? receivedRes.value
-                : receivedRes.value?.data || [];
-            setReceivedInterests(raw);
-        }
-
-        if (sentRes.status === "fulfilled" && sentRes.value) {
-            const raw = Array.isArray(sentRes.value)
-                ? sentRes.value
-                : sentRes.value?.data || [];
-            setSentInterests(raw);
-        }
-
-        if (shortlistsRes.status === "fulfilled" && shortlistsRes.value) {
-            const raw = Array.isArray(shortlistsRes.value)
-                ? shortlistsRes.value
-                : shortlistsRes.value?.content || shortlistsRes.value?.data || [];
-            setShortlists(raw);
-        }
-    } catch (err) {
-        console.error("Recent Activity load error:", err);
-    } finally {
-        setActivityLoading(false);
+    if (!userId) {
+      return;
     }
+
+    const [visitorsRes, receivedRes, sentRes, shortlistsRes] = await Promise.allSettled([
+      profileVisitorAPI.getMyVisitors(),
+      interestAPI.getReceivedInterests(userId),
+      interestAPI.getSentInterests(userId),
+      shortlistAPI.getMyShortlists(0, 10)
+    ]);
+
+    if (visitorsRes.status === "fulfilled" && visitorsRes.value) {
+      const raw = Array.isArray(visitorsRes.value)
+        ? visitorsRes.value
+        : visitorsRes.value?.data || [];
+      setVisitors(raw);
+    }
+
+    if (receivedRes.status === "fulfilled" && receivedRes.value) {
+      const raw = Array.isArray(receivedRes.value)
+        ? receivedRes.value
+        : receivedRes.value?.data || [];
+      setReceivedInterests(raw);
+    }
+
+    if (sentRes.status === "fulfilled" && sentRes.value) {
+      const raw = Array.isArray(sentRes.value)
+        ? sentRes.value
+        : sentRes.value?.data || [];
+      setSentInterests(raw);
+    }
+
+    if (shortlistsRes.status === "fulfilled" && shortlistsRes.value) {
+      const raw = Array.isArray(shortlistsRes.value)
+        ? shortlistsRes.value
+        : shortlistsRes.value?.content || shortlistsRes.value?.data || [];
+      setShortlists(raw);
+    }
+  } catch (err) {
+    console.error("Recent Activity load error:", err);
+  } finally {
+    activityLoadingRef.current = false;
+    setActivityLoading(false);
+  }
 }, []);
 
 const refreshDashboard = useCallback(async () => {
-    console.log("REFRESH DASHBOARD START");
+  if (dashboardRefreshingRef.current) return;
+  dashboardRefreshingRef.current = true;
+  setDashboardRefreshing(true);
 
-    if (dashboardRefreshing) return;
-
-    setDashboardRefreshing(true);
-
-    try {
-        const summary = await dashboardAPI.getSummary();
-        setDashboardStats(summary);
-    } catch (error) {
-        console.log("STEP ERROR", error);
-    } finally {
-        setDashboardRefreshing(false);
-    }
-
-}, [dashboardRefreshing]);
+  try {
+    const summary = await dashboardAPI.getSummary();
+    setDashboardStats(summary);
+  } catch (error) {
+    console.error("Dashboard stats error:", error);
+  } finally {
+    dashboardRefreshingRef.current = false;
+    setDashboardRefreshing(false);
+  }
+}, []);
 
 useEffect(() => {
-    const handleDashboardUpdated = () => {
-        console.log("🔄 Dashboard update event received");
-        refreshDashboard();
-        loadRecentActivity();
-    };
+  const handleDashboardUpdated = () => {
+    console.log("🔄 Dashboard update event received");
+    refreshDashboard();
+    loadRecentActivity();
+  };
 
-    const handleActivityOnlyUpdate = () => {
-        loadRecentActivity();
-    };
+  const handleActivityOnlyUpdate = () => {
+    loadRecentActivity();
+  };
 
-    window.addEventListener("dashboardUpdated", handleDashboardUpdated);
-    window.addEventListener("interestUpdated", handleActivityOnlyUpdate);
-    window.addEventListener("shortlist:updated", handleActivityOnlyUpdate);
-    window.addEventListener("visitorUpdated", handleActivityOnlyUpdate);
+  window.addEventListener("dashboardUpdated", handleDashboardUpdated);
+  window.addEventListener("interestUpdated", handleActivityOnlyUpdate);
+  window.addEventListener("shortlist:updated", handleActivityOnlyUpdate);
+  window.addEventListener("visitorUpdated", handleActivityOnlyUpdate);
 
-    return () => {
-        window.removeEventListener("dashboardUpdated", handleDashboardUpdated);
-        window.removeEventListener("interestUpdated", handleActivityOnlyUpdate);
-        window.removeEventListener("shortlist:updated", handleActivityOnlyUpdate);
-        window.removeEventListener("visitorUpdated", handleActivityOnlyUpdate);
-    };
+  return () => {
+    window.removeEventListener("dashboardUpdated", handleDashboardUpdated);
+    window.removeEventListener("interestUpdated", handleActivityOnlyUpdate);
+    window.removeEventListener("shortlist:updated", handleActivityOnlyUpdate);
+    window.removeEventListener("visitorUpdated", handleActivityOnlyUpdate);
+  };
 }, [refreshDashboard, loadRecentActivity]);
 
-
-
-
-const [loadingProfiles,setLoadingProfiles] =
-useState(true);
+const [loadingProfiles, setLoadingProfiles] = useState(true);
 const [showProfilePopup, setShowProfilePopup] = useState(false);
+
 useEffect(() => {
   if (profileLoading || !profileData) {
     setShowProfilePopup(false);
@@ -243,320 +231,169 @@ useEffect(() => {
   }
 }, [profileData, profileLoading]);
 
-const [showHeart,setShowHeart] =
-useState(null);
-
+const [showHeart, setShowHeart] = useState(null);
 
 const calculateAge = (dob) => {
-
- if (!dob) return "Age";
-
- const birthDate = new Date(dob);
-
- const today = new Date();
-
- let age =
- today.getFullYear() -
- birthDate.getFullYear();
-
- const monthDiff =
- today.getMonth() -
- birthDate.getMonth();
-
- if(
-   monthDiff < 0 ||
-   (
-    monthDiff===0 &&
-    today.getDate() <
-    birthDate.getDate()
-   )
- ){
-
-   age--;
-
- }
-
- return age;
-
+  if (!dob) return "Age";
+  const birthDate = new Date(dob);
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  return age;
 };
-
-
-  // Load real profiles from API
-// Load real profiles from API
-const [initialized, setInitialized] = useState(false);
-
 
 const PAGE_SIZE = 20;
 
 const loadProfiles = useCallback(
-    async (pageNumber = 0, append = false) => {
+  async (pageNumber = 0, append = false) => {
+    if (append) {
+      if (loadingMoreRef.current) return;
+      loadingMoreRef.current = true;
+      setLoadingMore(true);
+    } else {
+      setLoadingProfiles(true);
+    }
 
-        if (append) {
+    try {
+      const currentUser = JSON.parse(
+        sessionStorage.getItem("user") ||
+        localStorage.getItem("user") || "{}"
+      );
 
-            if (loadingMoreRef.current) {
-                return;
-            }
+      const userId = Number(
+        currentUser?.profile?.userId ||
+        currentUser?.userId ||
+        currentUser?.id
+      );
 
-            loadingMoreRef.current = true;
-            hideLoaderAfterAppendRef.current = false;
-            setLoadingMore(true);
+      if (!userId) {
+        console.warn("Current user ID not found for top matches");
+        return;
+      }
 
-        } else {
+      if (pageNumber === 0) {
+        try {
+          const currentBlockedUsers = await blockAPI.getMyBlockedUsers(userId);
+          const blockedList = Array.isArray(currentBlockedUsers) ? currentBlockedUsers : [];
+          blockedUsersRef.current = blockedList;
+          setBlockedUsers(blockedList);
+        } catch (bErr) {
+          console.warn("Failed to load blocked users:", bErr);
+        }
+      }
 
-            startLoading("Loading dashboard...");
-            setLoadingProfiles(true);
+      const blockedIds = (blockedUsersRef.current || []).map((u) => u.blockedId);
+
+      const data = await matchAPI.getTopMatches(userId, pageNumber, PAGE_SIZE);
+
+      if (append) {
+        currentPageRef.current = pageNumber;
+      }
+
+      const rawList = Array.isArray(data) ? data : data?.content || [];
+      const filteredProfiles = rawList.filter(
+        (profile) => profile && !blockedIds.includes(profile.userId)
+      );
+
+      if (rawList.length < PAGE_SIZE) {
+        setHasMore(false);
+      } else {
+        setHasMore(true);
+      }
+
+      setProfiles((prev) => {
+        if (!append) {
+          return filteredProfiles;
         }
 
-        try {
-
-            const currentUser = JSON.parse(
-                sessionStorage.getItem("user") ||
-                localStorage.getItem("user") || "{}"
-            );
-
-            const userId = Number(
-                currentUser?.profile?.userId ||
-                currentUser?.userId ||
-                currentUser?.id ||
-                profileData?.userId ||
-                profileData?.id
-            );
-
-            if (!userId) {
-                throw new Error(
-                    "Current user not found"
-                );
-            }
-
-
-            // =============================================
-            // Load blocked users only on first page
-            // =============================================
-
-            let currentBlockedUsers =
-                blockedUsers;
-
-            if (pageNumber === 0) {
-
-                currentBlockedUsers =
-                    await blockAPI
-                        .getMyBlockedUsers(userId);
-
-                setBlockedUsers(
-                    currentBlockedUsers
-                );
-            }
-
-
-            const blockedIds =
-                currentBlockedUsers.map(
-                    u => u.blockedId
-                );
-
-
-            // =============================================
-            // Load profiles
-            // =============================================
-
-            console.time(
-                `MATCH API page ${pageNumber}`
-            );
-
-            const data =
-                await matchAPI.getTopMatches(
-                    userId,
-                    pageNumber,
-                    PAGE_SIZE
-                );
-            if (append) {
-                currentPageRef.current = pageNumber;
-            }
-
-            console.timeEnd(
-                `MATCH API page ${pageNumber}`
-            );
-
-
-            // =============================================
-            // Filter blocked
-            // =============================================
-
-            const filteredProfiles =
-                data.filter(
-                    profile =>
-                        !blockedIds.includes(
-                            profile.userId
-                        )
-                );
-
-
-           // =============================================
-           // Determine whether more exists
-           // =============================================
-
-           if (data.length === 0) {
-               setHasMore(false);
-           } else {
-               setHasMore(true);
-           }
-
-
-           // =============================================
-           // Append profiles
-           // =============================================
-
-           setProfiles(prev => {
-
-               if (!append) {
-                   return filteredProfiles;
-               }
-
-               const existingIds = new Set(
-                   prev.map(
-                       profile => profile.userId
-                   )
-               );
-
-               const uniqueProfiles =
-                   filteredProfiles.filter(
-                       profile =>
-                           !existingIds.has(
-                               profile.userId
-                           )
-                   );
-
-               return [
-                   ...prev,
-                   ...uniqueProfiles
-               ];
-           });
-              } catch (error) {
-
-                  console.error(
-                      "Failed to load profiles:",
-                      error
-                  );
-
-              } finally {
-
-                  if (append) {
-
-                      loadingMoreRef.current = false;
-                      setLoadingMore(false);
-
-                  } else {
-
-                      setLoadingProfiles(false);
-                      stopLoading();
-
-                  }
-              }
-    },
-    [
-        blockedUsers,
-        profileData,
-        startLoading,
-        stopLoading
-    ]
-);
-useEffect(() => {
-
-    if (!hideLoaderAfterAppendRef.current) {
-        return;
-    }
-
-    hideLoaderAfterAppendRef.current = false;
-    loadingMoreRef.current = false;
-
-    setLoadingMore(false);
-
-}, [profiles.length]);
-const loadInitialData = useCallback(async () => {
-     currentPageRef.current = 0;
-     Promise.allSettled([
-         loadProfiles(0, false),
-         refreshDashboard(),
-         loadRecentActivity()
-     ]);
- }, [loadProfiles, refreshDashboard, loadRecentActivity]);
-
-useEffect(() => {
-    if (initialized) return;
-
-    setInitialized(true);
-    loadInitialData();
-}, [initialized, loadInitialData]);
-
-useEffect(() => {
-    if (profileData?.userId && profiles.length === 0 && !loadingProfiles) {
-        loadProfiles(0, false);
-    }
-}, [profileData?.userId, profiles.length, loadingProfiles, loadProfiles]);
-
-useEffect(() => {
-
-    const element = loadMoreRef.current;
-
-    if (!element) {
-        return;
-    }
-
-    const observer =
-        new IntersectionObserver(
-            entries => {
-
-                const firstEntry =
-                    entries[0];
-
-                if (
-                    !firstEntry.isIntersecting ||
-                    loadingMoreRef.current ||
-                    !hasMore ||
-                    loadingProfiles
-                ) {
-                    return;
-                }
-
-                const nextPage =
-                    currentPageRef.current + 1;
-
-                loadProfiles(
-                    nextPage,
-                    true
-                );
-
-            },
-            {
-                root: null,
-
-                // Load when user is reasonably close to bottom
-                rootMargin: "100px 0px",
-
-                threshold: 0
-            }
+        const existingIds = new Set(prev.map((profile) => profile.userId));
+        const uniqueProfiles = filteredProfiles.filter(
+          (profile) => !existingIds.has(profile.userId)
         );
 
-    observer.observe(element);
+        return [...prev, ...uniqueProfiles];
+      });
+    } catch (error) {
+      console.error("Failed to load profiles:", error);
+      if (!append) {
+        setProfiles([]);
+      }
+    } finally {
+      if (append) {
+        loadingMoreRef.current = false;
+        setLoadingMore(false);
+      } else {
+        setLoadingProfiles(false);
+      }
+    }
+  },
+  []
+);
 
-    return () => {
-        observer.disconnect();
-    };
+const loadInitialDashboardData = useCallback(async () => {
+  if (initialLoadRanRef.current) return;
+  initialLoadRanRef.current = true;
 
-}, [
-    loadProfiles,
-    hasMore,
-    loadingProfiles
-]);
+  startLoading("Loading dashboard...");
+  try {
+    currentPageRef.current = 0;
+    await Promise.allSettled([
+      loadProfiles(0, false),
+      refreshDashboard(),
+      loadRecentActivity()
+    ]);
+  } catch (err) {
+    console.error("Initial dashboard load error:", err);
+  } finally {
+    stopLoading();
+  }
+}, [loadProfiles, refreshDashboard, loadRecentActivity, startLoading, stopLoading]);
 
-  // Use real profile data for completion tracking
+useEffect(() => {
+  loadInitialDashboardData();
+}, [loadInitialDashboardData]);
+
+useEffect(() => {
+  const element = loadMoreRef.current;
+  if (!element) return;
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      const firstEntry = entries[0];
+      if (
+        !firstEntry.isIntersecting ||
+        loadingMoreRef.current ||
+        !hasMore ||
+        loadingProfiles
+      ) {
+        return;
+      }
+
+      const nextPage = currentPageRef.current + 1;
+      loadProfiles(nextPage, true);
+    },
+    {
+      root: null,
+      rootMargin: "100px 0px",
+      threshold: 0
+    }
+  );
+
+  observer.observe(element);
+  return () => {
+    observer.disconnect();
+  };
+}, [loadProfiles, hasMore, loadingProfiles]);
+
 const profileCompletion = {
-  completionPercentage:
-      profileData?.profileCompletionPercentage || 0,
-
- message:
- (profileData?.currentStep || 0) >= 100
-   ? "Profile completed successfully"
-   : "Click here to complete your profile"
+  completionPercentage: profileData?.profileCompletionPercentage || 0,
+  message:
+    (profileData?.currentStep || 0) >= 100
+      ? "Profile completed successfully"
+      : "Click here to complete your profile"
 };
 
 
@@ -1181,34 +1018,33 @@ onDoubleClick={async (e) => {
   }}
 />
 
-{
-  profile.imageUrl ? (
-    <>
-      <img
-        src={
-          profile.imageUrl.startsWith("http")
-            ? profile.imageUrl
-            : `http://localhost:9090${profile.imageUrl}`
-        }
-        alt={profile.name || "Profile"}
-        className="w-full h-full object-cover"
-        onError={(e) => {
-          e.currentTarget.onerror = null;
-          e.currentTarget.src = profile1;
-        }}
-      />
+                  <img
+                    src={resolveImageUrl(profile.imageUrl || profile.profilePhotoUrl, profile1)}
+                    alt={profile.name || "Profile"}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = profile1;
+                    }}
+                  />
 
-      <div className="absolute bottom-3 left-3 bg-white/90 px-3 py-1 rounded-full text-sm font-medium shadow">
-        ❤️ {profile.matchPercentage || 0} Match
-      </div>
-    </>
-  ) : (
-    <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400">
-      No Image
-    </div>
-  )
-}
-</div>
+                  {(() => {
+                    const matchScoreVal = profile.matchPercentage ?? profile.matchScore;
+                    const numericScore = typeof matchScoreVal === "string"
+                      ? parseFloat(matchScoreVal.replace(/[^0-9.]/g, ""))
+                      : Number(matchScoreVal);
+                    const displayScore = (!isNaN(numericScore) && numericScore > 0) ? Math.round(numericScore) : null;
+
+                    if (displayScore) {
+                      return (
+                        <div className="absolute bottom-3 left-3 bg-white/90 px-3 py-1 rounded-full text-sm font-medium shadow">
+                          ❤️ {displayScore}% Match
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
+                </div>
                   <div className="p-4 flex flex-col flex-1">
                   <h3 className="text-lg font-semibold leading-tight">
                     {profile.name || "Unknown User"}
@@ -1289,46 +1125,21 @@ onDoubleClick={async (e) => {
 
                   </button>
 
-                 <button
-
-                 className="
-                 w-full
-                 bg-[#F8F9FA]
-                 border
-                 border-[#E9ECEF]
-                 text-[#343A40]
-                 py-2
-                 rounded-xl
-                 font-semibold
-                 shadow-sm
-                 hover:bg-white
-                 transition
-                 "
-
-                 onClick={(e) => {
-
-                   e.stopPropagation();
-
-                   if (
-                     !(profileData?.profileCompleted || (profileData?.profileCompletionPercentage >= 80))
-                   ) {
-
-                     setShowProfilePopup(true);
-
-                     return;
-                   }
-
-                   navigate(
-                     `/profile/${profile.profileId}`
-                   );
-
-                 }}
-
-                 >
-
-                 👤 View Profile
-
-                 </button>
+                  <button
+                    className="w-full bg-[#F8F9FA] border border-[#E9ECEF] text-[#343A40] py-2 rounded-xl font-semibold shadow-sm hover:bg-white transition text-center"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (
+                        !(profileData?.profileCompleted || (profileData?.profileCompletionPercentage >= 80))
+                      ) {
+                        setShowProfilePopup(true);
+                        return;
+                      }
+                      navigate(`/profile/${profile.profileId || profile.id || profile.userId}`);
+                    }}
+                  >
+                    👤 View Profile
+                  </button>
                    </div>
 <div className="mt-3 flex justify-center gap-3">
 

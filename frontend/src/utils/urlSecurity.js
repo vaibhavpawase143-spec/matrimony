@@ -103,3 +103,42 @@ export const sanitizeUrl = (url, fallback = "") => {
   }
   return fallback;
 };
+
+/**
+ * Resolves profile image URLs safely across environments
+ * Handles absolute URLs, relative URLs, uploads, data/blob URLs, and fallbacks.
+ *
+ * @param {string} image - Image path or URL
+ * @param {string} fallback - Fallback image asset
+ * @returns {string} Fully qualified or safe relative image URL
+ */
+export const resolveImageUrl = (image, fallback = "") => {
+  if (!image || typeof image !== "string") return fallback;
+  const trimmed = image.trim();
+  if (!trimmed || trimmed === "null" || trimmed === "undefined") return fallback;
+
+  if (
+    trimmed.startsWith("http://") ||
+    trimmed.startsWith("https://") ||
+    trimmed.startsWith("blob:") ||
+    trimmed.startsWith("data:")
+  ) {
+    return trimmed;
+  }
+
+  const backendUrl = (
+    import.meta.env.VITE_BACKEND_URL ||
+    import.meta.env.VITE_API_BASE_URL ||
+    ""
+  ).replace(/\/+$/, "");
+
+  if (trimmed.startsWith("/")) {
+    return backendUrl ? `${backendUrl}${trimmed}` : trimmed;
+  }
+
+  if (trimmed.startsWith("uploads/")) {
+    return backendUrl ? `${backendUrl}/${trimmed}` : `/${trimmed}`;
+  }
+
+  return backendUrl ? `${backendUrl}/uploads/${trimmed}` : `/uploads/${trimmed}`;
+};

@@ -271,31 +271,40 @@ public class ProfileServiceImpl implements ProfileService {
 
         Profile profile = repository
                 .findByProfileIdWithRelations(id)
+                .or(() -> repository.findByUserIdWithDetails(id))
                 .orElseThrow(() ->
                         new RuntimeException("Profile not found"));
         // ================= SECURITY =================
-
         User profileUser = profile.getUser();
 
-        if (Boolean.TRUE.equals(profileUser.getIsDeleted())
-                || !Boolean.TRUE.equals(profileUser.getIsActive())
-                || Boolean.TRUE.equals(profileUser.getIsBlocked())) {
+        if (profileUser != null) {
+            if (Boolean.TRUE.equals(profileUser.getIsDeleted())
+                    || Boolean.FALSE.equals(profileUser.getIsActive())
+                    || Boolean.TRUE.equals(profileUser.getIsBlocked())) {
 
-            throw new RuntimeException("Profile not found");
+                throw new RuntimeException("Profile not found");
+            }
         }
 
         ProfileResponseDTO dto = mapToDTO(profile);
 
-        User currentUser = getCurrentUser();
+        try {
+            User currentUser = getCurrentUser();
+            if (currentUser != null) {
+                Profile currentProfile = repository
+                        .findByUserIdWithDetails(currentUser.getId())
+                        .orElse(null);
 
-        Profile currentProfile = repository
-                .findByUserIdWithDetails(currentUser.getId())
-                .orElse(null);
+                // Hide contact details for non-premium users
+                if (currentProfile != null
+                        && !subscriptionService.hasActiveSubscription(currentUser.getId())) {
 
-        // Hide contact details for non-premium users
-        if (currentProfile != null
-                && !subscriptionService.hasActiveSubscription(currentUser.getId())) {
-
+                    dto.setPhone(null);
+                    dto.setEmail(null);
+                }
+            }
+        } catch (Exception ignored) {
+            // Unauthenticated view hides contact details
             dto.setPhone(null);
             dto.setEmail(null);
         }

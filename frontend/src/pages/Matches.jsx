@@ -7,6 +7,16 @@ import { useLanguage } from "@/context/LanguageContext";
 import { useToast } from "@/components/Toast";
 import { matchAPI } from "@/services/api";
 import profile1 from "@/assets/profile1.jpg";
+import { resolveImageUrl } from "@/utils/urlSecurity";
+
+const parseScore = (m) => {
+  const raw = m?.matchScore ?? m?.matchPercentage ?? 0;
+  if (typeof raw === "string") {
+    const parsed = parseFloat(raw.replace(/[^0-9.]/g, ""));
+    return isNaN(parsed) ? 0 : parsed;
+  }
+  return Number(raw) || 0;
+};
 
 const Matches = () => {
   const { t } = useLanguage();
@@ -35,7 +45,8 @@ const Matches = () => {
         }
 
         const currentUser = JSON.parse(
-          localStorage.getItem("user")
+          sessionStorage.getItem("user") ||
+          localStorage.getItem("user") || "{}"
         );
 
         const userId = Number(
@@ -53,8 +64,7 @@ const Matches = () => {
           pageNumber
         );
 
-        // Backend ला existing call
-        // 20 candidates per page
+        // Backend call for top matches
         const response = await matchAPI.getTopMatches(
           userId,
           pageNumber,
@@ -75,15 +85,14 @@ const Matches = () => {
           matchList.length
         );
 
-        // ONLY 75%+ ON FRONTEND
-        const filteredMatches = matchList.filter(
-          (match) =>
-            Number(match.matchScore) >= 75
+        // Top matches from backend (sorted by highest compatibility)
+        const validMatches = matchList.filter(
+          (match) => match && (match.userId || match.profileId || match.id)
         );
 
         console.log(
-          "75%+ MATCHES:",
-          filteredMatches.length
+          "MATCHES LOADED:",
+          validMatches.length
         );
 
         if (append) {
@@ -99,7 +108,7 @@ const Matches = () => {
             );
 
             const newMatches =
-              filteredMatches.filter(
+              validMatches.filter(
                 (match) =>
                   !existingIds.has(
                     match.userId ||
@@ -114,7 +123,7 @@ const Matches = () => {
             ];
           });
         } else {
-          setMatches(filteredMatches);
+          setMatches(validMatches);
         }
 
         /*
@@ -350,32 +359,17 @@ const Matches = () => {
                     <div className="h-40 overflow-hidden relative">
 
                       <img
-                        src={
-                          m.profilePhotoUrl ||
-                          m.imageUrl ||
-                          profile1
-                        }
-
-                        alt={
-                          m.fullName ||
-                          m.name
-                        }
-
+                        src={resolveImageUrl(m.profilePhotoUrl || m.imageUrl, profile1)}
+                        alt={m.fullName || m.name || "Match Profile"}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-
                         onError={(e) => {
+                          e.target.onerror = null;
                           e.target.src = profile1;
                         }}
                       />
 
-                      <div className="absolute top-3 right-3 bg-emerald-badge text-primary-foreground text-xs font-bold px-2.5 py-1 rounded-full">
-
-                        {Math.round(
-                          Number(
-                            m.matchScore
-                          )
-                        )}% Match
-
+                      <div className="absolute top-3 right-3 bg-emerald-badge text-primary-foreground text-xs font-bold px-2.5 py-1 rounded-full shadow">
+                        ❤️ {Math.round(parseScore(m))}% Match
                       </div>
 
                     </div>
@@ -414,25 +408,24 @@ const Matches = () => {
                         <Link
                           to={`/profile/${
                             m.profileId ||
-                            m.id
+                            m.id ||
+                            m.userId
                           }`}
-
-                          className="flex-1 flex items-center justify-center gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold py-1.5 rounded-lg transition-colors text-center"
+                          className="flex-1 flex items-center justify-center gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold py-2 rounded-lg transition-colors text-center"
                         >
-                          View Profile
+                          👤 View Profile
                         </Link>
 
 
                         <button
                           onClick={() =>
                             navigate(
-                              `/match-details/${m.userId}`
+                              `/match-details/${m.userId || m.profileId || m.id}`
                             )
                           }
-
-                          className="flex-1 flex items-center justify-center gap-1.5 bg-accent/10 text-accent text-xs font-semibold py-1.5 rounded-lg hover:bg-accent/20 transition-colors"
+                          className="flex-1 flex items-center justify-center gap-1.5 bg-pink-50 border border-pink-200 text-pink-700 text-xs font-semibold py-2 rounded-lg hover:bg-pink-100 transition-colors text-center"
                         >
-                          View Match Details
+                          ⚡ Match Details
                         </button>
 
                       </div>

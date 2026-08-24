@@ -34,17 +34,26 @@ import {
   subscriptionAPI
 } from "@/services/api";
 import toast from "react-hot-toast";
+import profile1 from "@/assets/profile1.jpg";
+import { resolveImageUrl } from "@/utils/urlSecurity";
 
-const InfoRow = ({ label, value }) => (
-  <div className="flex justify-between items-center py-3 border-b border-border/60 last:border-0 gap-4 transition-colors">
-    <span className="text-sm font-medium text-muted-foreground shrink-0">
-      {label}
-    </span>
-    <span className="text-sm font-semibold text-foreground text-right break-words">
-      {value || "-"}
-    </span>
-  </div>
-);
+const InfoRow = ({ label, value }) => {
+  const displayValue =
+    value !== null && value !== undefined && value !== ""
+      ? String(value)
+      : "Not specified";
+
+  return (
+    <div className="flex justify-between items-center py-3 border-b border-border/60 last:border-0 gap-4 transition-colors">
+      <span className="text-sm font-medium text-muted-foreground shrink-0">
+        {label}
+      </span>
+      <span className="text-sm font-semibold text-foreground text-right break-words">
+        {displayValue}
+      </span>
+    </div>
+  );
+};
 
 const AccordionSection = ({
   title,
@@ -154,51 +163,95 @@ const ProfileDetails = () => {
       try {
         const data = await profileAPI.getProfileById(id);
 
+        if (!data) {
+          setProfileNotFound(true);
+          return;
+        }
+
         console.log("========== VIEW PROFILE ==========");
         console.log("PROFILE ID =", id);
         console.log("PROFILE RESPONSE =", data);
         console.log("==================================");
 
-        const currentUser = JSON.parse(sessionStorage.getItem("user") || localStorage.getItem("user") || "{}");
-        const currentUserId = Number(
-          currentUser?.userId || currentUser?.id || currentUser?.profile?.userId
-        );
-
-        const myProfile = await profileAPI.getProfile();
-        setIsPremiumUser(Boolean(myProfile.isPremium));
-
-        const blockedUsers = await blockAPI.getMyBlockedUsers(currentUserId);
-        const blockedIds = blockedUsers.map((user) => user.blockedId);
-
-        if (blockedIds.includes(data.userId)) {
-          setBlockedProfile(true);
-          return;
-        }
-
-        const galleryResponse = await photoAPI.getUserPhotos(data.userId);
-        setGalleryPhotos(galleryResponse.photos || []);
-
-        if (currentUser?.profile?.userId !== data.userId) {
-          await profileVisitorAPI.saveVisit(data.userId);
-          window.dispatchEvent(new Event("dashboardUpdated"));
-        }
-
-        const sentInterests = await interestAPI.getSentInterests(currentUserId);
-        const acceptedInterest = sentInterests.find(
-          (item) =>
-            Number(item.receiverId) === Number(data.userId) &&
-            item.status === "ACCEPTED"
-        );
-
-        setCanViewContact(!!acceptedInterest);
-        const alreadySent = sentInterests.some(
-          (item) => Number(item.receiverId) === Number(data.userId)
-        );
-
-        setInterestSent(alreadySent);
         setProfile(data);
+
+        const targetUserId = data.userId || data.id;
+
+        // Perform secondary enrichment tasks safely without blocking profile display
+        try {
+          const currentUserStr = sessionStorage.getItem("user") || localStorage.getItem("user") || "{}";
+          const currentUser = JSON.parse(currentUserStr);
+          const currentUserId = Number(
+            currentUser?.userId || currentUser?.id || currentUser?.profile?.userId
+          );
+
+          // 1. My profile check for premium
+          try {
+            const myProfile = await profileAPI.getProfile();
+            setIsPremiumUser(Boolean(myProfile?.isPremium));
+          } catch (e) {
+            console.warn("My profile load error in ProfileDetails:", e);
+          }
+
+          // 2. Blocked users check
+          if (currentUserId && targetUserId) {
+            try {
+              const blockedUsers = await blockAPI.getMyBlockedUsers(currentUserId);
+              const blockedList = Array.isArray(blockedUsers) ? blockedUsers : [];
+              const blockedIds = blockedList.map((u) => u.blockedId);
+              if (blockedIds.includes(targetUserId)) {
+                setBlockedProfile(true);
+                return;
+              }
+            } catch (e) {
+              console.warn("Blocked check error:", e);
+            }
+          }
+
+          // 3. User gallery photos
+          if (targetUserId) {
+            try {
+              const galleryResponse = await photoAPI.getUserPhotos(targetUserId);
+              setGalleryPhotos(galleryResponse?.photos || []);
+            } catch (e) {
+              console.warn("Photos load error:", e);
+            }
+          }
+
+          // 4. Record profile visit
+          if (currentUserId && targetUserId && currentUserId !== targetUserId) {
+            try {
+              await profileVisitorAPI.saveVisit(targetUserId);
+              window.dispatchEvent(new Event("dashboardUpdated"));
+            } catch (e) {
+              console.warn("Visitor record error:", e);
+            }
+          }
+
+          // 5. Sent interests status
+          if (currentUserId && targetUserId) {
+            try {
+              const sentInterests = await interestAPI.getSentInterests(currentUserId);
+              const sentList = Array.isArray(sentInterests) ? sentInterests : [];
+              const acceptedInterest = sentList.find(
+                (item) =>
+                  Number(item.receiverId) === Number(targetUserId) &&
+                  item.status === "ACCEPTED"
+              );
+              setCanViewContact(!!acceptedInterest);
+              const alreadySent = sentList.some(
+                (item) => Number(item.receiverId) === Number(targetUserId)
+              );
+              setInterestSent(alreadySent);
+            } catch (e) {
+              console.warn("Sent interests check error:", e);
+            }
+          }
+        } catch (innerErr) {
+          console.warn("Secondary data load failed:", innerErr);
+        }
       } catch (err) {
-        console.log(err);
+        console.error("Profile load error:", err);
         setProfileNotFound(true);
       }
     };
@@ -327,9 +380,12 @@ const ProfileDetails = () => {
                   )}
 
                   <img
-                    src={profile.imageUrl || "/default-profile.png"}
-                    alt={`${profile.firstName} ${profile.lastName}`}
+                    src={resolveImageUrl(profile.imageUrl || profile.profilePhotoUrl, profile1)}
+                    alt={`${profile.firstName || "User"} ${profile.lastName || ""}`}
                     className="w-full aspect-[3/4] object-cover"
+                    onError={(e) => {
+                      e.target.src = profile1;
+                    }}
                   />
                 </div>
 
@@ -395,7 +451,7 @@ const ProfileDetails = () => {
                     {profile.firstName} {profile.lastName}
                     {profile.isPremium && (
                       <span className="bg-amber-100 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 text-xs px-2.5 py-1 rounded-full font-semibold inline-flex items-center gap-1">
-                        <Crown size={12} /> Premium
+                        <Crown size={12} /> PREMIUM
                       </span>
                     )}
                   </h1>
@@ -481,14 +537,24 @@ const ProfileDetails = () => {
                   isOpen={openSections.family}
                   onToggle={() => toggleSection("family")}
                 >
-                  <InfoRow label="Father Name" value={profile.fatherName} />
-                  <InfoRow label="Father Occupation" value={profile.fatherOccupation} />
-                  <InfoRow label="Mother Name" value={profile.motherName} />
-                  <InfoRow label="Mother Occupation" value={profile.motherOccupation} />
-                  <InfoRow label="Siblings" value={profile.siblingsCount} />
+                  <InfoRow label="Father's Name" value={profile.fatherName} />
+                  <InfoRow label="Father's Occupation" value={profile.fatherOccupation} />
+                  <InfoRow label="Mother's Name" value={profile.motherName} />
+                  <InfoRow label="Mother's Occupation" value={profile.motherOccupation} />
+                  <InfoRow label="Number of Siblings" value={profile.siblingsCount} />
+                  <InfoRow label="Number of Brothers" value={profile.brothersCount} />
+                  <InfoRow label="Number of Sisters" value={profile.sistersCount} />
                   <InfoRow label="Family Type" value={profile.familyTypeName} />
                   <InfoRow label="Family Status" value={profile.familyStatusName} />
                   <InfoRow label="Family Value" value={profile.familyValueName} />
+                  <InfoRow label="Aunt Details" value={profile.aunt} />
+                  <InfoRow label="Nanihal Details" value={profile.nanihalDetails} />
+                  <InfoRow label="Best Friend" value={profile.bestFriend} />
+                  <InfoRow label="Number of Uncles" value={profile.unclesCount} />
+                  {profile.uncle1Name && <InfoRow label="Uncle 1 Name" value={profile.uncle1Name} />}
+                  {profile.uncle2Name && <InfoRow label="Uncle 2 Name" value={profile.uncle2Name} />}
+                  {profile.uncle3Name && <InfoRow label="Uncle 3 Name" value={profile.uncle3Name} />}
+                  {profile.uncle4Name && <InfoRow label="Uncle 4 Name" value={profile.uncle4Name} />}
                 </AccordionSection>
 
                 {/* 4. LOCATION (Default: COLLAPSED) */}
@@ -594,12 +660,18 @@ const ProfileDetails = () => {
               {galleryPhotos.length > 0 && (
                 <img
                   src={
-                    galleryPhotos[currentPhotoIndex]?.photoUrl ||
-                    galleryPhotos[currentPhotoIndex]?.imageUrl ||
-                    galleryPhotos[currentPhotoIndex]?.url
+                    resolveImageUrl(
+                      galleryPhotos[currentPhotoIndex]?.photoUrl ||
+                      galleryPhotos[currentPhotoIndex]?.imageUrl ||
+                      galleryPhotos[currentPhotoIndex]?.url,
+                      profile1
+                    )
                   }
                   alt=""
                   className="max-h-[70vh] max-w-[70vw] object-contain rounded-xl"
+                  onError={(e) => {
+                    e.target.src = profile1;
+                  }}
                 />
               )}
             </div>

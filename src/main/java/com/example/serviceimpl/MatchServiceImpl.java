@@ -7,8 +7,6 @@ import com.example.repository.*;
 import com.example.service.MatchService;
 import com.example.service.NotificationService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -17,16 +15,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.Period;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
-import java.util.HashSet;
-import java.util.Set;
-import com.example.model.Profile;
 
 @Service
 @RequiredArgsConstructor
@@ -207,22 +198,28 @@ public class MatchServiceImpl implements MatchService {
     // ================= GET MATCHES =================
 
     @Override
+    @Transactional(readOnly = true)
     public MatchDetailsResponseDTO getMatchDetails(Long userId, Long partnerId) {
 
-
         User currentUser = userRepository.findByIdWithProfileAndPreference(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseGet(() -> userRepository.findById(userId)
+                        .orElseThrow(() -> new RuntimeException("User not found: " + userId)));
 
-        User partner = userRepository.findByIdWithProfile(partnerId)
-                .orElseThrow(() -> new RuntimeException("Partner not found"));
-
-        Profile partnerProfile = partner.getProfile();
-        PartnerPreference preference = currentUser.getPartnerPreference();
+        Profile partnerProfile = profileRepository.findByUserIdWithDetails(partnerId)
+                .or(() -> profileRepository.findByProfileIdWithRelations(partnerId))
+                .or(() -> profileRepository.findByUserId(partnerId))
+                .orElseGet(() -> {
+                    User partner = userRepository.findByIdWithProfile(partnerId)
+                            .orElseGet(() -> userRepository.findById(partnerId)
+                                    .orElseThrow(() -> new RuntimeException("Partner not found: " + partnerId)));
+                    return partner.getProfile();
+                });
 
         if (partnerProfile == null) {
-            throw new RuntimeException("Partner profile not found");
+            throw new RuntimeException("Partner profile not found for user: " + partnerId);
         }
 
+        PartnerPreference preference = currentUser.getPartnerPreference();
         if (preference == null) {
             preference = new PartnerPreference();
         }
@@ -230,15 +227,18 @@ public class MatchServiceImpl implements MatchService {
         List<FieldMatchDTO> fields = new ArrayList<>();
 
         // ================= AGE =================
-
-        int partnerAge =
-                LocalDate.now().getYear() - partnerProfile.getDateOfBirth().getYear();
+        Integer partnerAge = null;
+        if (partnerProfile.getDateOfBirth() != null) {
+            partnerAge = Period.between(partnerProfile.getDateOfBirth(), LocalDate.now()).getYears();
+        } else if (partnerProfile.getAge() != null) {
+            partnerAge = partnerProfile.getAge();
+        }
 
         fields.add(
                 FieldMatchDTO.builder()
                         .fieldName("Age")
                         .myValue(getAgeRange(preference))
-                        .partnerValue(String.valueOf(partnerAge))
+                        .partnerValue(partnerAge != null ? String.valueOf(partnerAge) : "-")
                         .matched(isAgeMatched(preference, partnerProfile))
                         .build()
         );
@@ -394,9 +394,23 @@ public class MatchServiceImpl implements MatchService {
 
 
 
+        Long partnerUserId = partnerProfile.getUser() != null ? partnerProfile.getUser().getId() : partnerId;
+        String partnerName = null;
+        if (partnerProfile.getUser() != null) {
+            partnerName = partnerProfile.getUser().getFullName();
+            if (partnerName == null || partnerName.isBlank()) {
+                String first = partnerProfile.getUser().getFirstName();
+                String last = partnerProfile.getUser().getLastName();
+                partnerName = (first != null ? first : "") + (last != null ? " " + last : "");
+            }
+        }
+        if (partnerName == null || partnerName.isBlank()) {
+            partnerName = "Partner";
+        }
+
         return MatchDetailsResponseDTO.builder()
-                .userId(partner.getId())
-                .fullName(partner.getFullName())
+                .userId(partnerUserId)
+                .fullName(partnerName)
                 .profilePhoto(partnerProfile.getImageUrl())
                 .matchPercentage(percentage)
                 .totalFields(totalFields)
@@ -918,16 +932,22 @@ public class MatchServiceImpl implements MatchService {
     }
     private boolean isAgeMatched(PartnerPreference pref, Profile profile) {
 
-        if (pref.getMinAge() == null ||
-                pref.getMaxAge() == null ||
-                profile.getDateOfBirth() == null) {
+        if (pref == null || pref.getMinAge() == null || pref.getMaxAge() == null || profile == null) {
             return false;
         }
 
-        int age = LocalDate.now().getYear() - profile.getDateOfBirth().getYear();
+        Integer age = null;
+        if (profile.getDateOfBirth() != null) {
+            age = Period.between(profile.getDateOfBirth(), LocalDate.now()).getYears();
+        } else if (profile.getAge() != null) {
+            age = profile.getAge();
+        }
 
-        return age >= pref.getMinAge() &&
-                age <= pref.getMaxAge();
+        if (age == null) {
+            return false;
+        }
+
+        return age >= pref.getMinAge() && age <= pref.getMaxAge();
     }
     private boolean isReligionMatched(PartnerPreference pref, Profile profile) {
 
