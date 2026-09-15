@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/context/LanguageContext.jsx";
+import { useProfileData } from "@/hooks/useProfileData";
+import { resolveImageUrl } from "@/utils/urlSecurity";
 import logo from "@/assets/logo.png";
 import { Bell } from "lucide-react";
 import { useRef } from "react";
@@ -15,6 +17,7 @@ import {
   disconnectNotifications
 } from "@/utils/notificationSocket";
 import { notificationAPI } from "@/services/api";
+
 const Navbar = () => {
     const formatTimeAgo = (date) => {
 
@@ -52,27 +55,12 @@ const notificationAudio = useRef(
 );
 const user =
   JSON.parse(
-    sessionStorage.getItem("user") || localStorage.getItem("user") || "{}"
+    localStorage.getItem("user")
   );
 
 const currentUserId =
-  user?.profile?.userId || user?.userId || user?.id;
-  const getNotificationMeta = (type, item) => {
-    if (
-      item?.eventType === "SUCCESS_STORY_PUBLISHED" ||
-      item?.title?.includes("Success Story") ||
-      item?.message?.includes("success story")
-    ) {
-      const storyId = item?.referenceId || item?.storyId;
-      return {
-        icon: "❤️",
-        label: "Success Story",
-        route: storyId ? `/success-stories/${storyId}` : "/success-stories",
-        accent: "border-pink-500",
-        iconBg: "bg-pink-100 dark:bg-pink-500/15"
-      };
-    }
-
+  user?.profile?.userId;
+  const getNotificationMeta = (type) => {
     const map = {
       REQUEST: {
         icon: "💌",
@@ -98,7 +86,7 @@ const currentUserId =
       MATCH: {
           icon: "🎯",
           label: "Compatible Match",
-          route: "/matches",
+          route: "/matches",   // ata temporary theva
           accent: "border-violet-500",
           iconBg: "bg-violet-100 dark:bg-violet-500/15"
       },
@@ -188,14 +176,7 @@ WARNING: {
         notificationAPI.unreadCount(currentUserId)
       ]);
 
-      const items = Array.isArray(list) ? list : [];
-      const userOnlyItems = items.filter((n) => {
-        const title = n?.title || "";
-        const message = n?.message || "";
-        return !title.includes("Broadcast") && !message.includes("Notification broadcast");
-      });
-
-      setNotifications(userOnlyItems);
+      setNotifications(Array.isArray(list) ? list : []);
       setUnreadCount(Number(count) || 0);
     } catch (err) {
       console.error("Notification refresh failed:", err);
@@ -216,14 +197,19 @@ WARNING: {
 
   const [livePopup, setLivePopup] = useState(null);
 
-const { isLoggedIn, userName, logout } = useAuth();
+const { isAuthenticated, user: authUser, logout } = useAuth();
+const isLoggedIn = isAuthenticated();
+const userName = authUser?.fullName || authUser?.name || "User";
 const navigate = useNavigate();
 const { language, setLanguage, t } = useLanguage();
+const { profileData } = useProfileData();
 
 useEffect(() => {
   refreshNotifications();
 }, [currentUserId]);
+
   const publicLinks = [
+    { label: t.navbar.home, to: "/" },
     { label: t.navbar.about, to: "/about" },
     { label: t.navbar.contact, to: "/contact" },
     { label: t.navbar.login, to: "/login" },
@@ -231,12 +217,8 @@ useEffect(() => {
   ];
 
   const privateLinks = [
-    { label: t.navbar.search, to: "/search", icon: <Search className="h-4 w-4" /> },
-    { label: t.navbar.matches, to: "/matches", icon: <Heart className="h-4 w-4" /> },
-    { label: t.navbar.kundli, to: "/kundli", icon: <Star className="h-4 w-4" /> },
-    { label: "Shortlists", to: "/shortlists", icon: <Star className="h-4 w-4" /> },
-    { label: t.navbar.messages, to: "/messages", icon: <MessageSquare className="h-4 w-4" /> },
-    { label: t.navbar.settings, to: "/settings", icon: <Settings className="h-4 w-4" /> },
+    { label: t.navbar.about, to: "/about" },
+    { label: t.navbar.contact, to: "/contact" },
   ];
 
   const links = isLoggedIn ? privateLinks : publicLinks;
@@ -274,11 +256,11 @@ useEffect(() => {
     try {
 
       await fetch(
-        "/api/chat/offline",
+        "https://localhost:9090/api/chat/offline",
         {
           method: "PUT",
           headers: {
-            Authorization: `Bearer ${sessionStorage.getItem("token") || localStorage.getItem("token")}`
+            Authorization: `Bearer ${localStorage.getItem("token")}`
           }
         }
       );
@@ -334,7 +316,7 @@ useEffect(() => {
 
   const user =
     JSON.parse(
-      sessionStorage.getItem("user") || localStorage.getItem("user") || "{}"
+      localStorage.getItem("user")
     );
 
   if (
@@ -366,7 +348,7 @@ useEffect(() => {
       return;
   }
 const loggedInUser = JSON.parse(
-  sessionStorage.getItem("user") || localStorage.getItem("user") || "{}"
+  localStorage.getItem("user") || "{}"
 );
 
 const loggedInUserId = Number(
@@ -529,20 +511,7 @@ useEffect(() => {
             <div
               onClick={() => {
                 setLivePopup(null);
-                const storyId = livePopup.referenceId || livePopup.storyId;
-                if (
-                  livePopup.eventType === "SUCCESS_STORY_PUBLISHED" ||
-                  livePopup.title?.includes("Success Story") ||
-                  livePopup.message?.includes("success story")
-                ) {
-                  if (storyId) {
-                    navigate(`/success-stories/${storyId}`);
-                  } else {
-                    navigate("/success-stories");
-                  }
-                } else {
-                  navigate(meta.route);
-                }
+                navigate(meta.route);
               }}
               className={`
                 fixed
@@ -614,483 +583,207 @@ useEffect(() => {
       style={{ background: "linear-gradient(135deg, #d4bfe9, #e5bdee, rgb(217, 193, 241))" }}
     >
       {/* Floating hearts */}
-      <div className="container mx-auto px-4 flex items-center justify-between h-16">
+      <div className="w-full px-4 flex items-center justify-between h-16">
         <Link to={isLoggedIn ? "/home" : "/"} className="flex items-center gap-2">
-          <img 
-            src={logo} 
-            alt="Gathbandhan Logo" 
-           className="h-22 w-60 object-contain"
+          <img
+            src={logo}
+            alt="Gathbandhan Logo"
+            className="h-22 w-60 object-contain"
           />
         </Link>
 
-       <div className="flex items-center gap-5">
+        {/* Desktop right-side controls — hidden on mobile */}
+        <div className="hidden md:flex items-center gap-3 ml-auto pr-2">
           {links.map((l) => (
             <motion.div key={l.label} whileHover={{ scale: 1.05 }} transition={{ duration: 0.2 }}>
-              <Link 
-                to={l.to} 
+              <Link
+                to={l.to}
                 className={`text-sm font-medium text-foreground hover:text-primary transition-all duration-300 ease-in-out flex items-center gap-1.5 relative group ${
-                  window.location.pathname === l.to ? 'text-primary' : ''
+                  window.location.pathname === l.to ? "text-primary" : ""
                 }`}
               >
                 {"icon" in l && l.icon}
                 {l.label}
                 <span className={`absolute bottom-0 left-0 w-full h-0.5 bg-primary transform scale-x-0 transition-transform duration-300 ease-in-out ${
-                  window.location.pathname === l.to ? 'scale-x-100' : 'group-hover:scale-x-100'
+                  window.location.pathname === l.to ? "scale-x-100" : "group-hover:scale-x-100"
                 }`} />
               </Link>
             </motion.div>
           ))}
 
-
-
-
-
-          <button 
+          {/* Language */}
+          <button
             onClick={cycleLanguage}
-            className="text-foreground hover:text-primary transition-all duration-300 ease-in-out p-2 rounded-lg hover:bg-muted/50 hover:scale-105 hover:shadow-md"
+            className="text-foreground hover:text-primary transition-all duration-300 ease-in-out p-2 rounded-lg hover:bg-muted/50 hover:scale-105"
             title={t.navbar?.languageLabel || "Language"}
           >
             <Globe className="h-4 w-4" />
           </button>
-<div
-className="relative"
-ref={notificationRef}
->
 
-        <button
-     onClick={() => {
-       setShowNotifications(prev => !prev);
-     }}
-         className="
-         relative
-         p-2
-         rounded-lg
-         text-foreground
-         hover:bg-slate-200
-         hover:text-primary
-         transition-all
-         duration-200
-         "
-
-        >
-
-          <Bell className="h-5 w-5" />
-
-          {unreadCount > 0 && (
-
-            <span
-              className="
-              absolute
-              -top-1
-              -right-1
-              bg-red-500
-              text-white
-              text-xs
-              rounded-full
-              w-5
-              h-5
-              flex
-              items-center
-              justify-center
-              "
+          {/* Notifications */}
+          <div className="relative" ref={notificationRef}>
+            <button
+              onClick={() => setShowNotifications(prev => !prev)}
+              className="relative p-2 rounded-lg text-foreground hover:bg-slate-200 hover:text-primary transition-all duration-200"
             >
-             {unreadCount > 99 ? "99+" : unreadCount}
-            </span>
+              <Bell className="h-5 w-5" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              )}
+            </button>
 
-          )}
+            {showNotifications && (
+              <div className="fixed top-20 right-2 left-2 md:left-auto md:right-5 w-[95vw] max-w-md md:w-96 max-h-[500px] overflow-y-auto bg-slate-900 rounded-xl shadow-2xl border border-slate-700 z-[99999]">
+                <div className="flex justify-between items-center p-4 border-b border-slate-700 bg-gradient-to-r from-slate-800 to-slate-900">
+                  <h3 className="font-bold text-white">Notifications</h3>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={async () => {
+                        if (!currentUserId) return;
+                        try {
+                          await notificationAPI.markAllRead(currentUserId);
+                          setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+                          setUnreadCount(0);
+                          toast.success("All notifications marked as read");
+                        } catch {
+                          toast.error("Failed");
+                        }
+                      }}
+                      className="text-xs text-pink-400 hover:text-pink-300"
+                    >
+                      Mark All Read
+                    </button>
+                    <button onClick={() => setShowNotifications(false)} className="text-white hover:text-red-400 text-lg">✕</button>
+                  </div>
+                </div>
 
-        </button>
-          {
-          showNotifications && (
-
-          <div
-
-
-      className="
-    fixed
-    top-20
-    right-2
-    left-2
-    md:left-auto
-    md:right-5
-    w-[95vw] max-w-md md:w-96
-      max-h-[500px]
-      overflow-y-auto
-      bg-slate-900
-      rounded-xl
-      shadow-2xl
-      border
-      border-slate-700
-      z-[99999]
-      "
-      >
-
-
-         <div
-         className="
-         flex
-         justify-between
-         items-center
-         p-4
-         border-b
-         border-slate-700
-         bg-gradient-to-r
-         from-slate-800
-         to-slate-900
-         "
-         >
-
-           <h3
-             className="
-             font-bold
-             text-white
-             "
-           >
-             Notifications
-           </h3>
-
-           <div className="flex items-center gap-3">
-
-             <button
-               onClick={async () => {
-
-                 if (!currentUserId) return;
-
-                 try {
-
-                   await notificationAPI.markAllRead(
-                     currentUserId
-                   );
-
-                   setNotifications(
-                     prev =>
-                       prev.map(
-                         n => ({
-                           ...n,
-                           read: true
-                         })
-                       )
-                   );
-
-                   setUnreadCount(0);
-
-                   toast.success(
-                     "All notifications marked as read"
-                   );
-
-                 } catch {
-
-                   toast.error(
-                     "Failed"
-                   );
-
-                 }
-
-               }}
-               className="
-               text-xs
-               text-pink-400
-               hover:text-pink-300
-               "
-             >
-               Mark All Read
-             </button>
-
-             <button
-               onClick={() =>
-                 setShowNotifications(false)
-               }
-               className="
-               text-white
-               hover:text-red-400
-               text-lg
-               "
-             >
-               ✕
-             </button>
-
-           </div>
-
-        </div>
-
-        {notifications.length === 0 ? (
-
-          <div
-            className="
-            p-6
-            text-center
-            text-slate-400
-            "
-          >
-            No notifications yet
+                {notifications.length === 0 ? (
+                  <div className="p-6 text-center text-slate-400">No notifications yet</div>
+                ) : (
+                  notifications.map((item) => (
+                    <div
+                      key={item.id}
+                      onClick={async () => {
+                        try {
+                          await notificationAPI.markRead(item.id);
+                          setNotifications(prev => prev.map(n => n.id === item.id ? { ...n, read: true } : n));
+                          const user = JSON.parse(localStorage.getItem("user"));
+                          const count = await notificationAPI.unreadCount(user.profile.userId);
+                          setUnreadCount(count);
+                          const meta = getNotificationMeta(item.type);
+                          setShowNotifications(false);
+                          if (item.type === "MATCH") {
+                            if (user?.isPremium) {
+                              navigate(`/profile/${item.matchedUserId}`);
+                            } else {
+                              setPremiumFeature("Compatible Match");
+                              setShowUpgradePopup(true);
+                            }
+                            return;
+                          }
+                          if (["ANNOUNCEMENT","SYSTEM","MAINTENANCE","WARNING","SUBSCRIPTION"].includes(item.type)) {
+                            navigate(`/notifications/${item.id}`);
+                            return;
+                          }
+                          navigate(meta.route);
+                        } catch(err) {
+                          console.log(err);
+                        }
+                      }}
+                      className={`mx-2 my-2 p-4 rounded-lg cursor-pointer transition-all duration-200 hover:scale-[1.01] ${item.read ? "bg-slate-950 opacity-60" : `bg-slate-800 border-l-4 ${getNotificationMeta(item.type).accent}`} hover:bg-slate-700`}
+                    >
+                      <div className="flex justify-between items-start gap-3">
+                        <div className="flex gap-3 flex-1">
+                          <div className={`h-10 w-10 shrink-0 rounded-full flex items-center justify-center text-lg ${getNotificationMeta(item.type).iconBg}`}>
+                            {getNotificationMeta(item.type).icon}
+                          </div>
+                          <div>
+                            <p className={`text-sm font-medium leading-relaxed ${item.read ? "text-slate-400" : "text-white"}`}>
+                              {item.message}
+                            </p>
+                            <p className="text-xs text-slate-500 mt-1">{formatTimeAgo(item.createdAt)}</p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            try {
+                              await notificationAPI.delete(item.id);
+                              setNotifications(prev => prev.filter(n => n.id !== item.id));
+                              if (!item.read) setUnreadCount(prev => Math.max(0, prev - 1));
+                              toast.success("Notification deleted");
+                            } catch (err) {
+                              console.log(err);
+                              toast.error("Delete failed");
+                            }
+                          }}
+                          className="text-slate-400 hover:text-red-500 transition px-2"
+                          title="Delete Notification"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
           </div>
 
-        ) : (
-
-          notifications.map(
-(item) => (
-
-<div
-key={item.id}
-onClick={async () => {
-
-
-  try {
-    await notificationAPI.markRead(item.id);
-
-    setNotifications(prev =>
-      prev.map(n =>
-        n.id === item.id
-          ? { ...n, read: true }
-          : n
-      )
-    );
-
-    const targetUserId = user?.profile?.userId || user?.userId || user?.id || currentUserId;
-    if (targetUserId) {
-      try {
-        const count = await notificationAPI.unreadCount(targetUserId);
-        setUnreadCount(Number(count) || 0);
-      } catch (cErr) {
-        console.error("Failed to update unread count:", cErr);
-      }
-    }
-
-    const meta = getNotificationMeta(item.type);
-    setShowNotifications(false);
-
-    // 🎯 MATCH notification
-    if (item.type === "MATCH") {
-      const matchId = item.matchedUserId || item.senderId;
-      if (user?.isPremium) {
-        if (matchId) {
-          navigate(`/profile/${matchId}`);
-        } else {
-          navigate("/matches");
-        }
-      } else {
-        setPremiumFeature("Compatible Match");
-        setShowUpgradePopup(true);
-      }
-      return;
-    }
-
-    // Success Story published check
-    const storyId = item.referenceId || item.storyId;
-    if (
-      item.eventType === "SUCCESS_STORY_PUBLISHED" ||
-      item.title?.includes("Success Story") ||
-      item.message?.includes("success story")
-    ) {
-      if (storyId) {
-        navigate(`/success-stories/${storyId}`);
-      } else {
-        navigate("/success-stories");
-      }
-      return;
-    }
-
-    // System/Announcement notifications
-    if (
-      item.type === "ANNOUNCEMENT" ||
-      item.type === "SYSTEM" ||
-      item.type === "MAINTENANCE" ||
-      item.type === "WARNING"
-    ) {
-      navigate(`/notifications/${item.id}`);
-      return;
-    }
-
-    if (item.type === "SUBSCRIPTION") {
-      navigate("/upgrade");
-      return;
-    }
-
-    // Default route navigation based on notification type (LIKE -> /likes, VIEW -> /profile-visitors, etc.)
-    navigate(meta.route);
-  } catch(err) {
-    console.error("Error processing notification click:", err);
-    setShowNotifications(false);
-    navigate("/home");
-  }
-
-}}
-
-className={`
-mx-2
-my-2
-p-4
-rounded-lg
-cursor-pointer
-transition-all
-duration-200
-hover:scale-[1.01]
-
-${item.read
-  ? "bg-slate-950 opacity-60"
-  : `bg-slate-800 border-l-4 ${getNotificationMeta(item.type, item).accent}`}
-
-hover:bg-slate-700
-`}
->
-<div className="flex justify-between items-start gap-3">
-
-  <div className="flex gap-3 flex-1">
-
-  <div
-    className={`h-10 w-10 shrink-0 rounded-full flex items-center justify-center text-lg ${getNotificationMeta(item.type, item).iconBg}`}
-  >
-    {getNotificationMeta(item.type, item).icon}
-  </div>
-
-    <div>
-
-      <p
-        className={`
-        text-sm
-        font-medium
-        leading-relaxed
-        ${
-          item.read
-            ? "text-slate-400"
-            : "text-white"
-        }
-        `}
-      >
-        {item.message}
-      </p>
-
-      <p
-        className="
-        text-xs
-        text-slate-500
-        mt-1
-        "
-      >
-        {formatTimeAgo(item.createdAt)}
-      </p>
-
-    </div>
-
-  </div>
-
-  <button
-
-    onClick={async (e) => {
-
-      e.stopPropagation();
-
-      try {
-
-        await notificationAPI.delete(
-          item.id
-        );
-
-        setNotifications(
-          prev =>
-            prev.filter(
-              n => n.id !== item.id
-            )
-        );
-
-        if (!item.read) {
-
-          setUnreadCount(
-            prev =>
-              Math.max(
-                0,
-                prev - 1
-              )
-          );
-
-        }
-
-        toast.success(
-          "Notification deleted"
-        );
-
-      } catch (err) {
-
-        console.log(err);
-
-        toast.error(
-          "Delete failed"
-        );
-
-      }
-
-    }}
-
-    className="
-    text-slate-400
-    hover:text-red-500
-    transition
-    px-2
-    "
-
-    title="Delete Notification"
-
-  >
-
-    ✕
-
-  </button>
-
-</div>
-          </div>
-          )
-
-        )
-
-      )}
-
-      </div>
-
-          )
-
-          }
-
-          </div>
+          {/* Theme toggle */}
           <button
             onClick={toggleDarkMode}
-            className="text-foreground hover:text-primary transition-all duration-300 ease-in-out p-2 rounded-lg hover:bg-muted/50 hover:scale-105 hover:shadow-md"
+            className="text-foreground hover:text-primary transition-all duration-300 ease-in-out p-2 rounded-lg hover:bg-muted/50 hover:scale-105"
           >
             {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </button>
-          {isLoggedIn && (
-            <>
 
-              <motion.button
-                onClick={() => navigate("/upgrade")}
-                className="text-sm font-medium bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-lg transition-all duration-300 ease-in-out flex items-center gap-2 hover:scale-105"
-                whileHover={{ scale: 1.05 }}
-                transition={{ duration: 0.2 }}
-              >
-                <Crown className="h-4 w-4" />
-                {t.navbar.upgrade}
-              </motion.button>
-              <motion.button
-                onClick={handleLogout}
-                className="text-sm font-medium text-muted-foreground hover:text-destructive transition-all duration-300 ease-in-out flex items-center gap-1.5 hover:scale-105 hover:shadow-md"
-                whileHover={{ scale: 1.05 }}
-                transition={{ duration: 0.2 }}
-              >
-                <LogOut className="h-4 w-4" />
-                {t.navbar.logout}
-              </motion.button>
+          {/* Profile Avatar — RIGHTMOST control */}
+          {isLoggedIn && (() => {
+            const userObj = authUser || {};
+            const avatarUrl = profileData?.imageUrl || profileData?.profilePhotoUrl || userObj?.profile?.imageUrl || userObj?.profile?.profilePhotoUrl || userObj?.imageUrl || userObj?.profilePhotoUrl;
+            const initials = (profileData?.firstName && profileData?.lastName)
+              ? `${profileData.firstName[0]}${profileData.lastName[0]}`
+              : (userObj?.profile?.firstName && userObj?.profile?.lastName)
+                ? `${userObj.profile.firstName[0]}${userObj.profile.lastName[0]}`
+                : (profileData?.fullName || userObj?.fullName || userName || "U").charAt(0).toUpperCase();
+            return (
               <motion.button
                 onClick={() => navigate("/account")}
-                className="h-8 w-8 rounded-full bg-primary/20 hover:bg-primary/30 flex items-center justify-center text-primary font-bold text-sm cursor-pointer transition-all duration-300"
-                whileHover={{ scale: 1.1 }}
-                transition={{ duration: 0.2 }}
+                className="h-9 w-9 rounded-full overflow-hidden border-2 border-primary/30 hover:border-primary transition-colors cursor-pointer flex items-center justify-center flex-shrink-0"
                 title={t.navbar.account}
+                whileHover={{ scale: 1.08 }}
+                transition={{ duration: 0.15 }}
               >
-                {userName.charAt(0).toUpperCase()}
+                {avatarUrl ? (
+                  <img
+                    src={resolveImageUrl(avatarUrl, "")}
+                    alt="Profile"
+                    className="h-full w-full object-cover"
+                    onError={(e) => {
+                      e.target.style.display = "none";
+                      if (e.target.parentElement) {
+                        const el = e.target.parentElement.querySelector(".profile-initials");
+                        if (el) el.style.display = "flex";
+                      }
+                    }}
+                  />
+                ) : null}
+                <span
+                  className="profile-initials w-full h-full bg-primary/20 text-primary font-bold text-sm"
+                  style={{ display: avatarUrl ? "none" : "flex", alignItems: "center", justifyContent: "center" }}
+                >
+                  {initials}
+                </span>
               </motion.button>
-            </>
-          )}
+            );
+          })()}
         </div>
-               <motion.button
+
+        {/* Mobile hamburger button */}
+        <motion.button
           className="md:hidden text-foreground transition-all duration-300 ease-in-out hover:scale-110"
           onClick={() => setMobileOpen(!mobileOpen)}
           whileHover={{ scale: 1.1 }}
@@ -1101,7 +794,7 @@ hover:bg-slate-700
       </div>
 
       {mobileOpen && (
-        <motion.div
+        <motion.div 
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: "auto" }}
           exit={{ opacity: 0, height: 0 }}
@@ -1110,10 +803,10 @@ hover:bg-slate-700
         >
           {links.map((l) => (
             <motion.div key={l.label} whileHover={{ x: 5 }} transition={{ duration: 0.2 }}>
-              <Link
-                key={l.label}
-                to={l.to}
-                onClick={() => setMobileOpen(false)}
+              <Link 
+                key={l.label} 
+                to={l.to} 
+                onClick={() => setMobileOpen(false)} 
                 className="block text-sm font-medium text-foreground hover:text-primary py-2 transition-all duration-300 ease-in-out"
               >
                 {l.label}
@@ -1122,7 +815,7 @@ hover:bg-slate-700
           ))}
           {isLoggedIn && (
             <>
-              <motion.button
+              <motion.button 
                 onClick={() => { navigate("/upgrade"); setMobileOpen(false); }}
                 className="block text-sm font-medium bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-lg transition-all duration-300 ease-in-out hover:scale-105"
                 whileHover={{ x: 5 }}
@@ -1131,8 +824,8 @@ hover:bg-slate-700
                 <Crown className="h-4 w-4 inline mr-2" />
                 {t.navbar.upgrade}
               </motion.button>
-              <motion.button
-                onClick={() => { handleLogout(); setMobileOpen(false); }}
+              <motion.button 
+                onClick={() => { handleLogout(); setMobileOpen(false); }} 
                 className="block text-sm font-medium text-destructive py-2 transition-all duration-300 ease-in-out hover:scale-105"
                 whileHover={{ x: 5 }}
                 transition={{ duration: 0.2 }}
@@ -1142,7 +835,7 @@ hover:bg-slate-700
             </>
           )}
           <div className="border-t border-border pt-3 flex justify-center">
-            <button
+            <button 
               onClick={cycleLanguage}
               className="text-foreground hover:text-primary transition-all duration-300 ease-in-out p-2 rounded-lg hover:bg-muted/50 hover:scale-105 hover:shadow-md"
               title={t.navbar?.languageLabel || "Language"}

@@ -304,18 +304,30 @@ const loadProfiles = useCallback(
         setHasMore(true);
       }
 
-      setProfiles((prev) => {
-        if (!append) {
-          return filteredProfiles;
-        }
+        // Compute numeric match score (handles string/number)
+        const getScore = (p) => {
+          const raw = p?.matchPercentage ?? p?.matchScore ?? 0;
+          if (typeof raw === "string") {
+            const parsed = parseFloat(raw.replace(/[^0-9.]/g, ""));
+            return isNaN(parsed) ? 0 : parsed;
+          }
+          return Number(raw) || 0;
+        };
+        // Sort profiles by match percentage descending
+        const sortedProfiles = [...filteredProfiles].sort((a, b) => getScore(b) - getScore(a));
 
-        const existingIds = new Set(prev.map((profile) => profile.userId));
-        const uniqueProfiles = filteredProfiles.filter(
-          (profile) => !existingIds.has(profile.userId)
-        );
+        setProfiles((prev) => {
+          if (!append) {
+            return sortedProfiles;
+          }
 
-        return [...prev, ...uniqueProfiles];
-      });
+          const existingIds = new Set(prev.map((profile) => profile.userId));
+          const uniqueProfiles = sortedProfiles.filter(
+            (profile) => !existingIds.has(profile.userId)
+          );
+
+          return [...prev, ...uniqueProfiles];
+        });
     } catch (error) {
       console.error("Failed to load profiles:", error);
       if (!append) {
@@ -600,241 +612,8 @@ return (
 
 )}
 
-    <div className="h-screen bg-muted/30 flex overflow-hidden">
-      {/* Sidebar */}
-      <aside
-          className={`
-              hidden
-              md:flex
-              flex-col
-              bg-card
-              border-r
-              border-border
-              h-full
-              shrink-0
-              transition-all
-              duration-300
-              ${isSidebarOpen ? "w-64" : "w-20"}
-          `}
-      >
-        <div className="p-5 border-b border-border">
-          <Link to="/home" className="flex items-center gap-2">
-            <Heart className="h-6 w-6 text-primary fill-primary" />
-            {isSidebarOpen && <span className="text-xl font-display font-bold text-foreground">Gathbandhan</span>}
-          </Link>
-        </div>
-        <nav className="flex-1 p-4 space-y-1">
-          {[
-            { icon: <User className="h-4 w-4" />, label: "Dashboard", active: true, to: "/home" },
-            { icon: <Heart className="h-4 w-4" />, label: "Matches", to: "/matches" },
-            { icon: <Search className="h-4 w-4" />, label: "Search", to: "/search" },
-            { icon: <MessageSquare className="h-4 w-4" />, label: "Messages", to: "/messages" },
-            { icon: <Settings className="h-4 w-4" />, label: "Settings", to: "/settings" },
-            {/* { icon: <Star className="h-4 w-4" />, label: "Kundli", to: "/kundli" }, */}
-          ].map((item) => (
-            <Link
-              key={item.label}
-              to={
-                (profileData?.profileCompleted || (profileData?.profileCompletionPercentage >= 80))
-                  ? item.to
-                  : item.label === "Dashboard"
-                  ? "/home"
-                  : "#"
-              }
-             onClick={async (e) => {
-                 const isCompleted = Boolean(
-                   profileData?.profileCompleted ||
-                   (profileData?.profileCompletionPercentage >= 80)
-                 );
-                 // Profile completion check
-                 if (
-                     !isCompleted &&
-                     item.label !== "Dashboard" &&
-                     item.label !== "Settings"
-                 ) {
-                     e.preventDefault();
-                     setShowProfilePopup(true);
-                     return;
-                 }
+    <div className="flex-1 flex flex-col min-w-0 pb-16 md:pb-0">
 
-                 // Premium check for Messages & Matches
-                 if (
-                     item.label === "Messages" ||
-                     item.label === "Matches"
-                 ) {
-
-                     e.preventDefault();
-
-                     try {
-
-                         const subscription =
-                             await subscriptionAPI.getMySubscription();
-
-                         if (subscription?.isActive) {
-
-                             navigate(item.to);
-
-                         } else {
-
-                             setPremiumFeature(item.label);
-                             setShowUpgradePopup(true);
-
-                         }
-
-                     }catch (error) {
-
-                          setPremiumFeature(item.label);
-                          setShowUpgradePopup(true);
-
-                      }
-                     return;
-
-                 }
-
-             }}              className={`w-full flex items-center px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                isSidebarOpen ? 'gap-3' : 'justify-center'
-              } ${
-                item.active
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
-              }`}
-            >
-              {item.icon}
-              {isSidebarOpen && item.label}
-            </Link>
-          ))}
-        </nav>
-        <div className="p-4 border-t border-border">
-          <button onClick={handleLogout} className={`w-full flex items-center px-4 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors ${
-            isSidebarOpen ? 'gap-3' : 'justify-center'
-          }`}>
-            <LogOut className="h-4 w-4" />
-            {isSidebarOpen && 'Logout'}
-          </button>
-        </div>
-      </aside>
-
-      {/* Main content */}
-      <div
-          className="
-              flex-1
-              min-w-0
-              h-full
-              overflow-y-auto
-              overflow-x-hidden
-              flex
-              flex-col
-          "
-      >
-        <header className="sticky top-0 z-40 bg-card/95 backdrop-blur border-b border-border px-6 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="text-foreground hover:text-primary transition-colors"
-            >
-              <Menu className="h-5 w-5" />
-            </button>
-            <div>
-              <p className="text-muted-foreground text-sm">{t?.home?.header?.welcome}</p>
-              <h1 className="text-xl font-display font-bold text-foreground capitalize">
-                {profileData?.firstName && profileData?.lastName
-                  ? `${profileData.firstName} ${profileData.lastName}`
-                  : profileData?.fullName || userName || "User"}!
-              </h1>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-          {/* <ThemeToggle /> */}
-
-            <button
-              onClick={() => navigate("/account")}
-              className="h-9 w-9 rounded-full bg-accent/20 hover:bg-accent/30 flex items-center justify-center text-accent font-bold text-sm cursor-pointer transition-colors"
-              title="Account"
-            >
-              {
-              (profileData?.imageUrl || profileData?.profilePhotoUrl) ? (
-              <img
-                src={
-                  profileData.imageUrl ||
-                  profileData.profilePhotoUrl
-                }
-
-                alt="Profile"
-
-                className="
-                h-9
-                w-9
-                rounded-full
-                object-cover
-                "
-
-                onError={(e)=>{
-
-                  e.target.style.display =
-                  "none";
-
-                  e.target.parentElement
-                  .querySelector(
-                    ".profile-initials"
-                  )
-                  .style.display="flex";
-
-                }}
-
-              />
-
-              ) : null
-              }
-
-              <span
-
-              className="
-              profile-initials
-              flex
-              items-center
-              justify-center
-              "
-
-              style={{
-
-              display:
-              (profileData?.imageUrl ||
-              profileData?.profilePhotoUrl)
-
-              ? "none"
-
-              : "flex"
-
-              }}
-
-              >
-
-              {
-              profileData?.firstName &&
-              profileData?.lastName
-
-              ?
-
-              `${profileData.firstName[0]}${profileData.lastName[0]}`
-
-              :
-
-              (profileData?.fullName ||
-              userName ||
-              "U")
-
-              .charAt(0)
-
-              .toUpperCase()
-
-              }
-
-              </span>
-</button>
-
-</div>
-
-</header>
         {/* Hero banner */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -1037,8 +816,9 @@ onDoubleClick={async (e) => {
 
                     if (displayScore) {
                       return (
-                        <div className="absolute bottom-3 left-3 bg-white/90 px-3 py-1 rounded-full text-sm font-medium shadow">
-                          ❤️ {displayScore}% Match
+                        <div className="absolute top-3 left-3 bg-white dark:bg-slate-900 text-slate-900 dark:text-white px-2.5 py-1 rounded-full text-xs font-bold shadow-md border border-slate-200 dark:border-slate-700 z-10 flex items-center gap-1.5">
+                          <span>❤️</span>
+                          <span>{displayScore}% Match</span>
                         </div>
                       );
                     }
@@ -1460,7 +1240,7 @@ showLabel={false}
 
 
     </div>
-        </div>
+
 
         <ReportModal
           open={showReportModal}

@@ -123,7 +123,13 @@ const Matches = () => {
             ];
           });
         } else {
-          setMatches(validMatches);
+          const filteredSorted = validMatches
+          .filter((m) => parseScore(m) > 75)
+          .sort((a, b) => parseScore(b) - parseScore(a));
+        setMatches(filteredSorted);
+        if (filteredSorted.length === 0) {
+          setHasMore(false);
+        }
         }
 
         /*
@@ -278,6 +284,37 @@ const Matches = () => {
 
         ) : matches.length === 0 && !hasMore ? (
 
+            /* NO MATCHES ABOVE 75% */
+
+            <div className="text-center py-12">
+
+              <div className="text-muted-foreground mb-4">
+
+                <Heart className="h-12 w-12 mx-auto mb-4 opacity-50" />
+
+                <h3 className="text-lg font-semibold text-foreground mb-2">
+                  No matches above 75% yet.
+                </h3>
+
+                <p className="text-sm">
+                  We couldn't find any high-percentage matches for you yet.
+                </p>
+
+              </div>
+
+              <button
+                onClick={() =>
+                  window.location.href = "/settings"
+                }
+                className="mt-4 bg-primary text-primary-foreground px-6 py-2 rounded-lg hover:opacity-90 transition"
+              >
+                Complete Profile
+              </button>
+
+            </div>
+
+          ) : (
+
           /* NO MATCHES */
 
           <div className="text-center py-12">
@@ -368,8 +405,9 @@ const Matches = () => {
                         }}
                       />
 
-                      <div className="absolute top-3 right-3 bg-emerald-badge text-primary-foreground text-xs font-bold px-2.5 py-1 rounded-full shadow">
-                        ❤️ {Math.round(parseScore(m))}% Match
+                      <div className="absolute top-3 left-3 bg-white dark:bg-slate-900 text-slate-900 dark:text-white px-2.5 py-1 rounded-full text-xs font-bold shadow-md border border-slate-200 dark:border-slate-700 z-10 flex items-center gap-1.5">
+                        <span>❤️</span>
+                        <span>{Math.round(parseScore(m))}% Match</span>
                       </div>
 
                     </div>

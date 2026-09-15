@@ -4,6 +4,9 @@ import { useEffect, useState } from "react";
 import Footer from "./Footer";
 import { useLanguage } from "@/context/LanguageContext";
 import Navbar from "./Navbar";
+import DashboardSidebar from "./DashboardSidebar";
+import ErrorBoundary from "@/components/common/ErrorBoundary";
+
 const AuthenticatedLayout = ({ children }) => {
   const { t } = useLanguage();
   const { isAuthenticated } = useAuth();
@@ -64,16 +67,17 @@ console.log("CHECK PROFILE STARTED");
   }
 
 return (
-  <div className="min-h-screen bg-muted/30 flex flex-col">
-
+  <div className="h-screen bg-muted/30 flex flex-col overflow-hidden">
     <Navbar />
-
-    <div className="flex-1">
-      {children}
+    <div className="flex-1 flex overflow-hidden">
+      <DashboardSidebar />
+      <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden">
+        <ErrorBoundary>
+          {children}
+        </ErrorBoundary>
+        <Footer />
+      </main>
     </div>
-
-    <Footer />
-
   </div>
 );
 };

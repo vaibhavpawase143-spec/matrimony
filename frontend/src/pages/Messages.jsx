@@ -715,7 +715,14 @@ const loadConversations = async () => {
             return;
         }
 
-        // Existing logic
+        {selected ? (
+            // existing chat UI (already present)
+            <>{/* chat UI content */}</>
+        ) : (
+            <div className="flex-1 flex items-center justify-center">
+                <p className="text-muted-foreground">Select a conversation</p>
+            </div>
+        )}
         if (data.length > 0) {
 
             if (selected) {
