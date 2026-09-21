@@ -124,7 +124,6 @@ const Matches = () => {
           });
         } else {
           const filteredSorted = validMatches
-          .filter((m) => parseScore(m) > 75)
           .sort((a, b) => parseScore(b) - parseScore(a));
         setMatches(filteredSorted);
         if (filteredSorted.length === 0) {
@@ -138,8 +137,7 @@ const Matches = () => {
           Backend page मध्ये 20 पेक्षा कमी records आले
           म्हणजे पुढचे candidates नाहीत.
 
-          पण 20 candidates आले आणि त्यातून
-          0 profiles 75%+ असले तरी
+          पण 20 candidates आले तरी
           hasMore TRUE राहील.
         */
         if (matchList.length < 20) {
@@ -284,7 +282,7 @@ const Matches = () => {
 
         ) : matches.length === 0 && !hasMore ? (
 
-            /* NO MATCHES ABOVE 75% */
+            /* NO MATCHES FOUND */
 
             <div className="text-center py-12">
 
@@ -293,11 +291,11 @@ const Matches = () => {
                 <Heart className="h-12 w-12 mx-auto mb-4 opacity-50" />
 
                 <h3 className="text-lg font-semibold text-foreground mb-2">
-                  No matches above 75% yet.
+                  No matches found yet.
                 </h3>
 
                 <p className="text-sm">
-                  We couldn't find any high-percentage matches for you yet.
+                  We couldn't find any matches for you yet.
                 </p>
 
               </div>
@@ -310,38 +308,6 @@ const Matches = () => {
               >
                 Complete Profile
               </button>
-
-            </div>
-
-          ) : (
-
-          /* NO MATCHES */
-
-          <div className="text-center py-12">
-
-            <div className="text-muted-foreground mb-4">
-
-              <Heart className="h-12 w-12 mx-auto mb-4 opacity-50" />
-
-              <h3 className="text-lg font-semibold text-foreground mb-2">
-                No matches found
-              </h3>
-
-              <p className="text-sm">
-                We couldn't find any matches for you yet.
-                Complete your profile to get better matches!
-              </p>
-
-            </div>
-
-            <button
-              onClick={() =>
-                window.location.href = "/settings"
-              }
-              className="mt-4 bg-primary text-primary-foreground px-6 py-2 rounded-lg hover:opacity-90 transition"
-            >
-              Complete Profile
-            </button>
 
           </div>
 

@@ -125,13 +125,13 @@ const ProfileForm = ({
 
     // Validate file type
     if (!file.type.startsWith("image/")) {
-      onError && onError("Please select an image file");
+      onError && onError("Please select an image file (JPEG, PNG, or WEBP)");
       return;
     }
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      onError && onError("File size should be less than 5MB");
+    // Validate file size (max 1MB enforced by backend)
+    if (file.size > 1 * 1024 * 1024) {
+      onError && onError("File size must be less than 1MB (maximum allowed size is 1MB)");
       return;
     }
 
@@ -187,11 +187,11 @@ const ProfileForm = ({
     startLoading('Saving profile...');
 
     try {
-      // Remove File object before sending (can't serialize)
+      // Remove File object before sending JSON payload, pass file as second argument
       const dataToSave = { ...formData };
       delete dataToSave.profilePhoto;
       
-      await onSave && onSave(dataToSave);
+      await onSave && onSave(dataToSave, formData.profilePhoto);
     } catch (error) {
       onError && onError('Failed to save profile');
     } finally {
@@ -270,8 +270,9 @@ const ProfileForm = ({
           <label className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg text-sm font-medium cursor-pointer transition-colors inline-block">
             <Upload className="h-4 w-4" />
             {formData.profilePhotoUrl ? "Change Photo" : "Upload Photo"}
-            <input type="file" accept="image/*" onChange={handleProfilePhotoUpload} className="hidden" />
+            <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleProfilePhotoUpload} className="hidden" />
           </label>
+          <p className="text-[11px] text-muted-foreground mt-2">JPG, PNG or WEBP. Max size: 1MB.</p>
         </div>
       )}
 

@@ -1,14 +1,14 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { ChevronDown, Search } from "lucide-react";
 import MatrimonySelect from "./MatrimonySelect";
 import { useMatrimonyOptions } from "@/hooks/useMatrimonyOptions";
-import { useLoading } from "@/hooks/useLoading";
 import { useLanguage } from "@/context/LanguageContext";
 
 const SearchForm = () => {
+  const navigate = useNavigate();
   const { t } = useLanguage();
   const { getOptions, addCustomOption } = useMatrimonyOptions();
-  const { startLoading, stopLoading } = useLoading();
   const [searchData, setSearchData] = useState({
     lookingFor: "",
     age: "",
@@ -17,12 +17,37 @@ const SearchForm = () => {
     city: ""
   });
 
-  const handleSearch = async () => {
-    startLoading('Searching...');
-    // Simulate search
-    setTimeout(() => {
-      stopLoading();
-    }, 2000);
+  const handleSearch = () => {
+    const params = new URLSearchParams();
+    if (searchData.lookingFor) {
+      params.append('gender', searchData.lookingFor);
+    }
+    if (searchData.age) {
+      if (searchData.age === '18-25') {
+        params.append('min_age', '18');
+        params.append('max_age', '25');
+      } else if (searchData.age === '26-35') {
+        params.append('min_age', '26');
+        params.append('max_age', '35');
+      } else if (searchData.age === '36-45') {
+        params.append('min_age', '36');
+        params.append('max_age', '45');
+      } else if (searchData.age === '46+') {
+        params.append('min_age', '46');
+        params.append('max_age', '70');
+      }
+    }
+    if (searchData.religion) {
+      params.append('religion', searchData.religion);
+    }
+    if (searchData.caste) {
+      params.append('caste', searchData.caste);
+    }
+    if (searchData.city) {
+      params.append('city', searchData.city);
+    }
+    const query = params.toString();
+    navigate(query ? `/search?${query}` : '/search');
   };
 
   const handleFieldChange = (field, value) => {

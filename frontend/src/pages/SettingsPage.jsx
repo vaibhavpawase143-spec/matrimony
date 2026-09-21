@@ -133,6 +133,7 @@ const SettingsPage = () => {
   const navigate = useNavigate();
 
   const [profileSaving, setProfileSaving] = useState(false);
+  const [photoUploading, setPhotoUploading] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [notificationLoading, setNotificationLoading] = useState(false);
   const [blockedLoading, setBlockedLoading] = useState(false);
@@ -972,28 +973,78 @@ const SettingsPage = () => {
     });
   };
 
-  const handleProfilePhotoUpload = (e) => {
+  const handleProfilePhotoUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      error("Please select an image file");
+      error("Please select a valid image file (JPEG, PNG, or WEBP)");
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      error("File size should be less than 5MB");
+    // Backend strictly enforces 1MB limit (1048576 bytes)
+    if (file.size > 1 * 1024 * 1024) {
+      error("File size must be less than 1MB (maximum allowed size is 1MB)");
       return;
     }
 
     const previewUrl = URL.createObjectURL(file);
     objectUrlsToRevoke.current.add(previewUrl);
 
+    // Show preview immediately
     setFormData((prev) => ({
       ...prev,
-      profilePhoto: file,
+      profilePhoto: null,
       profilePhotoUrl: previewUrl,
     }));
+
+    // Upload immediately so profile photo does not depend on full 50-field form validation
+    setPhotoUploading(true);
+    try {
+      const uploadRes = await photoAPI.upload(file, "PROFILE");
+      if (uploadRes && uploadRes.photoUrl) {
+        const rawUrl = uploadRes.photoUrl;
+        const cacheBustedUrl = `${rawUrl}?v=${Date.now()}`;
+
+        setFormData((prev) => ({
+          ...prev,
+          profilePhoto: null,
+          profilePhotoUrl: cacheBustedUrl,
+        }));
+
+        if (savedProfileData) {
+          savedProfileData.imageUrl = cacheBustedUrl;
+        }
+
+        setGalleryPhotos((prev) => [
+          {
+            id: uploadRes.id,
+            preview: cacheBustedUrl,
+            photoUrl: cacheBustedUrl,
+            uploaded: true,
+            primaryPhoto: true,
+            isPrimary: true,
+            photoType: "PROFILE",
+          },
+          ...prev.map((p) => ({ ...p, primaryPhoto: false, isPrimary: false })),
+        ]);
+
+        success("Profile photo uploaded successfully!");
+      }
+    } catch (err) {
+      console.error("Failed to upload profile photo:", err);
+      const errMsg = err?.message || "Failed to upload profile photo";
+      error(errMsg.includes("1MB") ? "File size exceeds 1MB limit" : errMsg);
+      // Revert preview on failure
+      setFormData((prev) => ({
+        ...prev,
+        profilePhotoUrl: savedProfileData?.imageUrl || "",
+      }));
+    } finally {
+      setPhotoUploading(false);
+      // Reset input element so selecting the same file again triggers onChange
+      e.target.value = "";
+    }
   };
 
   const removeProfilePhoto = () => {
@@ -1039,11 +1090,22 @@ const SettingsPage = () => {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
 
+    for (const file of files) {
+      if (!file.type.startsWith("image/")) {
+        error(`File "${file.name}" is not an image. Only JPEG, PNG, and WEBP are supported.`);
+        return;
+      }
+      if (file.size > 1 * 1024 * 1024) {
+        error(`File "${file.name}" exceeds the 1MB limit. Please select files smaller than 1MB.`);
+        return;
+      }
+    }
+
     const currentCount = galleryPhotos.length;
-   if (currentCount + files.length > 4) {
-     error("Maximum 4 photos allowed. Please delete a photo first.");
-     return;
-   }
+    if (currentCount + files.length > 4) {
+      error("Maximum 4 photos allowed. Please delete a photo first.");
+      return;
+    }
 
     try {
       const photoFormData = new FormData();
@@ -1076,6 +1138,8 @@ const SettingsPage = () => {
     } catch (err) {
       console.error("Failed to upload gallery photos:", err);
       error("Failed to upload gallery photos");
+    } finally {
+      e.target.value = "";
     }
   };
 
@@ -1100,9 +1164,31 @@ const SettingsPage = () => {
   };
 
   const ensureSectionOpen = (sectionId) => {
-    setExpandedSections((prev) => ({
+    const sectionMap = {
+      personal: "personalDetails",
+      personalDetails: "personalDetails",
+      physical: "physicalDetails",
+      physicalDetails: "physicalDetails",
+      education: "educationCareer",
+      educationCareer: "educationCareer",
+      location: "locationDetails",
+      locationDetails: "locationDetails",
+      lifestyle: "lifestyle",
+      family: "familyDetails",
+      familyDetails: "familyDetails",
+      about: "aboutMe",
+      aboutMe: "aboutMe",
+      partner: "partnerPreferences",
+      partnerPreferences: "partnerPreferences",
+      photo: "profilePhoto",
+      profilePhoto: "profilePhoto",
+      gallery: "photoGallery",
+      photoGallery: "photoGallery",
+    };
+    const key = sectionMap[sectionId] || sectionId;
+    setOpenSections((prev) => ({
       ...prev,
-      [sectionId]: true,
+      [key]: true,
     }));
   };
 
@@ -1681,18 +1767,24 @@ const SettingsPage = () => {
                           : "U"}
                       </div>
                     )}
-                    <label className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg text-sm font-medium cursor-pointer transition-colors inline-block">
-                      <Upload className="h-4 w-4" />
-                      {formData.profilePhotoUrl
+                    <label className={`flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg text-sm font-medium cursor-pointer transition-colors inline-block ${photoUploading ? "opacity-75 pointer-events-none" : ""}`}>
+                      <Upload className={`h-4 w-4 ${photoUploading ? "animate-spin" : ""}`} />
+                      {photoUploading
+                        ? "Uploading photo..."
+                        : formData.profilePhotoUrl
                         ? "Change Photo"
                         : "Upload Photo"}
                       <input
                         type="file"
-                        accept="image/*"
+                        accept="image/jpeg,image/png,image/webp"
                         onChange={handleProfilePhotoUpload}
+                        disabled={photoUploading}
                         className="hidden"
                       />
                     </label>
+                    <p className="text-[11px] text-muted-foreground mt-2">
+                      JPG, PNG or WEBP. Max size: 1MB.
+                    </p>
                   </div>
 
                   {/* Profile Type */}

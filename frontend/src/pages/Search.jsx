@@ -1,10 +1,11 @@
 import { Search as SearchIcon, ChevronDown, SlidersHorizontal } from "lucide-react";
-import { Link } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 
 import { useLoading } from "@/hooks/useLoading";
 import { useToast } from "@/components/Toast";
-import { searchAPI, masterDataAPI,  blockAPI } from "@/services/api";
+import { useAuth } from "@/hooks/useAuth";
+import { searchAPI, masterDataAPI, blockAPI, interestAPI } from "@/services/api";
 import { useLanguage } from "@/context/LanguageContext.jsx";
 import { isSafeUrl } from "@/utils/urlSecurity";
 import { useMatrimonyOptions } from "@/hooks/useMatrimonyOptions";
@@ -96,6 +97,9 @@ const SelectField = ({
   );
 };
 const SearchPage = () => {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { user, isAuthenticated } = useAuth();
   const { startLoading, stopLoading } = useLoading();
   const { success, error } = useToast();
   const { getOptions } = useMatrimonyOptions();
@@ -111,11 +115,14 @@ const SearchPage = () => {
   const [pageSize, setPageSize] = useState(20);
   const [totalPages, setTotalPages] = useState(1);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [sentInterests, setSentInterests] = useState(new Set());
+  const [sendingInterests, setSendingInterests] = useState(new Set());
   
   // State for search filters
   const [filters, setFilters] = useState({
     min_age: '',
     max_age: '',
+    gender: '',
     religion_id: '',
     caste_id: '',
     city_id: '',
@@ -127,7 +134,8 @@ const SearchPage = () => {
     marital_status_id: '',
     min_weight: '',
     max_weight: '',
-    sort: 'relevance'
+    sort: 'relevance',
+    search: ''
   });
 
   // State for master data dropdowns
@@ -142,6 +150,70 @@ const SearchPage = () => {
     weights: [],
     maritalStatuses: []
   });
+
+  useEffect(() => {
+    const fetchSentInterests = async () => {
+      if (user?.id) {
+        try {
+          const sent = await interestAPI.getSentInterests(user.id);
+          if (Array.isArray(sent)) {
+            const receiverIds = new Set(
+              sent.map(item => item.receiverId || item.receiver?.id).filter(Boolean)
+            );
+            setSentInterests(receiverIds);
+          }
+        } catch (err) {
+          console.error("Failed to load sent interests:", err);
+        }
+      }
+    };
+    fetchSentInterests();
+  }, [user?.id]);
+
+  const handleSendInterest = async (e, profile) => {
+    e.stopPropagation();
+    e.preventDefault();
+
+    if (!isAuthenticated() || !user?.id) {
+      error("Please login to send interest.");
+      navigate("/login");
+      return;
+    }
+
+    const targetUserId = Number(profile.userId);
+    if (!targetUserId) {
+      error("Cannot identify recipient user.");
+      return;
+    }
+
+    if (Number(user.id) === targetUserId) {
+      error("You cannot send interest to yourself.");
+      return;
+    }
+
+    setSendingInterests(prev => new Set(prev).add(targetUserId));
+
+    try {
+      await interestAPI.sendInterest(Number(user.id), targetUserId);
+      setSentInterests(prev => new Set(prev).add(targetUserId));
+      window.dispatchEvent(new Event("dashboardUpdated"));
+      window.dispatchEvent(new Event("interestUpdated"));
+      success("Interest Sent Successfully ❤️");
+    } catch (err) {
+      console.error("Failed to send interest:", err);
+      if (err?.message?.includes("Daily limit reached")) {
+        error("Daily limit reached. Upgrade to Premium for unlimited interests.");
+      } else {
+        error(err?.message || "Failed to send interest. Please try again.");
+      }
+    } finally {
+      setSendingInterests(prev => {
+        const next = new Set(prev);
+        next.delete(targetUserId);
+        return next;
+      });
+    }
+  };
 
 useEffect(() => {
 
@@ -218,35 +290,80 @@ useEffect(() => {
   console.log("MASTER DATA =", masterData);
 }, [masterData]);
 
-  // Load master data on component mount
-  const loadMasterData = async () => {
-    try {
-      const bulkData = await masterDataAPI.getAllMasterData();
-      setMasterData({
-        religions: Array.isArray(bulkData?.religions) ? bulkData.religions : [],
-        castes: [],
-        cities: Array.isArray(bulkData?.cities) ? bulkData.cities : [],
-        educationLevels: Array.isArray(bulkData?.educationLevels) ? bulkData.educationLevels : [],
-        occupations: Array.isArray(bulkData?.occupations) ? bulkData.occupations : [],
-        employmentStatuses: Array.isArray(bulkData?.employmentStatuses)
-          ? bulkData.employmentStatuses
-          : [],
-        maritalStatuses: Array.isArray(bulkData?.maritalStatuses) ? bulkData.maritalStatuses : [],
-        subCastes: [],
-        heights: Array.isArray(bulkData?.heights) ? bulkData.heights : [],
-        weights: Array.isArray(bulkData?.weights) ? bulkData.weights : [],
-      });
-      console.log("MASTER DATA LOADED");
-    } catch (err) {
-      console.error("MASTER DATA ERROR", err);
-    }
-  };
   const observerTarget = useRef(null);
   const debounceTimerRef = useRef(null);
 
   useEffect(() => {
-    loadMasterData();
-    performSearch(0, pageSize); // Initial search
+    const initDataAndSearch = async () => {
+      let bulkData = null;
+      try {
+        bulkData = await masterDataAPI.getAllMasterData();
+        setMasterData({
+          religions: Array.isArray(bulkData?.religions) ? bulkData.religions : [],
+          castes: [],
+          cities: Array.isArray(bulkData?.cities) ? bulkData.cities : [],
+          educationLevels: Array.isArray(bulkData?.educationLevels) ? bulkData.educationLevels : [],
+          occupations: Array.isArray(bulkData?.occupations) ? bulkData.occupations : [],
+          employmentStatuses: Array.isArray(bulkData?.employmentStatuses)
+            ? bulkData.employmentStatuses
+            : [],
+          maritalStatuses: Array.isArray(bulkData?.maritalStatuses) ? bulkData.maritalStatuses : [],
+          subCastes: [],
+          heights: Array.isArray(bulkData?.heights) ? bulkData.heights : [],
+          weights: Array.isArray(bulkData?.weights) ? bulkData.weights : [],
+        });
+      } catch (err) {
+        console.error("MASTER DATA ERROR", err);
+      }
+
+      // Read query parameters
+      const minAgeParam = searchParams.get('min_age') || searchParams.get('ageFrom') || '';
+      const maxAgeParam = searchParams.get('max_age') || searchParams.get('ageTo') || '';
+      const genderParam = searchParams.get('gender') || '';
+      const religionIdParam = searchParams.get('religion_id') || searchParams.get('religionId') || '';
+      const casteIdParam = searchParams.get('caste_id') || searchParams.get('casteId') || '';
+      const cityIdParam = searchParams.get('city_id') || searchParams.get('cityId') || '';
+      const religionNameParam = searchParams.get('religion') || '';
+      const casteNameParam = searchParams.get('caste') || '';
+      const cityNameParam = searchParams.get('city') || '';
+      const searchParam = searchParams.get('search') || searchParams.get('q') || '';
+
+      let matchedReligionId = religionIdParam;
+      if (!matchedReligionId && religionNameParam && bulkData?.religions) {
+        const found = bulkData.religions.find(r => r.name?.toLowerCase() === religionNameParam.toLowerCase());
+        if (found) matchedReligionId = String(found.id);
+      }
+
+      let matchedCityId = cityIdParam;
+      if (!matchedCityId && cityNameParam && bulkData?.cities) {
+        const found = bulkData.cities.find(c => c.name?.toLowerCase() === cityNameParam.toLowerCase());
+        if (found) matchedCityId = String(found.id);
+      }
+
+      const initialFilters = {
+        min_age: minAgeParam,
+        max_age: maxAgeParam,
+        gender: genderParam,
+        religion_id: matchedReligionId,
+        caste_id: casteIdParam,
+        city_id: matchedCityId,
+        education_level_id: '',
+        occupation_id: '',
+        employment_status_id: '',
+        height_id: '',
+        weight_id: '',
+        marital_status_id: '',
+        min_weight: '',
+        max_weight: '',
+        sort: 'relevance',
+        search: searchParam || (!matchedReligionId && religionNameParam ? religionNameParam : '')
+      };
+
+      setFilters(prev => ({ ...prev, ...initialFilters }));
+      performSearch(0, pageSize, false, initialFilters);
+    };
+
+    initDataAndSearch();
   }, []);
 
   useEffect(() => {
@@ -313,6 +430,7 @@ const performSearch = async (pageToFetch = 0, sizeToFetch = pageSize, isAppend =
       religionId: activeFilters.religion_id ? Number(activeFilters.religion_id) : null,
       casteId: activeFilters.caste_id ? Number(activeFilters.caste_id) : null,
       cityId: activeFilters.city_id ? Number(activeFilters.city_id) : null,
+      gender: activeFilters.gender || null,
       educationLevelId: activeFilters.education_level_id ? Number(activeFilters.education_level_id) : null,
       occupationId: activeFilters.occupation_id ? Number(activeFilters.occupation_id) : null,
       employmentStatusId: activeFilters.employment_status_id
@@ -393,6 +511,7 @@ const handlePageSizeChange = (newSize) => {
     const defaultFilters = {
       min_age: '',
       max_age: '',
+      gender: '',
       religion_id: '',
       caste_id: '',
       city_id: '',
@@ -404,7 +523,8 @@ const handlePageSizeChange = (newSize) => {
       marital_status_id: '',
       min_weight: '',
       max_weight: '',
-      sort: 'relevance'
+      sort: 'relevance',
+      search: ''
     };
     setFilters(defaultFilters);
     performSearch(0, pageSize, false, defaultFilters);
@@ -631,75 +751,98 @@ const handlePageSizeChange = (newSize) => {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {searchResults.map((profile) => (
-              <Link 
-                to={`/profile/${profile.id}`} 
-                key={profile.id} 
-                className="bg-card rounded-2xl overflow-hidden border border-border/80 shadow-sm hover:shadow-xl transition-all duration-300 group flex flex-col hover:-translate-y-1"
-              >
-                <div className="relative aspect-[3/4] overflow-hidden bg-muted">
-                  {profile.isPremium && (
-                    <div className="absolute top-3 left-3 z-10 bg-gradient-to-r from-yellow-400 to-amber-500 text-white px-3 py-1 rounded-full text-[10px] font-extrabold shadow-md tracking-wider">
-                      👑 PREMIUM
-                    </div>
-                  )}
+            {searchResults.map((profile) => {
+              const isSent = sentInterests.has(profile.userId);
+              const isSending = sendingInterests.has(profile.userId);
 
-                  {profile.imageUrl && !failedImages[profile.id] ? (
-                    <img 
-                      src={getImageUrl(profile.imageUrl)}
-                      alt={`${profile.firstName || ''} ${profile.lastName || ''}`}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      onError={() => {
-                        setFailedImages(prev => ({ ...prev, [profile.id]: true }));
-                      }}
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-950 dark:to-pink-950">
-                      <div className="text-center p-4">
-                        <div className="w-20 h-20 bg-primary/10 rounded-full mx-auto mb-2 flex items-center justify-center border-2 border-primary/20">
-                          <span className="text-primary text-2xl font-bold">
-                            {profile.firstName?.charAt(0)?.toUpperCase() || '?'}
-                          </span>
-                        </div>
-                        <p className="text-xs font-semibold text-muted-foreground">
-                          {profile.firstName} {profile.lastName}
-                        </p>
+              return (
+                <div 
+                  key={profile.id} 
+                  onClick={() => navigate(`/profile/${profile.id}`)} 
+                  className="bg-card rounded-2xl overflow-hidden border border-border/80 shadow-sm hover:shadow-xl transition-all duration-300 group flex flex-col hover:-translate-y-1 cursor-pointer"
+                >
+                  <div className="relative aspect-[3/4] overflow-hidden bg-muted">
+                    {profile.isPremium && (
+                      <div className="absolute top-3 left-3 z-10 bg-gradient-to-r from-yellow-400 to-amber-500 text-white px-3 py-1 rounded-full text-[10px] font-extrabold shadow-md tracking-wider">
+                        👑 PREMIUM
                       </div>
+                    )}
+
+                    {profile.imageUrl && !failedImages[profile.id] ? (
+                      <img 
+                        src={getImageUrl(profile.imageUrl)}
+                        alt={`${profile.firstName || ''} ${profile.lastName || ''}`}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        onError={() => {
+                          setFailedImages(prev => ({ ...prev, [profile.id]: true }));
+                        }}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-950 dark:to-pink-950">
+                        <div className="text-center p-4">
+                          <div className="w-20 h-20 bg-primary/10 rounded-full mx-auto mb-2 flex items-center justify-center border-2 border-primary/20">
+                            <span className="text-primary text-2xl font-bold">
+                              {profile.firstName?.charAt(0)?.toUpperCase() || '?'}
+                            </span>
+                          </div>
+                          <p className="text-xs font-semibold text-muted-foreground">
+                            {profile.firstName} {profile.lastName}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="p-4 flex-1 flex flex-col justify-between">
+                    <div>
+                      <h3 className="text-base font-bold text-foreground flex items-center gap-1.5 truncate">
+                        <span>{profile.firstName} {profile.lastName}</span>
+                        {profile.isPremium && <span className="text-yellow-500 text-xs">👑</span>}
+                      </h3>
+
+                      <p className="text-xs font-medium text-muted-foreground mt-1 truncate">
+                        {profile.occupationName || 'Profession not specified'}
+                        {' · '}
+                        {profile.cityName || 'Location not specified'}
+                      </p>
+
+                      <p className="text-xs text-muted-foreground/80 mt-0.5 truncate">
+                        {profile.educationLevelName || 'Education not specified'}
+                        {' · '}
+                        {profile.religionName || 'Religion not specified'}
+                      </p>
                     </div>
-                  )}
-                </div>
 
-                <div className="p-4 flex-1 flex flex-col justify-between">
-                  <div>
-                    <h3 className="text-base font-bold text-foreground flex items-center gap-1.5 truncate">
-                      <span>{profile.firstName} {profile.lastName}</span>
-                      {profile.isPremium && <span className="text-yellow-500 text-xs">👑</span>}
-                    </h3>
-
-                    <p className="text-xs font-medium text-muted-foreground mt-1 truncate">
-                      {profile.occupationName || 'Profession not specified'}
-                      {' · '}
-                      {profile.cityName || 'Location not specified'}
-                    </p>
-
-                    <p className="text-xs text-muted-foreground/80 mt-0.5 truncate">
-                      {profile.educationLevelName || 'Education not specified'}
-                      {' · '}
-                      {profile.religionName || 'Religion not specified'}
-                    </p>
-                  </div>
-
-                  <div className="flex gap-2 mt-4 pt-3 border-t border-border/50">
-                    <button className="flex-1 bg-primary/10 text-primary text-xs font-semibold py-2 rounded-xl hover:bg-primary/20 transition-colors">
-                      {t.search.profileActions.viewProfile}
-                    </button>
-                    <button className="flex-1 bg-pink-500/10 text-pink-600 dark:text-pink-400 text-xs font-semibold py-2 rounded-xl hover:bg-pink-500/20 transition-colors">
-                      {t.search.profileActions.sendInterest}
-                    </button>
+                    <div className="flex gap-2 mt-4 pt-3 border-t border-border/50">
+                      <button 
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/profile/${profile.id}`);
+                        }}
+                        className="flex-1 bg-primary/10 text-primary text-xs font-semibold py-2 rounded-xl hover:bg-primary/20 transition-colors"
+                      >
+                        {t.search?.profileActions?.viewProfile || "View Profile"}
+                      </button>
+                      <button 
+                        type="button"
+                        disabled={isSent || isSending}
+                        onClick={(e) => handleSendInterest(e, profile)}
+                        className={`flex-1 text-xs font-semibold py-2 rounded-xl transition-colors ${
+                          isSent 
+                            ? "bg-muted text-muted-foreground cursor-not-allowed" 
+                            : isSending
+                            ? "bg-pink-500/20 text-pink-600 animate-pulse cursor-wait"
+                            : "bg-pink-500/10 text-pink-600 dark:text-pink-400 hover:bg-pink-500/20"
+                        }`}
+                      >
+                        {isSent ? "Interest Sent ✓" : isSending ? "Sending..." : (t.search?.profileActions?.sendInterest || "Send Interest")}
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </Link>
-            ))}
+              );
+            })}
           </div>
         )}
 

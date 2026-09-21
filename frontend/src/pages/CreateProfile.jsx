@@ -5,7 +5,7 @@ import { useLoading } from "@/hooks/useLoading";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/context/LanguageContext.jsx";
 import ProfileForm from "@/components/ProfileForm";
-import { authAPI } from "@/services/api";
+import { authAPI, photoAPI } from "@/services/api";
 
 const CreateProfile = () => {
   const navigate = useNavigate();
@@ -118,7 +118,7 @@ const CreateProfile = () => {
     }
   };
 
-  const handleSaveProfile = async (formData) => {
+  const handleSaveProfile = async (formData, photoFile) => {
     try {
       startLoading("Saving profile...");
       
@@ -137,6 +137,15 @@ const CreateProfile = () => {
       }
 
       const result = await response.json();
+
+      // If user selected a photo during profile creation, upload it now
+      if (photoFile && photoFile instanceof File) {
+        try {
+          await photoAPI.upload(photoFile, "PROFILE");
+        } catch (photoErr) {
+          console.error("Photo upload failed during profile creation:", photoErr);
+        }
+      }
       
       success("Profile saved successfully!");
       stopLoading();
